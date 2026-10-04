@@ -21,7 +21,7 @@ reverted. Name branches `feature/<what>`, `fix/<what>` or `docs/<what>`.
 ## Setup
 
 ```sh
-git clone https://github.com/planetofoses989/kastrava.git
+git clone https://github.com/tejaskhanna989/kastrava.git
 cd kastrava
 npm ci
 npm run build:dev   # desktop: webpack dev bundle

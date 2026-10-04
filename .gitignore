@@ -18,3 +18,5 @@ server/.env
 *.jks
 *.keystore
 local.properties
+
+*.unused-*

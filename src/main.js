@@ -445,7 +445,7 @@ function initElectronUpdater() {
 // ---- Linux system packages (deb / rpm / pacman): version popup,
 // download the matching package, verify exact byte size against the
 // release API, privileged install, relaunch. Never runs for AppImage.
-const UPDATE_REPO = 'planetofoses989/kastrava'
+const UPDATE_REPO = 'tejaskhanna989/kastrava'
 let linuxUpdateBusy = false
 function cmpVer(a, b) {
   const pa = String(a).split('.').map((x) => parseInt(x, 10) || 0)

@@ -36,7 +36,7 @@ Ensure you have the following installed on your system before building:
 ### Installation
 
 1. Clone the repository:
-   git clone https://github.com/planetofoses989/kastrava.git
+   git clone https://github.com/tejaskhanna989/kastrava.git
    cd kastrava
 
 2. Install dependencies:
