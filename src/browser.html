@@ -1287,7 +1287,7 @@ function loadTopSites(){
 /* First-run setup wizard */
 var setupStep=0,setupEngine="kastravasearch",setupThemeKey="dark-0",setupTracking="strict",setupStartup="last",setupNtpClock="on",setupNtpLogo="on",setupNavAt=0,setupRenderId=0;
 var SETUP_ENGINES=[{id:"kastravasearch",n:"KastravaSearch",d:"Kastrava's own search"},{id:"duckduckgo",n:"DuckDuckGo",d:"Private search"},{id:"brave",n:"Brave Search",d:"Independent index \u00b7 Premium"},{id:"google",n:"Google",d:"Most results \u00b7 Premium"},{id:"ecosia",n:"Ecosia",d:"Plants trees \u00b7 Premium"}];
-function setupDots(){var d='<div class="setup-steps">';for(var i=0;i<10;i++)d+='<div class="setup-dot'+(setupStep>=i?' on':'')+'"></div>';return d+'</div>';}
+function setupDots(){var d='<div class="setup-steps">';for(var i=0;i<11;i++)d+='<div class="setup-dot'+(setupStep>=i?' on':'')+'"></div>';return d+'</div>';}
 function setupGo(n){var t=Date.now();if(t-setupNavAt<350)return;setupNavAt=t;setupStep=n;renderSetup();}
 function setupBindNav(next){
   var n=$("setup-next");if(n)n.addEventListener("click",function(){setupGo(next);});
@@ -1353,13 +1353,44 @@ function renderSetup(){
     c.innerHTML=dots+grid(ART_SUMMARY,'<div class="setup-name" style="font-size:24px;letter-spacing:2px">You are protected</div><div class="setup-sub">Review your setup.</div><div class="setup-priv"><div><span class="ok">✓</span>Search <b>'+engName+'</b></div><div><span class="ok">✓</span>Theme <b>'+esc(setupThemeKey)+'</b>, tracking <b>'+setupTracking+'</b></div><div><span class="ok">✓</span>Startup <b>'+(setupStartup==="last"?"restore":"new tab")+'</b></div><div><span class="ok">✓</span>Cookies <b>blocked</b>, referrer <b>off</b>, DNT <b>on</b></div></div>',CONTINUE);
     setupBindNav(8);
   }else if(setupStep===8){
+    c.innerHTML=dots+grid(ART_SUMMARY,'<div class="setup-name" style="font-size:24px;letter-spacing:2px">Account</div><div class="setup-sub">One login syncs bookmarks and settings between devices, encrypted end to end.'+(isPremium()?' Sync is on with your Premium.':' Your login is saved now — syncing itself unlocks with Premium.')+'</div><div class="setup-sub" id="setup-sync-note"></div><input id="setup-ac-email" type="email" autocomplete="email" placeholder="you@example.com" style="width:100%;margin:2px 0 8px;padding:10px 14px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px"><input id="setup-ac-pass" type="password" autocomplete="current-password" placeholder="Password (8+ characters)" style="width:100%;margin:0 0 12px;padding:10px 14px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px"><div><button class="setup-btn" id="setup-ac-login" style="margin-right:8px">Log in</button><button class="setup-btn" id="setup-ac-signup">Sign up</button></div>',CONTINUE);
+    (function(){
+      function note(t){var n=$("setup-sync-note");if(n)n.textContent=t||"";}
+      function finishLogin(email,pass,pwEl){
+        if(!api||!api.syncLogin){note("Sync unavailable.");return;}
+        api.syncLogin({apiBase:syncApiBase(),email:email,password:pass}).then(function(r){
+          if(r&&r.ok){if(pwEl)pwEl.value="";note("Signed in as "+email+".");try{if(api.syncNow)api.syncNow({apiBase:syncApiBase()}).catch(function(){});}catch(e){}}
+          else note(r&&r.msg?r.msg:"Login failed.");
+        }).catch(function(){note("Could not reach the server.");});
+      }
+      function doAccount(mode){
+        var em=$("setup-ac-email"),pw=$("setup-ac-pass");
+        var email=em?em.value.trim():"",pass=pw?pw.value:"";
+        if(!email||pass.length<8){note("Email + 8-character password.");return;}
+        if(mode==="signup"){
+          note("Creating account…");
+          fetch(syncApiBase()+"/api/account/signup",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:email,password:pass})}).then(function(r){return r.json();}).then(function(j){
+            if(j&&j.ok)finishLogin(email,pass,pw);
+            else if(j&&j.error==="exists"){note("Account exists — logging in…");finishLogin(email,pass,pw);}
+            else note("Signup failed.");
+          }).catch(function(){note("Could not reach the server.");});
+        }else{note("Logging in…");finishLogin(email,pass,pw);}
+      }
+      try{
+        if(api&&api.syncStatus)api.syncStatus().then(function(st){if(st&&st.loggedIn)note("Signed in as "+st.email+".");}).catch(function(){});
+      }catch(e){}
+      var sli=$("setup-ac-login");if(sli)sli.addEventListener("click",function(){doAccount("login");});
+      var ssu=$("setup-ac-signup");if(ssu)ssu.addEventListener("click",function(){doAccount("signup");});
+    })();
+    setupBindNav(9);
+  }else if(setupStep===9){
     if(isPremium()){
       c.innerHTML=dots+grid(ART_PREMIUM,'<div class="setup-name" style="font-size:24px;letter-spacing:2px">Kastrava Premium</div><div class="setup-sub">You are already Premium. Enjoy every feature Kastrava has to offer.</div><div class="setup-priv"><div><span class="ok">✓</span>Premium is active on this machine</div><div><span class="ok">✓</span>All features are unlocked</div></div>',CONTINUE);
     }else{
       c.innerHTML=dots+grid(ART_PREMIUM,'<div class="setup-name" style="font-size:24px;letter-spacing:2px">Kastrava Premium</div><div class="setup-sub">Unlock the full browser — one plan, one machine.</div><div class="setup-priv"><div><span class="ok">✦</span><b>20 themes</b> — all dark &amp; light sets</div><div><span class="ok">✦</span><b>Tracking Radar</b> · <b>Split View</b> · <b>Workspaces</b></div><div><span class="ok">✦</span><b>Cursor FX</b> — fluid, particles &amp; more</div><div><span class="ok">✦</span><b>Brave</b> · <b>Google</b> · <b>Ecosia</b> engines</div><div><span class="ok">✦</span><b>PiP</b> · <b>Screenshot</b> tools</div><div><span class="ok">✦</span><b>Vertical tabs</b> · custom shortcuts · more</div></div><div style="margin:2px auto 16px;padding:8px 24px;border-radius:999px;border:1px solid rgba(255,179,0,.45);background:rgba(255,179,0,.08);color:#ffb300;font-weight:700;font-size:20px;display:inline-block">₹248 <span style="font-size:12px;color:var(--c-text2);font-weight:500">/ 34 days · one machine</span></div><div><button class="setup-btn" id="setup-prem-go" style="background:linear-gradient(135deg,#ffb300,#f57c00);box-shadow:0 6px 24px rgba(255,179,0,.35)">Get Premium</button></div>',CONTINUE);
       var g=$("setup-prem-go");if(g)g.addEventListener("click",function(){try{openPremiumStore();}catch(e){}});
     }
-    setupBindNav(9);
+    setupBindNav(10);
   }else{
     c.innerHTML=dots+'<div class="setup-grid"><div class="setup-art">'+setupHero()+'</div><div class="setup-body"><div class="setup-name" style="font-size:26px">You are all set</div><div class="setup-sub">Enjoy private browsing with Kastrava.</div></div></div><div class="setup-foot"><button class="setup-btn" id="setup-done">Start Browsing</button></div>';
     $("setup-done").addEventListener("click",finishSetup);
