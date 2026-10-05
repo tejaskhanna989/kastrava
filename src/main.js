@@ -394,10 +394,13 @@ function wipeLegacyWebData() {
 
 // ---- Auto-update: push force updates ----
 // Per-format policy (explicit):
-//   NSIS Setup .exe .... electron-updater over the GitHub latest.yml feed
-//   deb / rpm / pacman . custom flow below: version popup, download the
-//                          matching package, verify exact byte size against
-//                          the release API, privileged install, relaunch
+//   NSIS Setup .exe .... electron-updater over the GitHub latest.yml feed:
+//                        launch check in ~5s, then every 30 min. A found
+//                        build stops the search and prompts TWICE (Restart
+//                        now / later); two defers resume the 30-min search.
+//   deb / rpm / pacman . same cadence via the release API: version popup
+//                        x2, download the matching package, verify exact
+//                        byte size, privileged install, relaunch.
 //   AppImage ............ excluded by choice (no popups, no checks)
 //   Store MSIX .......... excluded (the Store updates it itself)
 //   portable .exe ........ excluded (cannot self-replace)
@@ -428,35 +431,48 @@ function initElectronUpdater() {
       try { console.error('[update] error', String((e && e.message) || e)) } catch {}
     })
     updater.on('update-downloaded', (event, info) => {
+      try { stopUpdSearch(); updReady = info || {}; updPrompts = 0; promptWinUpdate() } catch {}
+    })
+    const UPD_MS = 30 * 60 * 1000
+    let updTimer = null, updReady = null, updPrompts = 0, updReminder = null
+    const check = () => { try { updater.checkForUpdates().catch(() => {}) } catch {} }
+    const stopUpdSearch = () => { if (updTimer) { clearInterval(updTimer); updTimer = null } if (updReminder) { clearTimeout(updReminder); updReminder = null } }
+    const startUpdSearch = () => { stopUpdSearch(); updTimer = setInterval(check, UPD_MS) }
+    const promptWinUpdate = () => {
       try {
+        if (!updReady) return
         if (!mainWindow || mainWindow.isDestroyed()) {
           try { updater.quitAndInstall(false, true) } catch {}
           return
         }
+        updPrompts++
         let notes = ''
         try {
-          const rn = info && info.releaseNotes
+          const rn = updReady && updReady.releaseNotes
           const raw = Array.isArray(rn) ? rn.map((n) => (n && n.note) || '').join('\n') : String(rn || '')
           notes = raw.replace(/\r/g, '').trim().slice(0, 500)
         } catch {}
         dialog.showMessageBox(mainWindow, {
           type: 'info',
           title: 'Kastrava update ready',
-          message: 'Kastrava ' + ((info && info.version) || 'new version') + ' downloaded.'
-            + (notes ? '\n\n' + notes : '') + '\n\nRestart now to apply it?',
+          message: 'Kastrava ' + ((updReady && updReady.version) || 'new version') + ' downloaded.'
+            + (notes ? '\n\n' + notes : '') + '\n\nRestart now to apply it?' + (updPrompts > 1 ? '\n(This is the last reminder — it installs on quit.)' : ''),
           buttons: ['Restart now', 'On next quit'],
           defaultId: 0,
           cancelId: 1
         }).then(({ response }) => {
           if (response === 0) {
             setImmediate(() => { try { updater.quitAndInstall(false, true) } catch {} })
+          } else if (updPrompts < 2) {
+            updReminder = setTimeout(promptWinUpdate, UPD_MS)
+          } else {
+            startUpdSearch()
           }
         }).catch(() => {})
       } catch {}
-    })
-    const check = () => { try { updater.checkForUpdates().catch(() => {}) } catch {} }
-    setTimeout(check, 30000)
-    setInterval(check, 6 * 60 * 60 * 1000)
+    }
+    setTimeout(check, 5000)
+    startUpdSearch()
     ipcMain.handle('check-updates', async () => {
       try {
         if (updater) { await updater.checkForUpdates(); return { ok: true } }
@@ -507,34 +523,46 @@ function sysPkgAsset(type, assets) {
 function sysPkgExt(type) {
   return type === 'pacman' ? '.pkg.tar.zst' : type === 'deb' ? '.deb' : '.rpm'
 }
-async function linuxUpdateCheck(manual) {
-  if (linuxUpdateBusy) return
-  linuxUpdateBusy = true
+const LIN_UPD_MS = 30 * 60 * 1000
+let linTimer = null, linReminder = null, linPending = null, linPrompts = 0
+function stopLinSearch() { if (linTimer) { clearInterval(linTimer); linTimer = null } if (linReminder) { clearTimeout(linReminder); linReminder = null } }
+function startLinSearch() { stopLinSearch(); linTimer = setInterval(() => { linuxUpdateCheck(false) }, LIN_UPD_MS) }
+async function linAskUpdate() {
+  const p = linPending
+  if (!p) return { response: 1 }
+  const parent = mainWindow && !mainWindow.isDestroyed() ? mainWindow : undefined
+  return dialog.showMessageBox(parent || undefined, {
+    type: 'info',
+    title: 'Kastrava update ready',
+    message: 'Kastrava ' + p.tag + ' is available (you have ' + app.getVersion() + ').'
+      + (p.notes ? '\n\n' + p.notes : '')
+      + '\n\nDownload and install it now? System password will be asked once.'
+      + (linPrompts > 0 ? '\n(This is the last reminder.)' : ''),
+    buttons: ['Update now', 'Later'],
+    defaultId: 0,
+    cancelId: 1
+  }).catch(() => ({ response: 1 }))
+}
+async function deferLinux() {
+  linPrompts++
+  if (linPrompts < 2) {
+    linReminder = setTimeout(async () => {
+      linReminder = null
+      if (!linPending) return
+      const r = await linAskUpdate()
+      if (r.response === 0) { const q = linPending; linPending = null; await runLinuxInstall(q) }
+      else await deferLinux()
+    }, LIN_UPD_MS)
+  } else {
+    linPending = null
+    startLinSearch()
+  }
+}
+async function runLinuxInstall(p) {
+  const { tag, asset, type } = p || {}
+  const parent = mainWindow && !mainWindow.isDestroyed() ? mainWindow : undefined
+  if (!tag || !asset || !asset.browser_download_url || !type) { startLinSearch(); return }
   try {
-    const type = detectSysPkg()
-    if (!type) return
-    const rel = await (await fetch('https://api.github.com/repos/' + UPDATE_REPO + '/releases/latest', {
-      headers: { 'User-Agent': 'Kastrava', Accept: 'application/vnd.github+json' },
-      signal: AbortSignal.timeout(20000)
-    })).json()
-    const tag = String((rel && rel.tag_name) || '').replace(/^v/, '')
-    if (!tag || cmpVer(tag, app.getVersion()) <= 0) return
-    const asset = sysPkgAsset(type, rel.assets)
-    if (!asset || !asset.browser_download_url || !asset.size) return
-    const parent = mainWindow && !mainWindow.isDestroyed() ? mainWindow : undefined
-    let notes = ''
-    try { notes = String((rel && rel.body) || '').replace(/\r/g, '').trim().slice(0, 400) } catch {}
-    const { response } = await dialog.showMessageBox(parent || undefined, {
-      type: 'info',
-      title: 'Kastrava update ready',
-      message: 'Kastrava ' + tag + ' is available (you have ' + app.getVersion() + ').'
-        + (notes ? '\n\n' + notes : '')
-        + '\n\nDownload and install it now? System password will be asked once.',
-      buttons: ['Update now', 'Later'],
-      defaultId: 0,
-      cancelId: 1
-    }).catch(() => ({ response: 1 }))
-    if (response !== 0) return
     let buf = null
     for (let attempt = 1; attempt <= 2; attempt++) {
       try {
@@ -566,6 +594,7 @@ async function linuxUpdateCheck(manual) {
         type: 'warning', title: 'Kastrava update',
         message: 'Automatic install did not complete. Update any time with your package manager.'
       }).catch(() => {})
+      startLinSearch()
       return
     }
     // Confirm the new version actually landed before offering restart —
@@ -584,6 +613,7 @@ async function linuxUpdateCheck(manual) {
         type: 'warning', title: 'Kastrava update',
         message: 'Install reported success but version ' + tag + ' was not detected. Please update with your package manager.'
       }).catch(() => {})
+      startLinSearch()
       return
     }
     const { response: restart } = await dialog.showMessageBox(parent || undefined, {
@@ -596,6 +626,35 @@ async function linuxUpdateCheck(manual) {
       try { app.relaunch() } catch {}
       try { app.quit() } catch {}
     }
+    startLinSearch()
+  } catch (e) {
+    try { console.error('[update] linux install failed:', String((e && e.message) || e)) } catch {}
+    startLinSearch()
+  }
+}
+async function linuxUpdateCheck(manual) {
+  if (linuxUpdateBusy) return
+  linuxUpdateBusy = true
+  try {
+    const type = detectSysPkg()
+    if (!type) return
+    const rel = await (await fetch('https://api.github.com/repos/' + UPDATE_REPO + '/releases/latest', {
+      headers: { 'User-Agent': 'Kastrava', Accept: 'application/vnd.github+json' },
+      signal: AbortSignal.timeout(20000)
+    })).json()
+    const tag = String((rel && rel.tag_name) || '').replace(/^v/, '')
+    if (!tag || cmpVer(tag, app.getVersion()) <= 0) return
+    const asset = sysPkgAsset(type, rel.assets)
+    if (!asset || !asset.browser_download_url || !asset.size) return
+    let notes = ''
+    try { notes = String((rel && rel.body) || '').replace(/\r/g, '').trim().slice(0, 400) } catch {}
+    stopLinSearch()
+    linPending = { tag, asset, type, notes }
+    linPrompts = 0
+    const { response } = await linAskUpdate()
+    if (response !== 0) { await deferLinux(); return }
+    linPending = null
+    await runLinuxInstall({ tag, asset, type })
   } catch (e) {
     try { console.error('[update] linux check failed:', String((e && e.message) || e)) } catch {}
   } finally {
@@ -603,9 +662,8 @@ async function linuxUpdateCheck(manual) {
   }
 }
 function initLinuxSysUpdate() {
-  const check = () => { linuxUpdateCheck(false) }
-  setTimeout(check, 45000)
-  setInterval(check, 6 * 60 * 60 * 1000)
+  setTimeout(() => { linuxUpdateCheck(false) }, 5000)
+  startLinSearch()
   try {
     ipcMain.handle('check-updates', async () => {
       linuxUpdateCheck(true)
