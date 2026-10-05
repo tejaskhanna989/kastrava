@@ -321,6 +321,7 @@ input[type=file].adm-file{font-size:13px;color:var(--muted)}
         h+='<tr><td class="mono">'+esc(k)+'</td><td style="color:'+col+'"><b>'+esc(l.status||'?')+'</b></td><td class="mono">'+esc((l.machine_id||'').slice(0,18))+'</td><td>'+esc((l.expires_at||'?').slice(0,10))+'</td><td class="mono">'+esc(l.order_id||'')+'</td>';
         h+='<td class="adm-actions">'
           +'<button data-extend="'+esc(k)+'">Extend</button>'
+          +'<button data-life="'+esc(k)+'" title="Extend 100 years">Lifetime</button>'
           +'<button data-rebind="'+esc(k)+'">Rebind</button>'
           +(l.status!=='revoked'?'<button data-revoke="'+esc(k)+'">Revoke</button>':'')
           +'</td></tr>';
@@ -332,6 +333,17 @@ input[type=file].adm-file{font-size:13px;color:var(--muted)}
           if(d===null)return;
           api('/api/admin/extend',{key:b.dataset.extend,days:Number(d)},function(err2,r2){
             if(err2||!r2.json||!r2.json.ok){alert('Extend failed: '+((r2&&r2.json&&(r2.json.error||r2.json.msg))||'net'));return;}
+            alert('New expiry: '+(r2.json.expires_at||'?')+' — the app picks it up on its next launch.');
+            loadList();
+          });
+        });
+      });
+      out.querySelectorAll('[data-life]').forEach(function(b){
+        b.addEventListener('click',function(){
+          if(!confirm('Lifetime-extend '+b.dataset.life+' by 100 years?'))return;
+          api('/api/admin/extend',{key:b.dataset.life,days:36500},function(err2,r2){
+            if(err2||!r2.json||!r2.json.ok){alert('Lifetime failed: '+((r2&&r2.json&&(r2.json.error||r2.json.msg))||'net'));return;}
+            alert('Lifetime set, expires '+(r2.json.expires_at||'?')+' — the app picks it up on its next launch.');
             loadList();
           });
         });

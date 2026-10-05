@@ -340,7 +340,7 @@ async function handlePost(req, res, pathname) {
     const days = Math.floor(Number(body.days) || 0)
     const lic = store.getLicense(key)
     if (!lic) return json(res, 404, { error: 'invalid_key' })
-    if (!(days >= 1 && days <= 3650)) return json(res, 400, { error: 'bad_request' })
+    if (!(days >= 1 && days <= 36500)) return json(res, 400, { error: 'bad_request' })
     const base = lic.expires_at ? Math.max(Date.now(), new Date(lic.expires_at).getTime()) : Date.now()
     const expires = new Date(base + days * 86400000).toISOString()
     store.extendLicense(key, expires)

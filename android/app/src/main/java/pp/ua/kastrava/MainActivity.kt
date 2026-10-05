@@ -162,6 +162,18 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, "Kastrava ${u.name} available — update in Settings", Toast.LENGTH_LONG).show()
             }
         }.start()
+        // Silent license refresh once per process: an admin extend or renewal
+        // only lands in-app after a re-activate. Failures keep the cache.
+        Thread {
+            try {
+                val st = app.license.status()
+                if (st.activated && st.key != null) {
+                    if (app.license.activate(st.key) == null) {
+                        runOnUiThread { refreshPremiumLine() }
+                    }
+                }
+            } catch (e: Exception) { }
+        }.start()
     }
 
     override fun onNewIntent(intent: Intent) {

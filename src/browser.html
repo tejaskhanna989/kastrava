@@ -654,6 +654,7 @@ var EDITION=(typeof __EDITION__!=="undefined"&&__EDITION__)?__EDITION__:"premium
 var KAS_API=(typeof __KAS_API__!=="undefined"&&__KAS_API__)?__KAS_API__:"http://127.0.0.1:8787";
 var KAS_STORE=(typeof __KAS_STORE__!=="undefined"&&__KAS_STORE__)?__KAS_STORE__:(KAS_API||"http://127.0.0.1:8787");
 var LIC={activated:false,machine:"",key:null,reason:"no_license",expiresAt:null,subEnd:null,grace:false};
+var licRefreshed=false;
 function editionLabel(){if(EDITION==="free")return "Free";return LIC.activated?"Premium":"Free";}
 function isPremium(){if(EDITION==="free")return false;return !!(LIC&&LIC.activated);}
 function requirePremium(){if(isPremium())return true;toast("Kastrava Premium — ₹248/34 days, one machine");setTimeout(function(){openPremiumSection();},600);return false;}
@@ -686,7 +687,16 @@ function loadSettings(){
 // Premium license: runtime unlock in premium build, always locked in free.
 function loadLicense(){
   if(!api||!api.licStatus)return;
-  api.licStatus().then(function(s){if(s){LIC.activated=!!s.activated;LIC.machine=s.machine||"";LIC.key=s.key||null;LIC.reason=s.reason||null;LIC.expiresAt=s.expiresAt||null;LIC.subEnd=s.subEnd||null;LIC.grace=!!s.grace;}try{applyEditionUI();}catch(e){}try{
+  api.licStatus().then(function(s){if(s){LIC.activated=!!s.activated;LIC.machine=s.machine||"";LIC.key=s.key||null;LIC.reason=s.reason||null;LIC.expiresAt=s.expiresAt||null;LIC.subEnd=s.subEnd||null;LIC.grace=!!s.grace;}
+  // Silent refresh once per launch: an admin extend or renewal only lands
+  // in-app after a re-activate. Failures (offline, revoked) keep the cache.
+  try{
+    if(!licRefreshed&&s&&s.activated&&s.key&&api.licActivate){
+      licRefreshed=true;
+      api.licActivate(s.key).then(function(r){if(r&&r.ok){try{licRefreshed=true;loadLicense();}catch(e){}}}).catch(function(){});
+    }
+  }catch(e){}
+  try{applyEditionUI();}catch(e){}try{
     // applyEditionUI can silently downgrade settings (e.g. premium engine
     // back to KastravaSearch on expiry). If Settings is open, re-render the
     // active section so controls never disagree with effective settings.
