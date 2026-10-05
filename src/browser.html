@@ -1300,7 +1300,7 @@ function renderSetup(){
   function grid(art,body,nav){return '<div class="setup-grid"><div class="setup-art">'+art+'</div><div class="setup-body">'+body+'</div></div><div class="setup-foot">'+nav+'</div>';}
   var CONTINUE='<button class="setup-btn" id="setup-next">Continue</button><div><button class="setup-skip" id="setup-back">Back</button></div>';
   if(setupStep===0){
-    c.innerHTML=dots+'<div class="setup-grid"><div class="setup-art">'+setupHero()+'</div><div class="setup-body"><div class="setup-name">Kastrava</div><div class="setup-beta"><span>Beta</span> &middot; Originally AnterSurf</div><div class="setup-sub">The most private browser.<br>Zero telemetry. Your data never leaves this machine.</div></div></div><div class="setup-foot"><button class="setup-btn" id="setup-next">Get Started</button><div><button class="setup-skip" id="setup-skip">Skip setup</button></div></div>';
+    c.innerHTML=dots+'<div class="setup-grid"><div class="setup-art">'+setupHero()+'</div><div class="setup-body"><div class="setup-name">Kastrava</div><div class="setup-beta"><span>RC</span> &middot; Originally AnterSurf</div><div class="setup-sub">The most private browser.<br>Zero telemetry. Your data never leaves this machine.</div></div></div><div class="setup-foot"><button class="setup-btn" id="setup-next">Get Started</button><div><button class="setup-skip" id="setup-skip">Skip setup</button></div></div>';
     $("setup-next").addEventListener("click",function(){setupGo(1);});
     $("setup-skip").addEventListener("click",function(){setupThemeKey=settings.theme||"light-0";finishSetup();});
   }else if(setupStep===1){
@@ -3792,7 +3792,7 @@ function renderSettingsSection(id){
     }
   }
   else if(id==="search"){h="<h3>Search Engine</h3>";
-    h+="<div class=\"sg\"><div class=\"lbl\">Default Search Engine</div><select id=\"s-se\"><option value=\"kastravasearch\">KastravaSearch (Default, Beta)</option><option value=\"duckduckgo\">DuckDuckGo</option><option value=\"brave\">Brave Search (Premium)</option><option value=\"google\">Google (Premium)</option><option value=\"ecosia\">Ecosia (Premium)</option></select><div class=\"desc\">KastravaSearch is Kastrava's own private search engine. DuckDuckGo is free too; Brave, Google and Ecosia are Premium.</div></div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">Default Search Engine</div><select id=\"s-se\"><option value=\"kastravasearch\">KastravaSearch (Default, RC)</option><option value=\"duckduckgo\">DuckDuckGo</option><option value=\"brave\">Brave Search (Premium)</option><option value=\"google\">Google (Premium)</option><option value=\"ecosia\">Ecosia (Premium)</option></select><div class=\"desc\">KastravaSearch is Kastrava's own private search engine. DuckDuckGo is free too; Brave, Google and Ecosia are Premium.</div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Current Engine URL</div><div class=\"desc\" style=\"word-break:break-all\">"+esc(SEARCH_ENGINES[settings.searchEngine]||SEARCH_ENGINES.kastravasearch)+"</div></div>";
   }
   else if(id==="privacy"){h="<h3>Privacy &amp; Security</h3>";
@@ -3834,7 +3834,7 @@ function renderSettingsSection(id){
     h+="<div class=\"sg\"><button class=\"btn-sm btn-accent\" id=\"s-setupreplay\">Replay Welcome Setup</button><div class=\"desc\">Show the first-run setup wizard again.</div></div>";
   }
   else if(id==="about"){h="<h3>About</h3>";
-    h+="<div class=\"about-card\"><img src=\"logo.png\"><div><div class=\"name\">Kastrava <span style=\"font-size:10px;font-weight:700;background:rgba(245,158,11,.15);color:#f59e0b;padding:2px 8px;border-radius:10px;vertical-align:2px;letter-spacing:.5px\">BETA</span></div><div class=\"ver\">Version 101.2.2 &mdash; Starship Wonders ("+editionLabel()+")</div><div class=\"ver\" style=\"margin-top:2px\">Chromium "+(window.__chromeVer||"")+" · volatile sessions · zero telemetry</div></div></div>";
+    h+="<div class=\"about-card\"><img src=\"logo.png\"><div><div class=\"name\">Kastrava <span style=\"font-size:10px;font-weight:700;background:rgba(245,158,11,.15);color:#f59e0b;padding:2px 8px;border-radius:10px;vertical-align:2px;letter-spacing:.5px\">RC</span></div><div class=\"ver\">Version 101.2.2 &mdash; Starship Wonders ("+editionLabel()+")</div><div class=\"ver\" style=\"margin-top:2px\">Chromium "+(window.__chromeVer||"")+" · volatile sessions · zero telemetry</div></div></div>";
     h+="<div class=\"sg\" style=\"border:1px solid var(--c-border);border-radius:12px;padding:6px 16px;margin-top:4px\">"
       +"<div class=\"about-link\" data-link=\"help\">Get help with Kastrava<span>\u203a</span></div>"
       +"<div class=\"about-link\" data-link=\"issue\">Report an issue<span>\u203a</span></div>"

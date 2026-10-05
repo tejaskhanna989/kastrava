@@ -38,7 +38,7 @@ gradle :app:assembleDebug
 ## What to work on
 
 - Bugs reported on the [KendraServer Discord](https://discord.gg/UsgF73RJbx)
-- Anything in the app marked Beta / unfinished
+- Anything in the app marked RC / unfinished
 - Docs, icons, translations, tests
 
 Unsure? Ask on Discord before writing code — a 2-minute question can save

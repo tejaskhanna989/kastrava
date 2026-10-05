@@ -1,9 +1,9 @@
 {
   "version": "101.2.2",
   "codename": "Starship Wonders",
-  "channel": "beta",
+  "channel": "rc",
   "url": "https://kastrava.pp.ua/dl/kastrava_101.2.2_amd64.deb",
-  "notes": "Kastrava 101 Beta 'Starship Wonders' \u2014 the most private browser. Private-by-default downloads, Tracking Radar, KastravaSearch, Kastget downloads.",
+  "notes": "Kastrava 101 RC 'Starship Wonders' \u2014 the most private browser. Private-by-default downloads, Tracking Radar, KastravaSearch, Kastget downloads.",
   "date": "2026-09-20",
   "minimum": "26.0.0",
   "version_code": 1012002,
