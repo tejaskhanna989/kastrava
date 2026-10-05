@@ -71,6 +71,23 @@ header{padding:84px 0 30px}
 .hero-center .lede{margin:0 auto 30px}
 .hero-center .cta-row{justify-content:center}
 .hero-center .hero-meta{margin-top:24px}
+.hero-grid{display:grid;grid-template-columns:1.02fr .98fr;gap:52px;align-items:center;margin-top:8px}
+.hero-copy{text-align:left;max-width:600px}
+.hero-copy h1{text-align:left}
+.hero-copy .lede{margin:0 0 30px}
+.hero-copy .cta-row{justify-content:flex-start}
+.hero-copy .hero-meta{margin-top:24px}
+.proof{background:#0c0e13;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:20px 24px 24px;font-family:'JetBrains Mono',monospace;font-size:12.5px;line-height:2.05;color:#c9d1d9;box-shadow:0 24px 70px rgba(0,0,0,.4);overflow-x:auto}
+.proof .ph{display:flex;gap:7px;margin-bottom:12px}
+.proof .ph i{width:11px;height:11px;border-radius:50%;display:block}
+.proof .k{color:#7ee2a8}
+.proof .v{color:#f3eee4}
+.proof .dim{color:#5b6470}
+.card{transition:border-color .18s,transform .18s}
+.card:hover{border-color:var(--blue)}
+.prem-card{border-top:2px solid #ffb300}
+.dl-card{transition:border-color .18s}
+.dl-card:hover{border-color:var(--blue)}
 .hero-shot{max-width:980px;margin:60px auto 0}
 .hero-shot figcaption{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted2);margin-top:12px;text-align:center}
 .hero-grid{display:grid;grid-template-columns:1fr 1.1fr;gap:56px;align-items:center}
@@ -178,7 +195,7 @@ footer a{color:var(--blue);text-decoration:none}
 #authors-corner:hover{opacity:1;color:var(--blue)}
 ::selection{background:var(--blue);color:var(--bg)}
 .reveal{opacity:1;transform:none}
-@media(max-width:900px){.hero-grid{grid-template-columns:1fr}header h1{font-size:46px}.grid{grid-template-columns:1fr 1fr}.stats{grid-template-columns:1fr 1fr}.os-grid{grid-template-columns:1fr}.prem-steps{grid-template-columns:1fr 1fr}.foot-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:900px){.hero-grid{grid-template-columns:1fr}.hero-copy{text-align:center;max-width:860px;margin:0 auto}.hero-copy h1{text-align:center}.hero-copy .cta-row{justify-content:center}header h1{font-size:46px}.grid{grid-template-columns:1fr 1fr}.stats{grid-template-columns:1fr 1fr}.os-grid{grid-template-columns:1fr}.prem-steps{grid-template-columns:1fr 1fr}.foot-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:600px){.grid,.dl{grid-template-columns:1fr}.card.span2{grid-column:auto}.dl-row{flex-direction:column;gap:12px}.os-row{flex-direction:column;gap:8px}.os-tag{flex:none}header h1{font-size:36px}header{padding:52px 0 20px}.stats{grid-template-columns:1fr 1fr}.prem-steps{grid-template-columns:1fr}.faq{grid-template-columns:1fr}.foot-grid{grid-template-columns:1fr}}
 @media(max-width:480px){nav .beta{display:none}nav .name{font-size:13px;letter-spacing:2px}nav a.btn{padding:8px 15px;font-size:12px}.theme-btn{width:34px;height:34px}}
 @media(prefers-reduced-motion:reduce){.reveal{transition:none;opacity:1;transform:none}}
@@ -221,22 +238,28 @@ footer a{color:var(--blue);text-decoration:none}
 
 <header>
   <div class="container">
-    <div class="hero-center">
-      <div class="kicker" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--blue);letter-spacing:1px;margin-bottom:18px">v101.2.2-rc · Codename: Starship Wonders · originally Antersurf</div>
-      <h1>Leave <span class="strike">nothing</span> behind.</h1>
-      <p class="lede" style="font-size:16.5px;color:var(--muted);max-width:560px;margin-bottom:26px">Kastrava keeps <b>zero</b> persistent web storage. No cache, no cookies, no site databases on your disk — everything runs in RAM and is <b>wiped on exit</b>. Underneath it is Chromium — the same engine as Chrome — so sites just work.</p>
-      <div class="cta-row">
-        <a class="btn btn-primary" href="#download" style="display:inline-block;padding:15px 36px;border-radius:12px;font-size:15px;font-weight:600;background:#0288d1;color:#fff;text-decoration:none;font-family:'Space Grotesk',sans-serif">Download Free</a>
-        <a class="btn btn-ghost" href="#premium" style="display:inline-block;padding:15px 36px;border-radius:12px;font-size:15px;font-weight:600;background:transparent;border:1px solid var(--line);color:var(--ink);text-decoration:none;font-family:'Space Grotesk',sans-serif">Go Premium — $2.59/34d</a>
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <div class="kicker" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--blue);letter-spacing:1px;margin-bottom:18px">v101.2.2-rc · Codename: Starship Wonders · originally Antersurf</div>
+        <h1>Leave <span class="strike">nothing</span> behind.</h1>
+        <p class="lede" style="font-size:16.5px;color:var(--muted);margin-bottom:26px">Kastrava keeps <b>zero</b> persistent web storage. No cache, no cookies, no site databases on your disk — everything runs in RAM and is <b>wiped on exit</b>. Underneath it is Chromium — the same engine as Chrome — so sites just work.</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="#download" style="display:inline-block;padding:15px 36px;border-radius:12px;font-size:15px;font-weight:600;background:#0288d1;color:#fff;text-decoration:none;font-family:'Space Grotesk',sans-serif">Download Free</a>
+          <a class="btn btn-ghost" href="#premium" style="display:inline-block;padding:15px 36px;border-radius:12px;font-size:15px;font-weight:600;background:transparent;border:1px solid var(--line);color:var(--ink);text-decoration:none;font-family:'Space Grotesk',sans-serif">Go Premium — $2.59/34d</a>
+        </div>
+        <p class="mono hero-meta" style="font-size:11.5px;color:var(--muted2);margin-top:22px">Linux &middot; Windows &middot; Android &middot; Free core, forever &middot; Premium $2.59/34 days, one machine &middot; 100% Open Source (GPLv3)</p>
       </div>
-      <p class="mono hero-meta" style="font-size:11.5px;color:var(--muted2);margin-top:22px">Linux &middot; Windows &middot; Android &middot; Free core, forever &middot; Premium $2.59/34 days, one machine &middot; 100% Open Source (GPLv3)</p>
+      <aside class="proof" aria-label="Kastrava privacy report">
+        <div class="ph"><i style="background:#f28b82"></i><i style="background:#facc15"></i><i style="background:#4caf50"></i></div>
+        <div><span class="k">$</span> <span class="v">kastrava --privacy-report</span></div>
+        <div><span class="dim">telemetry sent .....</span> <span class="v">0 bytes</span></div>
+        <div><span class="dim">cookies on disk ....</span> <span class="v">0</span></div>
+        <div><span class="dim">web storage .......</span> <span class="v">RAM only, wiped on exit</span></div>
+        <div><span class="dim">engine ............</span> <span class="v">Chromium</span></div>
+        <div><span class="dim">telemetry endpoint </span> <span class="v">none exists</span></div>
+        <div><span class="dim">license ...........</span> <span class="v">GPLv3, read it all</span></div>
+      </aside>
     </div>
-    <figure class="hero-shot reveal">
-      <div class="shot-frame">
-        <img src="shot-ntp.png" alt="Kastrava browser showing a new tab page" style="display:block;width:100%;height:auto">
-      </div>
-      <figcaption>the actual browser — pitch black, KastravaSearch, zero clutter</figcaption>
-    </figure>
     <div class="stats">
       <div class="stat reveal"><div class="num cy">0</div><div class="lbl">bytes of telemetry</div></div>
       <div class="stat reveal"><div class="num cy">0</div><div class="lbl">cookies left on disk</div></div>
