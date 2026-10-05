@@ -1256,14 +1256,20 @@ function loadTopSites(){
   var c2=$("top-sites");if(!c2)return;
   var sites=[{u:"https://kastrava.pp.ua",t:"Kastrava",i:"K"}];
   try{customSites=JSON.parse(localStorage.getItem("as_custom_sites")||"[]")||[];}catch(e){customSites=[];}
+  var hiddenSites=[];
+  try{hiddenSites=JSON.parse(localStorage.getItem("as_hidden_sites")||"[]")||[];}catch(e){hiddenSites=[];}
   var fav=function(u,l){var f=favIcon(u);return "<div class=\"sc-icon\">"+esc(l)+(f?"<img class=\"sc-fav\" src=\""+f+"\" alt=\"\" onerror=\"this.style.display='none'\">":"")+"</div>";};
   var tiles=customSites.map(function(s){return "<div class=\"shortcut ts-custom\" data-url=\""+esc(s.u)+"\"><button class=\"ts-x\" data-url=\""+esc(s.u)+"\" title=\"Remove\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\"><path d=\"M18 6L6 18M6 6l12 12\"/></svg></button>"+fav(s.u,(s.t||"?").charAt(0).toUpperCase())+"<div class=\"sc-label\">"+esc(s.t)+"</div></div>";}).join("");
-  tiles+=sites.map(function(s){return "<div class=\"shortcut\" data-url=\""+esc(s.u)+"\">"+fav(s.u,s.i)+"<div class=\"sc-label\">"+esc(s.t)+"</div></div>";}).join("");
+  tiles+=sites.filter(function(s){return hiddenSites.indexOf(s.u)<0;}).map(function(s){return "<div class=\"shortcut ts-custom\" data-url=\""+esc(s.u)+"\"><button class=\"ts-x\" data-url=\""+esc(s.u)+"\" title=\"Remove\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\"><path d=\"M18 6L6 18M6 6l12 12\"/></svg></button>"+fav(s.u,s.i)+"<div class=\"sc-label\">"+esc(s.t)+"</div></div>";}).join("");
+  if(!customSites.length&&hiddenSites.length&&sites.every(function(s){return hiddenSites.indexOf(s.u)>=0;})){
+    tiles+="<div class=\"shortcut ts-add\" id=\"ts-restore\" title=\"Restore default shortcuts\"><div class=\"sc-icon\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"><path d=\"M3 12a9 9 0 1 0 3-6.7\"/><path d=\"M3 4v5h5\"/></svg></div><div class=\"sc-label\">Restore</div></div>";
+  }
   tiles+="<div class=\"shortcut ts-add\" id=\"ts-add\" title=\"Add shortcut\"><div class=\"sc-icon\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"><path d=\"M12 22C17.5 22 22 17.5 22 12C22 6.5 17.5 2 12 2C6.5 2 2 6.5 2 12C2 17.5 6.5 22 12 22Z\"/><path d=\"M8 12H16\"/><path d=\"M12 16V8\"/></svg></div><div class=\"sc-label\">Add</div></div>";
   c2.innerHTML=tiles;
   c2.onclick=function(e){
     var x=e.target.closest(".ts-x");
     if(x){removeCustomSite(x.dataset.url);return;}
+    if(e.target.closest("#ts-restore")){try{localStorage.setItem("as_hidden_sites","[]");}catch(e){}loadTopSites();toast("Default shortcuts restored");return;}
     if(e.target.closest("#ts-add")){openAddSiteModal();return;}
     var sc=e.target.closest(".shortcut");if(sc)addTab(sc.dataset.url);
   };
@@ -1391,7 +1397,12 @@ function addCustomSite(){
 }
 function removeCustomSite(u){
   customSites=customSites.filter(function(s){return s.u!==u;});
-  try{localStorage.setItem("as_custom_sites",JSON.stringify(customSites));}catch(e){}
+  try{
+    var hidden=JSON.parse(localStorage.getItem("as_hidden_sites")||"[]")||[];
+    if(hidden.indexOf(u)<0)hidden.push(u);
+    localStorage.setItem("as_hidden_sites",JSON.stringify(hidden));
+    localStorage.setItem("as_custom_sites",JSON.stringify(customSites));
+  }catch(e){}
   loadTopSites();
   toast("Shortcut removed");
 }
