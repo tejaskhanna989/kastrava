@@ -38,6 +38,16 @@ class Prefs(context: Context) {
         get() = p.getBoolean("batterySaver", true)
         set(v) { p.edit().putBoolean("batterySaver", v).apply() }
 
+    // Session restore (URLs only — pages reload fresh, logged out, exactly
+    // like the desktop volatile session). Empty means fresh start.
+    var sessionTabs: String
+        get() = p.getString("session_tabs", "") ?: ""
+        set(v) { p.edit().putString("session_tabs", v).apply() }
+
+    var sessionActive: Int
+        get() = p.getInt("session_active", -1)
+        set(v) { p.edit().putInt("session_active", v).apply() }
+
     companion object {
         const val KASTRA_SEARCH = "https://kastravasearch.pp.ua/search?q="
         val ENGINES = mapOf(

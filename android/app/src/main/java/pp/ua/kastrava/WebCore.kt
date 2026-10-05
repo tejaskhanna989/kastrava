@@ -56,6 +56,7 @@ class KastraWebClient(
 
     override fun onPageFinished(view: WebView, url: String) {
         super.onPageFinished(view, url)
+        CookieReject.inject(view)
         onPageEvent()
     }
 }

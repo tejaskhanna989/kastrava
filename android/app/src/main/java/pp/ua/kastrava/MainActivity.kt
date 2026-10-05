@@ -150,8 +150,11 @@ class MainActivity : AppCompatActivity() {
             } else false
         }
 
+        // Restore last tabs first (URLs only, pages reload fresh), then layer
+        // any incoming link on top as the active tab.
+        val restored = restoreSession()
         handleIntent(intent)
-        if (current < 0) showHome()
+        if (current < 0 && !restored) showHome()
         refreshPremiumLine()
         Thread {
             val u = Updater.check(this)
@@ -187,6 +190,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onPause() {
+        // Tabs persist (URLs only) so they survive process death, then freeze.
+        saveSession()
         // App backgrounded: freeze every tab + all JS timers. Lowest drain.
         try { tabs.forEach { it.view.onPause() } } catch (e: Exception) { }
         try { tabs.firstOrNull()?.view?.pauseTimers() } catch (e: Exception) { }
@@ -265,6 +270,7 @@ class MainActivity : AppCompatActivity() {
         updateTabCount()
         switchTo(tabs.size - 1)
         if (url != null) wv.loadUrl(url) else showHome()
+        saveSession()
     }
 
     private fun cycleTab(dir: Int) {
@@ -347,6 +353,7 @@ class MainActivity : AppCompatActivity() {
             switchTo(i.coerceAtMost(tabs.size - 1))
         }
         if (!quiet) showUndoSnackbar()
+        saveSession()
     }
 
     private fun showHome() {
@@ -482,6 +489,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun openPremium() {
         startActivity(Intent(this, PremiumActivity::class.java))
+    }
+
+    private fun openVault() {
+        startActivity(Intent(this, VaultActivity::class.java))
     }
 
     private fun openSettings() {
@@ -625,7 +636,9 @@ class MainActivity : AppCompatActivity() {
             Triple(R.drawable.ic_search, "Find on page", { openFindBar() }),
             Triple(R.drawable.ic_monitor, if (desktopOn) "Desktop ✓" else "Desktop site", { toggleDesktopMode() }),
             Triple(R.drawable.ic_textsize, "Text size", { openTextSize() }),
+            Triple(R.drawable.ic_shot, "Screenshot", { takeScreenshot() }),
             Triple(R.drawable.ic_trash, "Delete data", { wipeNow() }),
+            Triple(R.drawable.ic_vault, "Vault", { openVault() }),
             Triple(R.drawable.ic_premium, "Premium", { openPremium() }),
             Triple(R.drawable.ic_globe, "Default app", { requestDefaultBrowser() }),
             Triple(R.drawable.ic_info, "About", { showAbout() }),
@@ -886,7 +899,113 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // ----- session restore (F6, free): URLs only, pages reload fresh -----
+
+    private fun saveSession() {
+        try {
+            val arr = org.json.JSONArray()
+            tabs.forEach {
+                val u = it.view.url
+                if (!u.isNullOrBlank()) {
+                    arr.put(org.json.JSONObject().put("u", u).put("t", it.view.title ?: ""))
+                }
+            }
+            app.prefs.sessionTabs = arr.toString()
+            app.prefs.sessionActive = current
+        } catch (e: Exception) { }
+    }
+
+    private fun restoreSession(): Boolean {
+        return try {
+            val raw = app.prefs.sessionTabs
+            if (raw.isBlank()) return false
+            val arr = org.json.JSONArray(raw)
+            if (arr.length() == 0) return false
+            for (i in 0 until arr.length()) {
+                val u = arr.optJSONObject(i)?.optString("u") ?: ""
+                if (u.isNotBlank()) newTab(u)
+            }
+            if (tabs.isEmpty()) return false
+            val ai = app.prefs.sessionActive
+            switchTo(if (ai in tabs.indices) ai else tabs.size - 1)
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    // ----- screenshot (F7, free): PixelCopy of the window -> Downloads -----
+
+    private fun takeScreenshot() {
+        if (currentTab() == null) {
+            Toast.makeText(this, "Nothing to capture", Toast.LENGTH_SHORT).show()
+            return
+        }
+        try {
+            val root = window.decorView
+            if (root.width <= 0 || root.height <= 0) {
+                Toast.makeText(this, "Screenshot failed", Toast.LENGTH_SHORT).show()
+                return
+            }
+            val bmp = android.graphics.Bitmap.createBitmap(root.width, root.height, android.graphics.Bitmap.Config.ARGB_8888)
+            val rect = android.graphics.Rect(0, 0, root.width, root.height)
+            android.view.PixelCopy.request(window, rect, bmp, { res ->
+                if (res == android.view.PixelCopy.SUCCESS) saveScreenshot(bmp)
+                else runOnUiThread { Toast.makeText(this, "Screenshot failed", Toast.LENGTH_SHORT).show() }
+            }, android.os.Handler(mainLooper))
+        } catch (e: Exception) {
+            Toast.makeText(this, "Screenshot failed", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun saveScreenshot(bmp: android.graphics.Bitmap) {
+        Thread {
+            var name = ""
+            try {
+                name = "Kastrava-" + java.text.SimpleDateFormat("yyyyMMdd-HHmmss", java.util.Locale.US).format(java.util.Date()) + ".png"
+                val tmp = File.createTempFile("shot", ".png", cacheDir)
+                tmp.outputStream().use { bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
+                val ok = if (android.os.Build.VERSION.SDK_INT >= 29) {
+                    val values = android.content.ContentValues().apply {
+                        put(android.provider.MediaStore.Images.Media.DISPLAY_NAME, name)
+                        put(android.provider.MediaStore.Images.Media.MIME_TYPE, "image/png")
+                        put(android.provider.MediaStore.Images.Media.IS_PENDING, 1)
+                    }
+                    val resolver = contentResolver
+                    val uri = resolver.insert(
+                        android.provider.MediaStore.Images.Media.getContentUri(android.provider.MediaStore.VOLUME_EXTERNAL_PRIMARY),
+                        values,
+                    )
+                    if (uri == null) false else {
+                        resolver.openOutputStream(uri)?.use { out ->
+                            tmp.inputStream().use { it.copyTo(out) }
+                        }
+                        values.clear()
+                        values.put(android.provider.MediaStore.Images.Media.IS_PENDING, 0)
+                        resolver.update(uri, values, null, null)
+                        true
+                    }
+                } else {
+                    @Suppress("DEPRECATION")
+                    val dest = java.io.File(
+                        android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_PICTURES),
+                        name,
+                    )
+                    tmp.copyTo(dest, overwrite = true)
+                    true
+                }
+                try { tmp.delete() } catch (ignored: Exception) { }
+                runOnUiThread {
+                    Toast.makeText(this, if (ok) "Saved to gallery: $name" else "Screenshot failed", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                runOnUiThread { Toast.makeText(this, "Screenshot failed", Toast.LENGTH_SHORT).show() }
+            }
+        }.start()
+    }
+
     // ----- downloads -----
+
 
     private fun startSessionDownload(url: String, contentDisposition: String?) {
         val name = URLUtil.guessFileName(url, contentDisposition, null)

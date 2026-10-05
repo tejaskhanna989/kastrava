@@ -70,5 +70,9 @@
             android:name=".DownloadsActivity"
             android:exported="false"
             android:label="@string/downloads" />
+        <activity
+            android:name=".VaultActivity"
+            android:exported="false"
+            android:label="Vault" />
     </application>
 </manifest>

@@ -33,7 +33,7 @@ object Updater {
     const val FEED = "https://kastrava.pp.ua/version.json"
     private const val PREF_LAST_CHECK = "update_last_check"
     private const val PREF_DL_ID = "update_dl_id"
-    private const val CHECK_INTERVAL = 24L * 60 * 60 * 1000
+    private const val CHECK_INTERVAL = 48L * 60 * 60 * 1000
 
     private fun prefs(ctx: Context) =
         PreferenceManager.getDefaultSharedPreferences(ctx)
