@@ -161,6 +161,22 @@ function createWindow() {
     try {
       if (new URL(details.url).protocol === 'file:') return callback({ cancel: true })
     } catch {}
+    try {
+      // F2 per-site shields: block external scripts on domains the user
+      // flagged (inline page scripts still run — same limit as ScriptSafe).
+      if (details.resourceType === 'script' && settingsBackend) {
+        const shields = settingsBackend.get('siteShields') || {}
+        let topHost = ''
+        try {
+          const f = details.frame
+          const topUrl = (f && f.top && f.top.url) || details.url
+          const u = new URL(topUrl)
+          if (u.protocol === 'http:' || u.protocol === 'https:') topHost = u.hostname
+        } catch {}
+        const sh = topHost && shields[topHost]
+        if (sh && sh.master !== 'off' && sh.js === 'off') return callback({ cancel: true })
+      }
+    } catch {}
     callback({})
     let host = ''
     try {
@@ -177,17 +193,31 @@ function createWindow() {
   ses.webRequest.onHeadersReceived((details, callback) => {
     const rh = details.responseHeaders
     const cookiesOff = settingsBackend && settingsBackend.get('cookies') === 'off'
+    let siteCookieAllow = false
+    try {
+      // F2 per-site shields: a site set to "allow cookies" (or shields down)
+      // keeps its Set-Cookie headers despite the global block.
+      if (cookiesOff && settingsBackend) {
+        const shields = settingsBackend.get('siteShields') || {}
+        const f = details.frame
+        const topUrl = (f && f.top && f.top.url) || details.url
+        const u = new URL(topUrl)
+        const h = (u.protocol === 'http:' || u.protocol === 'https:') ? u.hostname : ''
+        const sh = h && shields[h]
+        siteCookieAllow = !!(sh && (sh.master === 'off' || sh.cookies === 'allow'))
+      }
+    } catch {}
     let hasSetCookie = false
     if (rh) {
       const filtered = {}
       for (const k in rh) {
         if (k.toLowerCase() === 'set-cookie') {
           hasSetCookie = true
-          if (cookiesOff) continue
+          if (cookiesOff && !siteCookieAllow) continue
         }
         filtered[k] = rh[k]
       }
-      if (cookiesOff && hasSetCookie) {
+      if (cookiesOff && !siteCookieAllow && hasSetCookie) {
         callback({ responseHeaders: filtered })
         return
       }
