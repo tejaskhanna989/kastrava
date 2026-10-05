@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Menu, nativeTheme, nativeImage, clipboard, shell, dialog, protocol } = require('electron')
+const { app, BrowserWindow, ipcMain, Menu, nativeTheme, nativeImage, clipboard, shell, dialog, protocol, safeStorage } = require('electron')
 const path = require('path')
 const fs = require('fs')
 const os = require('os')
@@ -865,6 +865,43 @@ ipcMain.handle('lic-status', () => license.status())
 ipcMain.handle('lic-activate', async (_, key) => license.activate(key))
 ipcMain.handle('lic-cancel', async () => license.cancel())
 ipcMain.handle('lic-verify', (_, payload, sig) => license.verifyPayload(payload, sig))
+
+// In-app sync (Phase 2): account login + zero-knowledge push/pull.
+// The renderer passes its API base (honors ?api= overrides); secrets and
+// the encryption key never leave the main process or the OS keychain.
+const syncEngine = require('./sync')
+function syncStore() {
+  return {
+    get: (k) => { try { return settingsBackend.get(k) } catch { return undefined } },
+    set: (k, v) => { try { settingsBackend.set(k, v) } catch {} }
+  }
+}
+function syncData() {
+  return {
+    getSettings: () => { try { return settingsBackend.getAll() } catch { return {} } },
+    setSetting: (k, v) => { try { settingsBackend.set(k, v) } catch {} },
+    getBookmarks: () => { try { return all('SELECT title, url FROM bookmarks') } catch { return [] } },
+    addBookmark: ({ title, url }) => {
+      try {
+        const dup = all('SELECT id FROM bookmarks WHERE url = ? LIMIT 1', [url])
+        if (!dup.length) run('INSERT INTO bookmarks (title, url) VALUES (?, ?)', [title, url])
+      } catch {}
+    },
+    licenseKey: () => { try { return license.status().key || null } catch { return null } }
+  }
+}
+ipcMain.handle('sync-status', () => {
+  try { return Object.assign({ ok: true }, syncEngine.status(syncStore(), safeStorage)) } catch { return { ok: false } }
+})
+ipcMain.handle('sync-login', async (_, { apiBase, email, password }) => {
+  try { return await syncEngine.login(apiBase || 'https://nexufog.pp.ua', email, password, syncStore(), safeStorage) } catch { return { ok: false, msg: 'Login failed.' } }
+})
+ipcMain.handle('sync-logout', async () => {
+  try { return await syncEngine.logout(syncStore()) } catch { return { ok: false } }
+})
+ipcMain.handle('sync-now', async (_, { apiBase }) => {
+  try { return await syncEngine.syncNow(apiBase || 'https://nexufog.pp.ua', syncStore(), safeStorage, syncData()) } catch { return { ok: false, msg: 'Sync failed.' } }
+})
 
 ipcMain.handle('get-bookmarks', () => {
   return all('SELECT * FROM bookmarks ORDER BY pos ASC, created_at DESC')

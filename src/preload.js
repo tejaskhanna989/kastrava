@@ -76,6 +76,12 @@ contextBridge.exposeInMainWorld('api', {
   licActivate: (key) => ipcRenderer.invoke('lic-activate', key),
   licCancel: () => ipcRenderer.invoke('lic-cancel'),
 
+  // In-app sync (Phase 2): login + push/pull. Key material stays main-side.
+  syncStatus: () => ipcRenderer.invoke('sync-status'),
+  syncLogin: (d) => ipcRenderer.invoke('sync-login', d),
+  syncLogout: () => ipcRenderer.invoke('sync-logout'),
+  syncNow: (d) => ipcRenderer.invoke('sync-now', d),
+
   // Auto-update (NSIS installer + AppImage; no-op elsewhere)
   checkUpdates: () => ipcRenderer.invoke('check-updates')
 })

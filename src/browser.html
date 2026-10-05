@@ -3447,6 +3447,69 @@ function shieldItems(){
     {text:(sh.cookies==="allow"?"\u2713 Allow cookies on ":"Allow cookies on ")+host,action:function(){setShield(host,{cookies:sh.cookies==="allow"?"default":"allow"});toast(sh.cookies==="allow"?("Cookies back to global on "+host):("Cookies allowed on "+host));reloadPage();}}
   ];
 }
+function syncApiBase(){try{if(typeof KAS_API!=="undefined"&&KAS_API)return KAS_API;}catch(e){}return "https://nexufog.pp.ua";}
+function bindSyncPanel(){
+  var goPrem=$("s-syncgo");if(goPrem){goPrem.addEventListener("click",function(){openPremiumSection();});return;}
+  function msg(t){var m=$("sy-msg");if(m)m.textContent=t||"";}
+  function paint(st){
+    var s=$("sy-status");if(!s)return;
+    if(st&&st.loggedIn){
+      var when=st.lastSyncAt?(" · last sync "+String(st.lastSyncAt).slice(0,16).replace("T"," ")):"";
+      s.textContent="Signed in as "+st.email+" (rev "+st.rev+")"+when;
+    }else{s.textContent="Not logged in.";}
+  }
+  function showLic(key){
+    var row=$("sy-licrow");if(!row)return;
+    if(key){row.style.display="";var k=$("sy-lickey");if(k)k.textContent=key;
+      var b=$("sy-activate");
+      if(b&&!b._bound){b._bound=true;b.addEventListener("click",function(){activatePremium(key);});}
+    }else{row.style.display="none";}
+  }
+  function refresh(){
+    if(!api||!api.syncStatus)return;
+    api.syncStatus().then(function(st){paint(st);}).catch(function(){});
+  }
+  var li=$("sy-login");
+  if(li)li.addEventListener("click",function(){
+    var em=$("sy-email"),pw=$("sy-pass");
+    var email=em?em.value.trim():"",pass=pw?pw.value:"";
+    if(!email||pass.length<8){msg("Email + 8-character password.");return;}
+    msg("Logging in…");
+    api.syncLogin({apiBase:syncApiBase(),email:email,password:pass}).then(function(r){
+      if(r&&r.ok){if(pw)pw.value="";msg("Logged in. Syncing…");refresh();
+        api.syncNow({apiBase:syncApiBase()}).then(function(r2){msg(r2&&r2.ok?"Synced.":"Sync will retry.");if(r2&&r2.licenseOnFile)showLic(r2.licenseOnFile);refresh();}).catch(function(){msg("Sync will retry.");});
+      }else{msg(r&&r.msg?r.msg:"Login failed.");}
+    }).catch(function(){msg("Could not reach the server.");});
+  });
+  var lo=$("sy-logout");
+  if(lo)lo.addEventListener("click",function(){if(!api||!api.syncLogout)return;api.syncLogout().then(function(){msg("Logged out.");paint(null);showLic(null);}).catch(function(){});});
+  var nw=$("sy-now");
+  if(nw)nw.addEventListener("click",function(){
+    if(!api||!api.syncNow)return;msg("Syncing…");
+    api.syncNow({apiBase:syncApiBase()}).then(function(r){
+      msg(r&&r.ok?"Synced.":(r&&r.msg?r.msg:"Sync failed."));
+      if(r&&r.licenseOnFile)showLic(r.licenseOnFile);refresh();
+    }).catch(function(){msg("Sync failed.");});
+  });
+  refresh();
+}
+function syncAutoInit(){
+  function run(){
+    try{
+      if(!isPremium())return;
+      if(!api||!api.syncNow)return;
+      api.syncNow({apiBase:syncApiBase()}).then(function(){try{loadLicense();}catch(e){}}).catch(function(){});
+    }catch(e){}
+  }
+  try{setTimeout(run,20000);}catch(e){}
+  try{setInterval(run,15*60*1000);}catch(e){}
+}
+function syncNowAction(){
+  if(!requirePremium())return;
+  if(!api||!api.syncNow){toast("Sync unavailable.");return;}
+  toast("Syncing…");
+  api.syncNow({apiBase:syncApiBase()}).then(function(r){toast(r&&r.ok?"Synced.":(r&&r.msg?r.msg:"Sync failed."));}).catch(function(){toast("Sync failed.");});
+}
 function toast(msg){var el=$("toast");if(!el)return;el.textContent=msg;el.classList.add("show");clearTimeout(el._t);el._t=setTimeout(function(){el.classList.remove("show");},2600);}
 function reopenTab(){var t=closedTabs.pop();if(t){saveClosed();if(t.url&&!isBlank(t.url)&&t.url!=="about:kastget")addTab(t.url,{pinned:t.pinned,title:t.title});else addTab();}}
 
@@ -3690,7 +3753,7 @@ function closeSettings(){
 }
 function renderSettingsNav(){
   var nav=$("settings-nav");
-  var secs=[{id:"premium",l:"Kastrava Premium"},{id:"general",l:"General"},{id:"appearance",l:"Appearance"},{id:"search",l:"Search Engine"},{id:"privacy",l:"Privacy & Security"},{id:"shortcuts",l:"Shortcuts"},{id:"accessibility",l:"Accessibility"},{id:"system",l:"System"},{id:"reset",l:"Reset Settings"},{id:"about",l:"About"}];
+  var secs=[{id:"premium",l:"Kastrava Premium"},{id:"sync",l:"Sync"},{id:"general",l:"General"},{id:"appearance",l:"Appearance"},{id:"search",l:"Search Engine"},{id:"privacy",l:"Privacy & Security"},{id:"shortcuts",l:"Shortcuts"},{id:"accessibility",l:"Accessibility"},{id:"system",l:"System"},{id:"reset",l:"Reset Settings"},{id:"about",l:"About"}];
   nav.innerHTML="<input type=\"text\" class=\"sn-search\" id=\"sn-search\" placeholder=\"Search settings\" spellcheck=\"false\" autocomplete=\"off\">"+secs.map(function(s){return "<div class=\"sn-item\" data-s=\""+s.id+"\">"+s.l+"</div>";}).join("");
   var snInp=$("sn-search");
   if(snInp)snInp.addEventListener("input",function(){
@@ -3730,6 +3793,15 @@ function renderSettingsSection(id){
       h+="<div class=\"desc\" style=\"margin-top:6px\">No key yet? Buy at <a href=\"#\" id=\"s-licbuylink\" style=\"color:var(--accent)\">kastrava.pp.ua/#premium</a> \u2014 you'll get a key instantly via Razorpay. One \u20B9248 payment unlocks 34 days, no auto-renew.</div>";
     }
     h+="<div class=\"sg\"><div class=\"lbl\">What's in Premium</div><div class=\"desc\">\u2022 Tracking Radar (live per-tab tracker score)<br>\u2022 Cursor Effects: Mouse Style, Fluid Splash, Blob Trail, Glass Lens, Particle Trail, Click Spark, Pixel Trail, Ribbons<br>\u2022 Workspaces<br>\u2022 Split View<br>\u2022 All 20 dark + light themes<br>\u2022 Extra search engines: Brave, Google, Ecosia<br>\u2022 Custom cursor arrow<br>\u2022 Picture-in-Picture, Screenshot<br>\u2022 Localhost Dashboard<br>\u2022 Vertical tabs layout<br>\u2022 Bookmark import &amp; export<br>\u2022 Custom shortcut remapping</div></div>";
+  }
+  else if(id==="sync"){h="<h3>Sync</h3>";
+    if(!isPremium()){
+      h+="<div class=\"sg\"><div class=\"lbl\">Sync is Premium</div><div class=\"desc\">One login syncs bookmarks and settings between your devices, encrypted so the server can never read them.</div><div style=\"margin-top:10px\"><button class=\"btn-sm btn-accent\" id=\"s-syncgo\">Get Premium</button></div></div>";
+    }else{
+      h+="<div class=\"sg\"><div class=\"lbl\">Kastrava account</div><div class=\"desc\">Same login as kastrava.pp.ua/account.html. Bookmarks and settings sync encrypted.</div><div id=\"sy-status\" class=\"desc\" style=\"margin-top:6px\">Checking…</div></div>";
+      h+="<div class=\"sg\" id=\"sy-form\"><div class=\"lbl\">Log in</div><input id=\"sy-email\" type=\"email\" placeholder=\"you@example.com\" autocomplete=\"email\" style=\"width:100%;margin:6px 0;padding:9px 12px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px\"><input id=\"sy-pass\" type=\"password\" placeholder=\"Password\" autocomplete=\"current-password\" style=\"width:100%;margin:0 0 6px;padding:9px 12px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px\"><div style=\"display:flex;gap:8px;margin-top:4px\"><button class=\"btn-sm btn-accent\" id=\"sy-login\">Log in</button><button class=\"btn-sm\" id=\"sy-logout\">Log out</button><button class=\"btn-sm\" id=\"sy-now\">Sync now</button></div><div id=\"sy-msg\" class=\"desc\" style=\"margin-top:6px\"></div></div>";
+      h+="<div class=\"sg\" id=\"sy-licrow\" style=\"display:none\"><div class=\"lbl\">Premium key on file</div><div class=\"desc\">Synced from another device — reference only. Keys stay bound to one machine.</div><div class=\"mono\" id=\"sy-lickey\" style=\"margin:6px 0;font-size:13px\"></div><button class=\"btn-sm\" id=\"sy-activate\">Activate on this device</button></div>";
+    }
   }
   else if(id==="general"){h="<h3>General</h3>";
     h+="<div class=\"sg\"><div class=\"lbl\">Startup</div><select id=\"s-startup\"><option value=\"last\">Restore previous session</option><option value=\"blank\">New tab</option></select></div>";
@@ -3894,7 +3966,8 @@ function bindSettingsEvents(id){
   function sv(k,v){saveSetting(k,v);}
   function setSel(elId,v){var el=$(elId);if(el&&v)el.value=v;}
   try{
-    if(id==="general"){
+    if(id==="sync"){bindSyncPanel();}
+    else if(id==="general"){
       setSel("s-startup",settings.startup);
       setSel("s-fontsize",settings.fontSize);
       setSel("s-zoom",settings.zoom||"100");
@@ -4296,6 +4369,7 @@ function init(){
   try{$("btn-menu").addEventListener("click",openSettings);}catch(e){}
   try{$("btn-more").addEventListener("click",toggleMoreMenu);document.addEventListener("click",function(e){var m=$("more-menu");if(m&&!e.target.closest("#btn-more")&&!e.target.closest("#more-menu"))m.classList.remove("visible");});}catch(e){}
   try{bindSidePanel();}catch(e){err("bindSidePanel",e);}
+  try{syncAutoInit();}catch(e){err("syncauto",e);}
   try{bindConfirmModal();}catch(e){err("bindConfirmModal",e);}
   try{bindAddSiteModal();}catch(e){err("bindAddSiteModal",e);}
   try{bindBookmarks();}catch(e){err("bindBookmarks",e);}
@@ -4321,7 +4395,7 @@ function init(){
 }
 if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",init);}else{init();}
 window.addTab=addTab; window.selectTab=selectTab; window.closeTab=closeTab; window.tabs=tabs; window.tabMap=tabMap;
-window.esc=esc; window.reloadPage=reloadPage; window.goBack=goBack; window.goForward=goForward; window.openFindBar=openFindBar; window.takeScreenshot=takeScreenshot; window.togglePip=togglePip; window.toggleReader=toggleReader; window.toggleSplit=toggleSplit; window.toggleRadar=toggleRadar; window.viewSource=viewSource; window.openSideTab=openSideTab; window.openSettings=openSettings; window.goHome=goHome; window.openAgPanel=openAgPanel;window.shotFullPage=shotFullPage;window.openShotEditor=openShotEditor;window.sleepTab=sleepTab;window.wakeTab=wakeTab;window.toggleMute=toggleMute;window.focusOmnibox=focusOmnibox;window.toggleBookmark=toggleBookmark;window.toggleBookmarkBar=toggleBookmarkBar;window.reopenTab=reopenTab; window.cycleTab=cycleTab; window.showPage=showPage; window.applyThemeKey=applyThemeKey; window.saveSetting=saveSetting; window.toast=toast; window.toggleTabLayout=toggleTabLayout; window.applyTabLayout=applyTabLayout; window.applyVtabsCollapsed=applyVtabsCollapsed; window.EDITION=EDITION; window.isPremium=isPremium; window.requirePremium=requirePremium; window.activatePremium=activatePremium; window.loadLicense=loadLicense; window.KAS_API=KAS_API; window.KAS_STORE=KAS_STORE; window.LIC=LIC; window.clickCheckout=null; window.openPremiumStore=openPremiumStore; window.copyText=copyText;
+window.esc=esc; window.reloadPage=reloadPage; window.goBack=goBack; window.goForward=goForward; window.openFindBar=openFindBar; window.takeScreenshot=takeScreenshot; window.togglePip=togglePip; window.toggleReader=toggleReader; window.toggleSplit=toggleSplit; window.toggleRadar=toggleRadar; window.viewSource=viewSource; window.openSideTab=openSideTab; window.openSettings=openSettings; window.goHome=goHome; window.openAgPanel=openAgPanel;window.syncNowAction=syncNowAction;window.shotFullPage=shotFullPage;window.openShotEditor=openShotEditor;window.sleepTab=sleepTab;window.wakeTab=wakeTab;window.toggleMute=toggleMute;window.focusOmnibox=focusOmnibox;window.toggleBookmark=toggleBookmark;window.toggleBookmarkBar=toggleBookmarkBar;window.reopenTab=reopenTab; window.cycleTab=cycleTab; window.showPage=showPage; window.applyThemeKey=applyThemeKey; window.saveSetting=saveSetting; window.toast=toast; window.toggleTabLayout=toggleTabLayout; window.applyTabLayout=applyTabLayout; window.applyVtabsCollapsed=applyVtabsCollapsed; window.EDITION=EDITION; window.isPremium=isPremium; window.requirePremium=requirePremium; window.activatePremium=activatePremium; window.loadLicense=loadLicense; window.KAS_API=KAS_API; window.KAS_STORE=KAS_STORE; window.LIC=LIC; window.clickCheckout=null; window.openPremiumStore=openPremiumStore; window.copyText=copyText;
 Object.defineProperty(window,'activeTab',{configurable:true,get:function(){return activeTab;}});
 Object.defineProperty(window,'settings',{configurable:true,get:function(){return settings;}});
 })();
@@ -4403,6 +4477,7 @@ var COMMANDS=[
   {name:'Focus Address Bar',icon:'\u2316',action:function(){W.focusOmnibox();},keys:'Ctrl+L'},
   {name:'Copy Page URL',icon:'\uD83D\uDCCB',action:function(){var at=W.activeTab;if(at&&at.url&&W.copyText){W.copyText(at.url);if(W.toast)W.toast('URL copied');}}},
   {name:'Full-Page Screenshot',icon:'\uD83D\uDCF8',action:function(){W.shotFullPage();}},
+  {name:'Sync Now',icon:'\uD83D\uDD04',action:function(){W.syncNowAction();}},
   {name:'Sleep Tab',icon:'\uD83D\uDCA4',action:function(){var at=W.activeTab;if(at&&W.tabs){var t=W.tabs.filter(function(x){return x.id===at.id;})[0];if(t&&window.sleepTab)window.sleepTab(t);}}}
 ];
 var paletteOpen=false,paletteIdx=0,paletteFiltered=[];
