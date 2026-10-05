@@ -443,7 +443,7 @@ const server = http.createServer((req, res) => {
   // `curl -I` probes get a real 200 instead of 405.
   if (req.method === 'GET' || req.method === 'HEAD') {
     if (pathname === '/api/health') {
-      return json(res, 200, { ok: true, dev: razorpay.isDev(), host: HOST, price: PRICE_INR, period_days: PERIOD_DAYS, grace_days: GRACE_DAYS, version: '101.2.2', codename: 'Starship Wonders' })
+      return json(res, 200, { ok: true, dev: razorpay.isDev(), host: HOST, price: PRICE_INR, period_days: PERIOD_DAYS, grace_days: GRACE_DAYS, version: '101.3.0', codename: 'Starship Wonders' })
     }
     if (pathname === '/api/admin/list') {
       if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })

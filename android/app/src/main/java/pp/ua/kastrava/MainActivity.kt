@@ -177,8 +177,26 @@ class MainActivity : AppCompatActivity() {
         if (!url.isNullOrBlank()) newTab(url)
     }
 
+    private fun pauseTab(t: WebTab?) {
+        if (!app.prefs.batterySaver) return
+        try { t?.view?.onPause() } catch (e: Exception) { }
+    }
+
+    private fun resumeTab(t: WebTab?) {
+        try { t?.view?.onResume() } catch (e: Exception) { }
+    }
+
+    override fun onPause() {
+        // App backgrounded: freeze every tab + all JS timers. Lowest drain.
+        try { tabs.forEach { it.view.onPause() } } catch (e: Exception) { }
+        try { tabs.firstOrNull()?.view?.pauseTimers() } catch (e: Exception) { }
+        super.onPause()
+    }
+
     override fun onResume() {
         super.onResume()
+        try { tabs.firstOrNull()?.view?.resumeTimers() } catch (e: Exception) { }
+        resumeTab(currentWebTab())
         refreshPremiumLine()
         renderQuickBookmarks()
         // Settings (engine, JS) may have changed: apply JS flag live.
@@ -301,9 +319,14 @@ class MainActivity : AppCompatActivity() {
 
     private fun switchTo(i: Int) {
         if (i !in tabs.indices) return
-        currentTab()?.visibility = WebView.GONE
+        val old = tabs.getOrNull(current)
+        if (old != null && old !== tabs[i]) {
+            old.view.visibility = WebView.GONE
+            pauseTab(old)
+        }
         current = i
         val wv = tabs[i].view
+        resumeTab(tabs[i])
         wv.visibility = WebView.VISIBLE
         homeView.visibility = ScrollView.GONE
         syncOmnibox()
@@ -327,6 +350,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showHome() {
+        pauseTab(currentWebTab())
         currentTab()?.visibility = WebView.GONE
         current = -1
         homeView.visibility = ScrollView.VISIBLE

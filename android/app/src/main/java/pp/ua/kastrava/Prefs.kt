@@ -31,6 +31,13 @@ class Prefs(context: Context) {
         get() = p.getInt("textZoom", 100).coerceIn(50, 200)
         set(v) { p.edit().putInt("textZoom", v.coerceIn(50, 200)).apply() }
 
+    // Battery saver (default on): hidden tabs are paused so their pages
+    // stop burning CPU; everything resumes on switch. App backgrounding
+    // additionally freezes all JS timers until return.
+    var batterySaver: Boolean
+        get() = p.getBoolean("batterySaver", true)
+        set(v) { p.edit().putBoolean("batterySaver", v).apply() }
+
     companion object {
         const val KASTRA_SEARCH = "https://kastravasearch.pp.ua/search?q="
         val ENGINES = mapOf(

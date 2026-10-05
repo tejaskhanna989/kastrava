@@ -98,5 +98,12 @@ class SettingsActivity : AppCompatActivity() {
             app.prefs.javaScript = v
             Toast.makeText(this, "Applies to new and current tabs", Toast.LENGTH_SHORT).show()
         }
+
+        val cbBattery: CheckBox = findViewById(R.id.cbBattery)
+        cbBattery.isChecked = app.prefs.batterySaver
+        cbBattery.setOnCheckedChangeListener { _, v ->
+            app.prefs.batterySaver = v
+            Toast.makeText(this, if (v) "Background tabs will pause" else "Background tabs stay live", Toast.LENGTH_SHORT).show()
+        }
     }
 }

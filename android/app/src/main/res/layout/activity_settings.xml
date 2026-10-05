@@ -54,6 +54,12 @@
             android:layout_height="wrap_content"
             android:text="JavaScript (needed by most sites)" />
 
+        <CheckBox
+            android:id="@+id/cbBattery"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Battery saver (pause background tabs)" />
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
