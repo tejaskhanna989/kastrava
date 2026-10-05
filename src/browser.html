@@ -3871,7 +3871,9 @@ function renderSettingsSection(id){
         var p=api.checkUpdates();
         if(p&&p.then)p.then(function(r){
           b.disabled=false;
-          if(r&&r.ok)toast("Check started — you will be notified if an update is found.");
+          if(r&&r.pending)toast("Update found — see the prompt.");
+          else if(r&&r.uptodate)toast("You are on the latest version.");
+          else if(r&&r.ok)toast("Check started — you will be notified if an update is found.");
           else toast("Updates are not available for this install type.");
         }).catch(function(){b.disabled=false;toast("Update check failed.");});
       }catch(e){b.disabled=false;toast("Update check failed.");}

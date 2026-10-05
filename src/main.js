@@ -475,7 +475,29 @@ function initElectronUpdater() {
     startUpdSearch()
     ipcMain.handle('check-updates', async () => {
       try {
-        if (updater) { await updater.checkForUpdates(); return { ok: true } }
+        if (updater) {
+          // Already found earlier? Show it again cleanly, restart the count.
+          if (updReady) { updPrompts = 0; promptWinUpdate(); return { ok: true, pending: true } }
+          const res = await updater.checkForUpdates()
+          // autoDownload resolves post-download, so a found build has
+          // already prompted via the event above.
+          if (updReady) return { ok: true, pending: true }
+          let newer = false
+          try {
+            const v = res && res.updateInfo && res.updateInfo.version
+            if (v) newer = cmpVer(v, app.getVersion()) > 0
+          } catch {}
+          if (!newer) {
+            const parent = mainWindow && !mainWindow.isDestroyed() ? mainWindow : undefined
+            await dialog.showMessageBox(parent || undefined, {
+              type: 'info', title: 'Kastrava updates',
+              message: 'You are on the latest version (' + app.getVersion() + ').',
+              buttons: ['OK'], defaultId: 0
+            }).catch(() => {})
+            return { ok: true, pending: false, uptodate: true }
+          }
+          return { ok: true, pending: false }
+        }
         if (process.platform === 'linux' && !process.env.APPIMAGE) {
           linuxUpdateCheck(true)
           return { ok: true }
@@ -637,26 +659,28 @@ async function linuxUpdateCheck(manual) {
   linuxUpdateBusy = true
   try {
     const type = detectSysPkg()
-    if (!type) return
+    if (!type) return false
     const rel = await (await fetch('https://api.github.com/repos/' + UPDATE_REPO + '/releases/latest', {
       headers: { 'User-Agent': 'Kastrava', Accept: 'application/vnd.github+json' },
       signal: AbortSignal.timeout(20000)
     })).json()
     const tag = String((rel && rel.tag_name) || '').replace(/^v/, '')
-    if (!tag || cmpVer(tag, app.getVersion()) <= 0) return
+    if (!tag || cmpVer(tag, app.getVersion()) <= 0) return false
     const asset = sysPkgAsset(type, rel.assets)
-    if (!asset || !asset.browser_download_url || !asset.size) return
+    if (!asset || !asset.browser_download_url || !asset.size) return false
     let notes = ''
     try { notes = String((rel && rel.body) || '').replace(/\r/g, '').trim().slice(0, 400) } catch {}
     stopLinSearch()
     linPending = { tag, asset, type, notes }
     linPrompts = 0
     const { response } = await linAskUpdate()
-    if (response !== 0) { await deferLinux(); return }
+    if (response !== 0) { await deferLinux(); return true }
     linPending = null
     await runLinuxInstall({ tag, asset, type })
+    return true
   } catch (e) {
     try { console.error('[update] linux check failed:', String((e && e.message) || e)) } catch {}
+    return false
   } finally {
     linuxUpdateBusy = false
   }
@@ -666,8 +690,27 @@ function initLinuxSysUpdate() {
   startLinSearch()
   try {
     ipcMain.handle('check-updates', async () => {
-      linuxUpdateCheck(true)
-      return { ok: true }
+      try {
+        // A check is already running — its dialogs will present themselves.
+        if (linuxUpdateBusy) return { ok: true }
+        // Already found earlier? Show it again cleanly, restart the count.
+        if (linPending) {
+          linPrompts = 0
+          const r0 = await linAskUpdate()
+          if (r0.response === 0) { const q = linPending; linPending = null; await runLinuxInstall(q) }
+          else await deferLinux()
+          return { ok: true, pending: true }
+        }
+        const found = await linuxUpdateCheck(true)
+        if (found) return { ok: true, pending: true }
+        const parent = mainWindow && !mainWindow.isDestroyed() ? mainWindow : undefined
+        await dialog.showMessageBox(parent || undefined, {
+          type: 'info', title: 'Kastrava updates',
+          message: 'You are on the latest version (' + app.getVersion() + ').',
+          buttons: ['OK'], defaultId: 0
+        }).catch(() => {})
+        return { ok: true, pending: false, uptodate: true }
+      } catch { return { ok: false } }
     })
   } catch {}
 }
