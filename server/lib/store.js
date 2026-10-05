@@ -164,6 +164,91 @@ class Store {
   all() {
     return this.data
   }
+
+  // ---- accounts (Kastrava logins for sync) ----
+  // Passwords: scrypt hash + salt, server-side. Sync payloads are opaque
+  // client-encrypted blobs — the server can never read bookmarks/prefs.
+  ensureAccountMaps() {
+    if (!this.data.accounts) this.data.accounts = {}
+    if (!this.data.sessions) this.data.sessions = {}
+    if (!this.data.sync) this.data.sync = {}
+  }
+
+  getAccountByEmail(email) {
+    this.ensureAccountMaps()
+    const e = String(email || '').trim().toLowerCase()
+    return this.data.accounts[e] || null
+  }
+
+  createAccount(email, passHash, passSalt, authSalt, syncSalt) {
+    this.ensureAccountMaps()
+    const e = String(email || '').trim().toLowerCase()
+    if (this.data.accounts[e]) return null
+    this.data.accounts[e] = {
+      email: e, pass_hash: passHash, pass_salt: passSalt,
+      auth_salt: authSalt, sync_salt: syncSalt,
+      created_at: new Date().toISOString()
+    }
+    this.save()
+    return this.data.accounts[e]
+  }
+
+  createSession(email, ttlMs) {
+    this.ensureAccountMaps()
+    const tokenHashKey = (t) => require('crypto').createHash('sha256').update(t).digest('hex')
+    const token = 'kas_' + require('crypto').randomBytes(32).toString('hex')
+    this.data.sessions[tokenHashKey(token)] = {
+      email: String(email).toLowerCase(),
+      created_at: new Date().toISOString(),
+      expires_at: new Date(Date.now() + ttlMs).toISOString()
+    }
+    this.save()
+    return token
+  }
+
+  getSessionAccount(token) {
+    this.ensureAccountMaps()
+    if (!token || !token.startsWith('kas_')) return null
+    const h = require('crypto').createHash('sha256').update(token).digest('hex')
+    const s = this.data.sessions[h]
+    if (!s) return null
+    if (new Date(s.expires_at).getTime() < Date.now()) {
+      delete this.data.sessions[h]
+      this.save()
+      return null
+    }
+    return this.getAccountByEmail(s.email)
+  }
+
+  destroySession(token) {
+    this.ensureAccountMaps()
+    if (!token) return
+    const h = require('crypto').createHash('sha256').update(String(token)).digest('hex')
+    if (this.data.sessions[h]) {
+      delete this.data.sessions[h]
+      this.save()
+    }
+  }
+
+  getSync(email) {
+    this.ensureAccountMaps()
+    const e = String(email).toLowerCase()
+    return this.data.sync[e] || { rev: 0, blob: null, updated_at: null }
+  }
+
+  // Returns {ok, rev} or {conflict, rev, blob}.
+  pushSync(email, blob, baseRev) {
+    this.ensureAccountMaps()
+    const e = String(email).toLowerCase()
+    const cur = this.getSync(e)
+    if (Number(baseRev) !== cur.rev) {
+      return { conflict: true, rev: cur.rev, blob: cur.blob, updated_at: cur.updated_at }
+    }
+    const next = { rev: cur.rev + 1, blob, updated_at: new Date().toISOString() }
+    this.data.sync[e] = next
+    this.save()
+    return { ok: true, rev: next.rev }
+  }
 }
 
 module.exports = Store

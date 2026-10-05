@@ -56,7 +56,7 @@ function json(res, code, obj) {
     'Content-Type': 'application/json; charset=utf-8',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-Admin-Token',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Admin-Token, Authorization',
     'Access-Control-Max-Age': '600'
   })
   res.end(body)
@@ -186,6 +186,12 @@ function finalizePayment(orderId, paymentId, machineIdRaw) {
   }
   return { key, renewed }
 }
+
+// ---- Kastrava accounts + zero-knowledge sync (module scope: the
+// throttle map must survive across requests) ----
+const AUTH_WINDOW_MS = 60000
+const AUTH_MAX = 20
+const authHits = new Map()
 
 async function handlePost(req, res, pathname) {
   const { raw, parsed: body } = await readBody(req)
@@ -411,6 +417,71 @@ async function handlePost(req, res, pathname) {
     return json(res, 200, { ok: true })
   }
 
+  function authThrottle(req) {
+    const fwd = (req.headers['x-forwarded-for'] || '').toString().split(',')[0].trim()
+    const ip = fwd || (req.socket && req.socket.remoteAddress) || 'unknown'
+    const now = Date.now()
+    const hits = (authHits.get(ip) || []).filter((t) => now - t < AUTH_WINDOW_MS)
+    hits.push(now)
+    authHits.set(ip, hits)
+    if (authHits.size > 5000) authHits.clear()
+    return hits.length <= AUTH_MAX
+  }
+  function bearer(req) {
+    const h = (req.headers.authorization || req.headers.Authorization || '').toString()
+    const m = h.match(/^Bearer\s+(kas_[A-Za-z0-9]+)$/)
+    return m ? m[1] : null
+  }
+  function validEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(e || '').trim()) }
+
+  if (pathname === '/api/account/signup' || pathname === '/api/account/login') {
+    if (!authThrottle(req)) return json(res, 429, { error: 'too_many' })
+    const email = String(body.email || '').trim().toLowerCase()
+    const password = String(body.password || '')
+    if (!validEmail(email)) return json(res, 400, { error: 'bad_email' })
+    if (password.length < 8) return json(res, 400, { error: 'weak_password' })
+    if (pathname === '/api/account/signup') {
+      if (store.getAccountByEmail(email)) return json(res, 409, { error: 'exists' })
+      const passSalt = crypto.randomBytes(16).toString('hex')
+      const authSalt = crypto.randomBytes(16).toString('hex')
+      const syncSalt = crypto.randomBytes(16).toString('hex')
+      const passHash = crypto.scryptSync(password, passSalt, 32).toString('hex')
+      store.createAccount(email, passHash, passSalt, authSalt, syncSalt)
+      const token = store.createSession(email, 30 * 86400000)
+      return json(res, 200, { ok: true, token, email, auth_salt: authSalt, sync_salt: syncSalt })
+    }
+    const acc = store.getAccountByEmail(email)
+    if (!acc) return json(res, 401, { error: 'bad_login' })
+    let good = false
+    try {
+      const h = crypto.scryptSync(password, acc.pass_salt, 32)
+      good = h.length === 32 && crypto.timingSafeEqual(h, Buffer.from(acc.pass_hash, 'hex'))
+    } catch {}
+    if (!good) return json(res, 401, { error: 'bad_login' })
+    const token = store.createSession(email, 30 * 86400000)
+    return json(res, 200, { ok: true, token, email, auth_salt: acc.auth_salt, sync_salt: acc.sync_salt })
+  }
+  if (pathname === '/api/account/logout') {
+    store.destroySession(bearer(req))
+    return json(res, 200, { ok: true })
+  }
+  if (pathname === '/api/account/me' || pathname === '/api/sync/pull' || pathname === '/api/sync/push') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    if (pathname === '/api/account/me') {
+      return json(res, 200, { ok: true, email: acc.email, created_at: acc.created_at })
+    }
+    if (pathname === '/api/sync/pull') {
+      const cur = store.getSync(acc.email)
+      return json(res, 200, { ok: true, rev: cur.rev, blob: cur.blob, updated_at: cur.updated_at })
+    }
+    const blob = String(body.blob || '')
+    if (!blob || blob.length > 262144) return json(res, 400, { error: 'bad_blob' })
+    const r = store.pushSync(acc.email, blob, Number(body.base_rev) || 0)
+    if (r.conflict) return json(res, 409, { error: 'conflict', rev: r.rev, blob: r.blob, updated_at: r.updated_at })
+    return json(res, 200, { ok: true, rev: r.rev })
+  }
+
   if (pathname === '/api/admin/markpaid') {
     if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
     const order = store.getOrder(String(body.order_id || ''))
@@ -427,7 +498,7 @@ const server = http.createServer((req, res) => {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, X-Admin-Token',
+      'Access-Control-Allow-Headers': 'Content-Type, X-Admin-Token, Authorization',
       'Access-Control-Max-Age': '600'
     })
     return res.end()

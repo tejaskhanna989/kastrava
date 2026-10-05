@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kastrava account — sync bookmarks and settings</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="canonical" href="https://kastrava.pp.ua/account.html">
+<meta name="description" content="A Kastrava account syncs your bookmarks and settings between devices. Your data stays encrypted — the server can store it but never read it.">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+:root{--bg:#faf7f1;--card:#ffffff;--ink:#14110b;--text:#2b2620;--muted:#5c564a;--muted2:#8a8474;--line:#f0ede6;--navbg:rgba(250,247,241,.9);--panel:#16130e;--pill:#16130e;--pill-fg:#ffffff;--blue:#0288d1;color-scheme:light}
+html[data-theme="dark"]{--bg:#12100c;--card:#1b1812;--ink:#f3eee4;--text:#cfc8ba;--muted:#9d9484;--muted2:#7c7466;--line:#262117;--navbg:rgba(18,16,12,.9);--panel:#211c14;--pill:#f3eee4;--pill-fg:#14110b;--blue:#4fc3f7;color-scheme:dark}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.65;-webkit-font-smoothing:antialiased}
+h1,h2{font-family:'Space Grotesk',sans-serif}
+.mono{font-family:'JetBrains Mono',monospace}
+.container{max-width:640px;margin:0 auto;padding:0 28px}
+nav{position:sticky;top:0;z-index:50;background:var(--navbg);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+nav .container{display:flex;align-items:center;gap:12px;padding-top:13px;padding-bottom:13px}
+nav img{width:36px;height:36px;border-radius:9px}
+nav .name{font-size:15px;font-weight:700;letter-spacing:4px;color:var(--ink);font-family:'Space Grotesk',sans-serif}
+main{padding:64px 0 80px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:34px 30px}
+.card h1{font-size:26px;color:var(--ink);margin-bottom:6px}
+.card .sub{font-size:14px;color:var(--muted);margin-bottom:22px}
+.tabs{display:flex;gap:8px;margin-bottom:20px}
+.tabs button{flex:1;padding:11px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:14px;font-weight:600;cursor:pointer;font-family:'Space Grotesk',sans-serif}
+.tabs button.on{background:var(--pill);color:var(--pill-fg);border-color:var(--pill)}
+label{display:block;font-size:13px;font-weight:600;color:var(--ink);margin:14px 0 6px}
+input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:14px;font-family:inherit}
+.go{width:100%;margin-top:18px;padding:14px;border-radius:12px;border:none;background:#0288d1;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif}
+.go:disabled{opacity:.5;cursor:not-allowed}
+.msg{font-size:13.5px;color:var(--muted);margin-top:14px;min-height:20px}
+.msg.err{color:#c62828}
+.fine{font-size:12.5px;color:var(--muted2);margin-top:18px}
+footer{border-top:1px solid var(--line);padding:28px 0 44px}
+footer p{font-size:12.5px;color:var(--muted2)}
+footer a{color:var(--blue);text-decoration:none}
+</style>
+<script>
+(function(){var r=document.documentElement,s=null;try{s=localStorage.getItem('kas-theme');}catch(e){}
+r.setAttribute('data-theme',s?s:(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'));})();
+</script>
+</head>
+<body>
+<nav><div class="container">
+<img src="logo.png" alt="Kastrava"><span class="name">KASTRAVA</span>
+<span style="flex:1"></span><a href="/" style="font-size:13px;color:var(--muted);text-decoration:none">← home</a>
+</div></nav>
+<main><div class="container">
+<div class="card">
+<h1>Your Kastrava account</h1>
+<p class="sub">One login syncs bookmarks and settings between your devices. Everything syncs encrypted — this server stores it but cannot read it.</p>
+<div id="auth-box">
+<div class="tabs"><button id="tab-login" class="on">Log in</button><button id="tab-signup">Sign up</button></div>
+<label for="ac-email">Email</label>
+<input id="ac-email" type="email" autocomplete="email" placeholder="you@example.com">
+<label for="ac-pass">Password (8+ characters)</label>
+<input id="ac-pass" type="password" autocomplete="current-password" placeholder="••••••••">
+<button class="go" id="ac-go">Log in</button>
+<div class="msg" id="ac-msg"></div>
+<p class="fine">No email verification, no newsletters, nothing else. Forget your password and the sync copy is unrecoverable — email <a href="mailto:khannatejas989@gmail.com" style="color:var(--blue)">support</a> and we'll reset the account (the old synced data stays locked).</p>
+</div>
+<div id="me-box" style="display:none">
+<p style="font-size:15px;color:var(--ink)">Signed in as <b id="me-email"></b></p>
+<p class="fine" id="me-since"></p>
+<p class="fine">Desktop and Android pick up this login in their Settings → Sync in the next app update. Your license key stays bound to one machine — sync never moves Premium between devices.</p>
+<button class="go" id="ac-out" style="background:transparent;border:1px solid var(--line);color:var(--ink)">Log out</button>
+<div class="msg" id="me-msg"></div>
+</div>
+</div>
+</div></main>
+<footer><div class="container"><p>Kastrava 101 RC · <a href="/">home</a> · <a href="/authors.html">authors</a></p></div></footer>
+<script>
+(function(){
+var KAS_API=((window.KAS_API)||(location.search.match(/[?&]api=([^&]+)/)||[])[1]||'https://nexufog.pp.ua').replace(/\/$/,'');
+function tok(){try{return localStorage.getItem('kas_sync_token')||'';}catch(e){return '';}}
+var mode='login',emailEl=document.getElementById('ac-email'),passEl=document.getElementById('ac-pass'),
+    goEl=document.getElementById('ac-go'),msgEl=document.getElementById('ac-msg');
+function setMode(m){mode=m;document.getElementById('tab-login').className=m==='login'?'on':'';
+document.getElementById('tab-signup').className=m==='signup'?'on':'';goEl.textContent=m==='login'?'Log in':'Create account';msgEl.textContent='';}
+document.getElementById('tab-login').addEventListener('click',function(){setMode('login');});
+document.getElementById('tab-signup').addEventListener('click',function(){setMode('signup');});
+function showMe(email,since){
+  document.getElementById('auth-box').style.display='none';
+  document.getElementById('me-box').style.display='block';
+  document.getElementById('me-email').textContent=email;
+  document.getElementById('me-since').textContent=since?('Account since '+since.slice(0,10)):'';
+}
+function refresh(){
+  var t=tok();if(!t)return;
+  fetch(KAS_API+'/api/account/me',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+t},body:'{}'})
+  .then(function(r){return r.json();}).then(function(j){
+    if(j&&j.ok)showMe(j.email,j.created_at);
+    else{try{localStorage.removeItem('kas_sync_token');}catch(e){}}
+  }).catch(function(){});
+}
+goEl.addEventListener('click',function(){
+  var email=(emailEl.value||'').trim(),pw=passEl.value||'';
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email)){msgEl.textContent='Enter a valid email.';msgEl.className='msg err';return;}
+  if(pw.length<8){msgEl.textContent='Password needs 8+ characters.';msgEl.className='msg err';return;}
+  goEl.disabled=true;msgEl.className='msg';msgEl.textContent=mode==='login'?'Logging in…':'Creating account…';
+  fetch(KAS_API+'/api/account/'+mode,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,password:pw})})
+  .then(function(r){return r.json().then(function(j){return {status:r.status,json:j};});})
+  .then(function(r){
+    goEl.disabled=false;
+    var j=r.json||{};
+    if(!j.ok){msgEl.className='msg err';
+      msgEl.textContent=r.status===409?'That email already has an account — log in instead.':(r.status===429?'Too many tries — wait a minute.':(j.error==='bad_login'?'Wrong email or password.':'Something went wrong.'));return;}
+    try{localStorage.setItem('kas_sync_token',j.token);}catch(e){}
+    passEl.value='';
+    showMe(j.email,null);refresh();
+  }).catch(function(){goEl.disabled=false;msgEl.className='msg err';msgEl.textContent='Could not reach the server.';});
+});
+document.getElementById('ac-out').addEventListener('click',function(){
+  var t=tok();
+  fetch(KAS_API+'/api/account/logout',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+t},body:'{}'}).catch(function(){});
+  try{localStorage.removeItem('kas_sync_token');}catch(e){}
+  location.reload();
+});
+refresh();
+})();
+</script>
+</body>
+</html>
