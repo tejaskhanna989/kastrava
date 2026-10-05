@@ -19,6 +19,7 @@ class VaultActivity : AppCompatActivity() {
     private lateinit var pass: EditText
     private lateinit var msg: TextView
     private lateinit var list: LinearLayout
+    private lateinit var setupBtn: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,11 +32,11 @@ class VaultActivity : AppCompatActivity() {
         msg = findViewById(R.id.vaultMsg)
         list = findViewById(R.id.vaultList)
         val unlock: Button = findViewById(R.id.vaultUnlock)
-        val setup: Button = findViewById(R.id.vaultSetup)
+        setupBtn = findViewById(R.id.vaultSetup)
         val add: Button = findViewById(R.id.vaultAdd)
         val lock: Button = findViewById(R.id.vaultLockBtn)
 
-        setup.visibility = if (store.hasVault()) Button.GONE else Button.VISIBLE
+        setupBtn.visibility = if (store.hasVault()) Button.GONE else Button.VISIBLE
         unlock.text = if (store.hasVault()) "Unlock" else "Unlock"
 
         unlock.setOnClickListener {
@@ -56,7 +57,7 @@ class VaultActivity : AppCompatActivity() {
                 }
             }.start()
         }
-        setup.setOnClickListener {
+        setupBtn.setOnClickListener {
             val pw = pass.text.toString()
             if (pw.length < 4) {
                 msg.text = "Password needs at least 4 characters."
@@ -67,7 +68,7 @@ class VaultActivity : AppCompatActivity() {
                 runOnUiThread {
                     if (ok) {
                         pass.text.clear()
-                        setup.visibility = Button.GONE
+                        setupBtn.visibility = Button.GONE
                         showMain()
                     } else {
                         msg.text = "Could not create vault."
@@ -96,7 +97,7 @@ class VaultActivity : AppCompatActivity() {
         lockBox.visibility = LinearLayout.VISIBLE
         mainBox.visibility = LinearLayout.GONE
         msg.text = if (store.hasVault()) "" else "No vault yet — set a password to create one."
-        setup.visibility = if (store.hasVault()) Button.GONE else Button.VISIBLE
+        setupBtn.visibility = if (store.hasVault()) Button.GONE else Button.VISIBLE
     }
 
     private fun showMain() {

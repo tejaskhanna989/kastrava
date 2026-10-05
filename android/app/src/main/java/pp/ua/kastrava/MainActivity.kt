@@ -975,7 +975,7 @@ class MainActivity : AppCompatActivity() {
             var name = ""
             try {
                 name = "Kastrava-" + java.text.SimpleDateFormat("yyyyMMdd-HHmmss", java.util.Locale.US).format(java.util.Date()) + ".png"
-                val tmp = File.createTempFile("shot", ".png", cacheDir)
+                val tmp = java.io.File.createTempFile("shot", ".png", cacheDir)
                 tmp.outputStream().use { bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
                 val ok = if (android.os.Build.VERSION.SDK_INT >= 29) {
                     val values = android.content.ContentValues().apply {
