@@ -657,7 +657,7 @@ var LIC={activated:false,machine:"",key:null,reason:"no_license",expiresAt:null,
 var licRefreshed=false;
 function editionLabel(){if(EDITION==="free")return "Free";return LIC.activated?"Premium":"Free";}
 function isPremium(){if(EDITION==="free")return false;return !!(LIC&&LIC.activated);}
-function requirePremium(){if(isPremium())return true;toast("Kastrava Premium — ₹248/34 days, one machine");setTimeout(function(){openPremiumSection();},600);return false;}
+function requirePremium(){if(isPremium())return true;toast("Kastrava Premium — ₹248/34 days, 10 devices");setTimeout(function(){openPremiumSection();},600);return false;}
 function $(id){return document.getElementById(id)}
 function qa(sel){return document.querySelectorAll(sel)}
 function esc(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
@@ -750,7 +750,7 @@ async function activatePremium(key){
   if(!res||!res.ok){toast(res&&res.msg?res.msg:"Activation failed.");return;}
   LIC.activated=true;LIC.key=res.license&&res.license.key?res.license.key:LIC.key;
   applyEditionUI();try{renderSettingsSection("premium");}catch(e){}
-  toast("Premium activated — 34 days, one machine. No auto-renew: we'll remind you to renew.");
+  toast("Premium activated — 34 days, up to 10 devices. No auto-renew.");
   try{renderWorkspaces();}catch(e){}
 }
 function copyText(t){
@@ -1395,7 +1395,7 @@ function renderSetup(){
     if(isPremium()){
       c.innerHTML=dots+grid(ART_PREMIUM,'<div class="setup-name" style="font-size:24px;letter-spacing:2px">Kastrava Premium</div><div class="setup-sub">You are already Premium. Enjoy every feature Kastrava has to offer.</div><div class="setup-priv"><div><span class="ok">✓</span>Premium is active on this machine</div><div><span class="ok">✓</span>All features are unlocked</div></div>',CONTINUE);
     }else{
-      c.innerHTML=dots+grid(ART_PREMIUM,'<div class="setup-name" style="font-size:24px;letter-spacing:2px">Kastrava Premium</div><div class="setup-sub">Unlock the full browser — one plan, one machine.</div><div class="setup-priv"><div><span class="ok">✦</span><b>20 themes</b> — all dark &amp; light sets</div><div><span class="ok">✦</span><b>Tracking Radar</b> · <b>Split View</b> · <b>Workspaces</b></div><div><span class="ok">✦</span><b>Cursor FX</b> — fluid, particles &amp; more</div><div><span class="ok">✦</span><b>Brave</b> · <b>Google</b> · <b>Ecosia</b> engines</div><div><span class="ok">✦</span><b>PiP</b> · <b>Screenshot</b> tools</div><div><span class="ok">✦</span><b>Vertical tabs</b> · custom shortcuts · more</div></div><div style="margin:2px auto 16px;padding:8px 24px;border-radius:999px;border:1px solid rgba(255,179,0,.45);background:rgba(255,179,0,.08);color:#ffb300;font-weight:700;font-size:20px;display:inline-block">₹248 <span style="font-size:12px;color:var(--c-text2);font-weight:500">/ 34 days · one machine</span></div><div><button class="setup-btn" id="setup-prem-go" style="background:linear-gradient(135deg,#ffb300,#f57c00);box-shadow:0 6px 24px rgba(255,179,0,.35)">Get Premium</button></div>',CONTINUE);
+      c.innerHTML=dots+grid(ART_PREMIUM,'<div class="setup-name" style="font-size:24px;letter-spacing:2px">Kastrava Premium</div><div class="setup-sub">Unlock the full browser — one account, ten devices.</div><div class="setup-priv"><div><span class="ok">✦</span><b>20 themes</b> — all dark &amp; light sets</div><div><span class="ok">✦</span><b>Tracking Radar</b> · <b>Split View</b> · <b>Workspaces</b></div><div><span class="ok">✦</span><b>Cursor FX</b> — fluid, particles &amp; more</div><div><span class="ok">✦</span><b>Brave</b> · <b>Google</b> · <b>Ecosia</b> engines</div><div><span class="ok">✦</span><b>PiP</b> · <b>Screenshot</b> tools</div><div><span class="ok">✦</span><b>Vertical tabs</b> · custom shortcuts · more</div></div><div style="margin:2px auto 16px;padding:8px 24px;border-radius:999px;border:1px solid rgba(255,179,0,.45);background:rgba(255,179,0,.08);color:#ffb300;font-weight:700;font-size:20px;display:inline-block">₹248 <span style="font-size:12px;color:var(--c-text2);font-weight:500">/ 34 days · 10 devices</span></div><div><button class="setup-btn" id="setup-prem-go" style="background:linear-gradient(135deg,#ffb300,#f57c00);box-shadow:0 6px 24px rgba(255,179,0,.35)">Get Premium</button></div>',CONTINUE);
       var g=$("setup-prem-go");if(g)g.addEventListener("click",function(){try{openPremiumStore();}catch(e){}});
     }
     setupBindNav(10);
@@ -3848,7 +3848,7 @@ try{if(!window.__chromeVer){var m=navigator.userAgent.match(/Chrome\/([\d.]+)/);
 function renderSettingsSection(id){
   var p=$("settings-panel");var h="";
   if(id==="premium"){h="<h3>Kastrava Premium</h3>";
-    h+="<div class=\"desc\" style=\"margin-bottom:12px\">Unlock Tracking Radar, Cursor FX, Workspaces, Split View and every theme \u2014 <b>\u20B9248 one-time for 34 days (~$2.8), one machine, no auto-renew</b>. The browser reminds you when renewal's due.</div>";
+    h+="<div class=\"desc\" style=\"margin-bottom:12px\">Unlock Tracking Radar, Cursor FX, Workspaces, Split View and every theme \u2014 <b>\u20B9248 for 34 days (~$2.59), up to 10 devices, no auto-renew</b>. The app reminds you before it ends.</div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Your Machine Code</div><div style=\"display:flex;gap:8px;align-items:center\"><code id=\"pm-machine\" style=\"flex:1;word-break:break-all;font-size:12px\">"+(LIC.machine||"…")+"</code><button class=\"btn-sm\" id=\"pm-copy\">Copy</button></div><div class=\"desc\">This code identifies <b>this PC</b>. Your license is bound to it \u2014 copying the app to another machine won't transfer it. Enter it at checkout to renew with the same key.</div></div>";
     if(LIC.activated){
       var stColor=LIC.grace?"#e65100":"#2e7d32";
@@ -3873,7 +3873,7 @@ function renderSettingsSection(id){
       h+="<div class=\"sg\" id=\"sy-form\"><div class=\"lbl\">Log in</div><input id=\"sy-email\" type=\"email\" placeholder=\"you@example.com\" autocomplete=\"email\" style=\"width:100%;margin:6px 0;padding:9px 12px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px\"><input id=\"sy-pass\" type=\"password\" placeholder=\"Password\" autocomplete=\"current-password\" style=\"width:100%;margin:0 0 6px;padding:9px 12px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px\"><div style=\"display:flex;gap:8px;margin-top:4px\"><button class=\"btn-sm btn-accent\" id=\"sy-login\">Log in</button><button class=\"btn-sm\" id=\"sy-logout\">Log out</button><button class=\"btn-sm\" id=\"sy-now\">Sync now</button></div><div id=\"sy-msg\" class=\"desc\" style=\"margin-top:6px\"></div></div>";
       h+="<div class=\"sg\" id=\"sy-devrow\"><div class=\"lbl\">Devices on this key</div><div class=\"desc\">Up to 10 per key. Remove one to free its slot.</div><div id=\"sy-devices\" class=\"desc\" style=\"margin-top:6px\">—</div></div>";
       h+="<div class=\"sg\"><div class=\"lbl\">Advanced settings</div><div class=\"desc\">Devices, keys and sync on the web dashboard.</div><div style=\"margin-top:8px\"><button class=\"btn-sm\" id=\"sy-advanced\">Open account dashboard</button></div></div>";
-      h+="<div class=\"sg\" id=\"sy-licrow\" style=\"display:none\"><div class=\"lbl\">Premium key on file</div><div class=\"desc\">Synced from another device — reference only. Keys stay bound to one machine.</div><div class=\"mono\" id=\"sy-lickey\" style=\"margin:6px 0;font-size:13px\"></div><button class=\"btn-sm\" id=\"sy-activate\">Activate on this device</button></div>";
+      h+="<div class=\"sg\" id=\"sy-licrow\" style=\"display:none\"><div class=\"lbl\">Premium key on file</div><div class=\"desc\">Synced from another device — reference only. Keys stay on your account.</div><div class=\"mono\" id=\"sy-lickey\" style=\"margin:6px 0;font-size:13px\"></div><button class=\"btn-sm\" id=\"sy-activate\">Activate on this device</button></div>";
     }
   }
   else if(id==="general"){h="<h3>General</h3>";
