@@ -164,12 +164,22 @@ class MainActivity : AppCompatActivity() {
         }.start()
         // Silent license refresh once per process: an admin extend or renewal
         // only lands in-app after a re-activate. Failures keep the cache.
+        // Silent license refresh once per process: logged-in accounts
+        // re-activate by account (same key, device counted), otherwise the
+        // legacy key refresh. Failures keep the cache.
         Thread {
             try {
-                val st = app.license.status()
-                if (st.activated && st.key != null) {
-                    if (app.license.activate(st.key) == null) {
+                val tok = app.account.token()
+                if (tok != null) {
+                    if (app.license.activateAccount(tok) == null) {
                         runOnUiThread { refreshPremiumLine() }
+                    }
+                } else {
+                    val st = app.license.status()
+                    if (st.activated && st.key != null) {
+                        if (app.license.activate(st.key) == null) {
+                            runOnUiThread { refreshPremiumLine() }
+                        }
                     }
                 }
             } catch (e: Exception) { }

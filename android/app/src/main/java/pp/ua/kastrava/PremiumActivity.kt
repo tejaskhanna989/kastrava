@@ -36,18 +36,36 @@ class PremiumActivity : AppCompatActivity() {
 
         fun refresh() {
             val st = app.license.status()
+            val dev = app.license.lastDevices
+            val devTxt = if (st.activated && dev != null && dev.first >= 0) " · ${dev.first}/${dev.second} devices" else ""
             status.text = if (st.activated) {
                 val exp = st.expiresAtMs?.let {
                     java.text.DateFormat.getDateInstance().format(java.util.Date(it))
                 }
-                if (st.grace) "Premium active — renewal due (grace until $exp)"
-                else "Premium active" + (if (exp != null) " · until $exp" else "")
+                if (st.grace) "Premium active — renewal due (grace until $exp)$devTxt"
+                else "Premium active" + (if (exp != null) " · until $exp" else "") + devTxt
             } else {
                 "Free core" + (if (st.reason != null && st.reason != "no_license") " (${st.reason})" else "")
             }
             if (st.key != null && key.text.isBlank()) key.setText(st.key)
         }
         refresh()
+        // Logged in? The account key auto-activates this device on open.
+        if (app.account.loggedIn()) {
+            msg.text = "Checking account key…"
+            Thread {
+                val err = app.license.activateAccount(app.account.token() ?: "")
+                runOnUiThread {
+                    if (err == null) {
+                        msg.text = "Premium activated on this device."
+                        refresh()
+                    } else {
+                        msg.text = err
+                        refresh()
+                    }
+                }
+            }.start()
+        }
 
         activate.setOnClickListener {
             val k = key.text.toString().trim()

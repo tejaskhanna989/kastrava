@@ -1,8 +1,11 @@
 package pp.ua.kastrava
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.widget.Button
 import android.widget.CheckBox
+import android.widget.EditText
 import android.widget.TextView
 import android.widget.SeekBar
 import android.widget.RadioButton
@@ -97,6 +100,55 @@ class SettingsActivity : AppCompatActivity() {
         cbJs.setOnCheckedChangeListener { _, v ->
             app.prefs.javaScript = v
             Toast.makeText(this, "Applies to new and current tabs", Toast.LENGTH_SHORT).show()
+        }
+
+        val tvAccount: TextView = findViewById(R.id.tvAccountStatus)
+        val etEmail = findViewById<EditText>(R.id.etAccountEmail)
+        val etPass = findViewById<EditText>(R.id.etAccountPass)
+        val btnIn: Button = findViewById(R.id.btnAccountGo)
+        val btnOut: Button = findViewById(R.id.btnAccountOut)
+        fun paintAccount() {
+            val em = app.account.email()
+            tvAccount.text = if (app.account.loggedIn()) "Signed in as $em. Same key auto-activates on up to 10 devices."
+            else "Not logged in. One login syncs and activates Premium."
+            if (!em.isNullOrBlank() && etEmail.text.isBlank()) etEmail.setText(em)
+        }
+        paintAccount()
+        btnIn.setOnClickListener {
+            val em = etEmail.text.toString()
+            val pw = etPass.text.toString()
+            tvAccount.text = "Logging in..."
+            btnIn.isEnabled = false
+            Thread {
+                val err = app.account.login(em, pw)
+                runOnUiThread {
+                    btnIn.isEnabled = true
+                    if (err == null) {
+                        etPass.text.clear()
+                        paintAccount()
+                        // Auto-activate the account key on this device.
+                        Thread {
+                            app.license.activateAccount(app.account.token() ?: "")
+                            runOnUiThread { paintAccount() }
+                        }.start()
+                    } else {
+                        tvAccount.text = err
+                    }
+                }
+            }.start()
+        }
+        btnOut.setOnClickListener {
+            app.account.logout()
+            etPass.text.clear()
+            paintAccount()
+            Toast.makeText(this, "Logged out", Toast.LENGTH_SHORT).show()
+        }
+        findViewById<Button>(R.id.btnAdvanced).setOnClickListener {
+            try {
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://account.kastrava.pp.ua")))
+            } catch (e: Exception) {
+                Toast.makeText(this, "Could not open browser", Toast.LENGTH_SHORT).show()
+            }
         }
 
         val cbBattery: CheckBox = findViewById(R.id.cbBattery)

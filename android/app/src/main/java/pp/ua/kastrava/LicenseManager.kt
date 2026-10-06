@@ -28,8 +28,9 @@ class LicenseManager(private val context: Context) {
             "MCowBQYDK2VwAyEAxI4SQmMrvkzEaNmw+ZgR+pmuS5J5pB6yER+5qZ9l7IQ="
 
         // Canonical bytes the server signs: Node JSON.stringify(payload) with
-        // insertion order sub, mid, product, edition, iss, iat, exp, sub_end?.
-        // Values are alphanumeric/dashes/ints, so plain quoting is exact.
+        // insertion order sub, [acc,] mid, product, edition, iss, iat, exp,
+        // sub_end?. v1 (legacy machine-bound) has no acc; v2 (account-bound)
+        // inserts acc after sub and the mid check is skipped client-side.
         fun canonicalPayloadBytes(payload: JSONObject): ByteArray {
             val sb = StringBuilder("{")
             fun str(k: String) {
@@ -41,7 +42,9 @@ class LicenseManager(private val context: Context) {
                 if (sb.length > 1) sb.append(',')
                 sb.append('"').append(k).append("\":").append(payload.getLong(k))
             }
-            str("sub"); str("mid"); str("product"); str("edition"); str("iss")
+            str("sub")
+            if (payload.has("acc") && !payload.isNull("acc")) str("acc")
+            str("mid"); str("product"); str("edition"); str("iss")
             num("iat"); num("exp")
             if (payload.has("sub_end") && !payload.isNull("sub_end")) num("sub_end")
             sb.append('}')
@@ -56,6 +59,7 @@ class LicenseManager(private val context: Context) {
         val subEndMs: Long?,
         val grace: Boolean,
         val key: String?,
+        val acc: String?,
     )
 
     private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -72,26 +76,33 @@ class LicenseManager(private val context: Context) {
         val sig = prefs.getString("sig", null)
         val machine = machineCode()
         if (key == null || payloadRaw == null || sig == null)
-            return Status(false, "no_license", null, null, false, null)
+            return Status(false, "no_license", null, null, false, null, null)
         return try {
             val payload = JSONObject(payloadRaw)
             if (!verifySignature(payload, sig))
-                return Status(false, "bad_signature", null, null, false, key)
+                return Status(false, "bad_signature", null, null, false, key, null)
             if (payload.optString("iss") != "kastrasoft" ||
                 payload.optString("product") != "kastrava-premium"
-            ) return Status(false, "bad_issuer", null, null, false, key)
-            if (!payload.optString("mid").equals(machine, ignoreCase = true))
-                return Status(false, "machine_mismatch", null, null, false, key)
+            ) return Status(false, "bad_issuer", null, null, false, key, null)
+            val acc = payload.optString("acc", "")
+            if (acc.isNotBlank()) {
+                // v2 account-bound: any device on the account verifies. The
+                // 10-device cap lives server-side, not in the signature.
+                if (!acc.contains("@")) return Status(false, "bad_issuer", null, null, false, key, null)
+            } else if (!payload.optString("mid").equals(machine, ignoreCase = true)) {
+                // v1 legacy machine-bound: unchanged.
+                return Status(false, "machine_mismatch", null, null, false, key, null)
+            }
             val now = System.currentTimeMillis() / 1000
             val exp = payload.optLong("exp", 0)
             if (exp != 0L && now > exp)
-                return Status(false, "expired", exp * 1000, null, false, key)
+                return Status(false, "expired", exp * 1000, null, false, key, if (acc.isNotBlank()) acc else null)
             val subEnd = if (payload.has("sub_end") && !payload.isNull("sub_end"))
                 payload.optLong("sub_end") * 1000 else null
             val grace = subEnd != null && now > subEnd / 1000
-            Status(true, null, if (exp != 0L) exp * 1000 else null, subEnd, grace, key)
+            Status(true, null, if (exp != 0L) exp * 1000 else null, subEnd, grace, key, if (acc.isNotBlank()) acc else null)
         } catch (e: Exception) {
-            Status(false, "bad_signature", null, null, false, key)
+            Status(false, "bad_signature", null, null, false, key, null)
         }
     }
 
@@ -170,6 +181,71 @@ class LicenseManager(private val context: Context) {
             null
         } catch (e: Exception) {
             "Could not reach the Kastrava license server. Check your connection."
+        }
+    }
+
+    /** Last account-activation device count (used/limit), null when unknown. */
+    var lastDevices: Pair<Int, Int>? = null
+        private set
+
+    /**
+     * Account-bound activation (new model): the logged-in account's key
+     * auto-activates this device, up to 10 per key. Same key everywhere.
+     * Network — must run off the main thread. Returns null on success.
+     */
+    fun activateAccount(accountToken: String): String? {
+        val machine = machineCode()
+        return try {
+            val url = URL("$API/api/activate")
+            val conn = (url.openConnection() as HttpURLConnection).apply {
+                requestMethod = "POST"
+                setRequestProperty("Content-Type", "application/json")
+                connectTimeout = 20000
+                readTimeout = 20000
+                doOutput = true
+            }
+            val body = JSONObject()
+                .put("account_token", accountToken)
+                .put("machine_id", machine)
+                .put("device_name", android.os.Build.MODEL ?: "")
+                .toString()
+            conn.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
+            val code = conn.responseCode
+            val text = try {
+                (if (code in 200..299) conn.inputStream else conn.errorStream)
+                    ?.bufferedReader()?.readText() ?: ""
+            } catch (e: Exception) { "" }
+            if (code !in 200..299) {
+                val err = try { JSONObject(text).optString("error") } catch (e: Exception) { "" }
+                return when (err) {
+                    "unauthorized" -> "Login expired. Log in again."
+                    "no_key" -> "No Premium key on this account yet."
+                    "key_expired" -> "The account key expired. Renew to keep Premium everywhere."
+                    "device_limit" -> "All 10 device slots are used. Remove one or buy a new key."
+                    "wrong_account" -> "This key belongs to a different account."
+                    "license_revoked" -> "This license was revoked. Contact support."
+                    "license_cancelled" -> "This license was cancelled. Buy again to restart Premium."
+                    else -> "Activation failed (HTTP $code)."
+                }
+            }
+            val lic = JSONObject(text).optJSONObject("license")
+                ?: return "Empty activation response."
+            val payload = lic.getJSONObject("payload")
+            val sig = lic.getString("sig")
+            if (!verifySignature(payload, sig)) return "License check failed on this device."
+            lastDevices = Pair(
+                try { JSONObject(text).optInt("devices_used", -1) } catch (e: Exception) { -1 },
+                try { JSONObject(text).optInt("device_limit", 10) } catch (e: Exception) { 10 },
+            )
+            prefs.edit()
+                .putString("key", lic.optString("key"))
+                .putString("payload", payload.toString())
+                .putString("sig", sig)
+                .putLong("activated_at", System.currentTimeMillis())
+                .apply()
+            null
+        } catch (e: Exception) {
+            "Could not reach the Kastrava server. Check your connection."
         }
     }
 

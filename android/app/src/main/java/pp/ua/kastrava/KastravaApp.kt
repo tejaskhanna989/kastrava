@@ -14,6 +14,7 @@ class KastravaApp : Application() {
     lateinit var filters: FilterLists
     lateinit var downloads: SessionDownloads
     lateinit var license: LicenseManager
+    lateinit var account: AccountManager
 
     override fun onCreate() {
         super.onCreate()
@@ -21,6 +22,7 @@ class KastravaApp : Application() {
         filters = FilterLists(this)
         downloads = SessionDownloads(this)
         license = LicenseManager(this)
+        account = AccountManager(this)
         applyTheme()
         // Crash leftovers must never outlive their session.
         Thread { downloads.wipe() }.start()

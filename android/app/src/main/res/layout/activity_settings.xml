@@ -108,12 +108,91 @@
             android:layout_marginTop="8dp"
             android:textSize="13sp" />
 
+        
+
         <Button
             android:id="@+id/btnCheckUpdates"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:text="Check for updates" />
+
+<TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="Account"
+            android:textStyle="bold"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/tvAccountStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textSize="13sp" />
+
+        <EditText
+            android:id="@+id/etAccountEmail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/field_bg"
+            android:hint="Email"
+            android:inputType="textEmailAddress"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:importantForAutofill="no"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:textColor="@color/chrome_text"
+            android:textColorHint="@color/chrome_hint"
+            android:textSize="15sp" />
+
+        <EditText
+            android:id="@+id/etAccountPass"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/field_bg"
+            android:hint="Password (8+ characters)"
+            android:inputType="textPassword"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:importantForAutofill="no"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:textColor="@color/chrome_text"
+            android:textColorHint="@color/chrome_hint"
+            android:textSize="15sp" />
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp">
+
+            <Button
+                android:id="@+id/btnAccountGo"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Log in" />
+
+            <Button
+                android:id="@+id/btnAccountOut"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Log out" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnAdvanced"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Advanced settings (web)" />
 
         <TextView
             android:layout_width="wrap_content"
