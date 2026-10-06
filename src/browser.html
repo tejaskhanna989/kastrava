@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https:; img-src * data:;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https:; connect-src 'self' https: http://localhost:* http://127.0.0.1:*; img-src * data:;">
 <title>Kastrava</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -3850,7 +3850,7 @@ try{if(!window.__chromeVer){var m=navigator.userAgent.match(/Chrome\/([\d.]+)/);
 function renderSettingsSection(id){
   var p=$("settings-panel");var h="";
   if(id==="premium"){h="<h3>Kastrava Premium</h3>";
-    h+="<div class=\"desc\" style=\"margin-bottom:12px\">Unlock Tracking Radar, Cursor FX, Workspaces, Split View and every theme \u2014 <b>\u20B9248 for 34 days (~$2.59), up to 10 devices, no auto-renew</b>. The app reminds you before it ends.</div>";
+    h+="<div class=\"desc\" style=\"margin-bottom:12px\">Unlock Tracking Radar, Cursor FX, Workspaces, Split View and every theme \u2014 <b>\u20B9248 for 34 days (~$2.8), up to 10 devices, no auto-renew</b>. The app reminds you before it ends.</div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Your Machine Code</div><div style=\"display:flex;gap:8px;align-items:center\"><code id=\"pm-machine\" style=\"flex:1;word-break:break-all;font-size:12px\">"+(LIC.machine||"…")+"</code><button class=\"btn-sm\" id=\"pm-copy\">Copy</button></div><div class=\"desc\">This code identifies <b>this PC</b>. Your license is bound to it \u2014 copying the app to another machine won't transfer it. Enter it at checkout to renew with the same key.</div></div>";
     if(LIC.activated){
       var stColor=LIC.grace?"#e65100":"#2e7d32";
@@ -4493,10 +4493,21 @@ function checkPort(port,cb){
 function renderLocalhostGrid(container){
   var grid=container||document.getElementById('localhost-grid'); if(!grid) return;
   grid.innerHTML=LOCALHOST_PORTS.map(function(p){return '<div class="tool-card" data-port="'+p+'" style="padding:12px;cursor:pointer;position:relative"><div style="position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;background:var(--c-text2);opacity:.3" id="lh-dot-'+p+'"></div><div style="font-weight:600">localhost:'+p+'</div><div style="font-size:11px;color:var(--c-text2)">http://localhost:'+p+'</div></div>';}).join('');
+  var pending=LOCALHOST_PORTS.length,online=0;
   grid.querySelectorAll('.tool-card').forEach(function(c){
     c.addEventListener('click',function(){var p=c.dataset.port;if(W.addTab) W.addTab('http://localhost:'+p);});
     var p=parseInt(c.dataset.port);
-    checkPort(p,function(ok){var dot=document.getElementById('lh-dot-'+p);if(dot){dot.style.background=ok?'#4caf50':'#f28b82';dot.style.opacity='1';dot.title=ok?'Online':'Offline';}});
+    checkPort(p,function(ok){
+      var dot=document.getElementById('lh-dot-'+p);
+      if(dot){dot.style.background=ok?'#4caf50':'#f28b82';dot.style.opacity='1';dot.title=ok?'Online':'Offline';}
+      if(ok)online++;
+      if(--pending===0&&online===0){
+        var hint=document.getElementById('localhost-hint');
+        if(!hint){hint=document.createElement('div');hint.id='localhost-hint';grid.parentElement.appendChild(hint);}
+        hint.style.cssText='padding:4px 16px 16px;font-size:12px;color:var(--c-text2)';
+        hint.textContent='Nothing running. Start something — e.g. python3 -m http.server 3000 — and it lights up here.';
+      }
+    });
   });
 }
 var go=document.getElementById('localhost-go');var custom=document.getElementById('localhost-custom');

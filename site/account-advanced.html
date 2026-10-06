@@ -67,7 +67,7 @@ r.setAttribute('data-theme',s?s:(window.matchMedia&&window.matchMedia('(prefers-
 <div id="dash" style="display:none">
 <div class="card"><h2>Premium keys</h2><p class="sub">One key works on up to 10 devices. Logged-in browsers pick up new keys and renewals on their own.</p>
 <div id="keys-out">Loading…</div>
-<div style="margin-top:14px"><button class="btn" id="buy-go">Buy a new key — $2.59 / 34 days</button></div>
+<div style="margin-top:14px"><button class="btn" id="buy-go">Buy a new key — $2.8 / 34 days</button></div>
 <div class="msg" id="buy-msg"></div>
 <p class="fine">Charged in INR (₹248). Renewing extends your newest key — every logged-in browser follows.</p>
 </div>
@@ -146,7 +146,7 @@ buyEl.addEventListener('click',function(){
   .then(function(r){return r.json();}).then(function(o){
     if(!o||!o.order_id){buyMsg.textContent='Order failed.';buyEl.disabled=false;return;}
     var rzp=new Razorpay({key:o.key_id,amount:o.amount,currency:o.currency,order_id:o.order_id,
-      name:'Kastrava Premium',description:'One-time $2.59 - 34 days - account key',
+      name:'Kastrava Premium',description:'One-time $2.8 - 34 days - account key',
       theme:{color:document.documentElement.getAttribute('data-theme')==='dark'?'#f3eee4':'#16130e'},
       handler:function(res){
         fetch(KAS_API+'/api/verify',{method:'POST',headers:{'Content-Type':'application/json'},

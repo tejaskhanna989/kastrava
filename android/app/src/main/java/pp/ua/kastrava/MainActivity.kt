@@ -917,7 +917,7 @@ class MainActivity : AppCompatActivity() {
             if (st.grace) "Premium active — renewal due (grace until $exp)"
             else "Premium active" + (if (exp != null) " · until $exp" else "")
         } else {
-            "Free core · Premium $2.59/34D in the menu"
+            "Free core · Premium $2.8/34D in the menu"
         }
     }
 
