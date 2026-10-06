@@ -165,6 +165,44 @@ class Store {
     return this.data
   }
 
+  // ---- account-bound licensing (10 devices per key) ----
+  setAccountEmail(key, email) {
+    const l = this.getLicense(key)
+    if (!l) return null
+    l.account_email = String(email).toLowerCase()
+    if (!l.devices) l.devices = {}
+    this.save()
+    return l
+  }
+
+  keysForAccount(email) {
+    const e = String(email || '').toLowerCase()
+    if (!e) return []
+    return Object.values(this.data.licenses).filter((l) => l.account_email === e)
+  }
+
+  touchDevice(key, machineId, name) {
+    const l = this.getLicense(key)
+    if (!l) return -1
+    if (!l.devices) l.devices = {}
+    const m = String(machineId || '').toUpperCase()
+    if (!m) return Object.keys(l.devices).length
+    const now = new Date().toISOString()
+    if (!l.devices[m]) l.devices[m] = { first_seen: now, name: String(name || '').slice(0, 60) || null }
+    l.devices[m].last_seen = now
+    if (name) l.devices[m].name = String(name).slice(0, 60)
+    this.save()
+    return Object.keys(l.devices).length
+  }
+
+  removeDevice(key, machineId) {
+    const l = this.getLicense(key)
+    if (!l || !l.devices) return 0
+    delete l.devices[String(machineId || '').toUpperCase()]
+    this.save()
+    return Object.keys(l.devices).length
+  }
+
   // ---- accounts (Kastrava logins for sync) ----
   // Passwords: scrypt hash + salt, server-side. Sync payloads are opaque
   // client-encrypted blobs — the server can never read bookmarks/prefs.

@@ -27,6 +27,7 @@ const PRICE_INR = parseInt(process.env.PRICE_INR || '248', 10)
 const PERIOD_DAYS = parseInt(process.env.PERIOD_DAYS || '34', 10)
 const GRACE_DAYS = parseInt(process.env.GRACE_DAYS || '3', 10)
 const LICENSE_YEARS = parseInt(process.env.LICENSE_YEARS || '10', 10)
+const DEVICE_LIMIT = 10
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data')
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || ''
 const SITE_DIR = path.join(__dirname, '..', 'site')
@@ -88,21 +89,24 @@ function licenseExpirySeconds(lic) {
   return end + GRACE_DAYS * 86400
 }
 
-function makeLicensePayload(key, machineId) {
+function makeLicensePayload(key, machineId, accountEmail) {
   const now = Math.floor(Date.now() / 1000)
   const lic = store.getLicense(key)
   const exp = licenseExpirySeconds(lic)
-  const payload = {
-    sub: key,
-    mid: (machineId || '').toUpperCase(),
-    product: 'kastrava-premium',
-    edition: 'premium',
-    iss: 'kastrasoft',
-    iat: now,
-    // Subscription keys expire at period end + grace; legacy one-time
-    // keys (no expires_at in store) keep the long LICENSE_YEARS lifetime.
-    exp: exp || now + LICENSE_YEARS * 365 * 24 * 3600
-  }
+  // v2 (account-bound): acc names the owning account, mid is the activating
+  // device (informational — the 10-device cap is enforced server-side, not
+  // in the signature). Field order is the signed canonical form: sub, acc,
+  // mid, product, edition, iss, iat, exp, sub_end?. Apps must mirror it.
+  // v1 (legacy machine-bound): no acc, mid enforced on-device as before.
+  const payload = accountEmail ? { sub: key, acc: String(accountEmail).toLowerCase() } : { sub: key }
+  payload.mid = (machineId || '').toUpperCase()
+  payload.product = 'kastrava-premium'
+  payload.edition = 'premium'
+  payload.iss = 'kastrasoft'
+  payload.iat = now
+  // Subscription keys expire at period end + grace; legacy one-time
+  // keys (no expires_at in store) keep the long LICENSE_YEARS lifetime.
+  payload.exp = exp || now + LICENSE_YEARS * 365 * 24 * 3600
   if (lic && lic.expires_at) payload.sub_end = Math.floor(new Date(lic.expires_at).getTime() / 1000)
   return payload
 }
@@ -161,10 +165,11 @@ function serveStatic(req, res, pathname) {
 //   - paid with a machine code that already has a license -> EXTEND that key
 //     from max(now, expiry) + PERIOD_DAYS and return the SAME key, so renewal
 //     needs no new activation; the app picks it up on its next re-activate.
-function finalizePayment(orderId, paymentId, machineIdRaw) {
+function finalizePayment(orderId, paymentId, machineIdRaw, accountEmailRaw) {
   const order = store.getOrder(orderId)
   store.markPaid(orderId, paymentId)
   const machine = String(machineIdRaw || (order && order.machine_id) || '').trim().toUpperCase()
+  const account = String(accountEmailRaw || (order && order.account_email) || '').trim().toLowerCase() || null
   let key = store.keyForOrder(orderId)
   let renewed = false
   if (!key) {
@@ -178,11 +183,34 @@ function finalizePayment(orderId, paymentId, machineIdRaw) {
         : Date.now()
       store.extendLicense(key, new Date(base + PERIOD_DAYS * 86400000).toISOString())
       store.setLicenseOrder(key, orderId)
+      if (account && !existing.account_email) store.setAccountEmail(key, account)
       renewed = true
+    } else if (account) {
+      // Account renewal: the account's newest live key extends (same key on
+      // every device picks it up on next launch) — otherwise mint + assign.
+      const cands = store.keysForAccount(account)
+        .filter((l) => l.status === 'activated' || l.status === 'issued')
+        .sort((a, b) => String(b.expires_at || '') < String(a.expires_at || '') ? -1 : 1)
+      if (cands.length) {
+        key = cands[0].key
+        const base = cands[0].expires_at
+          ? Math.max(Date.now(), new Date(cands[0].expires_at).getTime())
+          : Date.now()
+        store.extendLicense(key, new Date(base + PERIOD_DAYS * 86400000).toISOString())
+        store.setLicenseOrder(key, orderId)
+        renewed = true
+      } else {
+        key = sign.makeLicenseKey()
+        store.issueLicense(key, orderId, null, new Date(Date.now() + PERIOD_DAYS * 86400000).toISOString())
+        store.setAccountEmail(key, account)
+      }
     } else {
       key = sign.makeLicenseKey()
       store.issueLicense(key, orderId, null, new Date(Date.now() + PERIOD_DAYS * 86400000).toISOString())
     }
+  } else if (account) {
+    const lic = store.getLicense(key)
+    if (lic && !lic.account_email) store.setAccountEmail(key, account)
   }
   return { key, renewed }
 }
@@ -203,6 +231,10 @@ async function handlePost(req, res, pathname) {
       if (typeof body.name === 'string' && body.name) meta.name = body.name
       if (typeof body.email === 'string' && body.email) meta.email = body.email
       if (typeof body.machine_id === 'string' && body.machine_id.trim()) meta.machine_id = body.machine_id.trim().toUpperCase()
+      if (typeof body.account_token === 'string' && body.account_token) {
+        const acc = store.getSessionAccount(body.account_token)
+        if (acc) meta.account_email = acc.email
+      }
       store.createOrder(o.order_id, meta)
       return json(res, 200, { order_id: o.order_id, amount: o.amount, currency: o.currency, key_id: o.key_id, dev: !!o.dev })
     } catch (e) {
@@ -211,7 +243,7 @@ async function handlePost(req, res, pathname) {
   }
 
   if (pathname === '/api/verify') {
-    const { order_id, payment_id, signature, machine_id } = body
+    const { order_id, payment_id, signature, machine_id, account_token } = body
     if (!order_id || !payment_id) return json(res, 400, { error: 'bad_request' })
     const order = store.getOrder(order_id)
     if (!order) return json(res, 404, { error: 'order_not_found' })
@@ -226,7 +258,8 @@ async function handlePost(req, res, pathname) {
     if (!razorpay.verifySignature(String(order_id), String(payment_id), String(signature || ''))) {
       return json(res, 403, { error: 'bad_signature', msg: 'Payment could not be verified.' })
     }
-    const r = finalizePayment(String(order_id), String(payment_id), machine_id)
+    const vacc = account_token ? store.getSessionAccount(String(account_token)) : null
+    const r = finalizePayment(String(order_id), String(payment_id), machine_id, vacc ? vacc.email : null)
     const rc = makeReceipt(String(order_id), machine_id)
     return json(res, 200, { ok: true, key: r.key, renewed: r.renewed, already_paid: false,
       receipt: rc && rc.receipt, receipt_sig: rc && rc.receipt_sig })
@@ -246,7 +279,7 @@ async function handlePost(req, res, pathname) {
       if (ent && ent.order_id && body.event === 'payment.captured') {
         const order = store.getOrder(String(ent.order_id))
         if (order && order.status !== 'paid') {
-          const r = finalizePayment(String(ent.order_id), String(ent.id || ''), order.machine_id || '')
+          const r = finalizePayment(String(ent.order_id), String(ent.id || ''), order.machine_id || '', order.account_email || '')
           console.log('[webhook] payment.captured', String(ent.order_id), r.renewed ? 'renewal' : 'new key', r.key)
         }
       }
@@ -288,18 +321,28 @@ async function handlePost(req, res, pathname) {
   if (pathname === '/api/cancel') {
     const key = String(body.key || '').trim().toUpperCase()
     const machineId = String(body.machine_id || '').trim().toUpperCase()
-    if (!key || !machineId) return json(res, 400, { error: 'bad_request' })
+    if (!key) return json(res, 400, { error: 'bad_request' })
     const lic = store.getLicense(key)
     if (!lic) return json(res, 404, { error: 'invalid_key', msg: 'No such license key.' })
     if (lic.status !== 'activated' && lic.status !== 'issued') {
       return json(res, 400, { error: 'not_active', msg: 'This license is not active.' })
     }
-    // Fresh keys are not bound yet (binding happens at activation), so fall
-    // back to the checkout machine recorded on the order.
-    const order = store.getOrder(lic.order_id)
-    const bound = ((lic.machine_id || (order && order.machine_id)) || '').toUpperCase()
-    if (bound !== machineId) {
-      return json(res, 403, { error: 'machine_mismatch', msg: 'Only the bound machine can stop this license.' })
+    // Account owners can stop their own keys from the dashboard (no machine
+    // needed); otherwise the legacy bound-machine check applies.
+    let ownerOk = false
+    if (body.account_token) {
+      const acc = store.getSessionAccount(String(body.account_token))
+      ownerOk = !!(acc && lic.account_email === acc.email)
+    }
+    if (!ownerOk) {
+      if (!machineId) return json(res, 400, { error: 'bad_request' })
+      // Fresh keys are not bound yet (binding happens at activation), so fall
+      // back to the checkout machine recorded on the order.
+      const order = store.getOrder(lic.order_id)
+      const bound = ((lic.machine_id || (order && order.machine_id)) || '').toUpperCase()
+      if (bound !== machineId) {
+        return json(res, 403, { error: 'machine_mismatch', msg: 'Only the bound machine can stop this license.' })
+      }
     }
     lic.status = 'cancelled'
     lic.cancelled_at = new Date().toISOString()
@@ -321,6 +364,28 @@ async function handlePost(req, res, pathname) {
     const rc = makeReceipt(orderId)
     return json(res, 200, { ok: true, key, order_id: orderId, expires_at: expires,
       receipt: rc && rc.receipt, receipt_sig: rc && rc.receipt_sig })
+  }
+
+  // Account device management: list keys+devices, free a device slot.
+  if (pathname === '/api/account/devices' || pathname === '/api/account/device/remove') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    if (pathname === '/api/account/devices') {
+      const keys = store.keysForAccount(acc.email).map((l) => ({
+        key: l.key, status: l.status, expires_at: l.expires_at || null,
+        devices_used: Object.keys(l.devices || {}).length, device_limit: DEVICE_LIMIT,
+        devices: Object.entries(l.devices || {}).map(([id, d]) => ({
+          id, name: (d && d.name) || null,
+          first_seen: d && d.first_seen, last_seen: d && d.last_seen
+        }))
+      }))
+      return json(res, 200, { ok: true, keys, device_limit: DEVICE_LIMIT })
+    }
+    const key = String(body.key || '').trim().toUpperCase()
+    const lic = store.getLicense(key)
+    if (!lic || lic.account_email !== acc.email) return json(res, 404, { error: 'invalid_key' })
+    const left = store.removeDevice(key, String(body.machine_id || ''))
+    return json(res, 200, { ok: true, key, devices_used: left })
   }
 
   // Full order dossier for the admin panel: order + license + a freshly
@@ -384,6 +449,49 @@ async function handlePost(req, res, pathname) {
   }
 
   if (pathname === '/api/activate') {
+    // Account-bound flow (new apps): one key auto-activates up to
+    // DEVICE_LIMIT devices. Legacy {key, machine_id} flow below is kept
+    // byte-identical for old builds.
+    if (body.account_token) {
+      const acc = store.getSessionAccount(String(body.account_token))
+      if (!acc) return json(res, 401, { error: 'unauthorized', msg: 'Login expired. Log in again.' })
+      const machineId = String(body.machine_id || '').trim().toUpperCase()
+      if (!machineId) return json(res, 400, { error: 'bad_request' })
+      const deviceName = String(body.device_name || '').slice(0, 60)
+      const reqKey = String(body.key || '').trim().toUpperCase()
+      let lic = null
+      if (reqKey) {
+        lic = store.getLicense(reqKey)
+        if (!lic) return json(res, 404, { error: 'invalid_key', msg: 'No such license key.' })
+        if (lic.status === 'revoked') return json(res, 403, { error: 'license_revoked', msg: 'This license was revoked. Contact support.' })
+        if (lic.status === 'cancelled') return json(res, 403, { error: 'license_cancelled', msg: 'This license was cancelled. Buy again to restart Premium.' })
+        if (lic.account_email && lic.account_email !== acc.email) {
+          return json(res, 403, { error: 'wrong_account', msg: 'This key belongs to a different account.' })
+        }
+        // First touch claims a loose key for the account (whoever holds the
+        // key could already activate it anywhere, so this grants nothing new).
+        if (!lic.account_email) store.setAccountEmail(reqKey, acc.email)
+      } else {
+        const cands = store.keysForAccount(acc.email)
+          .filter((l) => l.status !== 'revoked' && l.status !== 'cancelled')
+          .sort((a, b) => String(b.expires_at || '') < String(a.expires_at || '') ? -1 : 1)
+        if (!cands.length) return json(res, 404, { error: 'no_key', msg: 'No Premium key on this account yet.' })
+        lic = cands[0]
+      }
+      const live = licenseExpirySeconds(lic)
+      if (!live || live * 1000 < Date.now()) {
+        return json(res, 402, { error: 'key_expired', msg: 'The key on this account expired. Renew to keep Premium on all devices.', key: lic.key })
+      }
+      const devs = lic.devices || {}
+      if (!devs[machineId] && Object.keys(devs).length >= DEVICE_LIMIT) {
+        return json(res, 403, { error: 'device_limit', msg: 'All ' + DEVICE_LIMIT + ' device slots are used. Remove one or buy a new key.', key: lic.key, devices_used: Object.keys(devs).length, device_limit: DEVICE_LIMIT })
+      }
+      const used = store.touchDevice(lic.key, machineId, deviceName)
+      if (!lic.machine_id) store.bindLicense(lic.key, machineId)
+      const payload = makeLicensePayload(lic.key, machineId, acc.email)
+      const sig = sign.signPayload(payload, keys.privateKey)
+      return json(res, 200, { ok: true, license: { key: lic.key, payload, sig }, status: 'activated', devices_used: used, device_limit: DEVICE_LIMIT })
+    }
     const key = String(body.key || '').trim().toUpperCase()
     const machineId = String(body.machine_id || '').trim().toUpperCase()
     if (!key || !machineId) return json(res, 400, { error: 'bad_request' })
@@ -505,7 +613,7 @@ const server = http.createServer((req, res) => {
   }
 
   const u = new URL(req.url, HOST + '/')
-  const pathname = u.pathname
+  let pathname = u.pathname
 
   if (req.method === 'POST') return handlePost(req, res, pathname)
 
@@ -513,6 +621,9 @@ const server = http.createServer((req, res) => {
   // suppresses the response body automatically), so download managers and
   // `curl -I` probes get a real 200 instead of 405.
   if (req.method === 'GET' || req.method === 'HEAD') {
+    if (pathname === '/register' || pathname === '/register/' || pathname === '/login' || pathname === '/login/') {
+      pathname = '/account.html'
+    }
     if (pathname === '/api/health') {
       return json(res, 200, { ok: true, dev: razorpay.isDev(), host: HOST, price: PRICE_INR, period_days: PERIOD_DAYS, grace_days: GRACE_DAYS, version: '101.3.1', codename: 'Starship Wonders' })
     }
