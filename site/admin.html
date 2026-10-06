@@ -9,68 +9,143 @@
 @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap');
 :root{
   --bg:#ffffff; --card:#ffffff; --ink:#0a0a0a; --text:#333333; --muted:#6e6e6e; --muted2:#9a9a9a;
-  --line:#e9e9e9; --deep:#0a0a0a; --cream:#ffffff; --navbg:rgba(255,255,255,.85);
-  --pill:#0a0a0a; --pill-fg:#ffffff; --blue:#0288d1; --accent:#0288d1; --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
-  color-scheme:light;
+  --line:#e9e9e9; --side:#101010; --side-tx:#bdbdbd; --accent:#0288d1; --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+  --green:#0b5c1b; --red:#c62828; color-scheme:light;
 }
 html[data-theme="dark"]{
-  --bg:#101010; --card:#161616; --ink:#f4f4f4; --text:#c9c9c9; --muted:#9c9c9c; --muted2:#6f6f6f;
-  --line:#262626; --deep:#f4f4f4; --cream:#101010; --navbg:rgba(16,16,16,.85);
-  --pill:#f4f4f4; --pill-fg:#0a0a0a; --blue:#4fc3f7; --accent:#4fc3f7;
+  --bg:#0e0e0e; --card:#161616; --ink:#f4f4f4; --text:#c9c9c9; --muted:#9c9c9c; --muted2:#6f6f6f;
+  --line:#262626; --side:#000000; --side-tx:#8a8a8a; --accent:#4fc3f7; --green:#61d98a; --red:#ff8a80;
   color-scheme:dark;
 }
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;-webkit-font-smoothing:antialiased;transition:background .25s,color .25s}
-h1,h2{font-family:'Instrument Serif',Georgia,serif;font-weight:400}
+body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.65;-webkit-font-smoothing:antialiased}
 .mono{font-family:var(--mono)}
-.container{max-width:880px;margin:0 auto;padding:0 28px}
-nav{position:sticky;top:0;z-index:50;background:var(--navbg);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
-nav .container{display:flex;align-items:center;gap:12px;padding-top:13px;padding-bottom:13px}
-nav img{width:32px;height:32px;border-radius:8px}
-nav .beta{font-family:var(--mono);font-size:10px;color:var(--muted);border:1px solid var(--line);padding:2px 8px;border-radius:20px;letter-spacing:1px}
-nav .name{font-size:14px;font-weight:700;letter-spacing:3px;color:var(--ink);text-decoration:none}
-nav .sp{flex:1}
-nav .navlink{font-size:13.5px;color:var(--muted);text-decoration:none}
-nav .navlink:hover{color:var(--ink)}
-nav a.btn{font-size:13px;font-weight:600;color:#fff;background:var(--ink);padding:10px 22px;border-radius:20px;text-decoration:none}
-html[data-theme="dark"] nav a.btn{background:#f4f4f4;color:#101010}
+.shell{display:flex;min-height:100vh}
+.side{width:230px;flex-shrink:0;background:var(--side);color:var(--side-tx);padding:26px 16px;display:flex;flex-direction:column;gap:4px;position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:10px;padding:0 10px 22px}
+.brand img{width:30px;height:30px;border-radius:8px}
+.brand .name{font-size:13px;font-weight:700;letter-spacing:3px;color:#fff}
+.brand .rc{font-family:var(--mono);font-size:10px;color:#8a8a8a;border:1px solid #333;border-radius:12px;padding:1px 8px}
+.snav{display:flex;flex-direction:column;gap:2px}
+.snav button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:none;color:var(--side-tx);font-size:14px;font-weight:500;padding:11px 12px;border-radius:10px;cursor:pointer;font-family:inherit}
+.snav button:hover{background:#1c1c1c;color:#fff}
+.snav button.on{background:#1e1e1e;color:#fff}
+.snav .dot{width:7px;height:7px;border-radius:50%;background:#3a3a3a;flex-shrink:0}
+.snav button.on .dot{background:var(--accent)}
+.side .foot{margin-top:auto;padding:10px;font-size:11.5px;color:#5c5c5c}
+.side .foot a{color:#8a8a8a;text-decoration:none}
+.main{flex:1;min-width:0;padding:30px 36px 70px;max-width:1060px}
+.topbar{display:flex;align-items:center;gap:12px;margin-bottom:26px}
+.topbar h1{font-family:'Instrument Serif',Georgia,serif;font-weight:400;font-size:34px;color:var(--ink)}
+.topbar .sp{flex:1}
+.topbar a{font-size:13px;color:var(--muted);text-decoration:none}
+.topbar a:hover{color:var(--ink)}
 .theme-btn{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer}
 html[data-theme="light"] .theme-btn .ic-sun{display:none}
 html[data-theme="dark"] .theme-btn .ic-moon{display:none}
-main{padding:64px 0 60px}
-.back{font-family:var(--mono);font-size:12px;color:var(--muted);text-decoration:none}
-.back:hover{color:var(--ink)}
-.kick{display:none}
-h1{font-size:44px;line-height:1.05;color:var(--ink);margin:18px 0 10px}
-.sub{font-size:15px;color:var(--muted);max-width:640px}
-.sub code{font-family:var(--mono);font-size:12px;background:var(--line);padding:2px 7px;border-radius:6px}
-.sub a{color:var(--accent);text-decoration:none}
-.lic-card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:30px 28px;margin-top:20px}
-.lic-card h2{font-size:24px;margin-bottom:6px}
-.lic-card a{color:var(--accent);text-decoration:none}
-.cmd{font-family:var(--mono);font-size:12px;background:var(--ink);color:var(--bg);border-radius:10px;padding:12px 14px;margin-top:10px;word-break:break-all;line-height:1.5;border:none;width:100%}
-html[data-theme="dark"] .cmd{background:#1c1c1c;color:#f4f4f4}
-.btn{display:inline-block;padding:12px 24px;border-radius:24px;font-size:14px;font-weight:600;border:none;cursor:pointer;background:var(--ink);color:var(--bg);font-family:system-ui,sans-serif}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:22px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px}
+.card .n{font-size:30px;font-weight:700;color:var(--ink);letter-spacing:-.02em}
+.card .l{font-size:12px;color:var(--muted2);margin-top:2px}
+.card .l b{color:var(--accent);font-weight:600}
+.pane{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:28px;margin-bottom:16px}
+.pane h2{font-family:'Instrument Serif',Georgia,serif;font-weight:400;font-size:26px;color:var(--ink);margin-bottom:4px}
+.pane .sub{font-size:13.5px;color:var(--muted);margin-bottom:16px}
+.pane .sub a,.pane a{color:var(--accent);text-decoration:none}
+label{display:block;font-size:12.5px;font-weight:600;color:var(--ink);margin:12px 0 6px}
+input[type=text],input[type=password],input[type=email],textarea{width:100%;padding:11px 14px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13.5px;font-family:inherit}
+textarea{font-family:var(--mono);font-size:11.5px;min-height:90px}
+.btn{display:inline-block;padding:11px 24px;border-radius:22px;font-size:14px;font-weight:600;border:none;cursor:pointer;background:var(--ink);color:var(--bg);font-family:inherit}
 html[data-theme="dark"] .btn{background:#f4f4f4;color:#101010}
+.btn:disabled{opacity:.5;cursor:not-allowed}
 .btn-primary{background:#0288d1 !important;color:#fff !important}
 .btn-primary:hover{background:#0277bd !important}
 .btn-ghost{background:transparent !important;border:1px solid var(--line);color:var(--ink) !important}
-.atab.on{background:var(--ink);color:var(--bg)}
-.lic{font-family:var(--mono);font-size:12px;line-height:1.75;color:var(--text);white-space:pre-wrap;word-break:break-word}
-footer{border-top:1px solid var(--line);margin-top:64px;padding:36px 0 48px}
-footer p{font-size:12.5px;color:var(--muted2)}
-footer a{color:var(--muted);text-decoration:none}
-footer a:hover{color:var(--ink)}
-@media(max-width:600px){h1{font-size:32px}.lic-card{padding:22px 18px}}
+.msg{font-size:13px;color:var(--muted);margin-top:12px}
 .adm-table{border-collapse:collapse;width:100%;font-size:13px}
 .adm-table th,.adm-table td{padding:11px 14px 11px 0;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
 .adm-table th{font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--muted2);font-weight:500}
-.adm-table td.mono{font-family:var(--mono);font-size:11.5px;max-width:230px;overflow:hidden;text-overflow:ellipsis}
-.adm-actions button{margin:0 8px 6px 0;cursor:pointer;font-size:12px;padding:6px 14px;border-radius:16px;border:1px solid var(--line);background:transparent;color:var(--ink)}
+.adm-table td.mono{font-family:var(--mono);font-size:11.5px;max-width:220px;overflow:hidden;text-overflow:ellipsis}
+.adm-actions button{margin:0 8px 6px 0;cursor:pointer;font-size:12px;padding:6px 14px;border-radius:16px;border:1px solid var(--line);background:transparent;color:var(--ink);font-family:inherit}
 .adm-actions button:hover{border-color:var(--ink)}
-input[type=file].adm-file{font-size:13px;color:var(--muted)}
+.cmd{font-family:var(--mono);font-size:12px;background:var(--ink);color:var(--bg);border-radius:10px;padding:11px 14px;border:none;width:100%}
+html[data-theme="dark"] .cmd{background:#1c1c1c;color:#f4f4f4}
+input[type=file].adm-file{font-size:13px;color:var(--muted);border:none;padding:0}
+.st-ok{color:var(--green);font-weight:700}
+.st-bad{color:var(--red);font-weight:700}
+.lock{max-width:460px;margin:60px auto}
 ::selection{background:var(--ink);color:var(--bg)}
+@media(max-width:760px){.side{width:64px;padding:20px 10px}.brand .name,.brand .rc,.snav button span,.side .foot{display:none}.snav button{justify-content:center}.main{padding:22px 16px 60px}}
 </style>
+<body>
+<div class="shell">
+<aside class="side">
+  <div class="brand"><img src="logo.png" alt="Kastrava"><span class="name">KASTRAVA</span><span class="rc">RC</span></div>
+  <nav class="snav" id="adm-tabs" style="display:none">
+    <button class="atab on" data-t="overview"><span class="dot"></span><span>Overview</span></button>
+    <button class="atab" data-t="verify"><span class="dot"></span><span>Verify receipt</span></button>
+    <button class="atab" data-t="issue"><span class="dot"></span><span>Issue key</span></button>
+    <button class="atab" data-t="list"><span class="dot"></span><span>Licenses</span></button>
+  </nav>
+  <div class="foot"><a href="https://kastrava.pp.ua/">← site</a> · <a href="/account.html">account</a></div>
+</aside>
+<main class="main">
+  <div class="topbar">
+    <h1 id="pane-title">Overview</h1>
+    <span class="sp" style="flex:1"></span>
+    <button id="theme-btn" class="theme-btn" title="Toggle dark mode" aria-label="Toggle dark mode">
+      <svg class="ic-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="ic-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+  </div>
+  <div id="adm-lock">
+    <div class="pane lock">
+      <h2>Admin token</h2>
+      <p class="sub">This dashboard needs the admin token. It lives only in this tab.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input id="adm-token" type="password" class="cmd" style="flex:1;min-width:200px" placeholder="Admin token" autocomplete="off">
+        <button id="adm-save" class="btn btn-primary">Unlock</button>
+      </div>
+      <p id="adm-status" class="mono" style="font-size:12px;color:var(--muted2);margin-top:10px">Locked.</p>
+    </div>
+  </div>
+  <div id="adm-tabs2" style="display:none">
+    <div class="apane" id="pane-overview">
+      <div class="cards" id="ov-cards"></div>
+      <div class="pane">
+        <h2>Latest licenses</h2>
+        <p class="sub">Newest first. Full table under Licenses.</p>
+        <div id="ov-recent" style="overflow-x:auto"></div>
+      </div>
+    </div>
+    <div class="apane pane" id="pane-verify" style="display:none">
+      <h2>Verify a signed receipt</h2>
+      <p class="sub">Paste the receipt JSON from a customer PDF (<span class="mono">{"receipt":{...},"receipt_sig":"..."}</span>). Bad signatures fail.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+        <input type="file" id="vrf-pdf" class="adm-file" accept="application/pdf,.pdf">
+        <button id="vrf-pdfgo" class="btn btn-primary">Analyze PDF</button>
+      </div>
+      <div class="mono" style="font-size:11px;color:var(--muted2);margin-bottom:10px">or paste receipt JSON:</div>
+      <textarea id="vrf-json" placeholder='{"receipt":{...},"receipt_sig":"..."}'></textarea>
+      <button id="vrf-go" class="btn btn-primary" style="margin-top:10px">Verify JSON</button>
+      <div id="vrf-out" style="margin-top:12px;font-size:13px"></div>
+    </div>
+    <div class="apane pane" id="pane-issue" style="display:none">
+      <h2>Issue a key directly</h2>
+      <p class="sub">Mint a 34-day key, no purchase. Leave blank unless binding now.</p>
+      <input id="iss-machine" placeholder="Machine code (optional, e.g. KAS2-...)">
+      <input id="iss-note" style="margin-top:8px" placeholder="Note (optional, e.g. tester name)">
+      <button id="iss-go" class="btn btn-primary" style="margin-top:10px">Mint key</button>
+      <div id="iss-out" style="margin-top:12px;font-size:13px"></div>
+    </div>
+    <div class="apane pane" id="pane-list" style="display:none">
+      <h2>Licenses <button id="lst-go" class="btn btn-ghost" style="padding:6px 14px;font-size:12px;margin-left:8px">Refresh</button></h2>
+      <div id="lst-out" style="margin-top:8px;font-size:13px;overflow-x:auto"></div>
+    </div>
+  </div>
+</main>
+</div>
+
 <script>
 (function(){
   var root=document.documentElement;
@@ -88,70 +163,7 @@ input[type=file].adm-file{font-size:13px;color:var(--muted)}
   });
 })();
 </script>
-</head>
-<body>
-<nav>
-  <div class="container">
-    <a href="/"><img src="logo.png" alt="Kastrava"></a>
-    <a class="name" href="/">KASTRAVA</a>
-    <span class="beta">RC</span>
-    <button id="theme-btn" class="theme-btn" title="Toggle dark mode" aria-label="Toggle dark mode">
-      <svg class="ic-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-      <svg class="ic-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-    </button>
-    <span class="sp"></span>
-    <a class="navlink" href="/account.html" style="margin-right:16px">Account</a>
-    <a class="btn" href="/#download">Download</a>
-  </div>
-</nav>
-
-<main>
-  <div class="container">
-    <a class="back" href="/">Back to kastrava.pp.ua</a>
-    <div class="kick">PRO ADMIN</div>
-    <h1>Kastrava Pro settings</h1>
-    <p class="sub">Verify receipts, issue keys, revoke keys, see licenses. Needs the admin token.</p>
-    <div class="lic-card">
-      <h2 style="font-size:16px;margin-bottom:8px">Admin token</h2>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <input id="adm-token" type="password" class="cmd" style="flex:1;min-width:220px;margin-top:0" placeholder="Admin token" autocomplete="off">
-        <button id="adm-save" class="btn btn-primary" style="padding:12px 22px">Unlock</button>
-      </div>
-      <p id="adm-status" class="mono" style="font-size:12px;color:var(--muted2);margin-top:10px">Locked.</p>
-    </div>
-    <div id="adm-tabs" style="display:none">
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin:22px 0 4px">
-        <button class="btn btn-ghost atab" data-t="verify" style="padding:10px 18px">Verify receipt</button>
-        <button class="btn btn-ghost atab" data-t="issue" style="padding:10px 18px">Issue key</button>
-        <button class="btn btn-ghost atab" data-t="list" style="padding:10px 18px">Licenses</button>
-      </div>
-      <div class="lic-card apane" id="pane-verify" style="margin-top:14px">
-        <h2 style="font-size:16px;margin-bottom:8px">Verify a signed receipt</h2>
-        <p class="sub">Paste the receipt JSON from a customer PDF (<span class="mono">{"receipt":{...},"receipt_sig":"..."}</span>). Bad signatures fail.</p>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
-          <input type="file" id="vrf-pdf" class="adm-file" accept="application/pdf,.pdf">
-          <button id="vrf-pdfgo" class="btn btn-primary" style="padding:12px 22px">Analyze PDF</button>
-        </div>
-        <div class="mono" style="font-size:11px;color:var(--muted2);margin-bottom:10px">or paste receipt JSON:</div>
-        <textarea id="vrf-json" class="cmd" style="min-height:90px;font-size:11px" placeholder='{"receipt":{...},"receipt_sig":"..."}'></textarea>
-        <button id="vrf-go" class="btn btn-primary" style="margin-top:10px;padding:12px 22px">Verify JSON</button>
-        <div id="vrf-out" style="margin-top:12px;font-size:13px"></div>
-      </div>
-      <div class="lic-card apane" id="pane-issue" style="margin-top:14px;display:none">
-        <h2 style="font-size:16px;margin-bottom:8px">Issue a key directly</h2>
-        <p class="sub">Mint a 34-day key, no purchase. Leave blank unless binding now.</p>
-        <input id="iss-machine" class="cmd" style="margin-top:0" placeholder="Machine code (optional, e.g. KAS2-...)">
-        <input id="iss-note" class="cmd" placeholder="Note (optional, e.g. tester name)">
-        <button id="iss-go" class="btn btn-primary" style="margin-top:10px;padding:12px 22px">Mint key</button>
-        <div id="iss-out" style="margin-top:12px;font-size:13px"></div>
-      </div>
-      <div class="lic-card apane" id="pane-list" style="margin-top:14px;display:none">
-        <h2 style="font-size:16px;margin-bottom:8px">Licenses <button id="lst-go" class="btn btn-ghost" style="padding:6px 14px;font-size:12px;margin-left:8px">Refresh</button></h2>
-        <div id="lst-out" style="margin-top:8px;font-size:13px;overflow-x:auto"></div>
-      </div>
-    </div>
-  </div>
-</main><script>
+<script>
 (function(){
   var KAS_API=((window.KAS_API)||(location.search.match(/[?&]api=([^&]+)/)||[])[1]||'https://nexufog.pp.ua').replace(/\/$/,'');
   function token(){try{return sessionStorage.getItem('kas_admin_token')||'';}catch(e){return '';}}
@@ -163,7 +175,10 @@ input[type=file].adm-file{font-size:13px;color:var(--muted)}
     var has=!!token();
     if(tokEl&&!tokEl.value&&has){/* keep field empty, token in memory */}
     if(stEl)stEl.textContent=has?'Unlocked for this tab session.':'Locked.';
-    if(tabsEl)tabsEl.style.display=has?'block':'none';
+    if(tabsEl)tabsEl.style.display=has?'':'none';
+    var lock=document.getElementById('adm-lock'),tabs2=document.getElementById('adm-tabs2');
+    if(lock)lock.style.display=has?'none':'';
+    if(tabs2)tabs2.style.display=has?'':'none';
   }
   var saveBtn=document.getElementById('adm-save');
   if(saveBtn)saveBtn.addEventListener('click',function(){
@@ -173,12 +188,36 @@ input[type=file].adm-file{font-size:13px;color:var(--muted)}
     if(tokEl)tokEl.value='';
     refreshLock();loadList();
   });
+  var ovCache=null;
+  window.__renderOverview=function(j){
+    ovCache=j;
+    var cards=document.getElementById('ov-cards'),recent=document.getElementById('ov-recent');
+    if(!cards||!recent)return;
+    var lics=(j&&j.licenses)||{},orders=(j&&j.orders)||{},accs=(j&&j.accounts)||{};
+    var keys=Object.keys(lics),paid=0,devs=0,act=0;
+    keys.forEach(function(k){var l=lics[k];if(l.status==='activated')act++;devs+=Object.keys(l.devices||{}).length;});
+    Object.keys(orders).forEach(function(o){if(orders[o].status==='paid')paid++;});
+    function card(n,l,sub){return '<div class="card"><div class="n">'+n+'</div><div class="l">'+l+(sub||'')+'</div></div>';}
+    cards.innerHTML=card(keys.length,'Licenses',' · <b>'+act+'</b> active')
+      +card(devs,'Devices in use')
+      +card(paid,'Paid orders',' · <b>≈₹'+(paid*248)+'</b>')
+      +card(Object.keys(accs).length,'Accounts');
+    var rows=keys.slice(-8).reverse().map(function(k){var l=lics[k];
+      var col=l.status==='activated'?'st-ok':(l.status==='revoked'?'st-bad':'');
+      return '<tr><td class="mono">'+esc(k)+'</td><td class="'+col+'"><b>'+esc(l.status||'?')+'</b></td><td>'+esc((l.expires_at||'?').slice(0,10))+'</td></tr>';}).join('');
+    recent.innerHTML='<table class="adm-table"><tr><th>Key</th><th>Status</th><th>Expires</th></tr>'+rows+'</table>';
+  };
   document.querySelectorAll('.atab').forEach(function(b){
     b.addEventListener('click',function(){
+      document.querySelectorAll('.atab').forEach(function(x){x.classList.remove('on');});
+      b.classList.add('on');
       document.querySelectorAll('.apane').forEach(function(p){p.style.display='none';});
       var p=document.getElementById('pane-'+b.dataset.t);
       if(p)p.style.display='block';
+      var t=document.getElementById('pane-title');
+      if(t)t.textContent=b.textContent.trim();
       if(b.dataset.t==='list')loadList();
+      if(b.dataset.t==='overview'&&ovCache)window.__renderOverview(ovCache);
     });
   });
   function api(path,body,cb){
@@ -328,6 +367,7 @@ input[type=file].adm-file{font-size:13px;color:var(--muted)}
     .then(function(r){
       if(r.status===401){out.textContent='Wrong token.';return;}
       var j=r.json||{},lics=j.licenses||{};
+      try{if(window.__renderOverview)window.__renderOverview(j);}catch(e){}
       var keys=Object.keys(lics);
       if(!keys.length){out.textContent='No licenses yet.';return;}
       var h='<table class="adm-table"><tr><th>Key</th><th>Status</th><th>Machine</th><th>Expires</th><th>Order</th><th></th></tr>';
