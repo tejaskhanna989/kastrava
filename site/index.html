@@ -43,7 +43,8 @@ html[data-theme="dark"]{
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;-webkit-font-smoothing:antialiased;transition:background .25s,color .25s}
-h1,h2,h3,.serif{font-family:'Instrument Serif',Georgia,serif;font-weight:400}
+header h1{font-family:'Instrument Serif',Georgia,serif;font-weight:400}
+h2,h3{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;font-weight:700;letter-spacing:-.01em}
 .mono{font-family:var(--mono)}
 .wrap{max-width:1120px;margin:0 auto;padding:0 32px}
 .narrow{max-width:760px}
@@ -93,7 +94,7 @@ section{padding:100px 0 0}
 .beta-free{font-size:13px;color:var(--muted);margin:14px 0 4px}
 .beta-free a{color:var(--accent);text-decoration:none}
 .prem-price{margin:10px 0 4px}
-.prem-price .rup{font-family:'Instrument Serif',serif;font-size:64px;color:var(--ink);line-height:1}
+.prem-price .rup{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;font-weight:700;font-size:56px;color:var(--ink);line-height:1}
 .prem-price .usd{font-family:var(--mono);font-size:12px;color:var(--muted2);display:block;margin-top:6px}
 .prem-feats{list-style:none;margin:26px 0;padding:0;border-top:1px solid var(--line)}
 .prem-feats li{padding:12px 0;font-size:14.5px;border-bottom:1px solid var(--line);color:var(--text)}
@@ -110,7 +111,7 @@ input.cmd::placeholder{opacity:.55}
 .prem-steps{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-top:48px;border-top:1px solid var(--line)}
 .prem-step{padding:24px 0;border-bottom:1px solid var(--line)}
 .prem-step .t{font-family:var(--mono);font-size:11px;color:var(--muted2);letter-spacing:1px;margin-bottom:8px}
-.prem-step h4{font-family:'Instrument Serif',serif;font-size:23px;font-weight:400;color:var(--ink);margin-bottom:4px}
+.prem-step h4{font-size:18px;font-weight:700;color:var(--ink);margin-bottom:4px}
 .prem-step p{font-size:14px;color:var(--muted)}
 .prem-step code{font-family:var(--mono);font-size:12px;background:var(--line);padding:2px 7px;border-radius:6px}
 .check{border-top:1px solid var(--line)}
@@ -129,7 +130,7 @@ html[data-theme="dark"] .band{border-color:#f4f4f4;color:#f4f4f4}
 .band .go{font-size:13px;font-weight:600}
 .faq details{border-top:1px solid var(--line);padding:20px 0;cursor:pointer}
 .faq details:last-child{border-bottom:1px solid var(--line)}
-.faq summary{font-size:17px;font-weight:600;color:var(--ink);list-style:none;cursor:pointer;font-family:'Instrument Serif',serif;font-size:21px;font-weight:400}
+.faq summary{font-size:16.5px;font-weight:600;color:var(--ink);list-style:none;cursor:pointer}
 .faq summary::-webkit-details-marker{display:none}
 .faq summary::after{content:'+';float:right;color:var(--muted2)}
 .faq details[open] summary::after{content:'–'}
@@ -173,7 +174,7 @@ footer a:hover{color:var(--ink)}
   <div class="wrap">
     <div class="kicker">v101.3.1-rc · Starship Wonders · originally Antersurf</div>
     <h1>Leave <em>nothing</em> behind.</h1>
-    <p class="lede">Kastrava keeps <b>zero</b> persistent web storage. No cache, no cookies, no site databases on your disk — everything runs in RAM and is <b>wiped on exit</b>. Underneath it is Chromium — the same engine as Chrome — so sites just work.</p>
+    <p class="lede">Kastrava keeps <b>zero</b> persistent web storage. No cache, no cookies, no site databases on your disk — everything runs in memory and is <b>wiped when you quit</b>. It is Chromium underneath, so sites work.</p>
     <div class="cta-row">
       <a class="btn btn-primary" href="#download">Download Free</a>
       <a class="btn btn-ghost" href="#premium">Go Premium — $2.59/34d</a>
@@ -191,23 +192,21 @@ footer a:hover{color:var(--ink)}
 
 <section id="features">
   <div class="wrap">
-    <div class="sec-no">01 — Under the hood</div>
-    <h2 class="sec-title">What it actually does.</h2>
+    <h2 class="sec-title">What it does.</h2>
     <p class="sec-sub">All of this is in the source code. You can check.</p>
-    <div class="feat"><div class="n">01</div><div><h3>Session isolation</h3><p>Cache, cookies, DOM storage and IndexedDB live in a RAM-only per-session sandbox and are wiped when you quit; crash leftovers are purged at the next launch. Your settings, bookmarks and history stay on disk until you clear them.</p></div></div>
-    <div class="feat"><div class="n">02</div><div><h3>Tracking radar</h3><p>Every third-party request and cookie is counted per tab, with a live score. Strict blocking, DNT headers, no referrers.</p></div></div>
-    <div class="feat"><div class="n">03</div><div><h3>KastravaSearch by default</h3><p>Kastrava's own search at kastravasearch.pp.ua. Switchable to DuckDuckGo, Brave, Google or Ecosia.</p></div></div>
-    <div class="feat"><div class="n">04</div><div><h3>Downloads that land</h3><p>Downloads save straight to your Downloads folder, with pause, resume and progress. Clicking download counts as consent, so quitting never deletes your files. Filenames are sanitized, nothing auto-executes, and opening a finished file reveals it in its folder instead of launching it.</p></div></div>
-    <div class="feat"><div class="n">05</div><div><h3>Keyboard control</h3><p>Ctrl+T/W/Tab, Ctrl+Shift+T, F12 DevTools — OS-level shortcuts that work even with a page focused.</p></div></div>
-    <div class="feat"><div class="n">06</div><div><h3>Guided first-run setup</h3><p>Nine-step welcome: engine, theme, tracking, startup. RC-labeled, honestly unfinished where it is.</p></div></div>
+    <div class="feat"><div class="n">01</div><div><h3>Private sessions</h3><p>Websites store nothing on your disk. Cache, cookies and site data live in memory and get wiped when you quit.</p></div></div>
+    <div class="feat"><div class="n">02</div><div><h3>Tracker count</h3><p>Counts third-party requests and cookies per tab, with a score. Blocks strictly. Sends DNT. No referrers.</p></div></div>
+    <div class="feat"><div class="n">03</div><div><h3>Own search</h3><p>Searches with kastravasearch.pp.ua. You can switch to DuckDuckGo, Brave, Google or Ecosia.</p></div></div>
+    <div class="feat"><div class="n">04</div><div><h3>Downloads</h3><p>Files save to your Downloads folder, with pause, resume and progress. Quitting never deletes them.</p></div></div>
+    <div class="feat"><div class="n">05</div><div><h3>Keyboard</h3><p>Ctrl+T/W/Tab, Ctrl+Shift+T, F12 devtools. They work even when a page has focus.</p></div></div>
+    <div class="feat"><div class="n">06</div><div><h3>Setup</h3><p>Nine quick screens: search, theme, tracking, startup.</p></div></div>
   </div>
 </section>
 
 <section id="premium">
   <div class="wrap">
-    <div class="sec-no">02 — Premium</div>
-    <h2 class="sec-title">Premium unlocks the rest.</h2>
-    <p class="sec-sub">The core browser stays free forever. Premium is <b>$2.59 once for 34 days</b> — your key lives on your account and activates up to 10 devices by itself. No auto-renew, no mandates: the app reminds you when it's time to renew.</p>
+    <h2 class="sec-title">Premium.</h2>
+    <p class="sec-sub">Free forever. Premium is <b>$2.59 for 34 days</b>. Your key stays on your account and covers 10 devices. No auto-renew. The app reminds you before it ends.</p>
     <div class="prem-card">
       <div class="tag">KASTRAVA PREMIUM · 34-DAY</div>
       <h3>Unlock everything</h3>
@@ -215,20 +214,19 @@ footer a:hover{color:var(--ink)}
       <div class="beta-free">Want it free? Contact the maintainer — <a href="mailto:khannatejas989@gmail.com">khannatejas989@gmail.com</a></div>
       <div class="prem-price"><span class="rup">$2.59/34D</span><span class="usd">Free for RC · one payment · no auto-renew</span></div>
       <ul class="prem-feats">
-        <li><b>Tracking Radar</b> — live per-tab counter of every request &amp; cookie with a privacy score</li>
-        <li><b>Cursor Effects</b> — Mouse Style, Fluid Splash, Blob Trail, Glass Lens, Particle Trail, Click Spark, Pixel Trail, Ribbons</li>
-        <li><b>Custom cursor arrow</b> — animated pointer that trails your mouse</li>
-        <li><b>Workspaces</b> — tab groups you can switch between</li>
-        <li><b>Split View</b> — two tabs side by side in one window</li>
-        <li><b>All themes</b> — 10 dark + 10 light, every accent</li>
-        <li><b>Extra search engines</b> — Brave, Google and Ecosia (free ships KastravaSearch + DuckDuckGo)</li>
-        <li><b>Picture-in-Picture and screenshots</b></li>
-        <li><b>Vertical tabs</b> — side tab strip layout</li>
-        <li><b>Localhost Dashboard</b> — one-click launcher for on-device web apps (localhost:3000–9000)</li>
-        <li><b>Bookmark import/export</b> — as HTML files</li>
-        <li><b>Custom shortcuts</b> — remap every keyboard shortcut</li>
+        <li><b>Tracking Radar</b> — counts requests and cookies per tab</li>
+        <li><b>Cursor Effects</b> — 8 effects and a custom arrow</li>
+        <li><b>Custom cursor</b> — an animated pointer</li>
+        <li><b>Workspaces</b> — tab groups</li>
+        <li><b>Split View</b> — two tabs side by side</li>
+        <li><b>All themes</b> — 10 dark, 10 light</li>
+        <li><b>More search engines</b> — Brave, Google, Ecosia</li>
+        <li><b>Video pop-out and screenshots</b></li>
+        <li><b>Vertical tabs</b> — tabs on the side</li>
+        <li><b>Localhost Dashboard</b> — opens local web apps</li>
+        <li><b>Bookmarks</b> — import and export as HTML</li>
+        <li><b>Shortcuts</b> — change any shortcut</li>
       </ul>
-      <input id="prem-machine" class="cmd" placeholder="Machine code (auto-filled — and locked — when you click from the app)">
       <button class="prem-buy" id="prem-buy">Pay $2.59 with Razorpay — 34 days</button>
       <p style="margin-top:10px;font-size:13px;color:var(--muted)">Already Premium and want out? <a href="#" id="prem-stop" style="color:var(--accent)">Stop Premium</a> — ends immediately, no refund.</p>
       <p style="font-size:12px;color:var(--muted2);margin-top:8px">Charged in INR (₹248) — your bank converts the $2.59 at checkout.</p>
@@ -244,32 +242,30 @@ footer a:hover{color:var(--ink)}
       <div class="prem-note">Secure checkout via Razorpay. UPI / cards / netbanking. <b>One-time $2.59 — no recurring mandate needed</b>. Instantly verified, key issued on this page.</div>
     </div>
     <div class="prem-steps">
-      <div class="prem-step"><div class="t">STEP 1 — INSTALL</div><h4>Grab the free build</h4><p>It's the whole app. Premium is inside — locked until you activate.</p></div>
-      <div class="prem-step"><div class="t">STEP 2 — PAY</div><h4>Pay here ($2.59 one-time · 34 days)</h4><p>Any UPI, card or netbanking via Razorpay. Your key appears on this page instantly. Renewing? Enter your machine code first and the same key just gets extended.</p></div>
-      <div class="prem-step"><div class="t">STEP 3 — ACTIVATE</div><h4>Paste key in the app</h4><p>Open <code>Settings → Kastrava Premium</code>, paste the <code>KAS-…</code> key, hit Activate. It binds to <b>this</b> PC and unlocks Premium for 34 days. No auto-renew — the app pops a reminder when renewal's due.</p></div>
-      <div class="prem-step"><div class="t">ONE ACCOUNT, TEN DEVICES</div><h4>Log in and you're Premium</h4><p>Your key lives on your account and activates up to 10 devices by itself — no pasting keys around.</p></div>
+      <div class="prem-step"><div class="t">STEP 1 — INSTALL</div><h4>Download the free app</h4><p>Premium is inside, locked until you pay.</p></div>
+      <div class="prem-step"><div class="t">STEP 2 — PAY</div><h4>Pay $2.59 for 34 days</h4><p>UPI, cards, netbanking. Your key shows here at once. Paying again extends it.</p></div>
+      <div class="prem-step"><div class="t">STEP 3 — LOG IN</div><h4>Log in inside the app</h4><p>Premium turns on by itself, on up to 10 devices. No keys to paste.</p></div>
+      <div class="prem-step"><div class="t">ONE ACCOUNT</div><h4>Same key everywhere</h4><p>It switches on by itself. Device 11 needs a freed slot or another key.</p></div>
     </div>
   </div>
 </section>
 
 <section>
   <div class="wrap">
-    <div class="sec-no">03 — Defaults</div>
     <h2 class="sec-title">Private by default.</h2>
-    <p class="sec-sub">Nothing to configure. Nothing phones home.</p>
+    <p class="sec-sub">On from the first launch.</p>
     <div class="check">
-      <div class="row"><span class="ok">✓</span><span>Tracking protection <b>Strict</b>, Do Not Track <b>on</b></span></div>
-      <div class="row"><span class="ok">✓</span><span>Cookies <b>blocked</b>, referrer <b>off</b>, location <b>blocked</b></span></div>
-      <div class="row"><span class="ok">✓</span><span>WebRTC leaks <b>disabled</b>, suggestions <b>removed</b></span></div>
-      <div class="row"><span class="ok">✓</span><span>Webpages <b>cannot touch</b> your local files</span></div>
-      <div class="row"><span class="ok">✓</span><span>History &amp; bookmarks can be <b>switched off</b> entirely</span></div>
+      <div class="row"><span class="ok">✓</span><span>Strict tracking protection. DNT on.</span></div>
+      <div class="row"><span class="ok">✓</span><span>No third-party cookies. No referrer. No location.</span></div>
+      <div class="row"><span class="ok">✓</span><span>No WebRTC leaks. No suggestions.</span></div>
+      <div class="row"><span class="ok">✓</span><span>Pages cannot touch your files.</span></div>
+      <div class="row"><span class="ok">✓</span><span>History and bookmarks can be off.</span></div>
     </div>
   </div>
 </section>
 
 <section id="download">
   <div class="wrap">
-    <div class="sec-no">04 — Get it</div>
     <h2 class="sec-title">Download Kastrava RC</h2>
     <p class="sec-sub">v101.3.1 — free core, forever. Premium unlocks inside the app (Settings → Kastrava Premium).</p>
     <div class="os">
@@ -286,37 +282,35 @@ footer a:hover{color:var(--ink)}
       <a class="dl-link" href="https://apps.microsoft.com/search?query=Kastrava" target="_blank" rel="noopener">Microsoft Store<span class="fn">Microsoft-signed · one-click install</span></a>
       <a class="dl-link" href="https://kastrava.pp.ua/dl/Kastrava-Setup-101.3.1.exe" target="_blank" rel="noopener">Windows installer<span class="fn">Kastrava-Setup-101.3.1.exe</span></a>
       <a class="dl-link" href="https://kastrava.pp.ua/dl/Kastrava-101.3.1.exe" target="_blank" rel="noopener">Portable (no install)<span class="fn">Kastrava-101.3.1.exe</span></a>
-      <p class="os-note">The direct EXEs are unsigned — SmartScreen may warn; choose "More info → Run anyway". The Store build is signed by Microsoft.</p>
+      <p class="os-note">The direct files are unsigned. SmartScreen will warn. Pick More info, Run anyway. The Store build is signed by Microsoft.</p>
     </div>
     <div class="os">
       <h3>Android</h3>
       <div class="plat">arm64 · v101.3.1</div>
       <a class="dl-link" href="https://kastrava.pp.ua/dl/Kastrava-101.3.1.apk" target="_blank" rel="noopener">Direct APK<span class="fn">Kastrava-101.3.1.apk</span></a>
-      <p class="os-note">Sideload build — allow "Install unknown apps" when prompted. Same Premium keys work: activate in-app with this device's machine code.</p>
+      <p class="os-note">Turn on Install unknown apps when asked. Log in inside the app for Premium.</p>
     </div>
   </div>
 </section>
 
 <section id="opensource">
   <div class="wrap">
-    <div class="sec-no">05 — Open source</div>
-    <h2 class="sec-title">Every line is public.</h2>
+    <h2 class="sec-title">Open source.</h2>
     <p class="sec-sub">Kastrava is 100% open source under <b>GPLv3</b> — built on Electron (Chromium + Node), with the whole browser — UI, license flow, themes — as our own GPLv3 code. Audit it, fork it, build your own.</p>
     <a class="band" href="https://github.com/tejaskhanna989/kastrava" target="_blank" rel="noopener">
       <span>github.com/tejaskhanna989/kastrava</span>
       <span class="go">Star the repo →</span>
     </a>
     <div class="check">
-      <div class="row"><span class="ok">LICENSE</span><span><b>GPLv3, unambiguously.</b> Copyleft, no exceptions — forks stay open too. <a href="/license.html" style="color:var(--accent)">Read the full license</a></span></div>
-      <div class="row"><span class="ok">AUDIT</span><span><b>Verify every privacy claim.</b> Zero telemetry, memory-only sessions, one-account keys — all in the source.</span></div>
-      <div class="row"><span class="ok">BUILD</span><span><b>Build it yourself.</b> <span class="mono" style="font-size:12.5px">git clone https://github.com/tejaskhanna989/kastrava.git</span> — nothing to register, no accounts.</span></div>
+      <div class="row"><span class="ok">LICENSE</span><span><b>GPLv3.</b> Copyleft. Forks stay open too. <a href="/license.html" style="color:var(--accent)">Read the full license</a></span></div>
+      <div class="row"><span class="ok">AUDIT</span><span><b>Verify every privacy claim.</b> Zero telemetry, memory-only sessions, account keys. All in the source.</span></div>
+      <div class="row"><span class="ok">BUILD</span><span><b>Build it yourself.</b> <span class="mono" style="font-size:12.5px">git clone https://github.com/tejaskhanna989/kastrava.git</span> — nothing to register.</span></div>
     </div>
   </div>
 </section>
 
 <section>
   <div class="wrap">
-    <div class="sec-no">06 — Questions</div>
     <h2 class="sec-title">Questions</h2>
     <div class="faq">
       <details><summary>What exactly is deleted when I quit?</summary><p>Everything websites stored: HTTP cache, cookies, DOM storage, IndexedDB, service-worker caches. They live in a private per-session sandbox and are wiped on every exit — even crash leftovers are purged at the next launch. Downloads are the exception: clicking download is explicit consent, so files save straight to your Downloads folder like any other browser. Your own settings, bookmarks and history database stay — unless you switch those off too.</p></details>
@@ -440,8 +434,9 @@ footer a:hover{color:var(--ink)}
       e.preventDefault();
       var k=prompt('License key to stop (e.g. KAS-XXXX-...):');
       if(!k||!k.trim())return;
-      var m=machineValue();
-      if(!m||m.charAt(0)==='('){alert('Enter your machine code in the box above first.');return;}
+      var m=prompt('Machine code for this key (app: Settings → Account, or the Premium screen):');
+      if(!m||!m.trim())return;
+      m=m.trim();
       if(!confirm('Stop Premium on this machine now? No refund will be issued.'))return;
       fetch(KAS_API+'/api/cancel',{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({key:k.trim(),machine_id:m})})
@@ -482,7 +477,7 @@ footer a:hover{color:var(--ink)}
           body:JSON.stringify({order_id:res.razorpay_order_id,payment_id:res.razorpay_payment_id,signature:res.razorpay_signature,machine_id:mach})})
         .then(function(r){return r.json();})
         .then(function(v){
-          if(v.ok&&v.key){showKey(v.key,!!v.renewed,{order_id:res.razorpay_order_id,payment_id:res.razorpay_payment_id,amount:o.amount,currency:o.currency,machine_id:mach,server_receipt:v.receipt||null,receipt_sig:v.receipt_sig||null});setBusy(false);}
+          if(v.ok&&v.key){showKey(v.key,!!v.renewed,{order_id:res.razorpay_order_id,payment_id:res.razorpay_payment_id,amount:o.amount,currency:o.currency,machine_id:mach,account_email:v.account_email||null,server_receipt:v.receipt||null,receipt_sig:v.receipt_sig||null});setBusy(false);}
           else fail((v&&v.msg)||'Payment could not be verified.');
         })
         .catch(function(){fail('Could not verify payment - your payment may still have gone through. Email the payment ID to khannatejas989@gmail.com');});
@@ -562,11 +557,11 @@ footer a:hover{color:var(--ink)}
     doc.setFont('courier','normal');doc.setFontSize(11);
     var rows=[
       ['Date',now.toLocaleString()],
-      ['Plan','Premium - 34 days, one machine, no auto-renew'],
+      ['Plan','Premium - 34 days, up to 10 devices, no auto-renew'],
       ['Order ID',d.order_id||'-'],
       ['Payment ID',d.payment_id||'-'],
       ['License key',keyEl?keyEl.textContent:'-'],
-      ['Machine code',(d.machine_id||machineValue())||'-'],
+      ['Account',d.account_email||'-'],
       ['Amount charged',amt],
       ['Paid through',(sr&&sr.paid_thru)?new Date(sr.paid_thru).toLocaleDateString():((sr&&sr.exp)?new Date(sr.exp*1000).toLocaleDateString():'-')],
       ['Grace until',(sr&&sr.exp)?new Date(sr.exp*1000).toLocaleDateString():'-']
@@ -579,7 +574,7 @@ footer a:hover{color:var(--ink)}
     });
     y+=10;
     doc.setFont('helvetica','normal');doc.setFontSize(10);
-    doc.text(receiptText('One license, one machine. The key above is bound to the machine code shown.'),x,y);y+=14;
+    doc.text(receiptText('One account, up to 10 devices. The key above lives on your account.'),x,y);y+=14;
     doc.text(receiptText('Support: khannatejas989@gmail.com - keep this receipt with your key.'),x,y);y+=20;
     if(sr&&d.receipt_sig){
       doc.setFont('helvetica','bold');doc.setFontSize(11);

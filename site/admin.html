@@ -94,7 +94,7 @@ input[type=file].adm-file{font-size:13px;color:var(--muted)}
     <a class="back" href="/">Back to kastrava.pp.ua</a>
     <div class="kick">PRO ADMIN</div>
     <h1>Kastrava Pro settings</h1>
-    <p class="sub">Verify signed receipts, issue keys directly, revoke keys, inspect licenses. Everything here needs the admin token.</p>
+    <p class="sub">Verify receipts, issue keys, revoke keys, see licenses. Needs the admin token.</p>
     <div class="lic-card">
       <h2 style="font-size:16px;margin-bottom:8px">Admin token</h2>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -111,7 +111,7 @@ input[type=file].adm-file{font-size:13px;color:var(--muted)}
       </div>
       <div class="lic-card apane" id="pane-verify" style="margin-top:14px">
         <h2 style="font-size:16px;margin-bottom:8px">Verify a signed receipt</h2>
-        <p class="sub">Paste the receipt JSON from a customer PDF (<span class="mono">{"receipt":{...},"receipt_sig":"..."}</span>). The signature is checked cryptographically; tampered copies fail.</p>
+        <p class="sub">Paste the receipt JSON from a customer PDF (<span class="mono">{"receipt":{...},"receipt_sig":"..."}</span>). Bad signatures fail.</p>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
           <input type="file" id="vrf-pdf" class="adm-file" accept="application/pdf,.pdf">
           <button id="vrf-pdfgo" class="btn btn-primary" style="padding:12px 22px">Analyze PDF</button>
@@ -123,7 +123,7 @@ input[type=file].adm-file{font-size:13px;color:var(--muted)}
       </div>
       <div class="lic-card apane" id="pane-issue" style="margin-top:14px;display:none">
         <h2 style="font-size:16px;margin-bottom:8px">Issue a key directly</h2>
-        <p class="sub">Mint a 34-day key with no purchase. Bind it now with a machine code, or leave blank and let first activation bind it.</p>
+        <p class="sub">Mint a 34-day key, no purchase. Leave blank unless binding now.</p>
         <input id="iss-machine" class="cmd" style="width:100%;border:none;background:#0c0e13;color:#7ee2a8;padding:12px 14px;font-size:12px;margin-top:0" placeholder="Machine code (optional, e.g. KAS2-...)">
         <input id="iss-note" class="cmd" style="width:100%;border:none;background:#0c0e13;color:#7ee2a8;padding:12px 14px;font-size:12px" placeholder="Note (optional, e.g. tester name)">
         <button id="iss-go" class="btn btn-primary" style="margin-top:10px;padding:12px 22px">Mint key</button>
