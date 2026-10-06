@@ -688,12 +688,19 @@ function loadSettings(){
 function loadLicense(){
   if(!api||!api.licStatus)return;
   api.licStatus().then(function(s){if(s){LIC.activated=!!s.activated;LIC.machine=s.machine||"";LIC.key=s.key||null;LIC.reason=s.reason||null;LIC.expiresAt=s.expiresAt||null;LIC.subEnd=s.subEnd||null;LIC.grace=!!s.grace;}
-  // Silent refresh once per launch: an admin extend or renewal only lands
-  // in-app after a re-activate. Failures (offline, revoked) keep the cache.
+  // Silent refresh once per launch: logged-in accounts re-activate by
+  // account (same key, device counted), otherwise the legacy key refresh.
+  // Failures (offline, revoked) keep the cache.
   try{
-    if(!licRefreshed&&s&&s.activated&&s.key&&api.licActivate){
+    if(!licRefreshed&&api&&api.syncStatus){
       licRefreshed=true;
-      api.licActivate(s.key).then(function(r){if(r&&r.ok){try{licRefreshed=true;loadLicense();}catch(e){}}}).catch(function(){});
+      api.syncStatus().then(function(st){
+        if(st&&st.loggedIn&&api.licActivateAccount){
+          api.licActivateAccount().then(function(r){if(r&&r.ok){try{loadLicense();}catch(e){}}}).catch(function(){});
+        }else if(s&&s.activated&&s.key&&api.licActivate){
+          api.licActivate(s.key).then(function(r){if(r&&r.ok){try{loadLicense();}catch(e){}}}).catch(function(){});
+        }
+      }).catch(function(){});
     }
   }catch(e){}
   try{applyEditionUI();}catch(e){}try{
@@ -1353,13 +1360,13 @@ function renderSetup(){
     c.innerHTML=dots+grid(ART_SUMMARY,'<div class="setup-name" style="font-size:24px;letter-spacing:2px">You are protected</div><div class="setup-sub">Review your setup.</div><div class="setup-priv"><div><span class="ok">✓</span>Search <b>'+engName+'</b></div><div><span class="ok">✓</span>Theme <b>'+esc(setupThemeKey)+'</b>, tracking <b>'+setupTracking+'</b></div><div><span class="ok">✓</span>Startup <b>'+(setupStartup==="last"?"restore":"new tab")+'</b></div><div><span class="ok">✓</span>Cookies <b>blocked</b>, referrer <b>off</b>, DNT <b>on</b></div></div>',CONTINUE);
     setupBindNav(8);
   }else if(setupStep===8){
-    c.innerHTML=dots+grid(ART_SUMMARY,'<div class="setup-name" style="font-size:24px;letter-spacing:2px">Account</div><div class="setup-sub">One login syncs bookmarks and settings between devices, encrypted end to end.'+(isPremium()?' Sync is on with your Premium.':' Your login is saved now — syncing itself unlocks with Premium.')+'</div><div class="setup-sub" id="setup-sync-note"></div><input id="setup-ac-email" type="email" autocomplete="email" placeholder="you@example.com" style="width:100%;margin:2px 0 8px;padding:10px 14px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px"><input id="setup-ac-pass" type="password" autocomplete="current-password" placeholder="Password (8+ characters)" style="width:100%;margin:0 0 12px;padding:10px 14px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px"><div><button class="setup-btn" id="setup-ac-login" style="margin-right:8px">Log in</button><button class="setup-btn" id="setup-ac-signup" style="margin-right:8px">Sign up</button><button class="setup-skip" id="setup-ac-skip" style="background:none;border:none;color:var(--c-text2);cursor:pointer;font-size:13px;font-family:inherit">Skip login</button></div>',CONTINUE);
+    c.innerHTML=dots+grid(ART_SUMMARY,'<div class="setup-name" style="font-size:24px;letter-spacing:2px">Account</div><div class="setup-sub">One login syncs bookmarks and settings between devices, encrypted end to end. Logging in auto-activates the account key on this device — up to 10 devices share one key, bound to your account, not the machine.'+(isPremium()?' Sync is on with your Premium.':' Your login is saved now — syncing itself unlocks with Premium.')+'</div><div class="setup-sub" id="setup-sync-note"></div><input id="setup-ac-email" type="email" autocomplete="email" placeholder="you@example.com" style="width:100%;margin:2px 0 8px;padding:10px 14px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px"><input id="setup-ac-pass" type="password" autocomplete="current-password" placeholder="Password (8+ characters)" style="width:100%;margin:0 0 12px;padding:10px 14px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px"><div><button class="setup-btn" id="setup-ac-login" style="margin-right:8px">Log in</button><button class="setup-btn" id="setup-ac-signup" style="margin-right:8px">Sign up</button><button class="setup-skip" id="setup-ac-skip" style="background:none;border:none;color:var(--c-text2);cursor:pointer;font-size:13px;font-family:inherit">Skip login</button></div>',CONTINUE);
     (function(){
       function note(t){var n=$("setup-sync-note");if(n)n.textContent=t||"";}
       function finishLogin(email,pass,pwEl){
         if(!api||!api.syncLogin){note("Sync unavailable.");return;}
         api.syncLogin({apiBase:syncApiBase(),email:email,password:pass}).then(function(r){
-          if(r&&r.ok){if(pwEl)pwEl.value="";note("Signed in as "+email+".");try{if(api.syncNow)api.syncNow({apiBase:syncApiBase()}).catch(function(){});}catch(e){}}
+          if(r&&r.ok){if(pwEl)pwEl.value="";note("Signed in as "+email+".");try{if(api.syncNow)api.syncNow({apiBase:syncApiBase()}).catch(function(){});}catch(e){}try{activateOnAccount();}catch(e){}}
           else note(r&&r.msg?r.msg:"Login failed.");
         }).catch(function(){note("Could not reach the server.");});
       }
@@ -3500,6 +3507,29 @@ function bindSyncPanel(){
   function refresh(){
     if(!api||!api.syncStatus)return;
     api.syncStatus().then(function(st){paint(st);}).catch(function(){});
+    renderDevices();
+  }
+  var adv=$("sy-advanced");
+  if(adv)adv.addEventListener("click",function(){if(api&&api.openExternal)api.openExternal("https://account.kastrava.pp.ua");});
+  function renderDevices(){
+    var box=$("sy-devices");if(!box||!api||!api.licDevices)return;
+    api.licDevices().then(function(r){
+      if(!r||!r.ok||!r.keys||!r.keys.length){box.textContent="No Premium key on this account yet.";return;}
+      var html="";
+      r.keys.forEach(function(k){
+        html+="<div style=\"margin:6px 0\"><b>"+esc(k.key||"")+"</b> · "+(k.devices_used||0)+"/"+(k.device_limit||10)+" devices"+(k.expires_at?" · until "+esc(String(k.expires_at).slice(0,10)):"")+"</div>";
+        (k.devices||[]).forEach(function(d){
+          html+="<div style=\"display:flex;align-items:center;gap:8px;margin:2px 0 2px 12px\"><span>"+esc(d.name||d.id||"device")+"</span><button class=\"btn-sm sy-unbind\" data-k=\""+esc(k.key||"")+"\" data-m=\""+esc(d.id||"")+"\" style=\"padding:2px 10px;font-size:11px\">Remove</button></div>";
+        });
+      });
+      box.innerHTML=html;
+      box.querySelectorAll(".sy-unbind").forEach(function(b){
+        b.addEventListener("click",function(){
+          if(!confirm("Remove this device? It loses Premium until it logs in again."))return;
+          api.licDeviceRemove({key:b.dataset.k,machine_id:b.dataset.m}).then(function(){renderDevices();}).catch(function(){});
+        });
+      });
+    }).catch(function(){});
   }
   var li=$("sy-login");
   if(li)li.addEventListener("click",function(){
@@ -3509,7 +3539,7 @@ function bindSyncPanel(){
     msg("Logging in…");
     api.syncLogin({apiBase:syncApiBase(),email:email,password:pass}).then(function(r){
       if(r&&r.ok){if(pw)pw.value="";msg("Logged in. Syncing…");refresh();
-        api.syncNow({apiBase:syncApiBase()}).then(function(r2){msg(r2&&r2.ok?"Synced.":"Sync will retry.");if(r2&&r2.licenseOnFile)showLic(r2.licenseOnFile);refresh();}).catch(function(){msg("Sync will retry.");});
+        api.syncNow({apiBase:syncApiBase()}).then(function(r2){msg(r2&&r2.ok?"Synced.":"Sync will retry.");if(r2&&r2.licenseOnFile)showLic(r2.licenseOnFile);refresh();activateOnAccount(function(){refresh();});}).catch(function(){msg("Sync will retry.");});
       }else{msg(r&&r.msg?r.msg:"Login failed.");}
     }).catch(function(){msg("Could not reach the server.");});
   });
@@ -3524,6 +3554,15 @@ function bindSyncPanel(){
     }).catch(function(){msg("Sync failed.");});
   });
   refresh();
+}
+function activateOnAccount(cb){
+  if(!api||!api.licActivateAccount){if(cb)cb(null);return;}
+  api.licActivateAccount().then(function(r){
+    try{loadLicense();}catch(e){}
+    if(r&&r.ok)toast("Premium activated on this device"+(r.devices_used?(" ("+r.devices_used+"/"+(r.device_limit||10)+" devices)"):"")+".");
+    else if(r&&r.error&&r.error!=="no_login")toast(r.msg||"Activation failed.");
+    if(cb)cb(r);
+  }).catch(function(){if(cb)cb(null);});
 }
 function syncAutoInit(){
   function run(){
@@ -3785,7 +3824,7 @@ function closeSettings(){
 }
 function renderSettingsNav(){
   var nav=$("settings-nav");
-  var secs=[{id:"premium",l:"Kastrava Premium"},{id:"sync",l:"Sync"},{id:"general",l:"General"},{id:"appearance",l:"Appearance"},{id:"search",l:"Search Engine"},{id:"privacy",l:"Privacy & Security"},{id:"shortcuts",l:"Shortcuts"},{id:"accessibility",l:"Accessibility"},{id:"system",l:"System"},{id:"reset",l:"Reset Settings"},{id:"about",l:"About"}];
+  var secs=[{id:"premium",l:"Kastrava Premium"},{id:"sync",l:"Account"},{id:"general",l:"General"},{id:"appearance",l:"Appearance"},{id:"search",l:"Search Engine"},{id:"privacy",l:"Privacy & Security"},{id:"shortcuts",l:"Shortcuts"},{id:"accessibility",l:"Accessibility"},{id:"system",l:"System"},{id:"reset",l:"Reset Settings"},{id:"about",l:"About"}];
   nav.innerHTML="<input type=\"text\" class=\"sn-search\" id=\"sn-search\" placeholder=\"Search settings\" spellcheck=\"false\" autocomplete=\"off\">"+secs.map(function(s){return "<div class=\"sn-item\" data-s=\""+s.id+"\">"+s.l+"</div>";}).join("");
   var snInp=$("sn-search");
   if(snInp)snInp.addEventListener("input",function(){
@@ -3832,6 +3871,8 @@ function renderSettingsSection(id){
     }else{
       h+="<div class=\"sg\"><div class=\"lbl\">Kastrava account</div><div class=\"desc\">Same login as kastrava.pp.ua/account.html. Bookmarks and settings sync encrypted.</div><div id=\"sy-status\" class=\"desc\" style=\"margin-top:6px\">Checking…</div></div>";
       h+="<div class=\"sg\" id=\"sy-form\"><div class=\"lbl\">Log in</div><input id=\"sy-email\" type=\"email\" placeholder=\"you@example.com\" autocomplete=\"email\" style=\"width:100%;margin:6px 0;padding:9px 12px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px\"><input id=\"sy-pass\" type=\"password\" placeholder=\"Password\" autocomplete=\"current-password\" style=\"width:100%;margin:0 0 6px;padding:9px 12px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px\"><div style=\"display:flex;gap:8px;margin-top:4px\"><button class=\"btn-sm btn-accent\" id=\"sy-login\">Log in</button><button class=\"btn-sm\" id=\"sy-logout\">Log out</button><button class=\"btn-sm\" id=\"sy-now\">Sync now</button></div><div id=\"sy-msg\" class=\"desc\" style=\"margin-top:6px\"></div></div>";
+      h+="<div class=\"sg\" id=\"sy-devrow\"><div class=\"lbl\">Devices on this key</div><div class=\"desc\">Up to 10 per key. Remove one to free its slot.</div><div id=\"sy-devices\" class=\"desc\" style=\"margin-top:6px\">—</div></div>";
+      h+="<div class=\"sg\"><div class=\"lbl\">Advanced settings</div><div class=\"desc\">Devices, keys and sync on the web dashboard.</div><div style=\"margin-top:8px\"><button class=\"btn-sm\" id=\"sy-advanced\">Open account dashboard</button></div></div>";
       h+="<div class=\"sg\" id=\"sy-licrow\" style=\"display:none\"><div class=\"lbl\">Premium key on file</div><div class=\"desc\">Synced from another device — reference only. Keys stay bound to one machine.</div><div class=\"mono\" id=\"sy-lickey\" style=\"margin:6px 0;font-size:13px\"></div><button class=\"btn-sm\" id=\"sy-activate\">Activate on this device</button></div>";
     }
   }

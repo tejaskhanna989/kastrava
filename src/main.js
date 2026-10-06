@@ -864,6 +864,41 @@ ipcMain.handle('lic-machine', () => license.machineCode())
 ipcMain.handle('lic-status', () => license.status())
 ipcMain.handle('lic-activate', async (_, key) => license.activate(key))
 ipcMain.handle('lic-cancel', async () => license.cancel())
+// Account-bound activation: token comes from the settings DB (written at
+// login), so the renderer never touches it. Same key on every device.
+ipcMain.handle('lic-activate-account', async () => {
+  try {
+    const t = settingsBackend.get('syncToken')
+    if (!t) return { ok: false, error: 'no_login', msg: 'Log in to your Kastrava account first.' }
+    return await license.activateAccount(t)
+  } catch { return { ok: false, error: 'server', msg: 'Activation failed.' } }
+})
+ipcMain.handle('lic-devices', async () => {
+  try {
+    const t = settingsBackend.get('syncToken')
+    if (!t) return { ok: false, error: 'no_login' }
+    const r = await fetch(license.API.replace(/\/$/, '') + '/api/account/devices', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t },
+      body: '{}',
+      signal: AbortSignal.timeout(20000)
+    })
+    return await r.json().catch(() => ({ ok: false }))
+  } catch { return { ok: false } }
+})
+ipcMain.handle('lic-device-remove', async (_, { key, machine_id }) => {
+  try {
+    const t = settingsBackend.get('syncToken')
+    if (!t) return { ok: false, error: 'no_login' }
+    const r = await fetch(license.API.replace(/\/$/, '') + '/api/account/device/remove', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t },
+      body: JSON.stringify({ key, machine_id }),
+      signal: AbortSignal.timeout(20000)
+    })
+    return await r.json().catch(() => ({ ok: false }))
+  } catch { return { ok: false } }
+})
 ipcMain.handle('lic-verify', (_, payload, sig) => license.verifyPayload(payload, sig))
 
 // In-app sync (Phase 2): account login + zero-knowledge push/pull.

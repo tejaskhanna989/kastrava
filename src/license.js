@@ -87,7 +87,14 @@ function verifyPayload(payload, sig) {
   }
   const now = Date.now() / 1000
   if (payload.exp && now > payload.exp) return { ok: false, reason: 'expired' }
-  if ((payload.mid || '').toUpperCase() !== machineCode()) return { ok: false, reason: 'machine_mismatch' }
+  if (payload.acc) {
+    // v2 account-bound: the device cap lives server-side, not in the
+    // signature. The app layer matches acc against the logged-in account.
+    if (typeof payload.acc !== 'string' || !payload.acc.includes('@')) return { ok: false, reason: 'bad_issuer' }
+  } else if ((payload.mid || '').toUpperCase() !== machineCode()) {
+    // v1 legacy machine-bound: unchanged.
+    return { ok: false, reason: 'machine_mismatch' }
+  }
   // Grace period: the billing period ended (sub_end) but exp (sub_end +
   // grace days) hasn't passed yet — still unlocked, UI nudges a renewal.
   const grace = !!(payload.sub_end && now > payload.sub_end)
@@ -98,7 +105,7 @@ function status() {
   const lic = loadLicense()
   const code = machineCode()
   if (!lic || !lic.payload) {
-    return { activated: false, edition: 'premium', machine: code, key: null, reason: 'no_license', expiresAt: null, subEnd: null, grace: false }
+    return { activated: false, edition: 'premium', machine: code, key: null, acc: null, reason: 'no_license', expiresAt: null, subEnd: null, grace: false }
   }
   const v = verifyPayload(lic.payload, lic.sig)
   return {
@@ -106,6 +113,7 @@ function status() {
     edition: 'premium',
     machine: code,
     key: lic.key || null,
+    acc: (lic.payload && lic.payload.acc) || null,
     reason: v.reason || null,
     expiresAt: v.ok && lic.payload.exp ? lic.payload.exp * 1000 : null,
     subEnd: v.ok && lic.payload.sub_end ? lic.payload.sub_end * 1000 : null,
@@ -141,8 +149,43 @@ async function activate(key) {
   }
 }
 
-// Stop Premium without refund: server marks the key cancelled (bound
-// machine only), then the local copy is dropped so features switch off.
+// Account-bound activation (new model): the logged-in account's key
+// auto-activates this device, up to 10 devices per key. Same key on every
+// device — no per-machine keys, no machine check. Legacy activate(key)
+// above is kept for old key-entry flows.
+async function activateAccount(accountToken) {
+  const machine = machineCode()
+  let deviceName = ''
+  try { deviceName = os.hostname() || '' } catch {}
+  try {
+    const res = await fetch(API.replace(/\/$/, '') + '/api/activate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ account_token: accountToken, machine_id: machine, device_name: deviceName }),
+      signal: AbortSignal.timeout(20000)
+    })
+    const body = await res.json().catch(() => ({}))
+    if (!res.ok || !body.license) {
+      const map = {
+        unauthorized: 'Login expired. Log in again.',
+        no_key: 'No Premium key on this account yet.',
+        key_expired: 'The account key expired. Renew to keep Premium everywhere.',
+        device_limit: 'All 10 device slots are used. Remove one or buy a new key.',
+        wrong_account: 'This key belongs to a different account.',
+        license_revoked: 'This license was revoked. Contact support.',
+        license_cancelled: 'This license was cancelled. Buy again to restart Premium.'
+      }
+      return { ok: false, error: body.error || 'server', msg: map[body.error] || body.msg || 'Activation failed (' + res.status + ').' }
+    }
+    const lic = { key: body.license.key, payload: body.license.payload, sig: body.license.sig, activated_at: Date.now() }
+    saveLicense(lic)
+    return { ok: true, license: lic, devices_used: body.devices_used || null, device_limit: body.device_limit || 10 }
+  } catch (e) {
+    return { ok: false, error: 'network', msg: 'Could not reach the Kastrava license server. Check your connection (' + API + ').' }
+  }
+}
+// Stop Premium without refund: server marks the key cancelled, then the
+// local copy is dropped so features switch off.
 async function cancel() {
   const lic = loadLicense()
   if (!lic || !lic.key) return { ok: false, error: 'no_license', msg: 'No active license on this machine.' }
@@ -187,4 +230,4 @@ async function refreshIfLicensed() {
   } catch {}
 }
 
-module.exports = { machineCode, machineIdRaw, status, activate, cancel, verifyPayload, loadLicense, refreshIfLicensed, clear, API }
+module.exports = { machineCode, machineIdRaw, status, activate, activateAccount, cancel, verifyPayload, loadLicense, refreshIfLicensed, clear, API }
