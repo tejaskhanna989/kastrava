@@ -625,7 +625,7 @@ const server = http.createServer((req, res) => {
       pathname = '/account.html'
     }
     if (pathname === '/api/health') {
-      return json(res, 200, { ok: true, dev: razorpay.isDev(), host: HOST, price: PRICE_INR, period_days: PERIOD_DAYS, grace_days: GRACE_DAYS, version: '101.3.1', codename: 'Starship Wonders' })
+      return json(res, 200, { ok: true, dev: razorpay.isDev(), host: HOST, price: PRICE_INR, period_days: PERIOD_DAYS, grace_days: GRACE_DAYS, version: '101.3.2', codename: 'Starship Wonders' })
     }
     if (pathname === '/api/admin/list') {
       if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
