@@ -196,11 +196,18 @@ input[type=file].adm-file{font-size:13px;color:var(--muted);border:none;padding:
     var lics=(j&&j.licenses)||{},orders=(j&&j.orders)||{},accs=(j&&j.accounts)||{};
     var keys=Object.keys(lics),paid=0,devs=0,act=0;
     keys.forEach(function(k){var l=lics[k];if(l.status==='activated')act++;devs+=Object.keys(l.devices||{}).length;});
-    Object.keys(orders).forEach(function(o){if(orders[o].status==='paid')paid++;});
+    var revPaise=0,revEst=0;
+    Object.keys(orders).forEach(function(o){
+      if(orders[o].status!=='paid')return;
+      paid++;
+      if(orders[o].amount_paise>0)revPaise+=orders[o].amount_paise;
+      else revEst++;
+    });
+    var revTotal=Math.round((revPaise+revEst*24800)/100);
     function card(n,l,sub){return '<div class="card"><div class="n">'+n+'</div><div class="l">'+l+(sub||'')+'</div></div>';}
     cards.innerHTML=card(keys.length,'Licenses',' · <b>'+act+'</b> active')
       +card(devs,'Devices in use')
-      +card(paid,'Paid orders',' · <b>≈₹'+(paid*248)+'</b>')
+      +card(paid,'Paid orders',' · <b>≈₹'+revTotal+'</b>')
       +card(Object.keys(accs).length,'Accounts');
     var rows=keys.slice(-8).reverse().map(function(k){var l=lics[k];
       var col=l.status==='activated'?'st-ok':(l.status==='revoked'?'st-bad':'');

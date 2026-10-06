@@ -35,11 +35,12 @@ class Store {
     return this.data.orders[orderId] || null
   }
 
-  markPaid(orderId, paymentId) {
+  markPaid(orderId, paymentId, amountPaise) {
     const o = this.getOrder(orderId)
     if (!o) return null
     o.status = 'paid'
     o.payment_id = paymentId
+    if (Number(amountPaise) > 0) o.amount_paise = Number(amountPaise)
     o.paid_at = new Date().toISOString()
     this.save()
     return o

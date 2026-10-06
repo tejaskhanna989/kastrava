@@ -167,7 +167,7 @@ function serveStatic(req, res, pathname) {
 //     needs no new activation; the app picks it up on its next re-activate.
 function finalizePayment(orderId, paymentId, machineIdRaw, accountEmailRaw) {
   const order = store.getOrder(orderId)
-  store.markPaid(orderId, paymentId)
+  store.markPaid(orderId, paymentId, PRICE_INR * 100)
   const machine = String(machineIdRaw || (order && order.machine_id) || '').trim().toUpperCase()
   const account = String(accountEmailRaw || (order && order.account_email) || '').trim().toLowerCase() || null
   let key = store.keyForOrder(orderId)
@@ -356,7 +356,7 @@ async function handlePost(req, res, pathname) {
     const note = String(body.note || '').slice(0, 200)
     const orderId = 'admin_' + Date.now().toString(36)
     store.createOrder(orderId, { provider: 'manual', machine_id: machine, note })
-    store.markPaid(orderId, 'manual')
+    store.markPaid(orderId, 'manual', 0)
     const key = sign.makeLicenseKey()
     const expires = new Date(Date.now() + PERIOD_DAYS * 86400000).toISOString()
     store.issueLicense(key, orderId, null, expires)
