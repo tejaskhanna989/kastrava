@@ -70,11 +70,26 @@ const DEFAULTS = {
   cursorStyle: 'system',
   cursorStyleColor: '#ffffff',
   webrtcMode: 'disable',
+  jsGlobal: 'on',
+  images: 'on',
+  doh: 'off',
+  startupUrls: '',
+  showFullUrls: 'off',
+  ntpQuick: 'on',
+  ntpSearch: 'on',
+  ntpBg: 'default',
+  ntpTiles: '8',
+  tabFavicons: 'on',
+  clearHistoryOnExit: 'off',
+  historyKeep: '0',
+  maxTabs: '0',
+  askDlLoc: 'off',
+  dlDir: '',
   proxy: { enabled: false, type: 'socks5', host: '', port: '' },
   migrateKs: ''
 }
 
-const PREFS_KEYS = ['hwAcc', 'dnt']
+const PREFS_KEYS = ['hwAcc', 'dnt', 'doh']
 
 function prefsPath() {
   return path.join(app.getPath('userData'), 'prefs.json')
@@ -95,10 +110,20 @@ function writePrefsSync(prefs) {
   } catch {}
 }
 
+const DOH_SERVERS = {
+  cloudflare: 'https://1.1.1.1/dns-query',
+  quad9: 'https://dns.quad9.net/dns-query',
+  google: 'https://dns.google/dns-query'
+}
 function initPreReady() {
   const prefs = readPrefsSync()
   if (prefs.hwAcc === 'off') {
     try { app.disableHardwareAcceleration() } catch {}
+  }
+  // Encrypted DNS, applied before any network runs. Needs a restart.
+  if (prefs.doh && prefs.doh !== 'off' && DOH_SERVERS[prefs.doh]) {
+    try { app.commandLine.appendSwitch('dns-over-https-mode', 'secure') } catch {}
+    try { app.commandLine.appendSwitch('dns-over-https-servers', DOH_SERVERS[prefs.doh]) } catch {}
   }
   return prefs
 }

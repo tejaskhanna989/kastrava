@@ -53,6 +53,7 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
 .tab-spinner svg{width:14px;height:14px;transform-origin:center;animation:as-rotate4 2s linear infinite}
 .tab-spinner circle{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-dasharray:1,200;stroke-dashoffset:0;stroke-linecap:round;animation:as-dash4 1.5s ease-in-out infinite}
 .tab-item.loading .tab-favicon{display:none}
+body.no-fav .tab-favicon{display:none!important}
 @keyframes as-rotate4{100%{transform:rotate(360deg)}}
 @keyframes as-dash4{0%{stroke-dasharray:1,200;stroke-dashoffset:0}50%{stroke-dasharray:90,200;stroke-dashoffset:-35px}100%{stroke-dashoffset:-125px}}
 .toolbar{display:flex;align-items:center;padding:0 8px;height:var(--toolbar-h);background:var(--c-toolbar);flex-shrink:0;gap:2px;border-bottom:1px solid var(--c-line)}
@@ -667,7 +668,7 @@ function isBlank(u){return!u||u==="about:newtab"||u==="about:localhost"||u==="ab
 function err(fn,e){console.error("[Kastrava]",fn,e)}
 var tabs=[];var tabMap={};var activeTab=null;var tabIdCounter=0;
 var agDownloads=[];var agIdMap={};var bookmarkUrls=new Set();
-var settings={setupDone:"",searchEngine:"kastravasearch",accent:"#4fc3f7",fontSize:"12",reduceAnimations:"off",hwAcc:"on",dnt:"on",tracking:"strict",suggest:"off",bookmarkBar:"auto",startup:"last",confirmClose:"off",historyEnabled:"on",bookmarksEnabled:"on",cookies:"off",location:"block",zoom:"100",uiRadius:"medium",speedDial:"comfortable",showHomeBtn:"off",showCopyBtn:"on",showNtpClock:"on",showNtpLogo:"on",tabLayout:"horizontal",vtabsCollapsed:"off",shortcuts:{},sleepTabs:"off",siteShields:{},maxSuggestions:"8",launchMaximized:"off",sendReferrer:"off",cursorFx:"off",cursorFxMode:"color",cursorFxColor:"#4fc3f7",cursorFxForce:"medium",cursorFxSize:"medium",blobFx:"off",blobColor:"#2f6fed",blobCount:"3",blobSize:"medium",blobOpacity:"0.6",blobShape:"circle",glassFx:"off",glassColor:"#3b82f6",glassShape:"sphere",glassSize:"medium",glassOpacity:"0.5",particleFx:"off",particleColor:"#3b82f6",particleSize:"medium",particleDensity:"medium",clickSparkFx:"off",clickSparkColor:"#ffffff",clickSparkSize:"medium",clickSparkCount:"8",clickSparkDuration:"400",pixelTrailFx:"off",pixelTrailColor:"#ffffff",pixelTrailGrid:"medium",pixelTrailTrail:"medium",ribbonsFx:"off",ribbonsColor:"#2f6fed",ribbonsThickness:"medium",ribbonsPoints:"50",cursorStyle:"system",cursorStyleColor:"#ffffff"};
+var settings={setupDone:"",searchEngine:"kastravasearch",accent:"#4fc3f7",fontSize:"12",reduceAnimations:"off",hwAcc:"on",dnt:"on",tracking:"strict",suggest:"off",bookmarkBar:"auto",startup:"last",confirmClose:"off",historyEnabled:"on",bookmarksEnabled:"on",cookies:"off",location:"block",zoom:"100",uiRadius:"medium",speedDial:"comfortable",showHomeBtn:"off",showCopyBtn:"on",showNtpClock:"on",showNtpLogo:"on",tabLayout:"horizontal",vtabsCollapsed:"off",shortcuts:{},sleepTabs:"off",siteShields:{},jsGlobal:"on",images:"on",webrtcMode:"disable",doh:"off",proxy:{enabled:false},startupUrls:"",showFullUrls:"off",ntpQuick:"on",ntpSearch:"on",ntpBg:"default",ntpTiles:"8",tabFavicons:"on",clearHistoryOnExit:"off",historyKeep:"0",maxTabs:"0",askDlLoc:"off",dlDir:"",maxSuggestions:"8",launchMaximized:"off",sendReferrer:"off",cursorFx:"off",cursorFxMode:"color",cursorFxColor:"#4fc3f7",cursorFxForce:"medium",cursorFxSize:"medium",blobFx:"off",blobColor:"#2f6fed",blobCount:"3",blobSize:"medium",blobOpacity:"0.6",blobShape:"circle",glassFx:"off",glassColor:"#3b82f6",glassShape:"sphere",glassSize:"medium",glassOpacity:"0.5",particleFx:"off",particleColor:"#3b82f6",particleSize:"medium",particleDensity:"medium",clickSparkFx:"off",clickSparkColor:"#ffffff",clickSparkSize:"medium",clickSparkCount:"8",clickSparkDuration:"400",pixelTrailFx:"off",pixelTrailColor:"#ffffff",pixelTrailGrid:"medium",pixelTrailTrail:"medium",ribbonsFx:"off",ribbonsColor:"#2f6fed",ribbonsThickness:"medium",ribbonsPoints:"50",cursorStyle:"system",cursorStyleColor:"#ffffff"};
 var splitOn=false;var splitPartner=null;var prevTabId=null;
 var closedTabs=[];
 var readerUrls={};
@@ -861,6 +862,11 @@ function applyTabLayout(v){
   }catch(e){}
   try{if(activeTab)scrollVTabIntoView(activeTab.id);}catch(e){}
 }
+function applyNtpQuick(v){settings.ntpQuick=v;var el=$("top-sites");if(el)el.style.display=(v==="off"?"none":"");}
+function applyNtpSearch(v){settings.ntpSearch=v;var el=document.querySelector(".ntp-search");if(el)el.style.display=(v==="off"?"none":"");}
+function applyNtpBg(v){settings.ntpBg=v;var el=$("ntp");if(!el)return;el.style.background=(v&&v!=="default")?v:"";}
+function applyNtpTiles(v){settings.ntpTiles=v;try{loadTopSites();}catch(e){}}
+function applyTabFavicons(v){settings.tabFavicons=v;document.body.classList.toggle("no-fav",v==="off");}
 function applyVtabsCollapsed(v){
   settings.vtabsCollapsed=(v==="on")?"on":"off";
   document.body.classList.toggle("vtabs-collapsed",settings.vtabsCollapsed==="on");
@@ -914,6 +920,9 @@ var SHORTCUT_ACTIONS={
   screenshot:{label:"Screenshot",default:"Ctrl+Shift+S"},
   mute:{label:"Mute tab",default:"Ctrl+Shift+M"},
   kastget:{label:"Downloads",default:"Ctrl+Shift+P"},
+  duplicateTab:{label:"Duplicate tab",default:"Ctrl+Shift+D"},
+  closeRight:{label:"Close tabs to the right",default:""},
+  closeOthers:{label:"Close other tabs",default:""},
   vtabs:{label:"Toggle vertical tabs",default:"Ctrl+Shift+V"}
 };
 function shortcutCombo(e){
@@ -967,6 +976,9 @@ function runShortcut(a){
     case "screenshot":takeScreenshot();break;
     case "mute":if(activeTab)toggleMute(activeTab.id);break;
     case "kastget":openAgPanel();break;
+    case "duplicateTab":duplicateTab();break;
+    case "closeRight":closeTabsRight();break;
+    case "closeOthers":closeOtherTabs();break;
     case "vtabs":toggleTabLayout();break;
   }
 }
@@ -1056,6 +1068,8 @@ function addTab(url,opts){
     if(url&&!isBlank(url)&&url.indexOf("about:")===0){activeTab.url=url;}
     renderTabs();selectTab(activeTab.id);return activeTab.id;
   }
+  var maxT=parseInt(settings.maxTabs)||0;
+  if(maxT>0&&tabs.length>=maxT){toast("Tab limit reached ("+maxT+")");return activeTab?activeTab.id:null;}
   var id=++tabIdCounter;
   var wrap=document.createElement("div");
   wrap.className="webview-wrap";
@@ -1126,6 +1140,9 @@ function selectTab(id){
   if(tab.asleep)wakeTab(tab);
   updNav();showPage(id);renderTabs();if(radarOpen)renderRadar();
 }
+function duplicateTab(){if(activeTab&&activeTab.url&&!isBlank(activeTab.url))addTab(activeTab.url);}
+function closeTabsRight(){if(!activeTab)return;var i=tabs.findIndex(function(t){return t.id===activeTab.id;});tabs.slice(i+1).map(function(t){return t.id;}).forEach(function(id){closeTab(id);});}
+function closeOtherTabs(){if(!activeTab)return;var keep=activeTab.id;tabs.map(function(t){return t.id;}).forEach(function(id){if(id!==keep)closeTab(id);});}
 function cycleTab(dir){
   if(!tabs.length)return;
   var cur=tabs.findIndex(function(t){return activeTab&&t.id===activeTab.id;});
@@ -1238,7 +1255,7 @@ function updNav(){
     try{
       var u=new URL(full);
       var httpish=(u.protocol==="http:"||u.protocol==="https:");
-      if(httpish&&!focused&&!(inp&&inp._userEditing)){
+      if(httpish&&!focused&&!(inp&&inp._userEditing)&&settings.showFullUrls!=="on"){
         collapsed=true;
         if(inp&&!inp._userEditing)inp.value=u.hostname;
         if(lock)lock.style.display="flex";
@@ -1276,7 +1293,8 @@ function loadTopSites(){
   var hiddenSites=[];
   try{hiddenSites=JSON.parse(localStorage.getItem("as_hidden_sites")||"[]")||[];}catch(e){hiddenSites=[];}
   var fav=function(u,l){var f=favIcon(u);return "<div class=\"sc-icon\">"+esc(l)+(f?"<img class=\"sc-fav\" src=\""+f+"\" alt=\"\" onerror=\"this.style.display='none'\">":"")+"</div>";};
-  var tiles=customSites.map(function(s){return "<div class=\"shortcut ts-custom\" data-url=\""+esc(s.u)+"\"><button class=\"ts-x\" data-url=\""+esc(s.u)+"\" title=\"Remove\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\"><path d=\"M18 6L6 18M6 6l12 12\"/></svg></button>"+fav(s.u,(s.t||"?").charAt(0).toUpperCase())+"<div class=\"sc-label\">"+esc(s.t)+"</div></div>";}).join("");
+  var tileMax=parseInt(settings.ntpTiles)||8;if(!(tileMax>0))tileMax=8;
+  var tiles=customSites.slice(0,tileMax).map(function(s){return "<div class=\"shortcut ts-custom\" data-url=\""+esc(s.u)+"\"><button class=\"ts-x\" data-url=\""+esc(s.u)+"\" title=\"Remove\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\"><path d=\"M18 6L6 18M6 6l12 12\"/></svg></button>"+fav(s.u,(s.t||"?").charAt(0).toUpperCase())+"<div class=\"sc-label\">"+esc(s.t)+"</div></div>";}).join("");
   tiles+=sites.filter(function(s){return hiddenSites.indexOf(s.u)<0;}).map(function(s){return "<div class=\"shortcut ts-custom\" data-url=\""+esc(s.u)+"\"><button class=\"ts-x\" data-url=\""+esc(s.u)+"\" title=\"Remove\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\"><path d=\"M18 6L6 18M6 6l12 12\"/></svg></button>"+fav(s.u,s.i)+"<div class=\"sc-label\">"+esc(s.t)+"</div></div>";}).join("");
   if(!customSites.length&&hiddenSites.length&&sites.every(function(s){return hiddenSites.indexOf(s.u)>=0;})){
     tiles+="<div class=\"shortcut ts-add\" id=\"ts-restore\" title=\"Restore default shortcuts\"><div class=\"sc-icon\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"><path d=\"M3 12a9 9 0 1 0 3-6.7\"/><path d=\"M3 4v5h5\"/></svg></div><div class=\"sc-label\">Restore</div></div>";
@@ -3473,7 +3491,7 @@ function togglePin(id){var t=tabMap[id];if(!t)return;t.pinned=!t.pinned;renderTa
 
 function siteHost(){try{var u=new URL((activeTab&&activeTab.url)||"");if(u.protocol==="http:"||u.protocol==="https:")return u.hostname;}catch(e){}return null;}
 function getShields(host){var m=settings.siteShields||{};return m[host]||{master:"on",js:"on",cookies:"default"};}
-function setShield(host,patch){var m=settings.siteShields||{};var cur=m[host]||{master:"on",js:"on",cookies:"default"};for(var k in patch)cur[k]=patch[k];m[host]=cur;saveSetting("siteShields",m);}
+function setShield(host,patch){var m=settings.siteShields||{};var cur=m[host]||{master:"on",js:"on",cookies:"default",images:"on"};for(var k in patch)cur[k]=patch[k];m[host]=cur;saveSetting("siteShields",m);}
 function shieldItems(){
   var host=siteHost();if(!host)return [];
   var sh=getShields(host);
@@ -3880,10 +3898,12 @@ function renderSettingsSection(id){
     }
   }
   else if(id==="general"){h="<h3>General</h3>";
-    h+="<div class=\"sg\"><div class=\"lbl\">Startup</div><select id=\"s-startup\"><option value=\"last\">Restore previous session</option><option value=\"blank\">New tab</option></select></div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">Startup</div><select id=\"s-startup\"><option value=\"last\">Restore previous session</option><option value=\"blank\">New tab</option><option value=\"urls\">Open specific pages</option></select></div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">Startup Pages</div><textarea id=\"s-startupurls\" rows=\"3\" placeholder=\"https://example.com\" style=\"width:100%;margin-top:6px\"></textarea><div class=\"desc\">One URL per line. Used when Startup is set to specific pages.</div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Font Size</div><select id=\"s-fontsize\"><option value=\"11\">Small</option><option value=\"12\">Medium</option><option value=\"14\">Large</option></select></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Default Zoom</div><select id=\"s-zoom\"><option value=\"100\">100%</option><option value=\"110\">110%</option><option value=\"125\">125%</option><option value=\"150\">150%</option><option value=\"175\">175%</option><option value=\"200\">200%</option></select><div class=\"desc\">Applied to all new tabs.</div></div>";
     h+="<div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Confirm Close</div><div class=\"desc\">Ask before closing multiple tabs.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-confirmclose\" class=\"tgl tgl-flip\"><label for=\"s-confirmclose\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">Tab Limit</div><select id=\"s-maxtabs\"><option value=\"0\">No limit</option><option value=\"20\">20 tabs</option><option value=\"50\">50 tabs</option><option value=\"100\">100 tabs</option></select><div class=\"desc\">Refuse new tabs past the limit.</div></div><div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Always Show Full URLs</div><div class=\"desc\">Show the complete address instead of just the site name.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-fullurls\" class=\"tgl tgl-flip\"><label for=\"s-fullurls\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div><div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Clear History on Exit</div><div class=\"desc\">Wipe history every time the browser closes.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-clearhistexit\" class=\"tgl tgl-flip\"><label for=\"s-clearhistexit\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div><div class=\"sg\"><div class=\"lbl\">Keep History</div><select id=\"s-historykeep\"><option value=\"0\">Forever</option><option value=\"7\">7 days</option><option value=\"30\">30 days</option><option value=\"90\">90 days</option></select></div>";
   }
   else if(id==="appearance"){h="<h3>Appearance</h3>";
     h+="<div class=\"sg\"><div class=\"lbl\">Dark Themes</div><div id=\"s-presets-dark\" style=\"display:flex;gap:6px;flex-wrap:wrap\">";
@@ -3899,6 +3919,7 @@ function renderSettingsSection(id){
     h+="</div><button class=\"btn-sm\" id=\"s-accentreset\" style=\"margin-top:10px\">Reset</button><div class=\"desc\">Custom accent color. Clears the active theme.</div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Corner Radius</div><select id=\"s-radius\"><option value=\"small\">Small</option><option value=\"medium\">Medium</option><option value=\"large\">Large</option></select><div class=\"desc\">Rounding of tabs, panels and menus.</div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Speed Dial Size</div><select id=\"s-scsize\"><option value=\"comfortable\">Comfortable</option><option value=\"compact\">Compact</option></select></div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">Shortcut Tiles</div><select id=\"s-ntptiles\"><option value=\"4\">4</option><option value=\"8\">8</option><option value=\"12\">12</option></select><div class=\"desc\">How many shortcut tiles to show.</div></div><div class=\"sg\"><div class=\"lbl\">New Tab Background</div><select id=\"s-ntpbg\"><option value=\"default\">Default</option><option value=\"#15181d\">Graphite</option><option value=\"#0d1b2a\">Midnight</option><option value=\"#10231a\">Forest</option></select></div><div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">New Tab Search</div><div class=\"desc\">Show the search box on new tabs.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-ntpsearch\" class=\"tgl tgl-flip\"><label for=\"s-ntpsearch\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div><div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">New Tab Shortcuts</div><div class=\"desc\">Show the shortcut tiles on new tabs.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-ntpquick\" class=\"tgl tgl-flip\"><label for=\"s-ntpquick\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div><div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Tab Favicons</div><div class=\"desc\">Show site icons on tabs.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-tabfav\" class=\"tgl tgl-flip\"><label for=\"s-tabfav\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Tab Layout</div><select id=\"s-tablayout\"><option value=\"horizontal\">Horizontal (top)</option><option value=\"vertical\">Vertical (side)</option></select><div class=\"desc\">Vertical tabs show a sidebar with full titles, count and drag-to-reorder. Shortcut: Ctrl+Shift+V.</div></div>";
     h+="<div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Collapse Vertical Sidebar</div><div class=\"desc\">Show icons only in vertical mode.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-vtabscollapse\" class=\"tgl tgl-flip\"><label for=\"s-vtabscollapse\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
     h+="<div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Show Home Button</div><div class=\"desc\">Adds a home button to the toolbar.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-homebtn\" class=\"tgl tgl-flip\"><label for=\"s-homebtn\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
@@ -3961,11 +3982,18 @@ function renderSettingsSection(id){
     }
   }
   else if(id==="search"){h="<h3>Search Engine</h3>";
-    h+="<div class=\"sg\"><div class=\"lbl\">Default Search Engine</div><select id=\"s-se\"><option value=\"kastravasearch\">KastravaSearch (Default, RC)</option><option value=\"duckduckgo\">DuckDuckGo</option><option value=\"brave\">Brave Search (Premium)</option><option value=\"google\">Google (Premium)</option><option value=\"ecosia\">Ecosia (Premium)</option></select><div class=\"desc\">KastravaSearch is Kastrava's own private search engine. DuckDuckGo is free too; Brave, Google and Ecosia are Premium.</div></div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">Default Search Engine</div><select id=\"s-se\"><option value=\"kastravasearch\">KastravaSearch (Default, RC)</option><option value=\"duckduckgo\">DuckDuckGo</option><option value=\"brave\">Brave Search (Premium)</option><option value=\"google\">Google (Premium)</option><option value=\"ecosia\">Ecosia (Premium)</option><option value=\"custom\">Custom URL…</option></select><div class=\"desc\">KastravaSearch is Kastrava's own private search engine. DuckDuckGo is free too; Brave, Google and Ecosia are Premium.</div></div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">Custom Engine URL</div><input id=\"s-customengine\" type=\"text\" placeholder=\"https://example.com/search?q=%s\"><div class=\"desc\">Use %s where the query goes. Used when Custom URL is selected.</div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Current Engine URL</div><div class=\"desc\" style=\"word-break:break-all\">"+esc(SEARCH_ENGINES[settings.searchEngine]||SEARCH_ENGINES.kastravasearch)+"</div></div>";
   }
   else if(id==="privacy"){h="<h3>Privacy &amp; Security</h3>";
-    h+="<div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Cookies</div><div class=\"desc\">Disabled by default. Cookies are stripped from all requests and stored cookies are cleared.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-cookies\" class=\"tgl tgl-flip\"><label for=\"s-cookies\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
+    h+="<div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">JavaScript</div><div class=\"desc\">Block scripts everywhere. Breaks most sites — use per-site shields for exceptions.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-jsglobal\" class=\"tgl tgl-flip\"><label for=\"s-jsglobal\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
+    h+="<div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Images</div><div class=\"desc\">Block all images. Pages load fast and light.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-images\" class=\"tgl tgl-flip\"><label for=\"s-images\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">Cookies</div><select id=\"s-cookies\"><option value=\"off\">Block all</option><option value=\"third\">Block third-party</option><option value=\"on\">Allow all</option></select><div class=\"desc\">Blocked by default. Stored cookies are cleared.</div></div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">Referrer Policy</div><select id=\"s-referrer2\"><option value=\"off\">Never send</option><option value=\"origin\">Origin only</option><option value=\"on\">Full URL</option></select><div class=\"desc\">What sites learn about the page you came from.</div></div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">WebRTC</div><select id=\"s-webrtc\"><option value=\"disable\">Block IP leaks</option><option value=\"allow\">Allow (calls need this)</option></select><div class=\"desc\">Applies to new tabs.</div></div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">Secure DNS</div><select id=\"s-doh\"><option value=\"off\">Off</option><option value=\"cloudflare\">Cloudflare</option><option value=\"quad9\">Quad9</option><option value=\"google\">Google</option></select><div class=\"desc\">Encrypt DNS lookups. Requires a restart.</div></div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">Proxy</div><div style=\"display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:6px\"><label style=\"display:flex;align-items:center;gap:6px;font-size:13px\"><input type=\"checkbox\" id=\"s-proxyon\"> Enabled</label><select id=\"s-proxytype\" style=\"max-width:110px\"><option value=\"socks5\">SOCKS5</option><option value=\"http\">HTTP</option></select><input id=\"s-proxyhost\" type=\"text\" placeholder=\"host\" style=\"flex:1;min-width:110px\"><input id=\"s-proxyport\" type=\"text\" inputmode=\"numeric\" placeholder=\"port\" style=\"width:80px\"></div><div class=\"desc\">Route traffic through a proxy. Local addresses always bypass. Requires a restart.</div></div>";
     h+="<div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Location Access</div><div class=\"desc\">Websites cannot see your location when blocked.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-location\" class=\"tgl tgl-flip\"><label for=\"s-location\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Permissions</div><div class=\"desc\">Camera, microphone, notifications, sensors and other site permissions are denied by default for privacy.</div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Tracking Protection</div><select id=\"s-tracking\"><option value=\"standard\">Standard</option><option value=\"strict\">Strict</option><option value=\"off\">Disabled</option></select></div>";
@@ -3994,8 +4022,8 @@ function renderSettingsSection(id){
   else if(id==="system"){h="<h3>System</h3>";
     h+="<div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Hardware Acceleration</div><div class=\"desc\">Uses the GPU for rendering. Requires a restart.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-hwacc\" class=\"tgl tgl-flip\"><label for=\"s-hwacc\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
     h+="<div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Launch Maximized</div><div class=\"desc\">Open the window maximized on startup.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-launchmax\" class=\"tgl tgl-flip\"><label for=\"s-launchmax\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
-    h+="<div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Send Referrer</div><div class=\"desc\">Send the HTTP referrer header to websites.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-referrer\" class=\"tgl tgl-flip\"><label for=\"s-referrer\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
-    h+="<div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Sleep Inactive Tabs</div><div class=\"desc\">Park tabs idle over 30 minutes to save memory. They reload on click.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-sleeptabs\" class=\"tgl tgl-flip\"><label for=\"s-sleeptabs\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
+    h+="<div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Ask Where to Save</div><div class=\"desc\">Choose a location for every download.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-askdl\" class=\"tgl tgl-flip\"><label for=\"s-askdl\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">Download Folder</div><input id=\"s-dldir\" type=\"text\" placeholder=\"Default Downloads folder\" style=\"width:100%;margin-top:6px\"><div class=\"desc\">Absolute path. Empty means the system Downloads folder.</div></div>";    h+="<div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Sleep Inactive Tabs</div><div class=\"desc\">Park tabs idle over 30 minutes to save memory. They reload on click.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-sleeptabs\" class=\"tgl tgl-flip\"><label for=\"s-sleeptabs\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
   }
   else if(id==="reset"){h="<h3>Reset Settings</h3>";
     h+="<div class=\"sg\"><button class=\"btn-sm btn-danger\" id=\"s-reset\">Reset All Settings</button><div class=\"desc\">Restore all settings to defaults.</div></div>";
@@ -4052,6 +4080,15 @@ function bindSettingsEvents(id){
       bindChange("s-fontsize",function(v){sv("fontSize",v);applyFontSize(v);});
       bindChange("s-zoom",function(v){sv("zoom",v);});
       bindCheck("s-confirmclose","on","off",function(v){sv("confirmClose",v);});
+      setSel("s-maxtabs",settings.maxTabs||"0");
+      bindChange("s-maxtabs",function(v){sv("maxTabs",v);});
+      setCheck("s-fullurls","on",settings.showFullUrls);
+      bindCheck("s-fullurls","on","off",function(v){sv("showFullUrls",v);updNav();});
+      setCheck("s-clearhistexit","on",settings.clearHistoryOnExit);
+      bindCheck("s-clearhistexit","on","off",function(v){sv("clearHistoryOnExit",v);});
+      setSel("s-historykeep",settings.historyKeep||"0");
+      bindChange("s-historykeep",function(v){sv("historyKeep",v);toast("History kept "+(v==="0"?"forever":v+" days"));});
+      var su=$("s-startupurls");if(su){su.value=settings.startupUrls||"";su.addEventListener("change",function(e){sv("startupUrls",e.target.value);});}
     }else if(id==="appearance"){
       document.querySelectorAll(".theme-btn").forEach(function(btn){btn.addEventListener("click",function(){var type=btn.dataset.type;var idx=parseInt(btn.dataset.idx);var key=type+"-"+idx;sv("theme",key);applyThemeKey(key);document.querySelectorAll(".theme-btn").forEach(function(b){b.style.borderColor="transparent";});btn.style.borderColor=type==="dark"?DARK_THEMES[idx].ac:LIGHT_THEMES[idx].ac;});});
       if(settings.theme)applyThemeKey(settings.theme);
@@ -4071,6 +4108,16 @@ function bindSettingsEvents(id){
       bindChange("s-radius",function(v){sv("uiRadius",v);applyUiRadius(v);});
       setSel("s-scsize",settings.speedDial||"comfortable");
       bindChange("s-scsize",function(v){sv("speedDial",v);applySpeedDial(v);});
+      setCheck("s-tabfav","on",settings.tabFavicons);
+      bindCheck("s-tabfav","on","off",function(v){sv("tabFavicons",v);applyTabFavicons(v);});
+      setCheck("s-ntpquick","on",settings.ntpQuick);
+      bindCheck("s-ntpquick","on","off",function(v){sv("ntpQuick",v);applyNtpQuick(v);});
+      setCheck("s-ntpsearch","on",settings.ntpSearch);
+      bindCheck("s-ntpsearch","on","off",function(v){sv("ntpSearch",v);applyNtpSearch(v);});
+      setSel("s-ntpbg",settings.ntpBg||"default");
+      bindChange("s-ntpbg",function(v){sv("ntpBg",v);applyNtpBg(v);});
+      setSel("s-ntptiles",settings.ntpTiles||"8");
+      bindChange("s-ntptiles",function(v){sv("ntpTiles",v);applyNtpTiles(v);});
       setSel("s-tablayout",settings.tabLayout||"horizontal");
       bindChange("s-tablayout",function(v){if(v==="vertical"&&!isPremium()){setSel("s-tablayout","horizontal");requirePremium();return;}sv("tabLayout",v);applyTabLayout(v);});
       setCheck("s-vtabscollapse","on",settings.vtabsCollapsed);
@@ -4164,6 +4211,7 @@ function bindSettingsEvents(id){
       bindChange("s-bmbar",function(v){sv("bookmarkBar",v);applyBookmarkBar(v);});
     }else if(id==="search"){
       var se=$("s-se");if(se)se.value=settings.searchEngine||"kastravasearch";
+      var ce=$("s-customengine");if(ce){ce.value=settings.customEngine||"";ce.addEventListener("change",function(e){sv("customEngine",e.target.value.trim());});}
       var seCh=$("s-se");if(seCh)seCh.addEventListener("change",function(e){var v=e.target.value;if(PREMIUM_ENGINES[v]&&!isPremium()){e.target.value=settings.searchEngine||"kastravasearch";requirePremium();return;}sv("searchEngine",v);});
     }else if(id==="privacy"){
       setSel("s-tracking",settings.tracking);
@@ -4172,7 +4220,29 @@ function bindSettingsEvents(id){
       setCheck("s-location","allow",settings.location);
       bindChange("s-tracking",function(v){sv("tracking",v);});
       bindCheck("s-dnt","on","off",function(v){sv("dnt",v);toast("Do Not Track "+(v==="on"?"enabled":"disabled"));});
-      bindCheck("s-cookies","on","off",function(v){sv("cookies",v);toast("Cookies "+(v==="on"?"enabled":"disabled"));});
+      bindChange("s-cookies",function(v){sv("cookies",v);toast("Cookies: "+v);});
+      setCheck("s-jsglobal","on",settings.jsGlobal);
+      bindCheck("s-jsglobal","on","off",function(v){sv("jsGlobal",v);toast("JavaScript "+(v==="on"?"enabled":"blocked everywhere"));});
+      setCheck("s-images","on",settings.images);
+      bindCheck("s-images","on","off",function(v){sv("images",v);toast("Images "+(v==="on"?"enabled":"blocked"));});
+      setSel("s-referrer2",settings.sendReferrer||"off");
+      bindChange("s-referrer2",function(v){sv("sendReferrer",v);if(api&&api.setReferrer)api.setReferrer(v);toast("Referrer: "+v);});
+      setSel("s-webrtc",settings.webrtcMode||"disable");
+      bindChange("s-webrtc",function(v){sv("webrtcMode",v);toast("WebRTC "+v+" — new tabs");});
+      setSel("s-doh",settings.doh||"off");
+      bindChange("s-doh",function(v){sv("doh",v);toast("Secure DNS "+v+" — restart required");});
+      (function(){
+        var pr=settings.proxy||{};
+        setCheck("s-proxyon","on",pr.enabled?"on":"off");
+        setSel("s-proxytype",pr.type||"socks5");
+        var ph=$("s-proxyhost");if(ph)ph.value=pr.host||"";
+        var pp=$("s-proxyport");if(pp)pp.value=pr.port||"";
+        var saveP=function(){
+          var o={enabled:($("s-proxyon")&&$("s-proxyon").checked),type:($("s-proxytype")&&$("s-proxytype").value)||"socks5",host:($("s-proxyhost")&&$("s-proxyhost").value.trim())||"",port:($("s-proxyport")&&$("s-proxyport").value.trim())||""};
+          sv("proxy",o);toast("Proxy saved — restart required");
+        };
+        ["s-proxyon","s-proxytype","s-proxyhost","s-proxyport"].forEach(function(id){var el=$(id);if(!el)return;el.addEventListener(el.type==="checkbox"?"change":"change",saveP);});
+      })();
       bindCheck("s-location","allow","block",function(v){sv("location",v);toast("Location access "+(v==="allow"?"allowed":"blocked"));});
       var ch=$("s-clearhist");if(ch)ch.addEventListener("click",function(){showConfirmModal(function(){if(api&&api.clearHistory)api.clearHistory().then(function(){toast("History cleared");}).catch(function(){toast("History cleared");});});});
       var ca=$("s-clearall");if(ca)ca.addEventListener("click",function(){showConfirmModal(clearAllData,{title:"Clear All Data?",desc:"This will delete all history, bookmarks and shortcuts. This cannot be reverted!"});});
@@ -4193,6 +4263,9 @@ function bindSettingsEvents(id){
       bindCheck("s-hwacc","on","off",function(v){sv("hwAcc",v);toast("Restart required for this change");});
       setCheck("s-launchmax","on",settings.launchMaximized);
       bindCheck("s-launchmax","on","off",function(v){sv("launchMaximized",v);toast("Restart required for this change");});
+      setCheck("s-askdl","on",settings.askDlLoc);
+      bindCheck("s-askdl","on","off",function(v){sv("askDlLoc",v);});
+      var dd=$("s-dldir");if(dd){dd.value=settings.dlDir||"";dd.addEventListener("change",function(e){sv("dlDir",e.target.value.trim());toast("Download folder saved");});}
       setCheck("s-referrer","on",settings.sendReferrer);
       bindCheck("s-referrer","on","off",function(v){sv("sendReferrer",v);if(api&&api.setReferrer)api.setReferrer(v);});
       setCheck("s-sleeptabs","on",settings.sleepTabs);
@@ -4217,7 +4290,7 @@ function bindSettingsEvents(id){
       var ccm=$("s-liccopy");if(ccm)ccm.addEventListener("click",function(){copyText(LIC.machine);toast("Machine code copied");});
       var stp=$("s-licstop");if(stp)stp.addEventListener("click",function(){showConfirmModal(function(){stopPremium();},{title:"Stop Premium?",desc:"This ends Premium on this machine immediately. No refund is issued. You can buy again any time."});});
     }else if(id==="reset"){
-      function doResetSettings(){settings={setupDone:"1",searchEngine:"kastravasearch",accent:"#4fc3f7",fontSize:"12",reduceAnimations:"off",hwAcc:"on",dnt:"on",tracking:"strict",suggest:"off",bookmarkBar:"auto",startup:"last",confirmClose:"off",historyEnabled:"on",bookmarksEnabled:"on",cookies:"off",location:"block",zoom:"100",uiRadius:"medium",speedDial:"comfortable",showHomeBtn:"off",showCopyBtn:"on",showNtpClock:"on",showNtpLogo:"on",tabLayout:"horizontal",vtabsCollapsed:"off",shortcuts:{},sleepTabs:"off",siteShields:{},maxSuggestions:"8",launchMaximized:"off",sendReferrer:"off",cursorFx:"off",cursorFxMode:"color",cursorFxColor:"#4fc3f7",cursorFxForce:"medium",cursorFxSize:"medium",blobFx:"off",blobColor:"#2f6fed",blobCount:"3",blobSize:"medium",blobOpacity:"0.6",blobShape:"circle",glassFx:"off",glassColor:"#3b82f6",glassShape:"sphere",glassSize:"medium",glassOpacity:"0.5",particleFx:"off",particleColor:"#3b82f6",particleSize:"medium",particleDensity:"medium",clickSparkFx:"off",clickSparkColor:"#ffffff",clickSparkSize:"medium",clickSparkCount:"8",clickSparkDuration:"400",pixelTrailFx:"off",pixelTrailColor:"#ffffff",pixelTrailGrid:"medium",pixelTrailTrail:"medium",ribbonsFx:"off",ribbonsColor:"#2f6fed",ribbonsThickness:"medium",ribbonsPoints:"50",cursorStyle:"system",cursorStyleColor:"#ffffff"};if(api&&api.setSetting){Object.keys(settings).forEach(function(k){api.setSetting(k,settings[k]);});}document.documentElement.style.cssText="";applyFontSize("12");applyReduceAnim("off");applyUiRadius("medium");applySpeedDial("comfortable");applyHomeBtn("off");applyCopyBtn("on");applyNtpClock("on");applyNtpLogo("on");applyTabLayout("horizontal");applyVtabsCollapsed("off");applyBookmarkBar("auto");applyHistoryEnabled("on");applyBookmarksEnabled("on");applyAllFx();toast("Settings reset.");}
+      function doResetSettings(){settings={setupDone:"1",searchEngine:"kastravasearch",accent:"#4fc3f7",fontSize:"12",reduceAnimations:"off",hwAcc:"on",dnt:"on",tracking:"strict",suggest:"off",bookmarkBar:"auto",startup:"last",confirmClose:"off",historyEnabled:"on",bookmarksEnabled:"on",cookies:"off",location:"block",zoom:"100",uiRadius:"medium",speedDial:"comfortable",showHomeBtn:"off",showCopyBtn:"on",showNtpClock:"on",showNtpLogo:"on",tabLayout:"horizontal",vtabsCollapsed:"off",shortcuts:{},sleepTabs:"off",siteShields:{},jsGlobal:"on",images:"on",webrtcMode:"disable",doh:"off",proxy:{enabled:false},startupUrls:"",showFullUrls:"off",ntpQuick:"on",ntpSearch:"on",ntpBg:"default",ntpTiles:"8",tabFavicons:"on",clearHistoryOnExit:"off",historyKeep:"0",maxTabs:"0",askDlLoc:"off",dlDir:"",maxSuggestions:"8",launchMaximized:"off",sendReferrer:"off",cursorFx:"off",cursorFxMode:"color",cursorFxColor:"#4fc3f7",cursorFxForce:"medium",cursorFxSize:"medium",blobFx:"off",blobColor:"#2f6fed",blobCount:"3",blobSize:"medium",blobOpacity:"0.6",blobShape:"circle",glassFx:"off",glassColor:"#3b82f6",glassShape:"sphere",glassSize:"medium",glassOpacity:"0.5",particleFx:"off",particleColor:"#3b82f6",particleSize:"medium",particleDensity:"medium",clickSparkFx:"off",clickSparkColor:"#ffffff",clickSparkSize:"medium",clickSparkCount:"8",clickSparkDuration:"400",pixelTrailFx:"off",pixelTrailColor:"#ffffff",pixelTrailGrid:"medium",pixelTrailTrail:"medium",ribbonsFx:"off",ribbonsColor:"#2f6fed",ribbonsThickness:"medium",ribbonsPoints:"50",cursorStyle:"system",cursorStyleColor:"#ffffff"};if(api&&api.setSetting){Object.keys(settings).forEach(function(k){api.setSetting(k,settings[k]);});}document.documentElement.style.cssText="";applyFontSize("12");applyReduceAnim("off");applyUiRadius("medium");applySpeedDial("comfortable");applyHomeBtn("off");applyCopyBtn("on");applyNtpClock("on");applyNtpLogo("on");applyTabLayout("horizontal");applyVtabsCollapsed("off");applyBookmarkBar("auto");applyHistoryEnabled("on");applyBookmarksEnabled("on");applyAllFx();toast("Settings reset.");}
       var rs=$("s-reset");if(rs)rs.addEventListener("click",function(){showConfirmModal(function(){doResetSettings();},{title:"Reset all settings?",desc:"Restore all settings to defaults. This cannot be reverted!"});});
       var ra=$("s-resetall");if(ra)ra.addEventListener("click",function(){showConfirmModal(function(){doResetSettings();clearAllData();},{title:"Reset everything?",desc:"Restore defaults and delete all history, bookmarks and top sites. This cannot be reverted!"});});
       var sr=$("s-setupreplay");if(sr)sr.addEventListener("click",function(){try{saveSetting("setupDone","");}catch(e){}setupRestart();});
@@ -4371,6 +4444,11 @@ async function loadSavedSession(){
   var mode=settings.startup||"last";
   if(mode==="blank"){addTab();return;}
   if(mode==="home"||mode==="blank"){addTab();return;}
+  if(mode==="urls"){
+    var urls=(settings.startupUrls||"").split("\n").map(function(u){return u.trim();}).filter(function(u){return u;}).slice(0,12);
+    if(urls.length){urls.forEach(function(u){addTab(resolveUrl(u));});return;}
+    addTab();return;
+  }
   if(!api||!api.loadSession){addTab();return;}
   var data=await api.loadSession().catch(function(){return null;});
   var list=null,activeUrl=null;
@@ -4428,6 +4506,11 @@ function init(){
       try{applyHistoryEnabled(settings.historyEnabled||"on");}catch(e){}
       try{applyBookmarksEnabled(settings.bookmarksEnabled||"on");}catch(e){}
       try{applyTabLayout(settings.tabLayout||"horizontal");}catch(e){}
+      try{applyNtpQuick(settings.ntpQuick||"on");}catch(e){}
+      try{applyNtpSearch(settings.ntpSearch||"on");}catch(e){}
+      try{applyNtpBg(settings.ntpBg||"default");}catch(e){}
+      try{applyNtpTiles(settings.ntpTiles||"8");}catch(e){}
+      try{applyTabFavicons(settings.tabFavicons||"on");}catch(e){}
       try{applyVtabsCollapsed(settings.vtabsCollapsed||"off");}catch(e){}
       try{applyAllFx();}catch(e){}
       try{applyEditionUI();}catch(e){}
@@ -4471,7 +4554,7 @@ function init(){
 }
 if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",init);}else{init();}
 window.addTab=addTab; window.selectTab=selectTab; window.closeTab=closeTab; window.tabs=tabs; window.tabMap=tabMap;
-window.esc=esc; window.reloadPage=reloadPage; window.goBack=goBack; window.goForward=goForward; window.openFindBar=openFindBar; window.takeScreenshot=takeScreenshot; window.togglePip=togglePip; window.toggleReader=toggleReader; window.toggleSplit=toggleSplit; window.toggleRadar=toggleRadar; window.viewSource=viewSource; window.openSideTab=openSideTab; window.openSettings=openSettings; window.goHome=goHome; window.openAgPanel=openAgPanel;window.syncNowAction=syncNowAction;window.shotFullPage=shotFullPage;window.openShotEditor=openShotEditor;window.sleepTab=sleepTab;window.wakeTab=wakeTab;window.toggleMute=toggleMute;window.focusOmnibox=focusOmnibox;window.toggleBookmark=toggleBookmark;window.toggleBookmarkBar=toggleBookmarkBar;window.reopenTab=reopenTab; window.cycleTab=cycleTab; window.showPage=showPage; window.applyThemeKey=applyThemeKey; window.saveSetting=saveSetting; window.toast=toast; window.toggleTabLayout=toggleTabLayout; window.applyTabLayout=applyTabLayout; window.applyVtabsCollapsed=applyVtabsCollapsed; window.EDITION=EDITION; window.isPremium=isPremium; window.requirePremium=requirePremium; window.activatePremium=activatePremium; window.loadLicense=loadLicense; window.KAS_API=KAS_API; window.KAS_STORE=KAS_STORE; window.LIC=LIC; window.clickCheckout=null; window.openPremiumStore=openPremiumStore; window.copyText=copyText;
+window.esc=esc; window.reloadPage=reloadPage; window.goBack=goBack; window.goForward=goForward; window.openFindBar=openFindBar; window.takeScreenshot=takeScreenshot; window.togglePip=togglePip; window.toggleReader=toggleReader; window.toggleSplit=toggleSplit; window.toggleRadar=toggleRadar; window.viewSource=viewSource; window.openSideTab=openSideTab; window.openSettings=openSettings; window.goHome=goHome; window.openAgPanel=openAgPanel;window.syncNowAction=syncNowAction;window.shotFullPage=shotFullPage;window.openShotEditor=openShotEditor;window.sleepTab=sleepTab;window.wakeTab=wakeTab;window.toggleMute=toggleMute;window.focusOmnibox=focusOmnibox;window.toggleBookmark=toggleBookmark;window.toggleBookmarkBar=toggleBookmarkBar;window.duplicateTab=duplicateTab;window.closeTabsRight=closeTabsRight;window.closeOtherTabs=closeOtherTabs;window.reopenTab=reopenTab; window.cycleTab=cycleTab; window.showPage=showPage; window.applyThemeKey=applyThemeKey; window.saveSetting=saveSetting; window.toast=toast; window.toggleTabLayout=toggleTabLayout; window.applyTabLayout=applyTabLayout; window.applyVtabsCollapsed=applyVtabsCollapsed; window.EDITION=EDITION; window.isPremium=isPremium; window.requirePremium=requirePremium; window.activatePremium=activatePremium; window.loadLicense=loadLicense; window.KAS_API=KAS_API; window.KAS_STORE=KAS_STORE; window.LIC=LIC; window.clickCheckout=null; window.openPremiumStore=openPremiumStore; window.copyText=copyText;
 Object.defineProperty(window,'activeTab',{configurable:true,get:function(){return activeTab;}});
 Object.defineProperty(window,'settings',{configurable:true,get:function(){return settings;}});
 })();
@@ -4566,6 +4649,10 @@ var COMMANDS=[
   {name:'Full-Page Screenshot',icon:'\uD83D\uDCF8',action:function(){W.shotFullPage();}},
   {name:'Sync Now',icon:'\uD83D\uDD04',action:function(){W.syncNowAction();}},
   {name:'Sleep Tab',icon:'\uD83D\uDCA4',action:function(){var at=W.activeTab;if(at&&W.tabs){var t=W.tabs.filter(function(x){return x.id===at.id;})[0];if(t&&window.sleepTab)window.sleepTab(t);}}}
+,
+  {name:"Duplicate Tab",icon:"\u29C9",action:function(){var at=W.activeTab;if(at&&W.duplicateTab)W.duplicateTab();},keys:"Ctrl+Shift+D"},
+  {name:"Close Tabs to the Right",icon:"\u25B6",action:function(){var at=W.activeTab;if(at&&W.closeTabsRight)W.closeTabsRight();}},
+  {name:"Close Other Tabs",icon:"\u2715",action:function(){var at=W.activeTab;if(at&&W.closeOtherTabs)W.closeOtherTabs();}}
 ];
 var paletteOpen=false,paletteIdx=0,paletteFiltered=[];
 function openPalette(){

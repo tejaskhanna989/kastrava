@@ -152,29 +152,38 @@ function createWindow() {
       try { registerAgDownloadHandler(session.fromPartition(part)) } catch {}
     }
     try { registerAgDownloadHandler(session.defaultSession) } catch {}
-    ses.on('will-download', (event, item) => agWillDownload(item))
+    ses.on('will-download', (event, item) => agDownloadRouted(item))
   }
 
   // Tracking Radar: live per-tab tracker monitoring
+  const topHostOf = (details) => {
+    try {
+      const f = details.frame
+      const topUrl = (f && f.top && f.top.url) || details.url
+      const u = new URL(topUrl)
+      if (u.protocol === 'http:' || u.protocol === 'https:') return u.hostname
+    } catch {}
+    return ''
+  }
   ses.webRequest.onBeforeRequest((details, callback) => {
     // Context isolation: webpages must never touch local files
     try {
       if (new URL(details.url).protocol === 'file:') return callback({ cancel: true })
     } catch {}
+    // Content switches: F2 per-site shields first (a per-site "off" always
+    // wins), otherwise the global JavaScript / Images switches decide.
+    // Note: inline page scripts still run — same limit as ScriptSafe.
     try {
-      // F2 per-site shields: block external scripts on domains the user
-      // flagged (inline page scripts still run — same limit as ScriptSafe).
-      if (details.resourceType === 'script' && settingsBackend) {
+      const rt = details.resourceType
+      if ((rt === 'script' || rt === 'image') && settingsBackend) {
         const shields = settingsBackend.get('siteShields') || {}
-        let topHost = ''
-        try {
-          const f = details.frame
-          const topUrl = (f && f.top && f.top.url) || details.url
-          const u = new URL(topUrl)
-          if (u.protocol === 'http:' || u.protocol === 'https:') topHost = u.hostname
-        } catch {}
+        const topHost = topHostOf(details)
         const sh = topHost && shields[topHost]
-        if (sh && sh.master !== 'off' && sh.js === 'off') return callback({ cancel: true })
+        if (sh && sh.master !== 'off' && ((rt === 'script' && sh.js === 'off') || (rt === 'image' && sh.images === 'off'))) {
+          return callback({ cancel: true })
+        }
+        const g = settingsBackend.get(rt === 'script' ? 'jsGlobal' : 'images')
+        if (g === 'off') return callback({ cancel: true })
       }
     } catch {}
     callback({})
@@ -192,17 +201,16 @@ function createWindow() {
   })
   ses.webRequest.onHeadersReceived((details, callback) => {
     const rh = details.responseHeaders
-    const cookiesOff = settingsBackend && settingsBackend.get('cookies') === 'off'
+    // Cookie policy: off = block all, third = first-party only, on = allow.
+    const cookieMode = (settingsBackend && settingsBackend.get('cookies')) || 'off'
+    const cookiesOff = cookieMode === 'off'
     let siteCookieAllow = false
     try {
       // F2 per-site shields: a site set to "allow cookies" (or shields down)
       // keeps its Set-Cookie headers despite the global block.
       if (cookiesOff && settingsBackend) {
         const shields = settingsBackend.get('siteShields') || {}
-        const f = details.frame
-        const topUrl = (f && f.top && f.top.url) || details.url
-        const u = new URL(topUrl)
-        const h = (u.protocol === 'http:' || u.protocol === 'https:') ? u.hostname : ''
+        const h = topHostOf(details)
         const sh = h && shields[h]
         siteCookieAllow = !!(sh && (sh.master === 'off' || sh.cookies === 'allow'))
       }
@@ -214,6 +222,12 @@ function createWindow() {
         if (k.toLowerCase() === 'set-cookie') {
           hasSetCookie = true
           if (cookiesOff && !siteCookieAllow) continue
+          if (cookieMode === 'third' && !siteCookieAllow) {
+            try {
+              const uh = new URL(details.url).hostname
+              if (uh && uh !== topHostOf(details)) continue
+            } catch { continue }
+          }
         }
         filtered[k] = rh[k]
       }
@@ -233,13 +247,33 @@ function createWindow() {
     const requestHeaders = details.requestHeaders || {}
     if (settingsBackend) {
       if (settingsBackend.get('dnt') === 'on') requestHeaders['DNT'] = '1'
-      if (settingsBackend.get('cookies') === 'off') {
+      const cm = settingsBackend.get('cookies') || 'off'
+      if (cm === 'off') {
         delete requestHeaders['Cookie']
         delete requestHeaders['cookie']
+      } else if (cm === 'third') {
+        try {
+          const uh = new URL(details.url).hostname
+          if (uh && uh !== topHostOf(details)) {
+            delete requestHeaders['Cookie']
+            delete requestHeaders['cookie']
+          }
+        } catch {}
       }
-      if (settingsBackend.get('sendReferrer') === 'off') {
+      // Referrer policy: off = strip, origin = origin only, on = untouched.
+      const ref = settingsBackend.get('sendReferrer') || 'off'
+      if (ref === 'off') {
         delete requestHeaders['Referer']
         delete requestHeaders['Referrer']
+      } else if (ref === 'origin' && (requestHeaders['Referer'] || requestHeaders['Referrer'])) {
+        try {
+          const top = topHostOf(details)
+          const proto = new URL(details.url).protocol
+          if (top) {
+            requestHeaders['Referer'] = proto + '//' + top + '/'
+            delete requestHeaders['Referrer']
+          }
+        } catch {}
       }
     }
     callback({ requestHeaders })
@@ -510,6 +544,29 @@ function initElectronUpdater() {
   }
 }
 
+// Proxy (manual): applied to every session at startup from settings.
+// Requires a restart after changing. Bypass stays local-only.
+function proxyRules() {
+  try {
+    const p = settingsBackend && settingsBackend.get('proxy')
+    if (p && p.enabled && p.host && p.port) {
+      const type = (p.type === 'http' || p.type === 'socks5') ? p.type : 'socks5'
+      return type + '://' + p.host + ':' + p.port
+    }
+  } catch {}
+  return null
+}
+function applyProxyAll(session) {
+  const rules = proxyRules()
+  const cfg = rules
+    ? { proxyRules: rules, proxyBypassRules: 'localhost,127.0.0.1' }
+    : { proxyRules: 'direct://', proxyBypassRules: 'localhost,127.0.0.1' }
+  for (const part of ['kastrava', 'kastrava-shell']) {
+    try { session.fromPartition(part).setProxy(cfg) } catch {}
+  }
+  try { session.defaultSession.setProxy(cfg) } catch {}
+}
+
 // ---- Linux system packages (deb / rpm / pacman): version popup,
 // download the matching package, verify exact byte size against the
 // release API, privileged install, relaunch. Never runs for AppImage.
@@ -718,6 +775,8 @@ function initLinuxSysUpdate() {
 app.whenReady().then(async () => {
   await initDatabase()
   initBackend()
+  try { pruneHistory() } catch {}
+  try { setInterval(pruneHistory, 24 * 60 * 60 * 1000) } catch {}
   wipeLegacyWebData()
   initAutoUpdate()
   // Strip the Electron token from the User-Agent on every session the app
@@ -728,11 +787,13 @@ app.whenReady().then(async () => {
     privacy.applyUserAgent(session.fromPartition('kastrava'))
     privacy.applyUserAgent(session.fromPartition('kastrava-shell'))
     privacy.applyUserAgent(session.defaultSession)
+    applyProxyAll(session)
   } catch {}
 
   app.on('web-contents-created', (_, wc) => {
     // Privacy spoofs (UA already set per-session below; page-level props
     // like connection/battery are neutered per document here).
+    try { privacy.setWebrtcAllowed(settingsBackend && settingsBackend.get('webrtcMode') === 'allow') } catch {}
     try { privacy.installPrivacyProtections(wc) } catch {}
     // Cover any session a guest/popup ends up with, so downloads from
     // popups (payment flows, drive links, blob: URLs) can't miss the
@@ -797,9 +858,22 @@ app.on('activate', () => {
 })
 
 let quitSaved = false
+function pruneHistory() {
+  try {
+    const keep = parseInt((settingsBackend && settingsBackend.get('historyKeep')) || '0', 10) || 0
+    if (keep > 0) {
+      run('DELETE FROM history WHERE visited_at < ?', [Date.now() - keep * 86400000])
+    }
+  } catch {}
+}
 app.on('before-quit', () => {
   if (quitSaved) return
   quitSaved = true
+  try {
+    if (settingsBackend && settingsBackend.get('clearHistoryOnExit') === 'on' && db) {
+      run('DELETE FROM history')
+    }
+  } catch {}
   // Volatile RAM: drop all in-memory web storage (cookies, cache,
   // IndexedDB, DOM storage). The OS frees the rest on exit.
   try {
@@ -1026,15 +1100,29 @@ let agIdCounter = 0
 function registerAgDownloadHandler(targetSes) {
   if (!targetSes || targetSes.__agRegistered) return
   targetSes.__agRegistered = true
-  targetSes.on('will-download', (event, item) => agWillDownload(item))
+  targetSes.on('will-download', (event, item) => agDownloadRouted(item))
+}
+// "Ask where to save": synchronous picker inside the event, so the download
+// never starts without a destination. Cancel aborts it. Used by every
+// session (main tabs and popups alike).
+function agDownloadRouted(item) {
+  try {
+    if (settingsBackend && settingsBackend.get('askDlLoc') === 'on') {
+      const r = dialog.showSaveDialogSync(mainWindow, { defaultPath: agFinalPath(agSafeFilename(item)) })
+      if (!r) { try { item.cancel() } catch {} return }
+      agWillDownload(item, r)
+      return
+    }
+  } catch {}
+  agWillDownload(item)
 }
 
 // User-initiated downloads save straight to the real Downloads folder,
 // like every other browser. Chromium still handles networking (cookies,
 // auth, redirects) and pause/resume.
-function agWillDownload(item) {
+function agWillDownload(item, customPath) {
   const id = ++agIdCounter
-  const fp = agFinalPath(agSafeFilename(item))
+  const fp = customPath || agFinalPath(agSafeFilename(item))
   const dl = { id, url: item.getURL(), filename: path.basename(fp), outputPath: fp, received: 0, total: 0, speed: 0, state: 'downloading', proc: null, item: null, _timer: null, _lastCheck: null, _lastBytes: 0, savedTo: fp }
   agDownloads.set(id, dl)
   attachNativeDownload(id, item)
@@ -1101,8 +1189,16 @@ function agPoll(id) {
 }
 
 const dlDir = () => {
-  const dir = realDownloadDir()
-  try { fs.mkdirSync(dir, { recursive: true }) } catch {}
+  let dir = realDownloadDir()
+  try {
+    const custom = settingsBackend && settingsBackend.get('dlDir')
+    if (custom && path.isAbsolute(custom)) {
+      fs.mkdirSync(custom, { recursive: true })
+      if (fs.statSync(custom).isDirectory()) dir = custom
+    } else {
+      fs.mkdirSync(dir, { recursive: true })
+    }
+  } catch {}
   return dir
 }
 

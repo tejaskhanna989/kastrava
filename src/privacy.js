@@ -456,8 +456,11 @@ function applyUserAgent(sessionObj) {
   sessionObj.setUserAgent(CHROME_UA)
 }
 
+let webrtcAllowed = false
+function setWebrtcAllowed(v) { webrtcAllowed = !!v }
 function installWebRTCProtection(webContents) {
   if (!webContents || webContents.isDestroyed()) return
+  if (webrtcAllowed) return
   webContents.on('dom-ready', () => {
     webContents.executeJavaScript(WEBRTC_BLOCK_SCRIPT).catch(() => {})
   })
@@ -659,7 +662,7 @@ async function applyProxy(sessionObj, proxyConfig) {
 
 module.exports = {
   CHROME_UA, CANVAS_NOISE_SCRIPT, WEBRTC_BLOCK_SCRIPT, NAVIGATOR_SPOOF_SCRIPT,
-  applyUserAgent, installWebRTCProtection, installCanvasProtection,
+  applyUserAgent, installWebRTCProtection, setWebrtcAllowed, installCanvasProtection,
   installNavigatorSpoof, installWebviewProtection, configureWebRTC,
   installPrivacyProtections, installPrivacyFilter, installFontProtection,
   installCookieBannerDismissal, loadFeatureState, saveFeatureState,
