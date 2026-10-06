@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Account dashboard — Kastrava</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<meta name="description" content="Manage your Kastrava account: Premium keys, devices, sync.">
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+:root{--bg:#faf7f1;--card:#ffffff;--ink:#14110b;--text:#2b2620;--muted:#5c564a;--muted2:#8a8474;--line:#f0ede6;--navbg:rgba(250,247,241,.9);--panel:#16130e;--pill:#16130e;--pill-fg:#ffffff;--blue:#0288d1;--green:#0b5c1b;--red:#c62828;color-scheme:light}
+html[data-theme="dark"]{--bg:#12100c;--card:#1b1812;--ink:#f3eee4;--text:#cfc8ba;--muted:#9d9484;--muted2:#7c7466;--line:#262117;--navbg:rgba(18,16,12,.9);--panel:#211c14;--pill:#f3eee4;--pill-fg:#14110b;--blue:#4fc3f7;--green:#61d98a;--red:#ff8a80;color-scheme:dark}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.65;-webkit-font-smoothing:antialiased}
+h1,h2{font-family:'Space Grotesk',sans-serif}
+.mono{font-family:'JetBrains Mono',monospace}
+.container{max-width:760px;margin:0 auto;padding:0 28px}
+nav{position:sticky;top:0;z-index:50;background:var(--navbg);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+nav .container{display:flex;align-items:center;gap:12px;padding-top:13px;padding-bottom:13px}
+nav img{width:36px;height:36px;border-radius:9px}
+nav .name{font-size:15px;font-weight:700;letter-spacing:4px;color:var(--ink);font-family:'Space Grotesk',sans-serif}
+main{padding:56px 0 80px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:30px 28px;margin-bottom:16px}
+.card h2{font-size:19px;color:var(--ink);margin-bottom:4px}
+.card .sub{font-size:13.5px;color:var(--muted);margin-bottom:14px}
+label{display:block;font-size:13px;font-weight:600;color:var(--ink);margin:12px 0 6px}
+input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:14px;font-family:inherit}
+.btn{display:inline-block;padding:13px 24px;border-radius:12px;border:none;background:#0288d1;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}
+.btn.danger{background:transparent;border:1px solid var(--red);color:var(--red);padding:8px 16px;font-size:13px}
+.msg{font-size:13.5px;color:var(--muted);margin-top:12px;min-height:20px}
+.msg.err{color:var(--red)}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;font-size:11px;letter-spacing:1px;color:var(--muted2);padding:8px 10px 8px 0;border-bottom:1px solid var(--line)}
+td{padding:10px 10px 10px 0;border-bottom:1px solid var(--line);vertical-align:top}
+.dev{display:flex;align-items:center;gap:8px;margin:3px 0;font-size:12.5px}
+.dev button{padding:2px 10px;font-size:11px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer}
+.fine{font-size:12.5px;color:var(--muted2);margin-top:12px}
+footer{border-top:1px solid var(--line);padding:28px 0 44px}
+footer p{font-size:12.5px;color:var(--muted2)}
+footer a{color:var(--blue);text-decoration:none}
+</style>
+<script>
+(function(){var r=document.documentElement,s=null;try{s=localStorage.getItem('kas-theme');}catch(e){}
+r.setAttribute('data-theme',s?s:(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'));})();
+</script>
+</head>
+<body>
+<nav><div class="container">
+<img src="logo.png" alt="Kastrava"><span class="name">KASTRAVA</span>
+<span style="flex:1"></span><a href="/" style="font-size:13px;color:var(--muted);text-decoration:none">← home</a>
+</div></nav>
+<main><div class="container" id="app">
+<div class="card" id="login-card">
+<h2>Account dashboard</h2>
+<p class="sub">Keys, devices and sync. Log in to manage them.</p>
+<label for="ac-email">Email</label>
+<input id="ac-email" type="email" autocomplete="email" placeholder="you@example.com">
+<label for="ac-pass">Password</label>
+<input id="ac-pass" type="password" autocomplete="current-password" placeholder="••••••••">
+<button class="btn" id="ac-go" style="margin-top:16px">Log in</button>
+<div class="msg" id="ac-msg"></div>
+<p class="fine">No account yet? <a href="/account.html" style="color:var(--blue)">Sign up</a> first — it takes ten seconds.</p>
+</div>
+<div id="dash" style="display:none">
+<div class="card"><h2>Premium keys</h2><p class="sub">One key works on up to 10 devices. Logged-in browsers pick up new keys and renewals on their own.</p>
+<div id="keys-out">Loading…</div>
+<div style="margin-top:14px"><button class="btn" id="buy-go">Buy a new key — $2.59 / 34 days</button></div>
+<div class="msg" id="buy-msg"></div>
+<p class="fine">Charged in INR (₹248). Renewing extends your newest key — every logged-in browser follows.</p>
+</div>
+<div class="card"><h2>Sync</h2><div id="sync-out">Loading…</div></div>
+<div class="card"><h2>Session</h2>
+<p class="sub" id="me-line"></p>
+<button class="btn ghost" id="ac-out">Log out</button>
+</div>
+</div>
+</div></main>
+<footer><div class="container"><p>Kastrava 101 RC · <a href="/">home</a></p></div></footer>
+<script>
+(function(){
+var KAS_API=((window.KAS_API)||(location.search.match(/[?&]api=([^&]+)/)||[])[1]||'https://nexufog.pp.ua').replace(/\/$/,'');
+function tok(){try{return localStorage.getItem('kas_sync_token')||'';}catch(e){return '';}}
+function authz(){return {'Content-Type':'application/json','Authorization':'Bearer '+tok()};}
+function esc(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+var loginCard=document.getElementById('login-card'),dash=document.getElementById('dash');
+function showDash(email){loginCard.style.display='none';dash.style.display='block';document.getElementById('me-line').textContent='Signed in as '+email+'.';loadKeys();loadSync(email);}
+function loadSync(email){
+  var out=document.getElementById('sync-out');
+  fetch(KAS_API+'/api/sync/pull',{method:'POST',headers:authz(),body:'{}'})
+  .then(function(r){return r.json();}).then(function(j){
+    out.innerHTML=j&&typeof j.rev==='number'
+      ?'Encrypted copy revision <b>'+j.rev+'</b>'+(j.updated_at?' · updated '+esc(j.updated_at.slice(0,16).replace('T',' ')):'')+'<br><span class="fine">Server stores it, cannot read it.</span>'
+      :'No synced data yet — log in inside the apps first.';
+  }).catch(function(){out.textContent='Could not load.';});
+}
+function loadKeys(){
+  var out=document.getElementById('keys-out');
+  out.textContent='Loading…';
+  fetch(KAS_API+'/api/account/devices',{method:'POST',headers:authz(),body:'{}'})
+  .then(function(r){return r.json();}).then(function(j){
+    if(!j||!j.ok){out.textContent='Could not load keys.';return;}
+    if(!j.keys||!j.keys.length){out.innerHTML='No keys yet — buy one below.';return;}
+    var h='<table><tr><th>Key</th><th>Status</th><th>Expires</th><th>Devices</th></tr>';
+    j.keys.forEach(function(k){
+      h+='<tr><td class="mono">'+esc(k.key)+'</td><td>'+esc(k.status)+'</td><td>'+esc((k.expires_at||'?').slice(0,10))+'</td><td><b>'+k.devices_used+'/'+(k.device_limit||10)+'</b>';
+      (k.devices||[]).forEach(function(d){
+        h+='<div class="dev"><span>'+esc(d.name||d.id)+'</span><button data-k="'+esc(k.key)+'" data-m="'+esc(d.id)+'">Remove</button></div>';
+      });
+      h+='</td></tr>';
+    });
+    out.innerHTML=h+'</table>';
+    out.querySelectorAll('button[data-k]').forEach(function(b){
+      b.addEventListener('click',function(){
+        if(!confirm('Remove this device? It loses Premium until it logs in again.'))return;
+        fetch(KAS_API+'/api/account/device/remove',{method:'POST',headers:authz(),body:JSON.stringify({key:b.dataset.k,machine_id:b.dataset.m})})
+        .then(function(r){return r.json();}).then(function(){loadKeys();}).catch(function(){});
+      });
+    });
+  }).catch(function(){out.textContent='Could not load keys.';});
+}
+var goEl=document.getElementById('ac-go'),msgEl=document.getElementById('ac-msg');
+goEl.addEventListener('click',function(){
+  var email=(document.getElementById('ac-email').value||'').trim(),pw=document.getElementById('ac-pass').value||'';
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email)||pw.length<8){msgEl.textContent='Valid email + 8-character password.';msgEl.className='msg err';return;}
+  goEl.disabled=true;msgEl.className='msg';msgEl.textContent='Logging in…';
+  fetch(KAS_API+'/api/account/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,password:pw})})
+  .then(function(r){return r.json();}).then(function(j){
+    goEl.disabled=false;
+    if(j&&j.ok){try{localStorage.setItem('kas_sync_token',j.token);}catch(e){}showDash(j.email);}
+    else{msgEl.className='msg err';msgEl.textContent='Wrong email or password.';}
+  }).catch(function(){goEl.disabled=false;msgEl.className='msg err';msgEl.textContent='Could not reach the server.';});
+});
+document.getElementById('ac-out').addEventListener('click',function(){
+  fetch(KAS_API+'/api/account/logout',{method:'POST',headers:authz(),body:'{}'}).catch(function(){});
+  try{localStorage.removeItem('kas_sync_token');}catch(e){}
+  location.reload();
+});
+var buyEl=document.getElementById('buy-go'),buyMsg=document.getElementById('buy-msg');
+buyEl.addEventListener('click',function(){
+  if(!window.Razorpay){buyMsg.textContent='Checkout failed to load. Refresh and try again.';return;}
+  buyMsg.className='msg';buyMsg.textContent='Contacting store…';buyEl.disabled=true;
+  fetch(KAS_API+'/api/order',{method:'POST',headers:authz(),body:JSON.stringify({account_token:tok()})})
+  .then(function(r){return r.json();}).then(function(o){
+    if(!o||!o.order_id){buyMsg.textContent='Order failed.';buyEl.disabled=false;return;}
+    var rzp=new Razorpay({key:o.key_id,amount:o.amount,currency:o.currency,order_id:o.order_id,
+      name:'Kastrava Premium',description:'One-time $2.59 - 34 days - account key',
+      theme:{color:document.documentElement.getAttribute('data-theme')==='dark'?'#f3eee4':'#16130e'},
+      handler:function(res){
+        fetch(KAS_API+'/api/verify',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({order_id:res.razorpay_order_id,payment_id:res.razorpay_payment_id,signature:res.razorpay_signature,machine_id:'',account_token:tok()})})
+        .then(function(r){return r.json();}).then(function(v){
+          buyEl.disabled=false;
+          if(v&&v.ok&&v.key){buyMsg.textContent='Paid. Key '+v.key+' is on your account'+(v.renewed?' (renewal extended)':'')+' — logged-in browsers pick it up automatically.';loadKeys();}
+          else{buyMsg.className='msg err';buyMsg.textContent='Payment could not be verified.';}
+        }).catch(function(){buyEl.disabled=false;buyMsg.textContent='Verification failed — email your payment ID to support.';});
+      },
+      modal:{ondismiss:function(){buyEl.disabled=false;buyMsg.textContent='';}}});
+    rzp.on('payment.failed',function(){buyEl.disabled=false;buyMsg.textContent='Payment failed. No charge was made.';});
+    rzp.open();
+  }).catch(function(){buyEl.disabled=false;buyMsg.textContent='Order failed.';});
+});
+// Auto-show dashboard when already logged in.
+(function(){
+  var t=tok();if(!t)return;
+  fetch(KAS_API+'/api/account/me',{method:'POST',headers:authz(),body:'{}'})
+  .then(function(r){return r.json();}).then(function(j){
+    if(j&&j.ok){showDash(j.email);document.getElementById('me-line').textContent='Signed in as '+j.email+'.';}
+  }).catch(function(){});
+})();
+})();
+</script>
+</body>
+</html>
