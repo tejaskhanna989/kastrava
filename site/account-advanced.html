@@ -71,9 +71,13 @@ r.setAttribute('data-theme',s?s:(window.matchMedia&&window.matchMedia('(prefers-
 <div class="plan-pick" data-plan="monthly" style="padding:14px;border-radius:14px;border:2px solid var(--ink);cursor:pointer"><div style="font-weight:700;font-size:15px">Monthly — $7</div><div style="font-size:12.5px;color:var(--muted)">₹670 · 30 days</div></div>
 <div class="plan-pick" data-plan="daily" style="padding:14px;border-radius:14px;border:1px solid var(--line);cursor:pointer"><div style="font-weight:700;font-size:15px">Daily — $2</div><div style="font-size:12.5px;color:var(--muted)">₹190 · 24 hours</div></div>
 </div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 4px">
+<label style="padding:12px;border-radius:12px;border:2px solid var(--ink);cursor:pointer;font-size:14px" id="renew-man-lab"><input type="radio" name="renew" value="manual" checked style="margin-right:6px">Manual<div style="font-size:11.5px;color:var(--muted)">Pay each time</div></label>
+<label style="padding:12px;border-radius:12px;border:1px solid var(--line);cursor:pointer;font-size:14px" id="renew-auto-lab"><input type="radio" name="renew" value="auto" style="margin-right:6px">Auto<div style="font-size:11.5px;color:var(--muted)">Mandate, cancel anytime</div></label>
+</div>
 <div style="margin-top:14px"><button class="btn" id="buy-go">Buy — ₹670 / 30 days</button></div>
 <div class="msg" id="buy-msg"></div>
-<p class="fine">Charged in INR (₹248). Renewing extends your newest key — every logged-in browser follows.</p>
+<p class="fine" id="buy-inrnote">Charged in INR (₹670). Renewing extends your newest key — every logged-in browser follows.</p>
 </div>
 <div class="card"><h2>Sync</h2><div id="sync-out">Loading…</div></div>
 <div class="card"><h2>Session</h2>
@@ -152,28 +156,25 @@ function paintPlan(){
     b.style.borderColor=on?'var(--ink)':'var(--line)';
   });
   buyEl.textContent='Buy — \u20B9'+PLAN_META[planPicked].inr+' / '+(PLAN_META[planPicked].days===1?'24 hours':'30 days');
+  var note=document.getElementById('buy-inrnote');
+  if(note)note.textContent='Charged in INR (\u20B9'+PLAN_META[planPicked].inr+'). Renewing extends your newest key — every logged-in browser follows.';
+  var autoLab=document.getElementById('renew-auto-lab');
+  if(autoLab){
+    var dis=planPicked==='daily';
+    autoLab.style.opacity=dis?'.45':'1';
+    var ar=autoLab.querySelector('input');if(ar){if(dis&&ar.checked){var mr=document.querySelector('input[name=renew][value=manual]');if(mr)mr.checked=true;}ar.disabled=dis;}
+  }
+  document.querySelectorAll('input[name=renew]').forEach(function(r){
+    var lab=r.closest('label');if(!lab)return;
+    lab.style.borderWidth=r.checked?'2px':'1px';
+    lab.style.borderColor=r.checked?'var(--ink)':'var(--line)';
+    r.addEventListener('change',function(){paintPlan();});
+  });
 }
 document.querySelectorAll('.plan-pick').forEach(function(b){
   b.addEventListener('click',function(){planPicked=b.dataset.plan;paintPlan();});
 });
 paintPlan();
-function renewChoice(go){
-  var ov=document.createElement('div');
-  ov.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box';
-  ov.innerHTML='<div style="background:var(--card);border:1px solid var(--line);border-radius:20px;padding:36px 34px;max-width:400px;width:100%"><div style="font-family:var(--mono);font-size:11px;letter-spacing:2px;color:var(--muted2);margin-bottom:10px">RENEWAL</div><div style="font-size:27px;color:var(--ink);margin-bottom:4px">How should it renew?</div><div style="font-size:13.5px;color:var(--muted);margin-bottom:20px">First charge now.</div><button id="rc-manual" style="display:block;width:100%;text-align:left;padding:15px 18px;border-radius:14px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;margin-bottom:10px;font-family:inherit"><div style="font-size:15px;font-weight:600">Manual renewal</div><div style="font-size:12.5px;color:var(--muted);margin-top:2px">Pay again each time. Nothing is stored.</div></button><button id="rc-auto" style="display:block;width:100%;text-align:left;padding:15px 18px;border-radius:14px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;margin-bottom:10px;font-family:inherit"><div style="font-size:15px;font-weight:600">Auto-renewal</div><div style="font-size:12.5px;color:var(--muted);margin-top:2px">Card/UPI mandate. Cancel anytime here.</div></button><button id="rc-x" style="display:block;width:100%;background:none;border:none;color:var(--muted2);cursor:pointer;padding:8px;font-size:13px;font-family:inherit">Cancel</button></div>';
-  document.body.appendChild(ov);
-  function done(){try{ov.remove();}catch(e){}}
-  ov.addEventListener('click',function(e){if(e.target===ov){done();buyEl.disabled=false;buyMsg.textContent='';}});
-  document.getElementById('rc-x').addEventListener('click',function(){done();buyEl.disabled=false;buyMsg.textContent='';});
-  document.getElementById('rc-manual').addEventListener('click',function(){done();go(false);});
-  if(typeof planPicked!=='undefined'&&planPicked==='daily'){
-    var ab=document.getElementById('rc-auto');
-    if(ab)ab.innerHTML='<b>Auto-renewal</b><br><span style="font-size:12.5px;color:var(--muted)">Monthly plan only</span>';
-  }
-  document.getElementById('rc-auto').addEventListener('click',function(){
-    if(typeof planPicked!=='undefined'&&planPicked==='daily'){alert('Daily is manual-renew only — auto-renew needs the Monthly plan.');return;}
-    done();go(true);});
-}
 function openSubscribe(){
   buyMsg.className='msg';buyMsg.textContent='Starting auto-renew…';
   fetch(KAS_API+'/api/subscribe',{method:'POST',headers:authz(),body:JSON.stringify({plan:planPicked,account_token:tok()})})
@@ -199,10 +200,10 @@ function openSubscribe(){
 buyEl.addEventListener('click',function(){
   if(!window.Razorpay){buyMsg.textContent='Checkout failed to load. Refresh and try again.';return;}
   buyMsg.className='msg';buyMsg.textContent='Contacting store…';buyEl.disabled=true;
-  renewChoice(function(auto){
-    if(auto){openSubscribe();return;}
-    manualPay();
-  });
+  var autoPick=document.querySelector('input[name=renew]:checked');
+  var auto=autoPick&&autoPick.value==='auto'&&planPicked!=='daily';
+  if(auto){openSubscribe();return;}
+  manualPay();
   function manualPay(){
   fetch(KAS_API+'/api/order',{method:'POST',headers:authz(),body:JSON.stringify({account_token:tok(),plan:planPicked})})
   .then(function(r){return r.json();}).then(function(o){
