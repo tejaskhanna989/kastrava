@@ -132,9 +132,9 @@ input[type=file].adm-file{font-size:13px;color:var(--muted);border:none;padding:
     </div>
     <div class="apane pane" id="pane-issue" style="display:none">
       <h2>Issue a key directly</h2>
-      <p class="sub">Mint a 34-day key, no purchase. Leave blank unless binding now.</p>
+      <p class="sub">Mint a key, no purchase. Leave blank unless binding now.</p>
       <input id="iss-machine" placeholder="Machine code (optional, e.g. KAS2-...)">
-      <input id="iss-note" style="margin-top:8px" placeholder="Note (optional, e.g. tester name)">
+      <div style="display:flex;gap:8px;margin-top:8px"><input id="iss-days" type="number" min="1" max="36500" value="30" title="Days" style="width:110px"><input id="iss-note" style="flex:1" placeholder="Note (optional, e.g. tester name)">
       <button id="iss-go" class="btn btn-primary" style="margin-top:10px">Mint key</button>
       <div id="iss-out" style="margin-top:12px;font-size:13px"></div>
     </div>
@@ -354,9 +354,9 @@ input[type=file].adm-file{font-size:13px;color:var(--muted);border:none;padding:
   });
   var issGo=document.getElementById('iss-go'),issOut=document.getElementById('iss-out');
   if(issGo)issGo.addEventListener('click',function(){
-    var m=document.getElementById('iss-machine'),n=document.getElementById('iss-note');
+    var m=document.getElementById('iss-machine'),n=document.getElementById('iss-note'),dd=document.getElementById('iss-days');
     issOut.textContent='Minting...';
-    api('/api/admin/issue',{machine_id:m?m.value.trim():'',note:n?n.value.trim():''},function(err,r){
+    api('/api/admin/issue',{machine_id:m?m.value.trim():'',note:n?n.value.trim():'',days:dd?Math.floor(Number(dd.value)||30):30},function(err,r){
       if(err){issOut.textContent='Network error.';return;}
       if(r.status===401){issOut.textContent='Wrong token.';return;}
       var j=r.json;

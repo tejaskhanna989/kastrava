@@ -658,7 +658,7 @@ var LIC={activated:false,machine:"",key:null,reason:"no_license",expiresAt:null,
 var licRefreshed=false;
 function editionLabel(){if(EDITION==="free")return "Free";return LIC.activated?"Premium":"Free";}
 function isPremium(){if(EDITION==="free")return false;return !!(LIC&&LIC.activated);}
-function requirePremium(){if(isPremium())return true;toast("Kastrava Premium — ₹248/34 days, 10 devices");setTimeout(function(){openPremiumSection();},600);return false;}
+function requirePremium(){if(isPremium())return true;toast("Kastrava Premium — from ₹190/day, 10 devices");setTimeout(function(){openPremiumSection();},600);return false;}
 function $(id){return document.getElementById(id)}
 function qa(sel){return document.querySelectorAll(sel)}
 function esc(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
@@ -751,7 +751,7 @@ async function activatePremium(key){
   if(!res||!res.ok){toast(res&&res.msg?res.msg:"Activation failed.");return;}
   LIC.activated=true;LIC.key=res.license&&res.license.key?res.license.key:LIC.key;
   applyEditionUI();try{renderSettingsSection("premium");}catch(e){}
-  toast("Premium activated — 34 days, up to 10 devices. No auto-renew.");
+  toast("Premium activated — up to 10 devices. No auto-renew.");
   try{renderWorkspaces();}catch(e){}
 }
 function copyText(t){
@@ -770,9 +770,8 @@ function openOobBuy(machine){
   var url=base+"/#premium?machine="+encodeURIComponent(machine||"");
   if(activeTab&&activeTab.wv){addTab(url);}else if(api&&api.openExternal){api.openExternal(url);}
 }
-// Renewal reminders: shown once per session when the 34 days are up (grace
-// nudge) or the license has fully expired. Renewal is a fresh one-time ₹248
-// payment — no auto-renew, so the browser keeps reminding.
+// Renewal reminders: shown once per session at grace/expiry. Renewal is a
+// fresh one-time payment — no auto-renew, so the browser keeps reminding.
 var renewReminded=false;
 function maybeRenewReminder(){
   if(renewReminded||!api||!api.licStatus)return;
@@ -786,12 +785,12 @@ function showRenewModal(s){
   s=s||{};
   var due=s.expiresAt?new Date(s.expiresAt).toLocaleDateString():"soon";
   var desc=s.grace
-    ?"Your 34 days ended \u2014 grace runs until "+due+". Pay \u20B9248 once to renew Premium for another 34 days; the key \u2014 and everything bound to it \u2014 stays the same."
-    :"Your Premium license expired"+(s.expiresAt?" ("+due+")":"")+". Pay \u20B9248 once to unlock Premium for another 34 days. No auto-renew \u2014 that's why reminders like this exist.";
+    ?"Plan ended \u2014 grace runs until "+due+". Renew to keep Premium on all devices; the key stays the same."
+    :"Your Premium plan ended"+(s.expiresAt?" ("+due+")":"")+". Renew to unlock Premium again. No auto-renew \u2014 that's why reminders like this exist.";
   showConfirmModal(function(){openOobBuy(s.machine||LIC.machine||"");},{
     title:s.grace?"Renew Kastrava Premium":"Kastrava Premium expired",
     desc:desc,
-    confirmText:"Renew \u2014 \u20B9248/34d"
+    confirmText:"Renew Premium"
   });
 }
 function saveSetting(k,v){settings[k]=v;if(api&&api.setSetting)api.setSetting(k,v);}
@@ -1381,7 +1380,7 @@ function renderSetup(){
     var __premActive=isPremium();
     var __premBox=__premActive
       ?'<div class="setup-priv"><div><span class="ok">\u2713</span>Premium is active on this machine</div></div>'
-      :'<div style="margin:10px auto 4px;padding:8px 24px;border-radius:999px;border:1px solid rgba(255,179,0,.45);background:rgba(255,179,0,.08);color:#ffb300;font-weight:700;font-size:20px;display:inline-block">\u20B9248 <span style="font-size:12px;color:var(--c-text2);font-weight:500">/ 34 days \u00B7 10 devices</span></div><div><button class="setup-btn" id="setup-prem-go" style="background:linear-gradient(135deg,#ffb300,#f57c00);box-shadow:0 6px 24px rgba(255,179,0,.35)">Get Premium</button></div><div class="setup-sub" style="margin-top:10px">Opens the buying page after setup finishes.</div>';
+      :'<div style="margin:10px auto 4px;padding:8px 24px;border-radius:999px;border:1px solid rgba(255,179,0,.45);background:rgba(255,179,0,.08);color:#ffb300;font-weight:700;font-size:20px;display:inline-block">\u20B9670 <span style="font-size:12px;color:var(--c-text2);font-weight:500">/ 30 days \u00B7 10 devices</span></div><div><button class="setup-btn" id="setup-prem-go" style="background:linear-gradient(135deg,#ffb300,#f57c00);box-shadow:0 6px 24px rgba(255,179,0,.35)">Get Premium</button></div><div class="setup-sub" style="margin-top:10px">Opens the buying page after setup finishes.</div>';
     c.innerHTML=dots+grid(ART_PREMIUM,'<div class="setup-name" style="font-size:24px;letter-spacing:2px">Account & Premium</div><div class="setup-sub">One login syncs bookmarks and settings between devices, encrypted end to end. Logging in auto-activates the account key on this device — up to 10 devices share one key, bound to your account, not the machine.'+(isPremium()?' Sync is on with your Premium.':' Your login is saved now — syncing itself unlocks with Premium.')+'</div><div class="setup-sub" id="setup-sync-note"></div><input id="setup-ac-email" type="email" autocomplete="email" placeholder="you@example.com" style="width:100%;margin:2px 0 8px;padding:10px 14px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px"><input id="setup-ac-pass" type="password" autocomplete="current-password" placeholder="Password (8+ characters)" style="width:100%;margin:0 0 12px;padding:10px 14px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px"><div><button class="setup-btn" id="setup-ac-login" style="margin-right:8px">Log in</button><button class="setup-btn" id="setup-ac-signup">Sign up</button></div><div style="margin-top:14px">'+__premBox+'</div>',CONTINUE);
     (function(){
       function note(t){var n=$("setup-sync-note");if(n)n.textContent=t||"";}
@@ -3868,20 +3867,20 @@ try{if(!window.__chromeVer){var m=navigator.userAgent.match(/Chrome\/([\d.]+)/);
 function renderSettingsSection(id){
   var p=$("settings-panel");var h="";
   if(id==="premium"){h="<h3>Kastrava Premium</h3>";
-    h+="<div class=\"desc\" style=\"margin-bottom:12px\">Unlock Tracking Radar, Cursor FX, Workspaces, Split View and every theme \u2014 <b>\u20B9248 for 34 days (~$2.8), up to 10 devices, no auto-renew</b>. The app reminds you before it ends.</div>";
+    h+="<div class=\"desc\" style=\"margin-bottom:12px\">Unlock Tracking Radar, Cursor FX, Workspaces, Split View and every theme \u2014 <b>\u20B9670 for 30 days (~$7), up to 10 devices, no auto-renew</b>. The app reminds you before it ends.</div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Your Machine Code</div><div style=\"display:flex;gap:8px;align-items:center\"><code id=\"pm-machine\" style=\"flex:1;word-break:break-all;font-size:12px\">"+(LIC.machine||"…")+"</code><button class=\"btn-sm\" id=\"pm-copy\">Copy</button></div><div class=\"desc\">This code identifies <b>this PC</b>. Your license is bound to it \u2014 copying the app to another machine won't transfer it. Enter it at checkout to renew with the same key.</div></div>";
     if(LIC.activated){
       var stColor=LIC.grace?"#e65100":"#2e7d32";
       var stText=LIC.grace?"\u26A0 Your 34 days ended \u2014 grace until "+(LIC.expiresAt?new Date(LIC.expiresAt).toLocaleDateString():"soon")+". Renew to keep Premium.":"\u2713 Premium active on this machine.";
       h+="<div class=\"sg\"><div class=\"lbl\">Status</div><div class=\"desc\" style=\"font-weight:600;color:"+stColor+"\">"+stText+"</div><div class=\"desc\">Key: <code style=\"font-size:12px\">"+(LIC.key||"")+"</code>"+(LIC.expiresAt?" &middot; unlocked until "+new Date(LIC.expiresAt).toLocaleDateString():"")+"</div></div>";
-      h+="<div class=\"sg\" style=\"display:flex;gap:8px;flex-wrap:wrap\"><button class=\"btn-sm btn-accent\" id=\"s-licrenew\">Renew \u2014 \u20B9248/34d</button><button class=\"btn-sm\" id=\"s-liccopy\">Copy machine code</button><button class=\"btn-sm btn-danger\" id=\"s-licstop\">Stop Premium</button></div>";
+      h+="<div class=\"sg\" style=\"display:flex;gap:8px;flex-wrap:wrap\"><button class=\"btn-sm btn-accent\" id=\"s-licrenew\">Renew Premium</button><button class=\"btn-sm\" id=\"s-liccopy\">Copy machine code</button><button class=\"btn-sm btn-danger\" id=\"s-licstop\">Stop Premium</button></div>";
     }else{
       if(LIC.reason==="expired"){
         h+="<div class=\"sg\"><div class=\"lbl\">Status</div><div class=\"desc\" style=\"font-weight:600;color:#c62828\">\u2716 Premium expired \u2014 pay \u20B9248 once to renew for 34 more days. No auto-renew \u2014 that's why this popup exists.</div></div>";
       }
       h+="<div class=\"sg\"><div class=\"lbl\">Activation Key</div><input type=\"text\" id=\"s-lickey\" style=\"font-family:var(--font-mono);letter-spacing:.5px\" placeholder=\"KAS-XXXX-XXXX-XXXX-XXXX\" autocomplete=\"off\" spellcheck=\"false\"><div class=\"desc\">Paste the key you received after paying, then click Activate.</div></div>";
-      h+="<div class=\"sg\" style=\"display:flex;gap:8px;flex-wrap:wrap\"><button class=\"btn-sm btn-accent\" id=\"s-licactivate\">Activate Premium</button>"+(LIC.reason==="expired"?"<button class=\"btn-sm btn-accent\" id=\"s-licrenew\">Renew \u2014 \u20B9248/34d</button>":"")+"<button class=\"btn-sm\" id=\"s-licbuy\">Buy Premium \u2014 \u20B9248/34d</button><button class=\"btn-sm\" id=\"s-liccopy\">Copy machine code</button></div>";
-      h+="<div class=\"desc\" style=\"margin-top:6px\">No key yet? Buy at <a href=\"#\" id=\"s-licbuylink\" style=\"color:var(--accent)\">kastrava.pp.ua/#premium</a> \u2014 you'll get a key instantly via Razorpay. One \u20B9248 payment unlocks 34 days, no auto-renew.</div>";
+      h+="<div class=\"sg\" style=\"display:flex;gap:8px;flex-wrap:wrap\"><button class=\"btn-sm btn-accent\" id=\"s-licactivate\">Activate Premium</button>"+(LIC.reason==="expired"?"<button class=\"btn-sm btn-accent\" id=\"s-licrenew\">Renew Premium</button>":"")+"<button class=\"btn-sm\" id=\"s-licbuy\">Buy Premium \u2014 \u20B9670/30d</button><button class=\"btn-sm\" id=\"s-liccopy\">Copy machine code</button></div>";
+      h+="<div class=\"desc\" style=\"margin-top:6px\">No key yet? Buy at <a href=\"#\" id=\"s-licbuylink\" style=\"color:var(--accent)\">kastrava.pp.ua/#premium</a> \u2014 you'll get a key instantly via Razorpay. Plans from \u20B9190/day, no auto-renew.</div>";
     }
     h+="<div class=\"sg\"><div class=\"lbl\">What's in Premium</div><div class=\"desc\">\u2022 Tracking Radar (live per-tab tracker score)<br>\u2022 Cursor Effects: Mouse Style, Fluid Splash, Blob Trail, Glass Lens, Particle Trail, Click Spark, Pixel Trail, Ribbons<br>\u2022 Workspaces<br>\u2022 Split View<br>\u2022 All 20 dark + light themes<br>\u2022 Extra search engines: Brave, Google, Ecosia<br>\u2022 Custom cursor arrow<br>\u2022 Picture-in-Picture, Screenshot<br>\u2022 Localhost Dashboard<br>\u2022 Vertical tabs layout<br>\u2022 Bookmark import &amp; export<br>\u2022 Custom shortcut remapping</div></div>";
   }

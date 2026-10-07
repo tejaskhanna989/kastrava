@@ -5,8 +5,8 @@
 //   PORT                  default 8787
 //   BIND_HOST             interface to bind, default 127.0.0.1 (0.0.0.0 for a public/bare deployment)
 //   KAS_HOST              public base URL used in responses, default http://127.0.0.1:8787
-//   PRICE_INR             one-time price per 34-day license, default 248
-//   PERIOD_DAYS           license validity days per payment, default 34
+//   PRICE_INR             legacy fallback price (paise x100), default 248
+//   PERIOD_DAYS           legacy fallback validity days, default 34
 //   GRACE_DAYS            days past expiry before access is revoked, default 3
 //   RAZORPAY_WEBHOOK_SECRET  secret for /api/webhook signature verification
 //   LICENSE_YEARS         legacy fallback for old one-time keys, default 10
@@ -28,6 +28,16 @@ const PERIOD_DAYS = parseInt(process.env.PERIOD_DAYS || '34', 10)
 const GRACE_DAYS = parseInt(process.env.GRACE_DAYS || '3', 10)
 const LICENSE_YEARS = parseInt(process.env.LICENSE_YEARS || '10', 10)
 const DEVICE_LIMIT = 10
+// Plans (one-time per cycle, no mandates — on purpose). `legacy` keeps old
+// builds working: no plan sent -> 34 days for INR 248, exactly as before.
+const PLANS = {
+  legacy: { usd: 2.8, inr: 248, days: 34, label: 'Legacy 34-day' },
+  monthly: { usd: 7, inr: 670, days: 30, label: 'Monthly' },
+  daily: { usd: 2, inr: 190, days: 1, label: 'Daily' }
+}
+function planOf(name) {
+  return PLANS[name] || PLANS.legacy
+}
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data')
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || ''
 const SITE_DIR = path.join(__dirname, '..', 'site')
@@ -120,6 +130,7 @@ function makeReceipt(orderId, machineRaw) {
   const key = store.keyForOrder(orderId)
   const lic = key ? store.getLicense(key) : null
   const machine = String(machineRaw || (order && order.machine_id) || '').trim().toUpperCase() || null
+  const plan = planOf(order.plan)
   const receipt = {
     kind: 'kastrava-receipt',
     version: 1,
@@ -127,9 +138,9 @@ function makeReceipt(orderId, machineRaw) {
     payment_id: order.payment_id || null,
     key: key,
     machine_id: machine,
-    amount_paise: PRICE_INR * 100,
+    amount_paise: order.amount_paise || plan.inr * 100,
     currency: 'INR',
-    plan: 'premium-34d',
+    plan: 'premium-' + ((order.plan || 'legacy') === 'legacy' ? '34d' : order.plan),
     product: 'kastrava-premium',
     iss: 'kastrasoft',
     iat: Math.floor(Date.now() / 1000),
@@ -167,7 +178,8 @@ function serveStatic(req, res, pathname) {
 //     needs no new activation; the app picks it up on its next re-activate.
 function finalizePayment(orderId, paymentId, machineIdRaw, accountEmailRaw) {
   const order = store.getOrder(orderId)
-  store.markPaid(orderId, paymentId, PRICE_INR * 100)
+  const plan = planOf(order && order.plan)
+  store.markPaid(orderId, paymentId, (order && order.amount_paise) || plan.inr * 100)
   const machine = String(machineIdRaw || (order && order.machine_id) || '').trim().toUpperCase()
   const account = String(accountEmailRaw || (order && order.account_email) || '').trim().toLowerCase() || null
   let key = store.keyForOrder(orderId)
@@ -181,7 +193,7 @@ function finalizePayment(orderId, paymentId, machineIdRaw, accountEmailRaw) {
       const base = existing.expires_at
         ? Math.max(Date.now(), new Date(existing.expires_at).getTime())
         : Date.now()
-      store.extendLicense(key, new Date(base + PERIOD_DAYS * 86400000).toISOString())
+      store.extendLicense(key, new Date(base + plan.days * 86400000).toISOString())
       store.setLicenseOrder(key, orderId)
       if (account && !existing.account_email) store.setAccountEmail(key, account)
       renewed = true
@@ -196,23 +208,23 @@ function finalizePayment(orderId, paymentId, machineIdRaw, accountEmailRaw) {
         const base = cands[0].expires_at
           ? Math.max(Date.now(), new Date(cands[0].expires_at).getTime())
           : Date.now()
-        store.extendLicense(key, new Date(base + PERIOD_DAYS * 86400000).toISOString())
+        store.extendLicense(key, new Date(base + plan.days * 86400000).toISOString())
         store.setLicenseOrder(key, orderId)
         renewed = true
       } else {
         key = sign.makeLicenseKey()
-        store.issueLicense(key, orderId, null, new Date(Date.now() + PERIOD_DAYS * 86400000).toISOString())
+        store.issueLicense(key, orderId, null, new Date(Date.now() + plan.days * 86400000).toISOString())
         store.setAccountEmail(key, account)
       }
     } else {
       key = sign.makeLicenseKey()
-      store.issueLicense(key, orderId, null, new Date(Date.now() + PERIOD_DAYS * 86400000).toISOString())
+      store.issueLicense(key, orderId, null, new Date(Date.now() + plan.days * 86400000).toISOString())
     }
   } else if (account) {
     const lic = store.getLicense(key)
     if (lic && !lic.account_email) store.setAccountEmail(key, account)
   }
-  return { key, renewed }
+  return { key, renewed, plan: (order && order.plan) || 'legacy' }
 }
 
 // ---- Kastrava accounts + zero-knowledge sync (module scope: the
@@ -226,8 +238,10 @@ async function handlePost(req, res, pathname) {
 
   if (pathname === '/api/order') {
     try {
-      const o = await razorpay.createOrder(PRICE_INR * 100)
-      const meta = {}
+      const planName = (body.plan === 'monthly' || body.plan === 'daily') ? body.plan : 'legacy'
+      const plan = planOf(planName)
+      const o = await razorpay.createOrder(plan.inr * 100)
+      const meta = { plan: planName, amount_paise: plan.inr * 100 }
       if (typeof body.name === 'string' && body.name) meta.name = body.name
       if (typeof body.email === 'string' && body.email) meta.email = body.email
       if (typeof body.machine_id === 'string' && body.machine_id.trim()) meta.machine_id = body.machine_id.trim().toUpperCase()
@@ -236,7 +250,7 @@ async function handlePost(req, res, pathname) {
         if (acc) meta.account_email = acc.email
       }
       store.createOrder(o.order_id, meta)
-      return json(res, 200, { order_id: o.order_id, amount: o.amount, currency: o.currency, key_id: o.key_id, dev: !!o.dev })
+      return json(res, 200, { order_id: o.order_id, amount: o.amount, currency: o.currency, key_id: o.key_id, dev: !!o.dev, plan: planName, plan_usd: plan.usd, plan_days: plan.days })
     } catch (e) {
       return json(res, 500, { error: 'order_failed', msg: String(e.message || e) })
     }
@@ -251,7 +265,8 @@ async function handlePost(req, res, pathname) {
       const k = store.keyForOrder(order_id)
       if (k) {
         const rc = makeReceipt(String(order_id), machine_id)
-        return json(res, 200, { ok: true, already_paid: true, key: k,
+        const ord = store.getOrder(String(order_id))
+        return json(res, 200, { ok: true, already_paid: true, key: k, plan: (ord && ord.plan) || 'legacy',
           receipt: rc && rc.receipt, receipt_sig: rc && rc.receipt_sig })
       }
     }
@@ -261,7 +276,7 @@ async function handlePost(req, res, pathname) {
     const vacc = account_token ? store.getSessionAccount(String(account_token)) : null
     const r = finalizePayment(String(order_id), String(payment_id), machine_id, vacc ? vacc.email : null)
     const rc = makeReceipt(String(order_id), machine_id)
-    return json(res, 200, { ok: true, key: r.key, renewed: r.renewed, already_paid: false,
+    return json(res, 200, { ok: true, key: r.key, renewed: r.renewed, already_paid: false, plan: r.plan, plan_days: planOf(r.plan).days,
       receipt: rc && rc.receipt, receipt_sig: rc && rc.receipt_sig })
   }
 
@@ -358,7 +373,8 @@ async function handlePost(req, res, pathname) {
     store.createOrder(orderId, { provider: 'manual', machine_id: machine, note })
     store.markPaid(orderId, 'manual', 0)
     const key = sign.makeLicenseKey()
-    const expires = new Date(Date.now() + PERIOD_DAYS * 86400000).toISOString()
+    const issueDays = Math.min(Math.max(Math.floor(Number(body.days) || 30), 1), 36500)
+    const expires = new Date(Date.now() + issueDays * 86400000).toISOString()
     store.issueLicense(key, orderId, null, expires)
     if (machine) store.bindLicense(key, machine)
     const rc = makeReceipt(orderId)
@@ -625,7 +641,8 @@ const server = http.createServer((req, res) => {
       pathname = '/account.html'
     }
     if (pathname === '/api/health') {
-      return json(res, 200, { ok: true, dev: razorpay.isDev(), host: HOST, price: PRICE_INR, period_days: PERIOD_DAYS, grace_days: GRACE_DAYS, version: '101.3.4', codename: 'Starship Wonders' })
+      return json(res, 200, { ok: true, dev: razorpay.isDev(), host: HOST, price: PRICE_INR, period_days: PERIOD_DAYS, grace_days: GRACE_DAYS, version: '101.3.4', codename: 'Starship Wonders',
+        plans: { monthly: PLANS.monthly, daily: PLANS.daily } })
     }
     if (pathname === '/api/admin/list') {
       if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })

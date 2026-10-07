@@ -17,14 +17,14 @@
 <meta property="og:image" content="https://kastrava.pp.ua/logo.png">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Kastrava — The Browser That Forgets Everything">
-<meta name="twitter:description" content="Zero telemetry. Memory-only sessions. Free core, forever. Premium $2.8/34D.">
+<meta name="twitter:description" content="Zero telemetry. Memory-only sessions. Free core, forever. Premium $7/mo, $2/day.">
 <meta name="twitter:image" content="https://kastrava.pp.ua/logo.png">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"SoftwareApplication",
 "name":"Kastrava","applicationCategory":"BrowserApplication",
 "operatingSystem":["Linux","Windows","Android"],
 "softwareVersion":"101.3.4","license":"https://www.gnu.org/licenses/gpl-3.0.html",
-"offers":{"@type":"Offer","price":"2.8","priceCurrency":"USD"},
+"offers":[{"@type":"Offer","price":"7","priceCurrency":"USD"},{"@type":"Offer","price":"2","priceCurrency":"USD"}],
 "url":"https://kastrava.pp.ua/"}
 </script>
 <meta name="description" content="Kastrava RC is a private desktop browser. Zero telemetry. Website data lives in a memory-only session and is wiped on exit; your settings, bookmarks and history persist.">
@@ -177,9 +177,9 @@ footer a:hover{color:var(--ink)}
     <p class="lede">Kastrava keeps <b>zero</b> persistent web storage. No cache, no cookies, no site databases on your disk — everything runs in memory and is <b>wiped when you quit</b>. It is Chromium underneath, so sites work.</p>
     <div class="cta-row">
       <a class="btn btn-primary" href="#download">Download Free</a>
-      <a class="btn btn-ghost" href="#premium">Go Premium — $2.8/34d</a>
+      <a class="btn btn-ghost" href="#premium">Go Premium — $7/mo</a>
     </div>
-    <p class="mono hero-meta">Linux · Windows · Android · Free core, forever · Premium $2.8/34 days, one account · 100% Open Source (GPLv3)</p>
+    <p class="mono hero-meta">Linux · Windows · Android · Free core, forever · Premium $7/mo · $2/day · 100% Open Source (GPLv3)</p>
     <div class="spec">
       <div class="row"><span class="k">Telemetry sent</span><span class="v mono">0 bytes</span></div>
       <div class="row"><span class="k">Cookies left on disk</span><span class="v mono">0</span></div>
@@ -206,13 +206,13 @@ footer a:hover{color:var(--ink)}
 <section id="premium">
   <div class="wrap">
     <h2 class="sec-title">Premium.</h2>
-    <p class="sec-sub">Free forever. Premium is <b>$2.8 for 34 days</b>. Your key stays on your account and covers 10 devices. No auto-renew. The app reminds you before it ends.</p>
+    <p class="sec-sub">Free forever. Premium is <b>$7 for 30 days or $2 for a day</b>. Your key stays on your account and covers 10 devices. No auto-renew. The app reminds you before it ends.</p>
     <div class="prem-card">
       <div class="tag">KASTRAVA PREMIUM · 34-DAY</div>
       <h3>Unlock everything</h3>
       <div class="sub">Tracking Radar · Cursor FX · Workspaces · Split View · all 20 themes</div>
       <div class="beta-free">Want it free? Contact the maintainer — <a href="mailto:khannatejas989@gmail.com">khannatejas989@gmail.com</a></div>
-      <div class="prem-price"><span class="rup">$2.8/34D</span><span class="usd">Free for RC · one payment · no auto-renew</span></div>
+      <div class="prem-price"><span class="rup">$7<span style="font-size:22px;color:var(--muted)">/mo</span> · $2<span style="font-size:22px;color:var(--muted)">/day</span></span><span class="usd">Pick a plan below · one payment · no auto-renew</span></div>
       <ul class="prem-feats">
         <li><b>Tracking Radar</b> — counts requests and cookies per tab</li>
         <li><b>Cursor Effects</b> — 8 effects and a custom arrow</li>
@@ -227,14 +227,25 @@ footer a:hover{color:var(--ink)}
         <li><b>Bookmarks</b> — import and export as HTML</li>
         <li><b>Shortcuts</b> — change any shortcut</li>
       </ul>
-      <button class="prem-buy" id="prem-buy">Pay $2.8 with Razorpay — 34 days</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0 4px">
+        <button class="plan-pick" data-plan="monthly" style="padding:14px;border-radius:14px;border:2px solid var(--ink);background:transparent;color:var(--ink);cursor:pointer;text-align:left;font-family:inherit">
+          <div style="font-weight:700;font-size:15px">Monthly — $7</div>
+          <div style="font-size:12.5px;color:var(--muted)">₹670 · 30 days</div>
+        </button>
+        <button class="plan-pick" data-plan="daily" style="padding:14px;border-radius:14px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;text-align:left;font-family:inherit">
+          <div style="font-weight:700;font-size:15px">Daily — $2</div>
+          <div style="font-size:12.5px;color:var(--muted)">₹190 · 24 hours</div>
+        </button>
+      </div>
+      <button class="prem-buy" id="prem-buy">Pay ₹670 with Razorpay — 30 days</button>
       <p style="margin-top:10px;font-size:13px;color:var(--muted)">Already Premium and want out? <a href="#" id="prem-stop" style="color:var(--accent)">Stop Premium</a> — ends immediately, no refund.</p>
-      <p style="font-size:12px;color:var(--muted2);margin-top:8px">Charged in INR (₹248) — your bank converts the $2.8 at checkout.</p>
+      <p id="prem-inrnote" style="font-size:12px;color:var(--muted2);margin-top:8px">Charged in INR (₹670) — your bank converts the $7 at checkout.</p>
       <div class="prem-keyout" id="prem-keyout">
         <div class="tag" style="color:var(--accent)">PAYMENT VERIFIED</div>
         <div style="font-size:13px;color:var(--muted);margin-top:4px">Your license key:</div>
         <div class="k" id="prem-key"></div>
         <div class="tag" id="prem-renewed" style="display:none;margin-top:8px">RENEWAL APPLIED — re-activate in the app to refresh</div>
+          <div class="tag" id="prem-plan" style="display:none;margin-top:8px"></div>
         <div style="font-size:13px;color:var(--muted)">Open <b>Settings → Kastrava Premium</b> in the app, paste this key, click Activate. That's it.</div>
         <button id="prem-receipt" class="btn btn-ghost" style="margin-top:10px;width:100%;text-align:center;padding:12px 18px;cursor:pointer">Download receipt (PDF)</button>
         <div style="font-family:var(--mono);font-size:11px;color:var(--muted2);margin-top:10px">Key is bound to the first machine that activates it. Lose it? <a href="mailto:khannatejas989@gmail.com" style="color:var(--accent)">We re-issue</a>.</div>
@@ -314,7 +325,7 @@ footer a:hover{color:var(--ink)}
     <h2 class="sec-title">Questions</h2>
     <div class="faq">
       <details><summary>What gets deleted when I quit?</summary><p>Everything websites stored: Cache, cookies, site data. It lives in memory and is wiped on exit — including crash leftovers. Your downloads stay. Your settings, bookmarks and history stay too, unless you switch them off.</p></details>
-      <details><summary>Is the core really free?</summary><p>Yes. Free forever. Premium ($2.8 / 34 days) pays for development. — but everything below is free: memory-only sessions, blockers, downloads, Reader Mode, shortcuts, KastravaSearch + DuckDuckGo, 2 themes.</p></details>
+      <details><summary>Is the core really free?</summary><p>Yes. Free forever. Premium ($7 / month or $2 / day) pays for development. — but everything below is free: memory-only sessions, blockers, downloads, Reader Mode, shortcuts, KastravaSearch + DuckDuckGo, 2 themes.</p></details>
       <details><summary>What does Premium unlock?</summary><p>Radar, all cursor effects, Workspaces, Split View, all 20 themes, Brave/Google/Ecosia search, video pop-out, screenshots, Localhost Dashboard, bookmark import/export, vertical tabs, custom shortcuts. One account, 10 devices. The app reminds you before it ends.</p></details>
       <details><summary>How does one account cover 10 devices?</summary><p>Your key sits on your account. Log in and it switches on. Same key everywhere, up to 10 devices. Device 11 needs a freed slot or another key.</p></details>
       <details><summary>I lost my key. What now?</summary><p>Email <a href="mailto:khannatejas989@gmail.com">khannatejas989@gmail.com</a> with your payment ID. We will re-issue it.</p></details>
@@ -401,7 +412,8 @@ footer a:hover{color:var(--ink)}
   function setBusy(on){
     if(!buyBtn)return;
     buyBtn.disabled=on;
-    buyBtn.textContent=on?'Contacting store…':'Pay $2.8 with Razorpay — 34 days';
+    buyBtn.textContent=on?'Contacting store…':'';
+    if(!on)paintPlan();
   }
   function showKey(key,renewed,receipt){
     if(keyEl)keyEl.textContent=key;
@@ -423,6 +435,22 @@ footer a:hover{color:var(--ink)}
   }
   function fail(msg){alert(msg||'Something went wrong. Please try again.');setBusy(false);}
 
+  var planPicked='monthly';
+  var PLAN_META={monthly:{inr:670,usd:7,days:30,label:'Monthly'},daily:{inr:190,usd:2,days:1,label:'Daily'}};
+  function paintPlan(){
+    document.querySelectorAll('.plan-pick').forEach(function(b){
+      var on=b.dataset.plan===planPicked;
+      b.style.borderWidth=on?'2px':'1px';
+      b.style.borderColor=on?'var(--ink)':'var(--line)';
+    });
+    if(buyBtn)buyBtn.textContent='Pay \u20B9'+PLAN_META[planPicked].inr+' with Razorpay — '+PLAN_META[planPicked].days+(PLAN_META[planPicked].days===1?' day':' days');
+    var note=document.getElementById('prem-inrnote');
+    if(note)note.textContent='Charged in INR (\u20B9'+PLAN_META[planPicked].inr+') — your bank converts the $'+PLAN_META[planPicked].usd+' at checkout.';
+  }
+  document.querySelectorAll('.plan-pick').forEach(function(b){
+    b.addEventListener('click',function(){planPicked=b.dataset.plan;paintPlan();});
+  });
+  paintPlan();
   function machineValue(){return machineInput&&machineInput.value?machineInput.value.trim():'';}
 
   // Stop Premium without refund: needs the license key + the machine it is
@@ -467,7 +495,7 @@ footer a:hover{color:var(--ink)}
       currency:o.currency,
       order_id:o.order_id,
       name:'Kastrava Premium',
-      description:'One-time $2.8 - 34 days - 10 devices - no auto-renew',
+      description:'Kastrava Premium - '+PLAN_META[planPicked].label+' - no auto-renew',
       prefill:{name:'',email:''},
       theme:{color:document.documentElement.getAttribute('data-theme')==='dark'?'#f3eee4':'#16130e'},
       handler:function(res){
@@ -477,7 +505,7 @@ footer a:hover{color:var(--ink)}
           body:JSON.stringify({order_id:res.razorpay_order_id,payment_id:res.razorpay_payment_id,signature:res.razorpay_signature,machine_id:mach})})
         .then(function(r){return r.json();})
         .then(function(v){
-          if(v.ok&&v.key){showKey(v.key,!!v.renewed,{order_id:res.razorpay_order_id,payment_id:res.razorpay_payment_id,amount:o.amount,currency:o.currency,machine_id:mach,account_email:v.account_email||null,server_receipt:v.receipt||null,receipt_sig:v.receipt_sig||null});setBusy(false);}
+          if(v.ok&&v.key){var pt=document.getElementById("prem-plan");if(pt&&v.plan){pt.style.display="block";pt.textContent=(v.plan==="daily"?"DAILY · 24 HOURS":"MONTHLY · 30 DAYS");}showKey(v.key,!!v.renewed,{order_id:res.razorpay_order_id,payment_id:res.razorpay_payment_id,amount:o.amount,currency:o.currency,machine_id:mach,account_email:v.account_email||null,server_receipt:v.receipt||null,receipt_sig:v.receipt_sig||null});setBusy(false);}
           else fail((v&&v.msg)||'Payment could not be verified.');
         })
         .catch(function(){fail('Could not verify payment - your payment may still have gone through. Email the payment ID to khannatejas989@gmail.com');});
@@ -494,7 +522,7 @@ footer a:hover{color:var(--ink)}
     setBusy(true);
     primeReceiptLib();
     fetch(KAS_API+'/api/order',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({machine_id:machineValue()})})
+      body:JSON.stringify({machine_id:machineValue(),plan:planPicked})})
     .then(function(r){return r.json();})
     .then(function(o){
       if(!o||!o.order_id)throw new Error(o&&o.msg||'no order');

@@ -10,7 +10,7 @@ Target state after this runbook:
 - `RAZORPAY_KEY_ID=rzp_live_…` / `RAZORPAY_KEY_SECRET=…` in `server/.env`
 - Existing webhook delivers `payment.captured` (account-wide; see §2)
 - `curl https://nexufog.pp.ua/api/health` → `{"dev":false,"price":248,"period_days":34,"grace_days":3,…}`
-- A real ₹248 purchase mints a 34-day license, activation binds it to the first
+- A real purchase (₹670/30d monthly or ₹190/1d daily) mints a license, activation binds it to the first
   machine, a second ₹248 payment with the same machine code **extends the same
   key**.
 
@@ -121,7 +121,7 @@ sudo systemctl status kastrava-license      # active (running)
 4. **Real purchase — the decisive test** (do it when you're happy to take real
    ₹248):
    - https://kastrava.pp.ua → **Premium** → pay ₹248 (card/UPI/netbanking).
-   - Checkout callback settles → key shown (34 days + 3 grace).
+   - Checkout callback settles → key shown (plan days + 3 grace).
    - **Renewal**: open Premium again from the app (brings your machine code,
      locked read-only) → pay again → **same key**, expiry extends; the app
      picks it up on next startup/re-activate.

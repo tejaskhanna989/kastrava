@@ -12,7 +12,7 @@ Reader Mode stays free. Premium gating strict on every entry point, as before.
 - F9 Cookie-banner auto-reject + tracking-param stripping
 - F13 Vault — password-locked notes/bookmarks, local AES (user chose Free)
 
-## PRO (one-time $2.8 / 34-day cycle, same key extends)
+## PRO (Monthly $7/30d or Daily $2/1d, one-time per cycle, same key extends)
 - P1 Tab groups + saved workspaces (desktop), grouped tab switcher (Android)
 - P4 Theme engine v2 — custom accents, NTP art, custom CSS (user chose Pro)
 - P5 Userscripts / userstyles manager
