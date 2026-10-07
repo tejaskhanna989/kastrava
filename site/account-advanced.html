@@ -104,6 +104,64 @@ function loadSync(email){
       :'No synced data yet — log in inside the apps first.';
   }).catch(function(){out.textContent='Could not load.';});
 }
+function receiptText(t){
+  return String(t==null?'':t).replace(/[\u20B9]/g,'Rs.').replace(/[\u2014\u2013]/g,'-').replace(/[\u2018\u2019]/g,"'").replace(/[\u201C\u201D]/g,'"').replace(/[^\x20-\x7E\n]/g,'?');
+}
+function loadJsPdf(cb){
+  if(window.jspdf&&window.jspdf.jsPDF)return cb();
+  if(window.__jspdfLoading){var t=setInterval(function(){if(window.jspdf&&window.jspdf.jsPDF){clearInterval(t);cb();}},150);return;}
+  window.__jspdfLoading=true;
+  var sc=document.createElement('script');
+  sc.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+  sc.onload=function(){window.__jspdfLoading=false;cb();};
+  sc.onerror=function(){window.__jspdfLoading=false;alert('Could not load the receipt generator. Try again.');};
+  document.head.appendChild(sc);
+}
+function downloadKeyReceipt(key){
+  fetch(KAS_API+'/api/account/key/receipt',{method:'POST',headers:authz(),body:JSON.stringify({key:key})})
+  .then(function(r){return r.json();}).then(function(d){
+    if(!d||!d.ok){alert('No receipt for this key.');return;}
+    loadJsPdf(function(){ buildKeyReceipt(d); });
+  }).catch(function(){alert('Could not fetch receipt.');});
+}
+function buildKeyReceipt(d){
+  var r=d.receipt||{};
+  var doc=new window.jspdf.jsPDF({unit:'pt',format:'a4'});
+  var x=56,y=72;
+  doc.setFont('helvetica','bold');doc.setFontSize(20);
+  doc.text(receiptText('Kastrava Premium - Key Receipt'),x,y);y+=16;
+  doc.setFont('helvetica','normal');doc.setFontSize(11);
+  doc.text(receiptText('Kastrasoft - khannatejas989@gmail.com'),x,y);y+=30;
+  doc.setFont('courier','normal');doc.setFontSize(11);
+  var amt=(r.amount_paise!=null&&r.currency==='INR')?('INR '+(r.amount_paise/100).toFixed(2)):receiptText((r.currency||'')+' '+(r.amount_paise==null?'':r.amount_paise));
+  var rows=[
+    ['License key',d.key||'-'],
+    ['Status',(d.status||'-')+' · '+(d.devices_used||0)+'/'+(d.device_limit||10)+' devices'],
+    ['Expires',d.expires_at?new Date(d.expires_at).toLocaleDateString():'-'],
+    ['Order ID',r.order_id||'-'],
+    ['Payment ID',r.payment_id||'-'],
+    ['Amount charged',amt]
+  ];
+  rows.forEach(function(rr){
+    doc.setFont('helvetica','bold');doc.text(receiptText(rr[0]+':'),x,y);
+    doc.setFont('courier','normal');
+    var lines=doc.splitTextToSize(receiptText(rr[1]),430);
+    doc.text(lines,x+150,y);y+=lines.length*14+6;
+  });
+  y+=6;
+  doc.setFont('helvetica','bold');doc.setFontSize(12);
+  doc.text(receiptText('Devices using this key:'),x,y);y+=16;
+  doc.setFont('courier','normal');doc.setFontSize(10);
+  var devs=d.devices||[];
+  if(!devs.length){doc.text(receiptText('(none yet — log in inside the app)'),x,y);y+=14;}
+  devs.forEach(function(dd){
+    var line='- '+(dd.name||dd.id||'?')+'  '+(dd.id||'');
+    if(dd.last_seen)line+='  last seen '+String(dd.last_seen).slice(0,10);
+    doc.splitTextToSize(receiptText(line),480).forEach(function(l){doc.text(l,x,y);y+=12;});
+  });
+  var oid=receiptText(d.key||'receipt').replace(/[^A-Za-z0-9_-]/g,'');
+  doc.save('kastrava-receipt-'+oid+'.pdf');
+}
 function loadKeys(){
   var out=document.getElementById('keys-out');
   out.textContent='Loading…';
@@ -113,13 +171,16 @@ function loadKeys(){
     if(!j.keys||!j.keys.length){out.innerHTML='No keys yet — buy one below.';return;}
     var h='<table><tr><th>Key</th><th>Status</th><th>Expires</th><th>Devices</th></tr>';
     j.keys.forEach(function(k){
-      h+='<tr><td class="mono">'+esc(k.key)+'</td><td>'+esc(k.status)+'</td><td>'+esc((k.expires_at||'?').slice(0,10))+'</td><td><b>'+k.devices_used+'/'+(k.device_limit||10)+'</b>';
+      h+='<tr><td class="mono">'+esc(k.key)+'</td><td>'+esc(k.status)+'</td><td>'+esc((k.expires_at||'?').slice(0,10))+'</td><td><button data-rc="'+esc(k.key)+'" style="padding:4px 12px;font-size:11.5px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;margin-bottom:6px">Receipt</button><br><b>'+k.devices_used+'/'+(k.device_limit||10)+'</b> devices';
       (k.devices||[]).forEach(function(d){
         h+='<div class="dev"><span>'+esc(d.name||d.id)+'</span><button data-k="'+esc(k.key)+'" data-m="'+esc(d.id)+'">Remove</button></div>';
       });
       h+='</td></tr>';
     });
     out.innerHTML=h+'</table>';
+    out.querySelectorAll('button[data-rc]').forEach(function(b){
+      b.addEventListener('click',function(){downloadKeyReceipt(b.dataset.rc);});
+    });
     out.querySelectorAll('button[data-k]').forEach(function(b){
       b.addEventListener('click',function(){
         if(!confirm('Remove this device? It loses Premium until it logs in again.'))return;
@@ -188,7 +249,7 @@ function openSubscribe(){
           body:JSON.stringify({subscription_id:res.razorpay_subscription_id,payment_id:res.razorpay_payment_id,signature:res.razorpay_signature,account_token:tok()})})
         .then(function(r){return r.json();}).then(function(v){
           buyEl.disabled=false;
-          if(v&&v.ok&&v.key){buyMsg.textContent='Auto-renew on. Key '+v.key+' is on your account — browsers pick it up automatically.';loadKeys();}
+          if(v&&v.ok&&v.key){buyMsg.textContent='Auto-renew on. Downloading receipt…';downloadKeyReceipt(v.key);buyMsg.textContent='Auto-renew on. Key '+v.key+' is on your account — browsers pick it up automatically.';loadKeys();}
           else{buyMsg.textContent='Mandate setup failed.';}
         }).catch(function(){buyEl.disabled=false;buyMsg.textContent='Verification failed.';});
       },
@@ -216,7 +277,7 @@ buyEl.addEventListener('click',function(){
           body:JSON.stringify({order_id:res.razorpay_order_id,payment_id:res.razorpay_payment_id,signature:res.razorpay_signature,machine_id:'',account_token:tok()})})
         .then(function(r){return r.json();}).then(function(v){
           buyEl.disabled=false;
-          if(v&&v.ok&&v.key){buyMsg.textContent='Paid. Key '+v.key+' is on your account'+(v.renewed?' (renewal extended)':'')+' — logged-in browsers pick it up automatically.';loadKeys();}
+          if(v&&v.ok&&v.key){buyMsg.textContent='Paid. Downloading receipt…';downloadKeyReceipt(v.key);buyMsg.textContent='Paid. Key '+v.key+' is on your account'+(v.renewed?' (renewal extended)':'')+' — logged-in browsers pick it up automatically.';loadKeys();}
           else{buyMsg.className='msg err';buyMsg.textContent='Payment could not be verified.';}
         }).catch(function(){buyEl.disabled=false;buyMsg.textContent='Verification failed — email your payment ID to support.';});
       },
