@@ -11,11 +11,20 @@ Kastrava is 100% open source under the **GNU General Public License v3.0 (GPLv3)
 * **Free Community Edition**: Complete access to the full source code, build scripts, and desktop browser features under GPLv3.
 * **Paid / Pro Supporter Tier**: A paid option for pre-compiled official binaries, priority issue triage, direct developer support, and funding ongoing development—without locking away any core functionality or compromising local privacy.
 
+## Premium & Renewal
+
+Premium is **$7/month (₹670, 30 days)** or **$2/day (₹190, 24 hours)**, one key per account, up to 10 devices. At payment you pick:
+
+* **Manual renewal** (default) — pay again each cycle, nothing is stored.
+* **Auto-renewal** (Monthly only) — card/UPI mandate, cancel anytime from the account dashboard.
+
+Old 34-day keys keep working till their expiry date.
+
 ---
 
 ## Features
 
-* **Privacy-First & Offline-Focused**: No cloud sync, no remote backends, and no user tracking. All data remains strictly on your local machine.
+* **Privacy-First & Offline-Focused**: No user tracking. Browsing data stays on your machine; optional account sync is end-to-end encrypted.
 * **100% Open Codebase**: Fully transparent, community-driven, and licensed under GPLv3.
 * **Desktop Integration**: Direct system hooks for high-performance navigation and shell interactions.
 * **Modern Web Standards**: Full support for contemporary web APIs, client-side frameworks, and browser features.
