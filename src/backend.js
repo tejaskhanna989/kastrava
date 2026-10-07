@@ -28,6 +28,7 @@ const DEFAULTS = {
   showNtpClock: 'on',
   showNtpLogo: 'on',
   tabLayout: 'horizontal',
+  uiStyle: 'firefox',
   vtabsCollapsed: 'off',
   setupDone: '',
   shortcuts: {},
