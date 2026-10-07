@@ -84,6 +84,17 @@ class Store {
     return s
   }
 
+  linkSubKey(subId, key, paymentId, status) {
+    const s = this.getSubscription(subId)
+    if (!s) return null
+    if (key) s.key = key
+    if (paymentId) s.last_payment = paymentId
+    if (status) s.status = status
+    s.updated_at = new Date().toISOString()
+    this.save()
+    return s
+  }
+
   keyForSubscription(subId) {
     for (const k in this.data.licenses) {
       if (this.data.licenses[k].subscription_id === subId) return k

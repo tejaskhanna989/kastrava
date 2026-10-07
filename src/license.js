@@ -179,7 +179,7 @@ async function activateAccount(accountToken) {
     }
     const lic = { key: body.license.key, payload: body.license.payload, sig: body.license.sig, activated_at: Date.now() }
     saveLicense(lic)
-    return { ok: true, license: lic, devices_used: body.devices_used || null, device_limit: body.device_limit || 10 }
+    return { ok: true, license: lic, devices_used: body.devices_used || null, device_limit: body.device_limit || 10, auto: !!body.auto }
   } catch (e) {
     return { ok: false, error: 'network', msg: 'Could not reach the Kastrava license server. Check your connection (' + API + ').' }
   }

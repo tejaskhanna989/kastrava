@@ -75,10 +75,74 @@ function verifyWebhookSignature(rawBody, signature) {
   }
 }
 
+// ---- Subscriptions (auto-renew via e-mandate / UPI Autopay) ----
+// Manual one-time stays the default; this powers the optional auto-renew
+// choice at checkout. First billing happens at mandate auth; every later
+// cycle arrives as a subscription.charged webhook that extends the same key.
+
+async function apiPost(path, data) {
+  const res = await fetch(BASE + path, {
+    method: 'POST',
+    headers: { Authorization: auth(), 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
+  const body = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error('razorpay ' + path + ' error: ' + res.status + ' ' + JSON.stringify(body))
+  return body
+}
+
+async function createPlan(period, amountPaise, name) {
+  if (isDev()) return { id: 'dev_plan_' + period, period, amount: amountPaise }
+  return apiPost('/plans', {
+    period, interval: 1,
+    item: { name, amount: amountPaise, currency: 'INR', description: 'Kastrava Premium ' + name }
+  })
+}
+
+async function createSubscription(planId, accountEmail) {
+  if (isDev()) {
+    return { id: 'dev_sub_' + Date.now().toString(36), plan_id: planId, status: 'created',
+      key_id: 'rzp_test_dev', dev: true }
+  }
+  const sub = await apiPost('/subscriptions', {
+    plan_id: planId, quantity: 1, customer_notify: 1,
+    total_count: 120,
+    notes: { product: 'kastrava-premium', account_email: accountEmail || '' }
+  })
+  sub.key_id = process.env.RAZORPAY_KEY_ID
+  return sub
+}
+
+async function cancelSubscription(subId) {
+  if (isDev()) return { id: subId, status: 'cancelled', dev: true }
+  return apiPost('/subscriptions/' + subId + '/cancel', {})
+}
+
+// Mandate-auth callback signs payment_id|subscription_id with the key secret.
+function verifySubscriptionSignature(paymentId, subscriptionId, signature) {
+  if (isDev()) return true
+  const secret = process.env.RAZORPAY_KEY_SECRET
+  try {
+    const expected = crypto
+      .createHmac('sha256', secret)
+      .update(paymentId + '|' + subscriptionId)
+      .digest('hex')
+    const a = Buffer.from(expected, 'hex')
+    const b = Buffer.from(String(signature), 'hex')
+    return a.length === b.length && crypto.timingSafeEqual(a, b)
+  } catch {
+    return false
+  }
+}
+
 module.exports = {
   createOrder,
   verifySignature,
+  verifySubscriptionSignature,
   verifyWebhookSignature,
+  createPlan,
+  createSubscription,
+  cancelSubscription,
   isDev,
   hasKeys
 }

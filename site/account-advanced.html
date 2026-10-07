@@ -157,9 +157,51 @@ document.querySelectorAll('.plan-pick').forEach(function(b){
   b.addEventListener('click',function(){planPicked=b.dataset.plan;paintPlan();});
 });
 paintPlan();
+function renewChoice(go){
+  var ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box';
+  ov.innerHTML='<div style="background:var(--card);border:1px solid var(--line);border-radius:18px;padding:28px;max-width:420px;width:100%">'
+    +'<div style="font-size:19px;font-weight:700;color:var(--ink);margin-bottom:12px">How should it renew?</div>'
+    +'<button id="rc-manual" style="display:block;width:100%;text-align:left;padding:13px 16px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;margin-bottom:8px;font-family:inherit"><b>Manual renewal</b><br><span style="font-size:12.5px;color:var(--muted)">Pay again each time. Nothing is stored.</span></button>'
+    +'<button id="rc-auto" style="display:block;width:100%;text-align:left;padding:13px 16px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;margin-bottom:8px;font-family:inherit"><b>Auto-renewal</b><br><span style="font-size:12.5px;color:var(--muted)">Card/UPI mandate. Cancel anytime here.</span></button>'
+    +'<button id="rc-x" style="display:block;width:100%;background:none;border:none;color:var(--muted);cursor:pointer;padding:6px;font-size:13px;font-family:inherit">Cancel</button></div>';
+  document.body.appendChild(ov);
+  function done(){try{ov.remove();}catch(e){}}
+  ov.addEventListener('click',function(e){if(e.target===ov){done();buyEl.disabled=false;buyMsg.textContent='';}});
+  document.getElementById('rc-x').addEventListener('click',function(){done();buyEl.disabled=false;buyMsg.textContent='';});
+  document.getElementById('rc-manual').addEventListener('click',function(){done();go(false);});
+  document.getElementById('rc-auto').addEventListener('click',function(){done();go(true);});
+}
+function openSubscribe(){
+  buyMsg.className='msg';buyMsg.textContent='Starting auto-renew…';
+  fetch(KAS_API+'/api/subscribe',{method:'POST',headers:authz(),body:JSON.stringify({plan:planPicked,account_token:tok()})})
+  .then(function(r){return r.json();}).then(function(sb){
+    if(!sb||!sb.subscription_id){buyMsg.textContent=(sb&&sb.msg)||'Could not start auto-renew.';buyEl.disabled=false;return;}
+    var rzp=new Razorpay({key:sb.key_id,subscription_id:sb.subscription_id,
+      name:'Kastrava Premium',description:'Auto-renew '+PLAN_META[planPicked].label+' - cancel anytime',
+      theme:{color:document.documentElement.getAttribute('data-theme')==='dark'?'#f3eee4':'#16130e'},
+      handler:function(res){
+        fetch(KAS_API+'/api/subscribe/verify',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({subscription_id:res.razorpay_subscription_id,payment_id:res.razorpay_payment_id,signature:res.razorpay_signature,account_token:tok()})})
+        .then(function(r){return r.json();}).then(function(v){
+          buyEl.disabled=false;
+          if(v&&v.ok&&v.key){buyMsg.textContent='Auto-renew on. Key '+v.key+' is on your account — browsers pick it up automatically.';loadKeys();}
+          else{buyMsg.textContent='Mandate setup failed.';}
+        }).catch(function(){buyEl.disabled=false;buyMsg.textContent='Verification failed.';});
+      },
+      modal:{ondismiss:function(){buyEl.disabled=false;buyMsg.textContent='';}}});
+    rzp.on('payment.failed',function(){buyEl.disabled=false;buyMsg.textContent='Mandate setup failed. No charge was made.';});
+    rzp.open();
+  }).catch(function(){buyEl.disabled=false;buyMsg.textContent='Could not start auto-renew.';});
+}
 buyEl.addEventListener('click',function(){
   if(!window.Razorpay){buyMsg.textContent='Checkout failed to load. Refresh and try again.';return;}
   buyMsg.className='msg';buyMsg.textContent='Contacting store…';buyEl.disabled=true;
+  renewChoice(function(auto){
+    if(auto){openSubscribe();return;}
+    manualPay();
+  });
+  function manualPay(){
   fetch(KAS_API+'/api/order',{method:'POST',headers:authz(),body:JSON.stringify({account_token:tok(),plan:planPicked})})
   .then(function(r){return r.json();}).then(function(o){
     if(!o||!o.order_id){buyMsg.textContent='Order failed.';buyEl.disabled=false;return;}
@@ -179,6 +221,7 @@ buyEl.addEventListener('click',function(){
     rzp.on('payment.failed',function(){buyEl.disabled=false;buyMsg.textContent='Payment failed. No charge was made.';});
     rzp.open();
   }).catch(function(){buyEl.disabled=false;buyMsg.textContent='Order failed.';});
+  }
 });
 // Auto-show dashboard when already logged in.
 (function(){

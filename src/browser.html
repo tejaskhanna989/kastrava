@@ -751,7 +751,7 @@ async function activatePremium(key){
   if(!res||!res.ok){toast(res&&res.msg?res.msg:"Activation failed.");return;}
   LIC.activated=true;LIC.key=res.license&&res.license.key?res.license.key:LIC.key;
   applyEditionUI();try{renderSettingsSection("premium");}catch(e){}
-  toast("Premium activated — up to 10 devices. No auto-renew.");
+  toast("Premium activated — up to 10 devices.");
   try{renderWorkspaces();}catch(e){}
 }
 function copyText(t){
@@ -774,6 +774,7 @@ function openOobBuy(machine){
 // fresh one-time payment — no auto-renew, so the browser keeps reminding.
 var renewReminded=false;
 function maybeRenewReminder(){
+  try{if(window.LIC&&window.LIC.auto)return;}catch(e){}
   if(renewReminded||!api||!api.licStatus)return;
   api.licStatus().then(function(s){
     if(!s)return;
@@ -786,7 +787,7 @@ function showRenewModal(s){
   var due=s.expiresAt?new Date(s.expiresAt).toLocaleDateString():"soon";
   var desc=s.grace
     ?"Plan ended \u2014 grace runs until "+due+". Renew to keep Premium on all devices; the key stays the same."
-    :"Your Premium plan ended"+(s.expiresAt?" ("+due+")":"")+". Renew to unlock Premium again. No auto-renew \u2014 that's why reminders like this exist.";
+    :"Your Premium plan ended"+(s.expiresAt?" ("+due+")":"")+". Renew to unlock Premium again. Manual renewal is default \u2014 that's why reminders like this exist.";
   showConfirmModal(function(){openOobBuy(s.machine||LIC.machine||"");},{
     title:s.grace?"Renew Kastrava Premium":"Kastrava Premium expired",
     desc:desc,
@@ -3577,6 +3578,7 @@ function bindSyncPanel(){
 function activateOnAccount(cb){
   if(!api||!api.licActivateAccount){if(cb)cb(null);return;}
   api.licActivateAccount().then(function(r){
+    try{if(r&&typeof r.auto==="boolean")LIC.auto=r.auto;}catch(e){}
     try{loadLicense();}catch(e){}
     if(r&&r.ok)toast("Premium activated on this device"+(r.devices_used?(" ("+r.devices_used+"/"+(r.device_limit||10)+" devices)"):"")+".");
     else if(r&&r.error&&r.error!=="no_login")toast(r.msg||"Activation failed.");
@@ -3867,7 +3869,7 @@ try{if(!window.__chromeVer){var m=navigator.userAgent.match(/Chrome\/([\d.]+)/);
 function renderSettingsSection(id){
   var p=$("settings-panel");var h="";
   if(id==="premium"){h="<h3>Kastrava Premium</h3>";
-    h+="<div class=\"desc\" style=\"margin-bottom:12px\">Unlock Tracking Radar, Cursor FX, Workspaces, Split View and every theme \u2014 <b>\u20B9670 for 30 days (~$7), up to 10 devices, no auto-renew</b>. The app reminds you before it ends.</div>";
+    h+="<div class=\"desc\" style=\"margin-bottom:12px\">Unlock Tracking Radar, Cursor FX, Workspaces, Split View and every theme \u2014 <b>\u20B9670 for 30 days (~$7), up to 10 devices. Manual renewal by default.</b></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Your Machine Code</div><div style=\"display:flex;gap:8px;align-items:center\"><code id=\"pm-machine\" style=\"flex:1;word-break:break-all;font-size:12px\">"+(LIC.machine||"…")+"</code><button class=\"btn-sm\" id=\"pm-copy\">Copy</button></div><div class=\"desc\">This code identifies <b>this PC</b>. Your license is bound to it \u2014 copying the app to another machine won't transfer it. Enter it at checkout to renew with the same key.</div></div>";
     if(LIC.activated){
       var stColor=LIC.grace?"#e65100":"#2e7d32";
@@ -3876,11 +3878,11 @@ function renderSettingsSection(id){
       h+="<div class=\"sg\" style=\"display:flex;gap:8px;flex-wrap:wrap\"><button class=\"btn-sm btn-accent\" id=\"s-licrenew\">Renew Premium</button><button class=\"btn-sm\" id=\"s-liccopy\">Copy machine code</button><button class=\"btn-sm btn-danger\" id=\"s-licstop\">Stop Premium</button></div>";
     }else{
       if(LIC.reason==="expired"){
-        h+="<div class=\"sg\"><div class=\"lbl\">Status</div><div class=\"desc\" style=\"font-weight:600;color:#c62828\">\u2716 Premium expired \u2014 pay \u20B9248 once to renew for 34 more days. No auto-renew \u2014 that's why this popup exists.</div></div>";
+        h+="<div class=\"sg\"><div class=\"lbl\">Status</div><div class=\"desc\" style=\"font-weight:600;color:#c62828\">\u2716 Premium expired \u2014 renew from \u20B9190/day. Manual by default.</div></div>";
       }
       h+="<div class=\"sg\"><div class=\"lbl\">Activation Key</div><input type=\"text\" id=\"s-lickey\" style=\"font-family:var(--font-mono);letter-spacing:.5px\" placeholder=\"KAS-XXXX-XXXX-XXXX-XXXX\" autocomplete=\"off\" spellcheck=\"false\"><div class=\"desc\">Paste the key you received after paying, then click Activate.</div></div>";
       h+="<div class=\"sg\" style=\"display:flex;gap:8px;flex-wrap:wrap\"><button class=\"btn-sm btn-accent\" id=\"s-licactivate\">Activate Premium</button>"+(LIC.reason==="expired"?"<button class=\"btn-sm btn-accent\" id=\"s-licrenew\">Renew Premium</button>":"")+"<button class=\"btn-sm\" id=\"s-licbuy\">Buy Premium \u2014 \u20B9670/30d</button><button class=\"btn-sm\" id=\"s-liccopy\">Copy machine code</button></div>";
-      h+="<div class=\"desc\" style=\"margin-top:6px\">No key yet? Buy at <a href=\"#\" id=\"s-licbuylink\" style=\"color:var(--accent)\">kastrava.pp.ua/#premium</a> \u2014 you'll get a key instantly via Razorpay. Plans from \u20B9190/day, no auto-renew.</div>";
+      h+="<div class=\"desc\" style=\"margin-top:6px\">No key yet? Buy at <a href=\"#\" id=\"s-licbuylink\" style=\"color:var(--accent)\">kastrava.pp.ua/#premium</a> \u2014 you'll get a key instantly via Razorpay. Plans from \u20B9190/day. Auto-renew optional.</div>";
     }
     h+="<div class=\"sg\"><div class=\"lbl\">What's in Premium</div><div class=\"desc\">\u2022 Tracking Radar (live per-tab tracker score)<br>\u2022 Cursor Effects: Mouse Style, Fluid Splash, Blob Trail, Glass Lens, Particle Trail, Click Spark, Pixel Trail, Ribbons<br>\u2022 Workspaces<br>\u2022 Split View<br>\u2022 All 20 dark + light themes<br>\u2022 Extra search engines: Brave, Google, Ecosia<br>\u2022 Custom cursor arrow<br>\u2022 Picture-in-Picture, Screenshot<br>\u2022 Localhost Dashboard<br>\u2022 Vertical tabs layout<br>\u2022 Bookmark import &amp; export<br>\u2022 Custom shortcut remapping</div></div>";
   }

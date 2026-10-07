@@ -206,13 +206,13 @@ footer a:hover{color:var(--ink)}
 <section id="premium">
   <div class="wrap">
     <h2 class="sec-title">Premium.</h2>
-    <p class="sec-sub">Free forever. Premium is <b>$7 for 30 days or $2 for a day</b>. Your key stays on your account and covers 10 devices. No auto-renew. The app reminds you before it ends.</p>
+    <p class="sec-sub">Free forever. Premium is <b>$7 for 30 days or $2 for a day</b>. Your key stays on your account and covers 10 devices. Manual renewal by default, auto-renew if you pick it.</p>
     <div class="prem-card">
       <div class="tag">KASTRAVA PREMIUM · 34-DAY</div>
       <h3>Unlock everything</h3>
       <div class="sub">Tracking Radar · Cursor FX · Workspaces · Split View · all 20 themes</div>
       <div class="beta-free">Want it free? Contact the maintainer — <a href="mailto:khannatejas989@gmail.com">khannatejas989@gmail.com</a></div>
-      <div class="prem-price"><span class="rup">$7<span style="font-size:22px;color:var(--muted)">/mo</span> · $2<span style="font-size:22px;color:var(--muted)">/day</span></span><span class="usd">Pick a plan below · one payment · no auto-renew</span></div>
+      <div class="prem-price"><span class="rup">$7<span style="font-size:22px;color:var(--muted)">/mo</span> · $2<span style="font-size:22px;color:var(--muted)">/day</span></span><span class="usd">Pick a plan below · manual or auto-renew</span></div>
       <ul class="prem-feats">
         <li><b>Tracking Radar</b> — counts requests and cookies per tab</li>
         <li><b>Cursor Effects</b> — 8 effects and a custom arrow</li>
@@ -483,6 +483,22 @@ footer a:hover{color:var(--ink)}
   // less chance the browser blocks the programmatic download).
   function primeReceiptLib(){try{loadJsPdf(function(){});}catch(e){}}
 
+  function openRenewChoice(plan, amount, go){
+    var ov=document.createElement('div');
+    ov.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box';
+    ov.innerHTML='<div style="background:var(--card);border:1px solid var(--line);border-radius:18px;padding:28px;max-width:420px;width:100%">'
+      +'<div style="font-size:19px;font-weight:700;color:var(--ink);margin-bottom:4px">How should it renew?</div>'
+      +'<div style="font-size:13.5px;color:var(--muted);margin-bottom:16px">'+plan+' · first charge now.</div>'
+      +'<button id="rc-manual" style="display:block;width:100%;text-align:left;padding:13px 16px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;margin-bottom:8px;font-family:inherit"><b>Manual renewal</b><br><span style="font-size:12.5px;color:var(--muted)">Pay again each time. Nothing is stored.</span></button>'
+      +'<button id="rc-auto" style="display:block;width:100%;text-align:left;padding:13px 16px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;margin-bottom:8px;font-family:inherit"><b>Auto-renewal</b><br><span style="font-size:12.5px;color:var(--muted)">Card/UPI mandate. Cancel anytime from your account.</span></button>'
+      +'<button id="rc-x" style="display:block;width:100%;background:none;border:none;color:var(--muted);cursor:pointer;padding:6px;font-size:13px;font-family:inherit">Cancel</button></div>';
+    document.body.appendChild(ov);
+    function done(){try{ov.remove();}catch(e){}}
+    ov.addEventListener('click',function(e){if(e.target===ov){done();setBusy(false);}});
+    document.getElementById('rc-x').addEventListener('click',function(){done();setBusy(false);});
+    document.getElementById('rc-manual').addEventListener('click',function(){done();go(false);});
+    document.getElementById('rc-auto').addEventListener('click',function(){done();go(true);});
+  }
   function openRazorpay(o){
     if(!window.Razorpay){
       fail('Razorpay checkout failed to load. Refresh and try again.');
@@ -495,7 +511,7 @@ footer a:hover{color:var(--ink)}
       currency:o.currency,
       order_id:o.order_id,
       name:'Kastrava Premium',
-      description:'Kastrava Premium - '+PLAN_META[planPicked].label+' - no auto-renew',
+      description:'Kastrava Premium - '+PLAN_META[planPicked].label+' - manual renewal',
       prefill:{name:'',email:''},
       theme:{color:document.documentElement.getAttribute('data-theme')==='dark'?'#f3eee4':'#16130e'},
       handler:function(res){
@@ -536,12 +552,64 @@ footer a:hover{color:var(--ink)}
         .catch(function(){fail('Dev checkout failed.');});
         return;
       }
-      if(!window.__razorpayLoaded){loadRazorpay(function(){openRazorpay(o);});}
-      else openRazorpay(o);
+      var goPay=function(auto){
+        if(auto){openSubscribe(o);return;}
+        if(!window.__razorpayLoaded){loadRazorpay(function(){openRazorpay(o);});}
+        else openRazorpay(o);
+      };
+      var meta=PLAN_META[planPicked]||PLAN_META.monthly;
+      openRenewChoice(meta.label+' · \u20B9'+meta.inr, meta.inr, goPay);
     })
     .catch(function(e){fail(e&&e.message);});
   });
 
+  function syncToken(){try{return localStorage.getItem('kas_sync_token')||'';}catch(e){return '';}}
+  function openSubscribe(o){
+    var t=syncToken();
+    if(!t){fail('Log in on the account page first — auto-renew attaches to your account.');return;}
+    var meta=PLAN_META[planPicked]||PLAN_META.monthly;
+    function doneSub(v){
+      setBusy(false);
+      if(v&&v.ok&&v.key){
+        var rb=document.getElementById('prem-receipt');if(rb)rb.style.display='none';
+        var pt=document.getElementById('prem-plan');
+        if(pt){pt.style.display='block';pt.textContent='AUTO-RENEW · '+(v.plan==='daily'?'DAILY':'MONTHLY');}
+        showKey(v.key,!!v.renewed,null);
+        var kd=document.querySelector('.prem-keyout .k');if(kd)kd.textContent=v.key;
+      }
+      else fail((v&&v.msg)||'Mandate setup failed.');
+    }
+    if(o.dev){
+      fetch(KAS_API+'/api/subscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan:planPicked,account_token:t})})
+      .then(function(r){return r.json();}).then(function(sb){
+        if(!sb||!sb.subscription_id){fail('Dev subscribe failed.');return;}
+        fetch(KAS_API+'/api/subscribe/verify',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({subscription_id:sb.subscription_id,payment_id:'pay_dev_'+Date.now(),signature:'dev',account_token:t})})
+        .then(function(r){return r.json();}).then(doneSub).catch(function(){fail('Dev checkout failed.');});
+      }).catch(function(){fail('Dev checkout failed.');});
+      return;
+    }
+    var startSub=function(){
+      fetch(KAS_API+'/api/subscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan:planPicked,account_token:t})})
+      .then(function(r){return r.json();}).then(function(sb){
+        if(!sb||!sb.subscription_id){fail((sb&&sb.msg)||'Could not start auto-renew.');return;}
+        var rzp=new Razorpay({key:sb.key_id,subscription_id:sb.subscription_id,
+          name:'Kastrava Premium',description:'Auto-renew '+meta.label+' - cancel anytime',
+          theme:{color:document.documentElement.getAttribute('data-theme')==='dark'?'#f3eee4':'#16130e'},
+          handler:function(res){
+            setBusy(true);
+            fetch(KAS_API+'/api/subscribe/verify',{method:'POST',headers:{'Content-Type':'application/json'},
+              body:JSON.stringify({subscription_id:res.razorpay_subscription_id,payment_id:res.razorpay_payment_id,signature:res.razorpay_signature,account_token:t})})
+            .then(function(r){return r.json();}).then(doneSub)
+            .catch(function(){fail('Could not verify mandate.');});
+          },
+          modal:{ondismiss:function(){setBusy(false);}}});
+        rzp.on('payment.failed',function(){setBusy(false);alert('Mandate setup failed. No charge was made.');});
+        rzp.open();
+      }).catch(function(){fail('Could not start auto-renew.');});
+    };
+    if(!window.__razorpayLoaded){loadRazorpay(startSub);}else startSub();
+  }
   function loadRazorpay(cb){
     if(window.__razorpayLoading){var t=checker.t||null;checker.t=setInterval(function(){if(window.__razorpayLoaded){clearInterval(t);cb();}},150);return;}
     window.__razorpayLoading=true;
@@ -556,6 +624,13 @@ footer a:hover{color:var(--ink)}
   // flat content (no form fields, nothing fillable). Note: jsPDF built-in
   // fonts are WinAnsi-only, so rupee signs and fancy punctuation are mapped
   // to ASCII — amounts print as "INR 248.00".
+  function planText(){
+    var pl=(receiptData&&receiptData.server_receipt&&receiptData.server_receipt.plan)||'';
+    if(pl==='premium-monthly')return 'Premium Monthly - 30 days, up to 10 devices';
+    if(pl==='premium-daily')return 'Premium Daily - 24 hours, up to 10 devices';
+    if(pl==='premium-34d')return 'Premium - 34 days (legacy), up to 10 devices';
+    return 'Premium, up to 10 devices';
+  }
   function receiptText(t){
     return String(t==null?'':t)
       .replace(/[\u20B9]/g,'Rs.').replace(/[\u2014\u2013]/g,'-').replace(/[\u2018\u2019]/g,"'").replace(/[\u201C\u201D]/g,'"')
@@ -585,7 +660,7 @@ footer a:hover{color:var(--ink)}
     doc.setFont('courier','normal');doc.setFontSize(11);
     var rows=[
       ['Date',now.toLocaleString()],
-      ['Plan','Premium - 34 days, up to 10 devices, no auto-renew'],
+      ['Plan',planText()],
       ['Order ID',d.order_id||'-'],
       ['Payment ID',d.payment_id||'-'],
       ['License key',keyEl?keyEl.textContent:'-'],

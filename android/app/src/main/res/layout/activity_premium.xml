@@ -88,7 +88,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:text="One key, one device. No auto-renew — renew manually and the same key extends."
+            android:text="One account, 10 devices. Manual or auto-renew — same key extends."
             android:textSize="13sp" />
     </LinearLayout>
 </ScrollView>

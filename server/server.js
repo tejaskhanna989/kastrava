@@ -28,15 +28,45 @@ const PERIOD_DAYS = parseInt(process.env.PERIOD_DAYS || '34', 10)
 const GRACE_DAYS = parseInt(process.env.GRACE_DAYS || '3', 10)
 const LICENSE_YEARS = parseInt(process.env.LICENSE_YEARS || '10', 10)
 const DEVICE_LIMIT = 10
-// Plans (one-time per cycle, no mandates — on purpose). `legacy` keeps old
+// Plans: one-time default, auto-renew optional. `legacy` keeps old
 // builds working: no plan sent -> 34 days for INR 248, exactly as before.
 const PLANS = {
   legacy: { usd: 2.8, inr: 248, days: 34, label: 'Legacy 34-day' },
-  monthly: { usd: 7, inr: 670, days: 30, label: 'Monthly' },
-  daily: { usd: 2, inr: 190, days: 1, label: 'Daily' }
+  monthly: { usd: 7, inr: 670, days: 30, label: 'Monthly', interval: 'monthly' },
+  daily: { usd: 2, inr: 190, days: 1, label: 'Daily', interval: 'daily' }
 }
 function planOf(name) {
   return PLANS[name] || PLANS.legacy
+}
+
+// Razorpay plan ids for auto-renew (created once, cached on disk).
+function rzpPlanFile() { return path.join(DATA_DIR, 'plans.json') }
+function rzpPlanIds() {
+  try { return JSON.parse(fs.readFileSync(rzpPlanFile(), 'utf8')) } catch { return {} }
+}
+async function ensureRzpPlans() {
+  try {
+    const ids = rzpPlanIds()
+    let changed = false
+    for (const name of ['monthly', 'daily']) {
+      const envId = process.env['RAZORPAY_PLAN_' + name.toUpperCase()]
+      if (envId) { if (ids[name] !== envId) { ids[name] = envId; changed = true } continue }
+      if (ids[name]) continue
+      const plan = PLANS[name]
+      const created = await razorpay.createPlan(plan.interval, plan.inr * 100, 'Kastrava Premium ' + plan.label)
+      ids[name] = created.id
+      changed = true
+      console.log('[kastrava-licenses] razorpay plan created:', name, created.id)
+    }
+    if (changed) {
+      fs.mkdirSync(path.dirname(rzpPlanFile()), { recursive: true })
+      fs.writeFileSync(rzpPlanFile(), JSON.stringify(ids, null, 2), { mode: 0o600 })
+    }
+    return ids
+  } catch (e) {
+    console.error('[kastrava-licenses] plan ensure failed:', String((e && e.message) || e))
+    return rzpPlanIds()
+  }
 }
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data')
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || ''
@@ -298,6 +328,24 @@ async function handlePost(req, res, pathname) {
           console.log('[webhook] payment.captured', String(ent.order_id), r.renewed ? 'renewal' : 'new key', r.key)
         }
       }
+      const subEnt = body.payload && body.payload.subscription && body.payload.subscription.entity
+      if (subEnt && subEnt.id && String(body.event || '').startsWith('subscription.')) {
+        const ev = body.event
+        if (ev === 'subscription.activated') {
+          const rec0 = store.getSubscription(subEnt.id)
+          if (!rec0) store.createSubscription(subEnt.id, { plan: planNameForRzp(subEnt.plan_id), status: 'active' })
+          else store.linkSubKey(subEnt.id, null, null, 'active')
+          console.log('[webhook]', ev, subEnt.id)
+        } else if (ev === 'subscription.charged') {
+          const pay = (body.payload.payment && body.payload.payment.entity) || {}
+          const rec1 = store.getSubscription(subEnt.id)
+          const r = settleSubscription(subEnt.id, pay.id || null, (rec1 && rec1.account_email) || null, planNameForRzp(subEnt.plan_id))
+          console.log('[webhook]', ev, subEnt.id, r.key)
+        } else if (ev === 'subscription.cancelled' || ev === 'subscription.halted' || ev === 'subscription.completed') {
+          store.linkSubKey(subEnt.id, null, null, 'cancelled')
+          console.log('[webhook]', ev, subEnt.id)
+        }
+      }
     } catch (e) {
       console.error('[webhook] error:', e)
     }
@@ -506,7 +554,9 @@ async function handlePost(req, res, pathname) {
       if (!lic.machine_id) store.bindLicense(lic.key, machineId)
       const payload = makeLicensePayload(lic.key, machineId, acc.email)
       const sig = sign.signPayload(payload, keys.privateKey)
-      return json(res, 200, { ok: true, license: { key: lic.key, payload, sig }, status: 'activated', devices_used: used, device_limit: DEVICE_LIMIT })
+      const allSubs = store.all().subscriptions || {}
+      const auto = Object.values(allSubs).some((s) => s.account_email === acc.email && (s.status === 'active' || s.status === 'created' || s.status === 'pending'))
+      return json(res, 200, { ok: true, license: { key: lic.key, payload, sig }, status: 'activated', devices_used: used, device_limit: DEVICE_LIMIT, auto })
     }
     const key = String(body.key || '').trim().toUpperCase()
     const machineId = String(body.machine_id || '').trim().toUpperCase()
@@ -593,7 +643,9 @@ async function handlePost(req, res, pathname) {
     const acc = store.getSessionAccount(bearer(req))
     if (!acc) return json(res, 401, { error: 'unauthorized' })
     if (pathname === '/api/account/me') {
-      return json(res, 200, { ok: true, email: acc.email, created_at: acc.created_at })
+      const allSubs = store.all().subscriptions || {}
+      const auto = Object.values(allSubs).some((s) => s.account_email === acc.email && (s.status === 'active' || s.status === 'created' || s.status === 'pending'))
+      return json(res, 200, { ok: true, email: acc.email, created_at: acc.created_at, auto })
     }
     if (pathname === '/api/sync/pull') {
       const cur = store.getSync(acc.email)
@@ -604,6 +656,110 @@ async function handlePost(req, res, pathname) {
     const r = store.pushSync(acc.email, blob, Number(body.base_rev) || 0)
     if (r.conflict) return json(res, 409, { error: 'conflict', rev: r.rev, blob: r.blob, updated_at: r.updated_at })
     return json(res, 200, { ok: true, rev: r.rev })
+  }
+
+  // ---- Auto-renew (optional): Razorpay Subscriptions ----
+  // Manual one-time stays the default everywhere. This powers the second
+  // checkout choice: a mandate whose every billing settles the same key.
+  function planNameForRzp(planId) {
+    try {
+      const ids = rzpPlanIds()
+      for (const k of Object.keys(ids)) if (ids[k] === planId) return k
+    } catch {}
+    return 'monthly'
+  }
+  function settleSubscription(subId, paymentId, accountEmail, planName) {
+    const plan = planOf(planName === 'daily' ? 'daily' : 'monthly')
+    const pname = planName === 'daily' ? 'daily' : 'monthly'
+    let rec = store.getSubscription(subId)
+    if (!rec) {
+      store.createSubscription(subId, { account_email: accountEmail || null, plan: pname, status: 'pending' })
+      rec = store.getSubscription(subId)
+    }
+    if (!rec) return { key: null, renewed: false }
+    if (paymentId && rec.last_payment === paymentId) {
+      return { key: rec.key || null, renewed: true, dup: true }
+    }
+    const email = accountEmail || rec.account_email || null
+    let key = (rec.key && store.getLicense(rec.key)) ? rec.key : null
+    let renewed = false
+    if (!key && email) {
+      const cands = store.keysForAccount(email)
+        .filter((l) => l.status === 'activated' || l.status === 'issued')
+        .sort((a, b) => String(b.expires_at || '') < String(a.expires_at || '') ? -1 : 1)
+      if (cands.length) key = cands[0].key
+    }
+    if (key) {
+      const lic = store.getLicense(key)
+      const base = (lic && lic.expires_at)
+        ? Math.max(Date.now(), new Date(lic.expires_at).getTime())
+        : Date.now()
+      store.extendLicense(key, new Date(base + plan.days * 86400000).toISOString())
+      if (email && lic && !lic.account_email) store.setAccountEmail(key, email)
+      renewed = true
+    } else {
+      key = sign.makeLicenseKey()
+      store.issueLicense(key, null, subId, new Date(Date.now() + plan.days * 86400000).toISOString())
+      if (email) store.setAccountEmail(key, email)
+    }
+    // One synthetic order per billing so revenue + receipts keep working.
+    if (paymentId) {
+      const oid = 'subpay_' + String(paymentId).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40)
+      if (!store.getOrder(oid)) {
+        store.createOrder(oid, { provider: 'subscription', subscription_id: subId, account_email: email, plan: pname, amount_paise: plan.inr * 100 })
+        store.markPaid(oid, paymentId, plan.inr * 100)
+        const lic2 = store.getLicense(key)
+        if (lic2) { lic2.order_id = oid; store.save() }
+      }
+    }
+    store.linkSubKey(subId, key, paymentId || rec.last_payment, 'active')
+    return { key, renewed, plan: pname }
+  }
+
+  if (pathname === '/api/subscribe') {
+    const planName = body.plan === 'daily' ? 'daily' : 'monthly'
+    const acc = store.getSessionAccount(String(body.account_token || ''))
+    if (!acc) return json(res, 401, { error: 'unauthorized', msg: 'Log in first — auto-renew attaches to your account.' })
+    try {
+      let ids = rzpPlanIds()
+      if (!ids[planName]) { await ensureRzpPlans(); ids = rzpPlanIds() }
+      if (!ids[planName]) return json(res, 503, { error: 'busy', msg: 'Billing is warming up. Try again in a minute.' })
+      const sub = await razorpay.createSubscription(ids[planName], acc.email)
+      store.createSubscription(sub.id, { account_email: acc.email, plan: planName, status: 'created' })
+      const plan = PLANS[planName]
+      return json(res, 200, { ok: true, subscription_id: sub.id, key_id: sub.key_id,
+        amount: plan.inr * 100, currency: 'INR', plan: planName, plan_days: plan.days, dev: !!sub.dev })
+    } catch (e) {
+      return json(res, 500, { error: 'billing_failed', msg: String((e && e.message) || e) })
+    }
+  }
+  if (pathname === '/api/subscribe/verify') {
+    const { subscription_id, payment_id, signature, account_token } = body
+    if (!subscription_id || !payment_id) return json(res, 400, { error: 'bad_request' })
+    const acc = store.getSessionAccount(String(account_token || ''))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    if (!razorpay.verifySubscriptionSignature(String(payment_id), String(subscription_id), String(signature || ''))) {
+      return json(res, 403, { error: 'bad_signature', msg: 'Mandate verification failed.' })
+    }
+    const rec = store.getSubscription(String(subscription_id))
+    const r = settleSubscription(String(subscription_id), String(payment_id), acc.email, rec ? rec.plan : 'monthly')
+    if (!r.key) return json(res, 500, { error: 'settle_failed' })
+    return json(res, 200, { ok: true, key: r.key, renewed: r.renewed, plan: r.plan, auto: true })
+  }
+  if (pathname === '/api/subscription/cancel') {
+    const acc = store.getSessionAccount(String(body.account_token || body.token || ''))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    const data = store.all()
+    let n = 0
+    for (const sid of Object.keys(data.subscriptions || {})) {
+      const rec = data.subscriptions[sid]
+      if (rec.account_email === acc.email && (rec.status === 'active' || rec.status === 'created' || rec.status === 'pending')) {
+        try { await razorpay.cancelSubscription(sid) } catch {}
+        store.linkSubKey(sid, null, null, 'cancelled')
+        n++
+      }
+    }
+    return json(res, 200, { ok: true, cancelled: n })
   }
 
   if (pathname === '/api/admin/markpaid') {
@@ -655,6 +811,7 @@ const server = http.createServer((req, res) => {
 })
 
 server.listen(port, BIND_HOST, () => {
+  ensureRzpPlans().catch(() => {})
   console.log('[kastrava-licenses] listening on http://' + BIND_HOST + ':' + port)
   console.log('[kastrava-licenses] host=' + HOST + ' price=INR ' + PRICE_INR + '/' + PERIOD_DAYS + 'd one-time grace=' + GRACE_DAYS + 'd dev=' + razorpay.isDev())
 })
