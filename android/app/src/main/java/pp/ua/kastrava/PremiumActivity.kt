@@ -68,6 +68,10 @@ class PremiumActivity : AppCompatActivity() {
         }
 
         activate.setOnClickListener {
+            if (!app.account.loggedIn()) {
+                msg.text = "Log in first (Settings → Account) — Premium needs an account."
+                return@setOnClickListener
+            }
             val k = key.text.toString().trim()
             if (k.isEmpty()) {
                 msg.text = "Enter the license key from your purchase."
