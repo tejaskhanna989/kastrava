@@ -6,7 +6,7 @@ const path = require('path')
 class Store {
   constructor(file) {
     this.file = file
-    this.data = { orders: {}, subscriptions: {}, licenses: {} }
+    this.data = { orders: {}, subscriptions: {}, licenses: {}, accounts: {}, sessions: {}, sync: {} }
     this.load()
   }
 
@@ -16,6 +16,12 @@ class Store {
       this.data.orders = raw.orders || {}
       this.data.subscriptions = raw.subscriptions || {}
       this.data.licenses = raw.licenses || {}
+      // Accounts, sessions and sync blobs must survive restarts exactly
+      // like orders and licenses — losing them logs everyone out and drops
+      // synced data on every deploy.
+      this.data.accounts = raw.accounts || {}
+      this.data.sessions = raw.sessions || {}
+      this.data.sync = raw.sync || {}
     } catch {}
   }
 

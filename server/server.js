@@ -456,6 +456,26 @@ async function handlePost(req, res, pathname) {
     return json(res, 200, { ok: true, key, devices_used: left })
   }
 
+  // Per-key receipt for the account dashboard: signed receipt data plus
+  // the devices currently using the key. Key owners only.
+  if (pathname === '/api/account/key/receipt') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    const key = String(body.key || '').trim().toUpperCase()
+    const lic = store.getLicense(key)
+    if (!lic || lic.account_email !== acc.email) return json(res, 404, { error: 'invalid_key' })
+    if (!lic.order_id) return json(res, 404, { error: 'no_receipt' })
+    const rc = makeReceipt(lic.order_id, null)
+    if (!rc) return json(res, 404, { error: 'no_receipt' })
+    return json(res, 200, { ok: true, key,
+      receipt: rc.receipt, receipt_sig: rc.receipt_sig,
+      expires_at: lic.expires_at || null, status: lic.status,
+      devices_used: Object.keys(lic.devices || {}).length, device_limit: DEVICE_LIMIT,
+      devices: Object.entries(lic.devices || {}).map(([id, d]) => ({
+        id, name: (d && d.name) || null,
+        first_seen: d && d.first_seen, last_seen: d && d.last_seen })) })
+  }
+
   // Full order dossier for the admin panel: order + license + a freshly
   // signed receipt. Powers PDF cross-checks (extracted PDF fields are
   // compared against this server truth).
