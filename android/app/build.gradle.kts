@@ -56,6 +56,9 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("androidx.preference:preference-ktx:1.2.1")
     implementation("com.google.android.material:material:1.12.0")
+    // EncryptedSharedPreferences (AndroidKeyStore) holds the sync encryption
+    // key after first login — the password itself is never stored.
+    implementation("androidx.security:security-crypto:1.0.0")
     // Ed25519 license-signature verification on every API level
     // (java.security Ed25519 needs API 33+; BouncyCastle covers 26+).
     implementation("org.bouncycastle:bcprov-jdk18on:1.78.1")

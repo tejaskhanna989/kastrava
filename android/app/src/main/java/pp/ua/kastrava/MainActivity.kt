@@ -16,10 +16,14 @@ import android.widget.SeekBar
 import com.google.android.material.snackbar.Snackbar
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
+import android.app.Activity
 import android.webkit.CookieManager
+import android.webkit.GeolocationPermissions
 import android.webkit.URLUtil
+import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebView
+import androidx.activity.result.contract.ActivityResultContracts
 import android.graphics.Bitmap
 import android.util.TypedValue
 import android.widget.EditText
@@ -60,10 +64,39 @@ class MainActivity : AppCompatActivity() {
         var favicon: Bitmap? = null,
         var desktopMode: Boolean = false,
         var defaultUa: String? = null,
+        var blockedCount: Int = 0,
     )
 
     private val tabs = mutableListOf<WebTab>()
     private var current = -1
+
+    // <input type=file> support: at most one pending chooser.
+    private var filePathCallback: ValueCallback<Array<Uri>>? = null
+    private val filePicker = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) { res ->
+        val cb = filePathCallback
+        filePathCallback = null
+        try {
+            if (res.resultCode == Activity.RESULT_OK) {
+                val data = res.data
+                val uris = mutableListOf<Uri>()
+                data?.clipData?.let { clip ->
+                    for (i in 0 until clip.itemCount) uris.add(clip.getItemAt(i).uri)
+                }
+                data?.data?.let { uris.add(it) }
+                cb?.onReceiveValue(uris.toTypedArray())
+            } else {
+                cb?.onReceiveValue(null)
+            }
+        } catch (e: Exception) {
+            try { cb?.onReceiveValue(null) } catch (ignored: Exception) { }
+        }
+    }
+
+    // Fullscreen video (<video> fullscreen button).
+    private var customView: View? = null
+    private var customViewCallback: WebChromeClient.CustomViewCallback? = null
 
     companion object {
         private const val DESKTOP_UA =
@@ -101,7 +134,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<LinearLayout>(R.id.tileSettings).setOnClickListener { openSettings() }
         updateTabCount()
 
-        CookieManager.getInstance().setAcceptCookie(true)
+        applyCookiePolicy()
 
         findViewById<ImageButton>(R.id.btnBack).setOnClickListener { currentTab()?.goBack() }
         findViewById<ImageButton>(R.id.btnForward).setOnClickListener { currentTab()?.goForward() }
@@ -151,7 +184,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Restore last tabs first (URLs only, pages reload fresh), then layer
-        // any incoming link on top as the active tab.
+        // any incoming link on top as the active tab. Honors the Restore
+        // tabs + session-recording switches.
         val restored = restoreSession()
         handleIntent(intent)
         if (current < 0 && !restored) showHome()
@@ -232,11 +266,52 @@ class MainActivity : AppCompatActivity() {
         resumeTab(currentWebTab())
         refreshPremiumLine()
         renderQuickBookmarks()
-        // Settings (engine, JS) may have changed: apply JS flag live.
-        tabs.forEach {
-            it.view.settings.javaScriptEnabled = app.prefs.javaScript
-            it.view.settings.textZoom = app.prefs.textZoom
-        }
+        // Settings may have changed while away: push every live switch
+        // into all tabs and re-apply the global cookie policy.
+        applyCookiePolicy()
+        tabs.forEach { applyTabSettings(it.view) }
+    }
+
+    /** Global cookie jar follows the cookie-mode switch. */
+    private fun applyCookiePolicy() {
+        try {
+            val cm = CookieManager.getInstance()
+            val mode = app.prefs.cookieMode
+            cm.setAcceptCookie(mode != "block")
+            tabs.forEach { tab ->
+                try { cm.setAcceptThirdPartyCookies(tab.view, mode == "allow") } catch (e: Exception) { }
+            }
+            if (mode == "block") {
+                try { cm.removeAllCookies(null) } catch (e: Exception) { }
+                try { cm.flush() } catch (e: Exception) { }
+            }
+        } catch (e: Exception) { }
+    }
+
+    /** Push every content switch into one WebView. */
+    private fun applyTabSettings(wv: WebView) {
+        try {
+            val s = wv.settings
+            s.javaScriptEnabled = app.prefs.javaScript
+            s.textZoom = app.prefs.textZoom
+            try { s.defaultFontSize = app.prefs.fontSize } catch (e: Exception) { }
+            try { s.loadsImagesAutomatically = app.prefs.loadImages } catch (e: Exception) { }
+            try { s.blockNetworkImage = !app.prefs.loadImages } catch (e: Exception) { }
+            try {
+                s.mixedContentMode =
+                    if (app.prefs.blockMixed) android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW
+                    else android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+            } catch (e: Exception) { }
+            try { s.safeBrowsingEnabled = app.prefs.safeBrowsing } catch (e: Exception) { }
+            try { s.geolocationEnabled = app.prefs.geoEnabled } catch (e: Exception) { }
+            try { s.allowFileAccess = app.prefs.fileAccess } catch (e: Exception) { }
+            try {
+                wv.setLayerType(
+                    if (app.prefs.hwAccel) View.LAYER_TYPE_HARDWARE
+                    else View.LAYER_TYPE_SOFTWARE, null,
+                )
+            } catch (e: Exception) { }
+        } catch (e: Exception) { }
     }
 
     // ----- tabs -----
@@ -244,12 +319,21 @@ class MainActivity : AppCompatActivity() {
     private fun currentTab(): WebView? = tabs.getOrNull(current)?.view
     private fun currentWebTab(): WebTab? = tabs.getOrNull(current)
 
-    private fun newTab(url: String? = null, desktopMode: Boolean = false) {
-        val wv = buildWebView(this, app.prefs.javaScript)
-        wv.settings.textZoom = app.prefs.textZoom
-        val tab = WebTab(wv)
-        tab.defaultUa = wv.settings.userAgentString
-        wv.webViewClient = KastraWebClient(app.filters, { app.prefs.blockers })
+    /** Network + chrome clients shared by fresh and crash-rebuilt tabs. */
+    private fun attachTabClients(wv: WebView, tab: WebTab) {
+        wv.webViewClient = KastraWebClient(
+            app.filters,
+            { app.prefs.blockers },
+            onBlocked = {
+                tab.blockedCount++
+            },
+            onPageStart = {
+                tab.blockedCount = 0
+            },
+            onCrashed = { crashed ->
+                rebuildTab(crashed)
+            },
+        )
         wv.webChromeClient = object : WebChromeClient() {
             override fun onProgressChanged(view: WebView, p: Int) {
                 if (view == currentTab()) {
@@ -267,7 +351,79 @@ class MainActivity : AppCompatActivity() {
             override fun onReceivedIcon(view: WebView, icon: Bitmap?) {
                 tabs.find { it.view == view }?.favicon = icon
             }
+
+            override fun onGeolocationPermissionsShowPrompt(
+                origin: String,
+                callback: GeolocationPermissions.Callback,
+            ) {
+                // Desktop location toggle equivalent: default deny.
+                callback.invoke(origin, app.prefs.geoEnabled, false)
+            }
+
+            override fun onShowFileChooser(
+                view: WebView,
+                callback: ValueCallback<Array<Uri>>,
+                params: FileChooserParams,
+            ): Boolean {
+                return try {
+                    filePathCallback?.onReceiveValue(null)
+                    filePathCallback = callback
+                    val intent = params.createIntent().apply {
+                        addCategory(Intent.CATEGORY_OPENABLE)
+                    }
+                    filePicker.launch(intent)
+                    true
+                } catch (e: Exception) {
+                    filePathCallback = null
+                    false
+                }
+            }
+
+            override fun onShowCustomView(view: View, callback: CustomViewCallback) {
+                if (customView != null) {
+                    callback.onCustomViewHidden()
+                    return
+                }
+                customView = view
+                customViewCallback = callback
+                try {
+                    container.addView(
+                        view,
+                        FrameLayout.LayoutParams(
+                            FrameLayout.LayoutParams.MATCH_PARENT,
+                            FrameLayout.LayoutParams.MATCH_PARENT,
+                        ),
+                    )
+                } catch (e: Exception) {
+                    onHideCustomView()
+                }
+            }
+
+            override fun onHideCustomView() {
+                try { container.removeView(customView) } catch (e: Exception) { }
+                customView = null
+                try { customViewCallback?.onCustomViewHidden() } catch (e: Exception) { }
+                customViewCallback = null
+            }
         }
+    }
+
+    private fun newTab(url: String? = null, desktopMode: Boolean = false) {
+        // Desktop maxTabs equivalent: refuse with a message instead of
+        // silently piling up renderers on a low-end phone.
+        val cap = app.prefs.maxTabs
+        if (cap > 0 && tabs.size >= cap) {
+            Toast.makeText(this, "Tab limit reached ($cap) — close one first", Toast.LENGTH_SHORT).show()
+            showTabs()
+            return
+        }
+        val wv = buildWebView(this, app.prefs)
+        try {
+            CookieManager.getInstance().setAcceptThirdPartyCookies(wv, app.prefs.cookieMode == "allow")
+        } catch (e: Exception) { }
+        val tab = WebTab(wv)
+        tab.defaultUa = wv.settings.userAgentString
+        attachTabClients(wv, tab)
         wv.setOnLongClickListener {
             val result = wv.hitTestResult
             when (result?.type) {
@@ -286,7 +442,7 @@ class MainActivity : AppCompatActivity() {
         wv.setDownloadListener { dlUrl, _, contentDisposition, _, _ ->
             startSessionDownload(dlUrl, contentDisposition)
         }
-        if (desktopMode) applyDesktopMode(tab, true)
+        if (desktopMode || app.prefs.desktopDefault) applyDesktopMode(tab, true)
         tabs.add(tab)
         container.addView(
             wv,
@@ -310,8 +466,53 @@ class MainActivity : AppCompatActivity() {
     private var lastClosedUrl: String? = null
 
     private fun closeAllTabs() {
+        if (tabs.isEmpty()) return
+        if (app.prefs.confirmClose && tabs.size > 1) {
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Close ${tabs.size} tabs?")
+                .setPositiveButton("Close all") { _, _ ->
+                    tabs.toList().indices.reversed().forEach { closeTab(it, quiet = true) }
+                    showUndoSnackbar()
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+            return
+        }
         tabs.toList().indices.reversed().forEach { closeTab(it, quiet = true) }
         showUndoSnackbar()
+    }
+
+    /** Rebuild a tab whose renderer crashed, keeping its URL. */
+    private fun rebuildTab(crashed: WebView) {
+        val idx = tabs.indexOfFirst { it.view === crashed }
+        if (idx < 0) return
+        val url = try { crashed.url } catch (e: Exception) { null }
+        runOnUiThread {
+            try {
+                val old = tabs[idx]
+                container.removeView(old.view)
+                try { old.view.destroy() } catch (e: Exception) { }
+                val wv = buildWebView(this, app.prefs)
+                try {
+                    CookieManager.getInstance().setAcceptThirdPartyCookies(wv, app.prefs.cookieMode == "allow")
+                } catch (e: Exception) { }
+                val tab = WebTab(wv)
+                tab.defaultUa = wv.settings.userAgentString
+                if (old.desktopMode) applyDesktopMode(tab, true)
+                attachTabClients(wv, tab)
+                tabs[idx] = tab
+                container.addView(
+                    wv,
+                    FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                    ),
+                )
+                if (idx == current) switchTo(idx)
+                if (!url.isNullOrBlank()) wv.loadUrl(url)
+                Toast.makeText(this, "Tab recovered after a crash", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) { }
+        }
     }
 
     private fun showUndoSnackbar() {
@@ -518,7 +719,8 @@ class MainActivity : AppCompatActivity() {
     private fun engineUrl(): (String) -> String {
         val premium = app.license.status().activated
         val engine = app.prefs.engine
-        return { q -> Prefs.searchUrl(engine, premium, q.ifBlank { "kastrava browser" }) }
+        val custom = app.prefs.customEngine
+        return { q -> Prefs.searchUrl(engine, premium, q.ifBlank { "kastrava browser" }, custom) }
     }
 
     private fun openQuery(input: String) {
@@ -535,6 +737,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun displayHost(url: String): String {
         if (url.isBlank()) return ""
+        if (app.prefs.showFullUrls) return url
         return try {
             val uri = android.net.Uri.parse(url)
             val host = uri.host ?: return url
@@ -653,6 +856,15 @@ class MainActivity : AppCompatActivity() {
             maxLines = 1
             setTextColor(getColor(R.color.chrome_hint))
         })
+        val blocked = currentWebTab()?.blockedCount ?: 0
+        if (blocked > 0) {
+            titleBox.addView(TextView(this).apply {
+                text = "Blocked $blocked tracker${if (blocked == 1) "" else "s"} on this page"
+                textSize = 12f
+                maxLines = 1
+                setTextColor(getColor(R.color.chrome_hint))
+            })
+        }
         header.addView(titleBox)
         header.addView(ImageButton(this).apply {
             layoutParams = LinearLayout.LayoutParams((44 * density).toInt(), (44 * density).toInt())
@@ -674,17 +886,22 @@ class MainActivity : AppCompatActivity() {
         // top row: New tab | Bookmarks | Downloads | Share | Settings
         val row1 = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            weightSum = 5f
         }
         val pageUrl = currentTab()?.url
         val saved = pageUrl != null && BookmarkStore(this@MainActivity).contains(pageUrl)
-        val row1Items = listOf(
+        val row1Items = if (app.prefs.bookmarksEnabled) listOf(
             Triple(R.drawable.ic_plus, "New tab", { newTab() }),
             Triple(R.drawable.ic_star, if (saved) "Saved" else "Bookmark", { toggleBookmark() }),
             Triple(R.drawable.ic_download, "Downloads", { openDownloads() }),
             Triple(R.drawable.ic_share, "Share", { sharePage() }),
             Triple(R.drawable.ic_settings, "Settings", { openSettings() }),
+        ) else listOf(
+            Triple(R.drawable.ic_plus, "New tab", { newTab() }),
+            Triple(R.drawable.ic_download, "Downloads", { openDownloads() }),
+            Triple(R.drawable.ic_share, "Share", { sharePage() }),
+            Triple(R.drawable.ic_settings, "Settings", { openSettings() }),
         )
+        row1.weightSum = row1Items.size.toFloat()
         row1Items.forEach { (icon, label, action) ->
             row1.addView(menuIconCell(icon, label) { sheet.dismiss(); action() }.apply {
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
@@ -735,6 +952,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun toggleBookmark() {
+        if (!app.prefs.bookmarksEnabled) {
+            Toast.makeText(this, "Bookmarks are turned off in Settings", Toast.LENGTH_SHORT).show()
+            return
+        }
         val wv = currentTab() ?: return
         val url = wv.url ?: return
         val store = BookmarkStore(this)
@@ -825,6 +1046,12 @@ class MainActivity : AppCompatActivity() {
     private fun renderQuickBookmarks() {
         val grid: GridLayout = try { findViewById(R.id.quickBookmarks) } catch (e: Exception) { return }
         grid.removeAllViews()
+        // Desktop bookmarksEnabled + showQuick + ntpTiles equivalents.
+        if (!app.prefs.bookmarksEnabled || !app.prefs.showQuick) {
+            findViewById<TextView>(R.id.quickLabel).visibility = View.GONE
+            grid.visibility = View.GONE
+            return
+        }
         val marks = try { BookmarkStore(this).load() } catch (e: Exception) { emptyList() }
         if (marks.isEmpty()) {
             findViewById<TextView>(R.id.quickLabel).visibility = View.GONE
@@ -834,7 +1061,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.quickLabel).visibility = View.VISIBLE
         grid.visibility = View.VISIBLE
         val density = resources.displayMetrics.density
-        marks.take(8).forEach { bm ->
+        marks.take(app.prefs.ntpTiles.coerceIn(1, 12)).forEach { bm ->
             val cell = LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
                 gravity = android.view.Gravity.CENTER_HORIZONTAL
@@ -963,6 +1190,12 @@ class MainActivity : AppCompatActivity() {
     // ----- session restore (F6, free): URLs only, pages reload fresh -----
 
     private fun saveSession() {
+        // historyEnabled off = don't record anything, drop the old record.
+        if (!app.prefs.historyEnabled) {
+            app.prefs.sessionTabs = ""
+            app.prefs.sessionActive = -1
+            return
+        }
         try {
             val arr = org.json.JSONArray()
             tabs.forEach {
@@ -977,6 +1210,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun restoreSession(): Boolean {
+        if (!app.prefs.historyEnabled || !app.prefs.restoreTabs) return false
         return try {
             val raw = app.prefs.sessionTabs
             if (raw.isBlank()) return false
@@ -1121,6 +1355,11 @@ class MainActivity : AppCompatActivity() {
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
+            // Fullscreen video exits first, like every other browser.
+            if (customView != null) {
+                try { currentTab()?.webChromeClient?.onHideCustomView() } catch (e: Exception) { }
+                return true
+            }
             val wv = currentTab()
             if (wv != null && wv.canGoBack()) {
                 wv.goBack()
