@@ -1341,7 +1341,7 @@ function renderSetup(){
   function grid(art,body,nav){return '<div class="setup-grid"><div class="setup-art">'+art+'</div><div class="setup-body">'+body+'</div></div><div class="setup-foot">'+nav+'</div>';}
   var CONTINUE='<button class="setup-btn" id="setup-next">Continue</button><div><button class="setup-skip" id="setup-back">Back</button></div>';
   if(setupStep===0){
-    c.innerHTML=dots+'<div class="setup-grid"><div class="setup-art">'+setupHero()+'</div><div class="setup-body"><div class="setup-name">Kastrava</div><div class="setup-beta"><span>RC</span> &middot; Originally AnterSurf</div><div class="setup-sub">The most private browser.<br>Zero telemetry. Your data never leaves this machine.</div></div></div><div class="setup-foot"><button class="setup-btn" id="setup-next">Get Started</button><div><button class="setup-skip" id="setup-skip">Skip setup</button></div></div>';
+    c.innerHTML=dots+'<div class="setup-grid"><div class="setup-art">'+setupHero()+'</div><div class="setup-body"><div class="setup-name">Kastrava</div><div class="setup-beta"><span>RC</span></div><div class="setup-sub">The most private browser.<br>Zero telemetry. Your data never leaves this machine.</div></div></div><div class="setup-foot"><button class="setup-btn" id="setup-next">Get Started</button><div><button class="setup-skip" id="setup-skip">Skip setup</button></div></div>';
     $("setup-next").addEventListener("click",function(){setupGo(1);});
     $("setup-skip").addEventListener("click",function(){setupThemeKey=settings.theme||"light-0";finishSetup();});
   }else if(setupStep===1){
