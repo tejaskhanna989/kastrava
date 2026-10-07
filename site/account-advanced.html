@@ -170,7 +170,13 @@ function renewChoice(go){
   ov.addEventListener('click',function(e){if(e.target===ov){done();buyEl.disabled=false;buyMsg.textContent='';}});
   document.getElementById('rc-x').addEventListener('click',function(){done();buyEl.disabled=false;buyMsg.textContent='';});
   document.getElementById('rc-manual').addEventListener('click',function(){done();go(false);});
-  document.getElementById('rc-auto').addEventListener('click',function(){done();go(true);});
+  if(typeof planPicked!=='undefined'&&planPicked==='daily'){
+    var ab=document.getElementById('rc-auto');
+    if(ab)ab.innerHTML='<b>Auto-renewal</b><br><span style="font-size:12.5px;color:var(--muted)">Monthly plan only</span>';
+  }
+  document.getElementById('rc-auto').addEventListener('click',function(){
+    if(typeof planPicked!=='undefined'&&planPicked==='daily'){alert('Daily is manual-renew only — auto-renew needs the Monthly plan.');return;}
+    done();go(true);});
 }
 function openSubscribe(){
   buyMsg.className='msg';buyMsg.textContent='Starting auto-renew…';

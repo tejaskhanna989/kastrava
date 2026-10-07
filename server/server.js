@@ -45,10 +45,13 @@ function rzpPlanIds() {
   try { return JSON.parse(fs.readFileSync(rzpPlanFile(), 'utf8')) } catch { return {} }
 }
 async function ensureRzpPlans() {
-  try {
-    const ids = rzpPlanIds()
-    let changed = false
-    for (const name of ['monthly', 'daily']) {
+  const ids = rzpPlanIds()
+  let changed = false
+  // NOTE: Razorpay rejects daily intervals under 7, so auto-renew is
+  // Monthly-only. Daily stays manual. The loop keeps working if that
+  // ever changes upstream.
+  for (const name of ['monthly', 'daily']) {
+    try {
       const envId = process.env['RAZORPAY_PLAN_' + name.toUpperCase()]
       if (envId) { if (ids[name] !== envId) { ids[name] = envId; changed = true } continue }
       if (ids[name]) continue
@@ -57,16 +60,17 @@ async function ensureRzpPlans() {
       ids[name] = created.id
       changed = true
       console.log('[kastrava-licenses] razorpay plan created:', name, created.id)
+    } catch (e) {
+      console.error('[kastrava-licenses] plan ensure failed for', name + ':', String((e && e.message) || e))
     }
-    if (changed) {
+  }
+  if (changed) {
+    try {
       fs.mkdirSync(path.dirname(rzpPlanFile()), { recursive: true })
       fs.writeFileSync(rzpPlanFile(), JSON.stringify(ids, null, 2), { mode: 0o600 })
-    }
-    return ids
-  } catch (e) {
-    console.error('[kastrava-licenses] plan ensure failed:', String((e && e.message) || e))
-    return rzpPlanIds()
+    } catch {}
   }
+  return ids
 }
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data')
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || ''
@@ -717,7 +721,10 @@ async function handlePost(req, res, pathname) {
   }
 
   if (pathname === '/api/subscribe') {
-    const planName = body.plan === 'daily' ? 'daily' : 'monthly'
+    if (body.plan === 'daily') {
+      return json(res, 400, { error: 'manual_only', msg: 'Daily is manual-renew only — auto-renew needs the Monthly plan.' })
+    }
+    const planName = 'monthly'
     const acc = store.getSessionAccount(String(body.account_token || ''))
     if (!acc) return json(res, 401, { error: 'unauthorized', msg: 'Log in first — auto-renew attaches to your account.' })
     try {
