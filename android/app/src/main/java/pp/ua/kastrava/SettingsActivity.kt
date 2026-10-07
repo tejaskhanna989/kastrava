@@ -84,12 +84,27 @@ class SettingsActivity : AppCompatActivity() {
             btnUpd.isEnabled = false
             Thread {
                 val u = Updater.check(this, force = true)
+                // A finished APK may already sit on disk (e.g. downloaded
+                // earlier, or installed after allowing unknown sources).
+                // Install it instead of downloading again when it matches.
+                val have = Updater.downloadedFile(this)
+                val haveCode = if (have != null) Updater.apkCode(this, have) else -1L
                 runOnUiThread {
                     btnUpd.isEnabled = true
-                    showUpdate(u)
-                    if (u != null) {
-                        Updater.download(this, u)
-                        tvUpdate.text = "Downloading Kastrava ${u.name}..."
+                    if (u != null && (have == null || haveCode < u.code)) {
+                        showUpdate(u)
+                        val id = Updater.download(this, u)
+                        if (id >= 0) tvUpdate.text = "Downloading Kastrava ${u.name}..."
+                    } else if (u != null && have != null) {
+                        showUpdate(u)
+                        tvUpdate.text = "Update ready to install."
+                        Updater.promptInstall(this, have)
+                    } else if (have != null && haveCode > 0) {
+                        showUpdate(null)
+                        tvUpdate.text = "Update ready to install."
+                        Updater.promptInstall(this, have)
+                    } else {
+                        showUpdate(u)
                     }
                 }
             }.start()

@@ -54,40 +54,59 @@ object Updater {
             if (System.currentTimeMillis() - last < CHECK_INTERVAL) return null
         }
         return try {
-            prefs(ctx).edit().putLong(PREF_LAST_CHECK, System.currentTimeMillis()).apply()
             val conn = (URL(FEED).openConnection() as HttpURLConnection).apply {
                 setRequestProperty("User-Agent", "Kastrava-Android")
                 connectTimeout = 15000
                 readTimeout = 15000
             }
-            if (conn.responseCode != 200) return null
+            if (conn.responseCode != 200) {
+                // Failed check must not start the 48h silence: retry in an hour.
+                prefs(ctx).edit().putLong(PREF_LAST_CHECK,
+                    System.currentTimeMillis() - CHECK_INTERVAL + 3600_000).apply()
+                return null
+            }
             val j = JSONObject(conn.inputStream.bufferedReader().readText())
             val code = j.optLong("version_code", -1)
-            if (code <= installedCode(ctx)) return null
+            if (code <= installedCode(ctx)) {
+                prefs(ctx).edit().putLong(PREF_LAST_CHECK, System.currentTimeMillis()).apply()
+                return null
+            }
             val url = j.optString("apk_url")
             if (url.isBlank()) return null
+            prefs(ctx).edit().putLong(PREF_LAST_CHECK, System.currentTimeMillis()).apply()
             UpdateInfo(code, j.optString("version", "?"), url,
                 j.optLong("apk_size", -1), j.optString("notes", ""))
         } catch (e: Exception) {
+            try {
+                prefs(ctx).edit().putLong(PREF_LAST_CHECK,
+                    System.currentTimeMillis() - CHECK_INTERVAL + 3600_000).apply()
+            } catch (ignored: Exception) { }
             null
         }
     }
 
     fun download(ctx: Context, info: UpdateInfo): Long {
-        val file = File(ctx.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS),
-            "Kastrava-${info.name}.apk")
-        try { if (file.exists()) file.delete() } catch (e: Exception) { }
-        val req = DownloadManager.Request(Uri.parse(info.url)).apply {
-            setTitle("Kastrava ${info.name}")
-            setDescription("Downloading update")
-            setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            setDestinationUri(Uri.fromFile(file))
-            setAllowedOverMetered(true)
+        val name = "Kastrava-${info.name}.apk"
+        return try {
+            val dm = ctx.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            val req = DownloadManager.Request(Uri.parse(info.url)).apply {
+                setTitle("Kastrava ${info.name}")
+                setDescription("Downloading update")
+                setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                // App-private downloads dir: no storage permission needed on
+                // any API level, and no file:// URI exposure.
+                setDestinationInExternalFilesDir(ctx, Environment.DIRECTORY_DOWNLOADS, name)
+                setAllowedOverMetered(true)
+            }
+            val id = dm.enqueue(req)
+            prefs(ctx).edit().putLong(PREF_DL_ID, id).apply()
+            id
+        } catch (e: Exception) {
+            try {
+                Toast.makeText(ctx, "System downloader unavailable", Toast.LENGTH_LONG).show()
+            } catch (ignored: Exception) { }
+            -1L
         }
-        val dm = ctx.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-        val id = dm.enqueue(req)
-        prefs(ctx).edit().putLong(PREF_DL_ID, id).apply()
-        return id
     }
 
     fun downloadedFile(ctx: Context): File? {
@@ -95,6 +114,18 @@ object Updater {
             ?.listFiles { f -> f.name.startsWith("Kastrava-") && f.name.endsWith(".apk") }
             ?.sortedByDescending { it.lastModified() }
         return files?.firstOrNull()?.takeIf { it.length() > 1024 * 1024 }
+    }
+
+    /** Version code baked into a downloaded APK, or -1 when unreadable. */
+    fun apkCode(ctx: Context, file: File): Long {
+        return try {
+            @Suppress("DEPRECATION")
+            val pi = ctx.packageManager.getPackageArchiveInfo(file.absolutePath, 0)
+                ?: return -1L
+            PackageInfoCompat.getLongVersionCode(pi)
+        } catch (e: Exception) {
+            -1L
+        }
     }
 
     fun promptInstall(ctx: Context, file: File): Boolean {
