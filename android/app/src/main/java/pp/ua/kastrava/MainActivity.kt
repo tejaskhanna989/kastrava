@@ -204,7 +204,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun pauseTab(t: WebTab?) {
         if (!app.prefs.batterySaver) return
-        try { t?.view?.onPause() } catch (e: Exception) { }
+        try {
+            val v = t?.view ?: return
+            // Never freeze a page mid-load — a paused load stalls and the
+            // tab looks broken. It sleeps on the next switch instead.
+            if (v.progress in 1..99) return
+            v.onPause()
+        } catch (e: Exception) { }
     }
 
     private fun resumeTab(t: WebTab?) {
@@ -386,16 +392,51 @@ class MainActivity : AppCompatActivity() {
         renderQuickBookmarks()
         updateTabCount()
         omnibox.setText("")
+        // Fresh tab = empty search box. Otherwise the last query sits here
+        // and one accidental Go re-opens the old results in the new tab.
+        homeSearch.setText("")
         progress.visibility = ProgressBar.GONE
     }
 
+    private var tabsSheet: BottomSheetDialog? = null
+    private var tabsSheetList: LinearLayout? = null
+
     private fun showTabs() {
+        val open = tabsSheet
+        if (open != null && open.isShowing && tabsSheetList != null) {
+            renderTabsSheet(tabsSheetList!!, open)
+            return
+        }
         val sheet = BottomSheetDialog(this)
         val list = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             val pad = (16 * resources.displayMetrics.density).toInt()
             setPadding(pad, pad / 2, pad, pad)
         }
+        tabsSheet = sheet
+        tabsSheetList = list
+        renderTabsSheet(list, sheet)
+        sheet.setOnDismissListener {
+            if (tabsSheet === sheet) {
+                tabsSheet = null
+                tabsSheetList = null
+            }
+        }
+        sheet.setContentView(ScrollView(this).apply { addView(list) })
+        sheet.show()
+    }
+
+    // Re-renders the open sheet in place: closing a tab must not dismiss
+    // and re-show the whole panel (that replayed the enter animation).
+    private fun refreshTabsSheet() {
+        val sheet = tabsSheet
+        val list = tabsSheetList
+        if (sheet == null || list == null || !sheet.isShowing) return
+        if (tabs.isEmpty()) sheet.dismiss() else renderTabsSheet(list, sheet)
+    }
+
+    private fun renderTabsSheet(list: LinearLayout, sheet: BottomSheetDialog) {
+        list.removeAllViews()
         val density = resources.displayMetrics.density
         tabs.forEachIndexed { i, tab ->
             val wv = tab.view
@@ -441,7 +482,7 @@ class MainActivity : AppCompatActivity() {
                 setImageResource(R.drawable.ic_close)
                 background = null
                 contentDescription = "Close tab"
-                setOnClickListener { closeTab(i); sheet.dismiss(); if (tabs.isNotEmpty()) showTabs() }
+                setOnClickListener { closeTab(i); refreshTabsSheet() }
             }
             row.addView(close)
             if (i == current) row.setBackgroundColor(getColor(R.color.chrome_pill))
@@ -470,8 +511,6 @@ class MainActivity : AppCompatActivity() {
             setOnClickListener { sheet.dismiss(); newTab() }
         }
         list.addView(newTabRow)
-        sheet.setContentView(ScrollView(this).apply { addView(list) })
-        sheet.show()
     }
 
     // ----- navigation -----
