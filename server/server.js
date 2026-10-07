@@ -804,7 +804,7 @@ const server = http.createServer((req, res) => {
       pathname = '/account.html'
     }
     if (pathname === '/api/health') {
-      return json(res, 200, { ok: true, dev: razorpay.isDev(), host: HOST, price: PRICE_INR, period_days: PERIOD_DAYS, grace_days: GRACE_DAYS, version: '101.3.4', codename: 'Starship Wonders',
+      return json(res, 200, { ok: true, dev: razorpay.isDev(), host: HOST, price: PRICE_INR, period_days: PERIOD_DAYS, grace_days: GRACE_DAYS, version: '101.3.5', codename: 'Starship Wonders',
         plans: { monthly: PLANS.monthly, daily: PLANS.daily } })
     }
     if (pathname === '/api/admin/list') {
