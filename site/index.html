@@ -455,14 +455,14 @@ footer a:hover{color:var(--ink)}
       var email=em?em.value.trim():'',pass=pw?pw.value:'';
       if(!email||pass.length<8){if(mm)mm.textContent='Email + 8-character password.';return;}
       if(mm)mm.textContent='Logging in…';
-      fetch(KAS_API+'/api/account/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,password:pass})})
+      apiFetch(KAS_API+'/api/account/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,password:pass})})
       .then(function(r){return r.json();}).then(function(j){
         if(j&&j.ok&&j.token){
           try{localStorage.setItem('kas_sync_token',j.token);}catch(e){}
           var lb=document.getElementById('prem-login');if(lb)lb.style.display='none';
           if(buyBtn)buyBtn.click();
         }else if(mm)mm.textContent='Wrong email or password.';
-      }).catch(function(){if(mm)mm.textContent='Could not reach the server.';});
+      }).catch(function(e){if(mm){mm.textContent=apiErr(e,'Could not reach the server.');}});
     });
   })();
 
@@ -546,14 +546,14 @@ footer a:hover{color:var(--ink)}
       handler:function(res){
         setBusy(true);
         var mach=machineValue();
-        fetch(KAS_API+'/api/verify',{method:'POST',headers:{'Content-Type':'application/json'},
+        apiFetch(KAS_API+'/api/verify',{method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({order_id:res.razorpay_order_id,payment_id:res.razorpay_payment_id,signature:res.razorpay_signature,machine_id:mach})})
         .then(function(r){return r.json();})
         .then(function(v){
           if(v.ok&&v.key){var pt=document.getElementById("prem-plan");if(pt&&v.plan){pt.style.display="block";pt.textContent=(v.plan==="daily"?"DAILY · 24 HOURS":"MONTHLY · 30 DAYS");}showKey(v.key,!!v.renewed,{order_id:res.razorpay_order_id,payment_id:res.razorpay_payment_id,amount:o.amount,currency:o.currency,machine_id:mach,account_email:v.account_email||null,server_receipt:v.receipt||null,receipt_sig:v.receipt_sig||null});setBusy(false);}
           else fail((v&&v.msg)||'Payment could not be verified.');
         })
-        .catch(function(){fail('Could not verify payment - your payment may still have gone through. Email the payment ID to khannatejas989@gmail.com');});
+        .catch(function(e){fail(apiErr(e,'Could not verify payment - your payment may still have gone through. Email the payment ID to khannatejas989@gmail.com'));});
       },
       modal:{ondismiss:function(){setBusy(false);}}
     };
@@ -571,7 +571,7 @@ footer a:hover{color:var(--ink)}
     }
     setBusy(true);
     primeReceiptLib();
-    fetch(KAS_API+'/api/order',{method:'POST',headers:{'Content-Type':'application/json'},
+    apiFetch(KAS_API+'/api/order',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({machine_id:machineValue(),plan:planPicked})})
     .then(function(r){return r.json();})
     .then(function(o){
@@ -579,11 +579,11 @@ footer a:hover{color:var(--ink)}
       if(o.dev){
         // Dev mode (no Razorpay keys configured): simulate the paid callback.
         var mach=machineValue();
-        fetch(KAS_API+'/api/verify',{method:'POST',headers:{'Content-Type':'application/json'},
+        apiFetch(KAS_API+'/api/verify',{method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({order_id:o.order_id,payment_id:'pay_dev_'+Date.now(),signature:'dev',machine_id:mach})})
         .then(function(r){return r.json();})
         .then(function(v){if(v.ok&&v.key){showKey(v.key,!!v.renewed,{order_id:o.order_id,payment_id:'pay_dev',amount:o.amount,currency:o.currency,machine_id:mach});}setBusy(false);})
-        .catch(function(){fail('Dev checkout failed.');});
+        .catch(function(e){fail(apiErr(e,'Dev checkout failed.'));});
         return;
       }
       var goPay=function(auto){
@@ -595,9 +595,31 @@ footer a:hover{color:var(--ink)}
       var auto=autoPick&&autoPick.value==='auto'&&planPicked!=='daily';
       goPay(auto);
     })
-    .catch(function(e){fail(e&&e.message);});
+    .catch(function(e){fail(apiErr(e,e&&e.message));});
   });
 
+  function apiFetch(url,opts){
+    opts=opts||{};
+    var ctrl=null,timer=null;
+    try{
+      if(window.AbortController){ctrl=new AbortController();opts.signal=ctrl.signal;
+        timer=setTimeout(function(){try{ctrl.abort();}catch(e){}},25000);}
+    }catch(e){}
+    return fetch(url,opts).then(function(r){
+      if(timer)clearTimeout(timer);
+      var ct='';try{ct=r.headers.get('content-type')||'';}catch(e){}
+      if(ct.indexOf('application/json')<0){
+        throw new Error('blocked');
+      }
+      return r;
+    },function(e){if(timer)clearTimeout(timer);throw e;});
+  }
+  function apiErr(e,fallback){
+    var m=String((e&&e.message)||e||'');
+    if(m.indexOf('blocked')>=0)return 'Blocked by a browser security check — finish any “verify you are human” box on this page, then retry. (VPNs trigger this.)';
+    if(m.indexOf('abort')>=0||m.indexOf('imeout')>=0||m.indexOf('etch')>=0||m.indexOf('etwork')>=0)return 'Request timed out — check connection and retry.';
+    return fallback||'Something went wrong. Please try again.';
+  }
   function syncToken(){try{return localStorage.getItem('kas_sync_token')||'';}catch(e){return '';}}
   function openSubscribe(o){
     var t=syncToken();
@@ -615,17 +637,17 @@ footer a:hover{color:var(--ink)}
       else fail((v&&v.msg)||'Mandate setup failed.');
     }
     if(o.dev){
-      fetch(KAS_API+'/api/subscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan:planPicked,account_token:t})})
+      apiFetch(KAS_API+'/api/subscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan:planPicked,account_token:t})})
       .then(function(r){return r.json();}).then(function(sb){
         if(!sb||!sb.subscription_id){fail('Dev subscribe failed.');return;}
-        fetch(KAS_API+'/api/subscribe/verify',{method:'POST',headers:{'Content-Type':'application/json'},
+        apiFetch(KAS_API+'/api/subscribe/verify',{method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({subscription_id:sb.subscription_id,payment_id:'pay_dev_'+Date.now(),signature:'dev',account_token:t})})
-        .then(function(r){return r.json();}).then(doneSub).catch(function(){fail('Dev checkout failed.');});
-      }).catch(function(){fail('Dev checkout failed.');});
+        .then(function(r){return r.json();}).then(doneSub).catch(function(e){fail(apiErr(e,'Dev checkout failed.'));});
+      }).catch(function(e){fail(apiErr(e,'Dev checkout failed.'));});
       return;
     }
     var startSub=function(){
-      fetch(KAS_API+'/api/subscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan:planPicked,account_token:t})})
+      apiFetch(KAS_API+'/api/subscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan:planPicked,account_token:t})})
       .then(function(r){return r.json();}).then(function(sb){
         if(!sb||!sb.subscription_id){fail((sb&&sb.msg)||'Could not start auto-renew.');return;}
         var rzp=new Razorpay({key:sb.key_id,subscription_id:sb.subscription_id,
@@ -633,10 +655,10 @@ footer a:hover{color:var(--ink)}
           theme:{color:document.documentElement.getAttribute('data-theme')==='dark'?'#f3eee4':'#16130e'},
           handler:function(res){
             setBusy(true);
-            fetch(KAS_API+'/api/subscribe/verify',{method:'POST',headers:{'Content-Type':'application/json'},
+            apiFetch(KAS_API+'/api/subscribe/verify',{method:'POST',headers:{'Content-Type':'application/json'},
               body:JSON.stringify({subscription_id:res.razorpay_subscription_id,payment_id:res.razorpay_payment_id,signature:res.razorpay_signature,account_token:t})})
             .then(function(r){return r.json();}).then(doneSub)
-            .catch(function(){fail('Could not verify mandate.');});
+            .catch(function(e){fail(apiErr(e,'Could not verify mandate.'));});
           },
           modal:{ondismiss:function(){setBusy(false);}}});
         rzp.on('payment.failed',function(){setBusy(false);alert('Mandate setup failed. No charge was made.');});

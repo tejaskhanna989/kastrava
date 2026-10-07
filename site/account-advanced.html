@@ -90,6 +90,28 @@ r.setAttribute('data-theme',s?s:(window.matchMedia&&window.matchMedia('(prefers-
 <script>
 (function(){
 var KAS_API=((window.KAS_API)||(location.search.match(/[?&]api=([^&]+)/)||[])[1]||'https://nexufog.pp.ua').replace(/\/$/,'');
+  function apiFetch(url,opts){
+    opts=opts||{};
+    var ctrl=null,timer=null;
+    try{
+      if(window.AbortController){ctrl=new AbortController();opts.signal=ctrl.signal;
+        timer=setTimeout(function(){try{ctrl.abort();}catch(e){}},25000);}
+    }catch(e){}
+    return fetch(url,opts).then(function(r){
+      if(timer)clearTimeout(timer);
+      var ct='';try{ct=r.headers.get('content-type')||'';}catch(e){}
+      if(ct.indexOf('application/json')<0){
+        throw new Error('blocked');
+      }
+      return r;
+    },function(e){if(timer)clearTimeout(timer);throw e;});
+  }
+  function apiErr(e,fallback){
+    var m=String((e&&e.message)||e||'');
+    if(m.indexOf('blocked')>=0)return 'Blocked by a browser security check — finish any “verify you are human” box on this page, then retry. (VPNs trigger this.)';
+    if(m.indexOf('abort')>=0||m.indexOf('imeout')>=0||m.indexOf('etch')>=0||m.indexOf('etwork')>=0)return 'Request timed out — check connection and retry.';
+    return fallback||'Something went wrong. Please try again.';
+  }
 function tok(){try{return localStorage.getItem('kas_sync_token')||'';}catch(e){return '';}}
 function authz(){return {'Content-Type':'application/json','Authorization':'Bearer '+tok()};}
 function esc(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
@@ -195,12 +217,12 @@ goEl.addEventListener('click',function(){
   var email=(document.getElementById('ac-email').value||'').trim(),pw=document.getElementById('ac-pass').value||'';
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email)||pw.length<8){msgEl.textContent='Valid email + 8-character password.';msgEl.className='msg err';return;}
   goEl.disabled=true;msgEl.className='msg';msgEl.textContent='Logging in…';
-  fetch(KAS_API+'/api/account/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,password:pw})})
+  apiFetch(KAS_API+'/api/account/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,password:pw})})
   .then(function(r){return r.json();}).then(function(j){
     goEl.disabled=false;
     if(j&&j.ok){try{localStorage.setItem('kas_sync_token',j.token);}catch(e){}showDash(j.email);}
     else{msgEl.className='msg err';msgEl.textContent='Wrong email or password.';}
-  }).catch(function(){goEl.disabled=false;msgEl.className='msg err';msgEl.textContent='Could not reach the server.';});
+  }).catch(function(e){goEl.disabled=false;msgEl.className='msg err';msgEl.textContent=apiErr(e,'Could not reach the server.');});
 });
 document.getElementById('ac-out').addEventListener('click',function(){
   fetch(KAS_API+'/api/account/logout',{method:'POST',headers:authz(),body:'{}'}).catch(function(){});
@@ -238,25 +260,25 @@ document.querySelectorAll('.plan-pick').forEach(function(b){
 paintPlan();
 function openSubscribe(){
   buyMsg.className='msg';buyMsg.textContent='Starting auto-renew…';
-  fetch(KAS_API+'/api/subscribe',{method:'POST',headers:authz(),body:JSON.stringify({plan:planPicked,account_token:tok()})})
+  apiFetch(KAS_API+'/api/subscribe',{method:'POST',headers:authz(),body:JSON.stringify({plan:planPicked,account_token:tok()})})
   .then(function(r){return r.json();}).then(function(sb){
     if(!sb||!sb.subscription_id){buyMsg.textContent=(sb&&sb.msg)||'Could not start auto-renew.';buyEl.disabled=false;return;}
     var rzp=new Razorpay({key:sb.key_id,subscription_id:sb.subscription_id,
       name:'Kastrava Premium',description:'Auto-renew '+PLAN_META[planPicked].label+' - cancel anytime',
       theme:{color:document.documentElement.getAttribute('data-theme')==='dark'?'#f3eee4':'#16130e'},
       handler:function(res){
-        fetch(KAS_API+'/api/subscribe/verify',{method:'POST',headers:{'Content-Type':'application/json'},
+        apiFetch(KAS_API+'/api/subscribe/verify',{method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({subscription_id:res.razorpay_subscription_id,payment_id:res.razorpay_payment_id,signature:res.razorpay_signature,account_token:tok()})})
         .then(function(r){return r.json();}).then(function(v){
           buyEl.disabled=false;
           if(v&&v.ok&&v.key){buyMsg.textContent='Auto-renew on. Downloading receipt…';downloadKeyReceipt(v.key);buyMsg.textContent='Auto-renew on. Key '+v.key+' is on your account — browsers pick it up automatically.';loadKeys();}
           else{buyMsg.textContent='Mandate setup failed.';}
-        }).catch(function(){buyEl.disabled=false;buyMsg.textContent='Verification failed.';});
+        }).catch(function(e){buyEl.disabled=false;buyMsg.textContent=apiErr(e,'Verification failed.');});
       },
       modal:{ondismiss:function(){buyEl.disabled=false;buyMsg.textContent='';}}});
     rzp.on('payment.failed',function(){buyEl.disabled=false;buyMsg.textContent='Mandate setup failed. No charge was made.';});
     rzp.open();
-  }).catch(function(){buyEl.disabled=false;buyMsg.textContent='Could not start auto-renew.';});
+  }).catch(function(e){buyEl.disabled=false;buyMsg.textContent=apiErr(e,'Could not start auto-renew.');});
 }
 buyEl.addEventListener('click',function(){
   if(!window.Razorpay){buyMsg.textContent='Checkout failed to load. Refresh and try again.';return;}
@@ -266,25 +288,25 @@ buyEl.addEventListener('click',function(){
   if(auto){openSubscribe();return;}
   manualPay();
   function manualPay(){
-  fetch(KAS_API+'/api/order',{method:'POST',headers:authz(),body:JSON.stringify({account_token:tok(),plan:planPicked})})
+  apiFetch(KAS_API+'/api/order',{method:'POST',headers:authz(),body:JSON.stringify({account_token:tok(),plan:planPicked})})
   .then(function(r){return r.json();}).then(function(o){
     if(!o||!o.order_id){buyMsg.textContent='Order failed.';buyEl.disabled=false;return;}
     var rzp=new Razorpay({key:o.key_id,amount:o.amount,currency:o.currency,order_id:o.order_id,
       name:'Kastrava Premium',description:'Kastrava Premium - '+PLAN_META[planPicked].label+' - no auto-renew',
       theme:{color:document.documentElement.getAttribute('data-theme')==='dark'?'#f3eee4':'#16130e'},
       handler:function(res){
-        fetch(KAS_API+'/api/verify',{method:'POST',headers:{'Content-Type':'application/json'},
+        apiFetch(KAS_API+'/api/verify',{method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({order_id:res.razorpay_order_id,payment_id:res.razorpay_payment_id,signature:res.razorpay_signature,machine_id:'',account_token:tok()})})
         .then(function(r){return r.json();}).then(function(v){
           buyEl.disabled=false;
           if(v&&v.ok&&v.key){buyMsg.textContent='Paid. Downloading receipt…';downloadKeyReceipt(v.key);buyMsg.textContent='Paid. Key '+v.key+' is on your account'+(v.renewed?' (renewal extended)':'')+' — logged-in browsers pick it up automatically.';loadKeys();}
           else{buyMsg.className='msg err';buyMsg.textContent='Payment could not be verified.';}
-        }).catch(function(){buyEl.disabled=false;buyMsg.textContent='Verification failed — email your payment ID to support.';});
+        }).catch(function(e){buyEl.disabled=false;buyMsg.textContent=apiErr(e,'Verification failed — email your payment ID to support.');});
       },
       modal:{ondismiss:function(){buyEl.disabled=false;buyMsg.textContent='';}}});
     rzp.on('payment.failed',function(){buyEl.disabled=false;buyMsg.textContent='Payment failed. No charge was made.';});
     rzp.open();
-  }).catch(function(){buyEl.disabled=false;buyMsg.textContent='Order failed.';});
+  }).catch(function(e){buyEl.disabled=false;buyMsg.textContent=apiErr(e,'Order failed.');});
   }
 });
 // Auto-show dashboard when already logged in.
