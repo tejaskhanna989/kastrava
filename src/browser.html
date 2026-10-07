@@ -739,6 +739,7 @@ function applyEditionUI(){
     if(settings.theme!=="dark-0"&&settings.theme!=="light-0"){settings.theme="dark-0";saveSetting("theme","dark-0");}
     if(PREMIUM_ENGINES[settings.searchEngine]){settings.searchEngine="kastravasearch";saveSetting("searchEngine","kastravasearch");}
     if(settings.tabLayout==="vertical"){settings.tabLayout="horizontal";saveSetting("tabLayout","horizontal");applyTabLayout("horizontal");}
+    if(settings.uiStyle==="firefox"){settings.uiStyle="chrome";saveSetting("uiStyle","chrome");applyUiStyle("chrome");}
     if(!applyThemeKey(settings.theme||"dark-0")&&settings.accent){document.documentElement.style.setProperty("--accent",settings.accent);}
     ["cursorFx","blobFx","glassFx","particleFx","clickSparkFx","pixelTrailFx","ribbonsFx"].forEach(function(k){if(settings[k]==="on"){settings[k]="off";saveSetting(k,"off");}});
     if(settings.cursorStyle==="custom"){settings.cursorStyle="system";saveSetting("cursorStyle","system");applyCursorStyle();}
@@ -868,6 +869,7 @@ function applyBookmarkBar(v){
 function applyHistoryEnabled(v){settings.historyEnabled=v;document.body.classList.toggle("no-history",v==="off");}
 function applyBookmarksEnabled(v){settings.bookmarksEnabled=v;document.body.classList.toggle("no-bookmarks",v==="off");}
 function applyUiStyle(v){
+  if(v==="firefox"&&!isPremium())v="chrome";
   settings.uiStyle=(v==="chrome")?"chrome":"firefox";
   document.body.classList.toggle("ui-firefox",settings.uiStyle==="firefox");
 }
@@ -4142,7 +4144,7 @@ function bindSettingsEvents(id){
       setSel("s-ntptiles",settings.ntpTiles||"8");
       bindChange("s-ntptiles",function(v){sv("ntpTiles",v);applyNtpTiles(v);});
       setSel("s-uistyle",settings.uiStyle||"firefox");
-      bindChange("s-uistyle",function(v){sv("uiStyle",v);applyUiStyle(v);toast("Interface: "+v);});
+      bindChange("s-uistyle",function(v){if(v==="firefox"&&!isPremium()){setSel("s-uistyle","chrome");requirePremium();return;}sv("uiStyle",v);applyUiStyle(v);toast("Interface: "+v);});
       setSel("s-tablayout",settings.tabLayout||"horizontal");
       bindChange("s-tablayout",function(v){if(v==="vertical"&&!isPremium()){setSel("s-tablayout","horizontal");requirePremium();return;}sv("tabLayout",v);applyTabLayout(v);});
       setCheck("s-vtabscollapse","on",settings.vtabsCollapsed);
