@@ -137,7 +137,7 @@ class SettingsActivity : AppCompatActivity() {
         fun paintAccount() {
             val em = app.account.email()
             tvAccount.text = if (app.account.loggedIn()) "Signed in as $em. Same key auto-activates on up to 10 devices."
-            else "Not logged in. One login syncs and activates Premium."
+            else "Not logged in. Bookmarks and settings stay on this device either way. One login syncs and activates Premium."
             if (!em.isNullOrBlank() && etEmail.text.isBlank()) etEmail.setText(em)
         }
         val tvSync: TextView = findViewById(R.id.tvSyncStatus)
