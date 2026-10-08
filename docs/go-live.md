@@ -126,7 +126,7 @@ sudo systemctl status kastrava-license      # active (running)
      picks it up on next startup/re-activate.
    - **Machine lock**: the key must refuse to activate on a second machine
      (`machine_mismatch`).
-     `kastrava_101.4.0_amd64.deb`.
+     `kastrava_101.4.1_amd64.deb`.
 
 5. **Optional store cleanup** — if you want zero test artifacts mixed with
    real orders, wipe the store *before* real sales (this also deletes the
