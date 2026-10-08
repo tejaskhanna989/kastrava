@@ -228,6 +228,8 @@ body.no-bookmarks #bm-bar{display:none!important}
 .ctx-menu.visible{display:block}
 .ctx-menu .item{padding:6px 14px;cursor:pointer;transition:background .08s;border-radius:4px;margin:0 4px}
 .ctx-menu .item:hover{background:var(--c-hover)}
+.ctx-menu .item.disabled{opacity:.38;cursor:default}
+.ctx-menu .item.disabled:hover{background:none}
 .ctx-menu .div{height:1px;background:var(--c-border);margin:4px 0}
 .modal-overlay{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center}
 .modal-overlay.visible{display:flex}
@@ -3469,8 +3471,8 @@ function showCtxMenu(items,x,y){
   ctx.innerHTML="";
   items.forEach(function(it){
     if(it.div){var d=document.createElement("div");d.className="div";ctx.appendChild(d);return;}
-    var el=document.createElement("div");el.className="item";el.textContent=it.text;
-    el.addEventListener("click",function(){hideCtxMenu();try{it.action&&it.action();}catch(e){err("ctx",e);}});
+    var el=document.createElement("div");el.className="item"+(it.disabled?" disabled":"");el.textContent=it.text;
+    el.addEventListener("click",function(){if(it.disabled)return;hideCtxMenu();try{it.action&&it.action();}catch(e){err("ctx",e);}});
     ctx.appendChild(el);
   });
   ctx.style.left=Math.max(4,Math.min(x,window.innerWidth-240))+"px";
@@ -3502,10 +3504,24 @@ function webviewCtxMenu(wv,e){
     items.push({div:1});
   }
   var ef=p.editFlags||{};
-  if(ef.canCopy)items.push({text:"Copy",action:function(){try{wv.copy()}catch(e){}}});
-  if(ef.canCut)items.push({text:"Cut",action:function(){try{wv.cut()}catch(e){}}});
-  if(ef.canPaste)items.push({text:"Paste",action:function(){try{wv.paste()}catch(e){}}});
-  if(ef.canSelectAll)items.push({text:"Select All",action:function(){try{wv.selectAll()}catch(e){}}});
+  if(p.isEditable){
+    items.push({text:"Cut",disabled:!ef.canCut,action:function(){try{wv.cut()}catch(e){}}});
+    items.push({text:"Copy",disabled:!ef.canCopy,action:function(){try{wv.copy()}catch(e){}}});
+    items.push({text:"Paste",disabled:!ef.canPaste,action:function(){try{wv.paste()}catch(e){}}});
+    items.push({text:"Select All",disabled:!ef.canSelectAll,action:function(){try{wv.selectAll()}catch(e){}}});
+    if(p.dictionarySuggestions&&p.dictionarySuggestions.length){
+      items.push({div:1});
+      p.dictionarySuggestions.slice(0,3).forEach(function(sug){
+        items.push({text:String(sug),action:function(){try{wv.replaceMisspelling(sug)}catch(e){}}});
+      });
+    }
+    items.push({div:1});
+  }else{
+    if(ef.canCopy)items.push({text:"Copy",action:function(){try{wv.copy()}catch(e){}}});
+    if(ef.canCut)items.push({text:"Cut",action:function(){try{wv.cut()}catch(e){}}});
+    if(ef.canPaste)items.push({text:"Paste",action:function(){try{wv.paste()}catch(e){}}});
+    if(ef.canSelectAll)items.push({text:"Select All",action:function(){try{wv.selectAll()}catch(e){}}});
+  }
   if(p.selectionText&&items.length)items.push({div:1});
   if(p.selectionText)items.push({text:'Search for "'+esc(p.selectionText).slice(0,24)+(p.selectionText.length>24?"...":"")+'"',action:function(){addTab(resolveUrl(p.selectionText));}});
   items.push({div:1});
