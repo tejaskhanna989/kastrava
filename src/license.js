@@ -122,13 +122,14 @@ function status() {
   }
 }
 
+function appVersion() { try { return require('electron').app.getVersion() } catch { return null } }
 async function activate(key) {
   const machine = machineCode()
   try {
     const res = await fetch(API.replace(/\/$/, '') + '/api/activate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key: String(key || '').trim(), machine_id: machine }),
+      body: JSON.stringify({ key: String(key || '').trim(), machine_id: machine, app_version: appVersion() }),
       signal: AbortSignal.timeout(20000)
     })
     const body = await res.json().catch(() => ({}))
@@ -161,7 +162,7 @@ async function activateAccount(accountToken) {
     const res = await fetch(API.replace(/\/$/, '') + '/api/activate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ account_token: accountToken, machine_id: machine, device_name: deviceName }),
+      body: JSON.stringify({ account_token: accountToken, machine_id: machine, device_name: deviceName, app_version: appVersion() }),
       signal: AbortSignal.timeout(20000)
     })
     const body = await res.json().catch(() => ({}))

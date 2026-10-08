@@ -208,6 +208,7 @@ class LicenseManager(private val context: Context) {
                 .put("account_token", accountToken)
                 .put("machine_id", machine)
                 .put("device_name", android.os.Build.MODEL ?: "")
+                .put("app_version", BuildConfig.VERSION_NAME)
                 .toString()
             conn.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
             val code = conn.responseCode
@@ -264,6 +265,7 @@ class LicenseManager(private val context: Context) {
             val body = JSONObject()
                 .put("key", key.trim())
                 .put("machine_id", machine)
+                .put("app_version", BuildConfig.VERSION_NAME)
                 .toString()
             conn.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
             val code = conn.responseCode

@@ -203,7 +203,7 @@ class Store {
     return Object.values(this.data.licenses).filter((l) => l.account_email === e)
   }
 
-  touchDevice(key, machineId, name) {
+  touchDevice(key, machineId, name, version) {
     const l = this.getLicense(key)
     if (!l) return -1
     if (!l.devices) l.devices = {}
@@ -213,6 +213,7 @@ class Store {
     if (!l.devices[m]) l.devices[m] = { first_seen: now, name: String(name || '').slice(0, 60) || null }
     l.devices[m].last_seen = now
     if (name) l.devices[m].name = String(name).slice(0, 60)
+    if (version) l.devices[m].app_version = String(version).slice(0, 20)
     this.save()
     return Object.keys(l.devices).length
   }

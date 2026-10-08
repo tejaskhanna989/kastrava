@@ -42,6 +42,7 @@ function planOf(name) {
 
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data')
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || ''
+const APP_VERSION = '101.4.3'
 const SITE_DIR = path.join(__dirname, '..', 'site')
 
 const keys = sign.ensureKeys()
@@ -570,7 +571,7 @@ async function handlePost(req, res, pathname) {
         return json(res, 403, { error: 'device_limit', msg: 'All ' + DEVICE_LIMIT + ' device slots are used. Remove one or buy a new key.', key: lic.key, devices_used: Object.keys(devs).length, device_limit: DEVICE_LIMIT })
       }
       const isNew = !((lic.devices || {})[machineId])
-      const used = store.touchDevice(lic.key, machineId, deviceName)
+      const used = store.touchDevice(lic.key, machineId, deviceName, String(body.app_version || '').slice(0, 20))
       store.noteDeviceOwner(lic.key, machineId, acc.email)
       if (isNew) store.audit(lic.account_email || acc.email, 'device_add', 'device activated')
       if (!lic.machine_id) store.bindLicense(lic.key, machineId)
@@ -908,7 +909,7 @@ async function handlePost(req, res, pathname) {
     const r = store.resolveApproval(acc.email, String(body.id || ''), !!body.approve)
     if (!r) return json(res, 404, { error: 'not_found' })
     if (r.approved) {
-      store.touchDevice(r.approval.key, r.approval.machine_id, r.approval.device_name)
+      store.touchDevice(r.approval.key, r.approval.machine_id, r.approval.device_name, '')
       store.noteDeviceOwner(r.approval.key, r.approval.machine_id, acc.email)
       store.audit(acc.email, 'approval_ok', 'device approved')
     } else {
@@ -977,12 +978,14 @@ const server = http.createServer((req, res) => {
       pathname = '/account.html'
     }
     if (pathname === '/api/health') {
-      return json(res, 200, { ok: true, dev: razorpay.isDev(), host: HOST, price: PRICE_INR, period_days: PERIOD_DAYS, grace_days: GRACE_DAYS, version: '101.4.3', codename: 'Starship Wonders',
+      return json(res, 200, { ok: true, dev: razorpay.isDev(), host: HOST, price: PRICE_INR, period_days: PERIOD_DAYS, grace_days: GRACE_DAYS, version: APP_VERSION, codename: 'Starship Wonders',
         plans: { monthly: PLANS.monthly, daily: PLANS.daily } })
     }
     if (pathname === '/api/admin/list') {
       if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
-      return json(res, 200, store.all())
+      const dump = store.all()
+      dump.server_version = APP_VERSION
+      return json(res, 200, dump)
     }
     return serveStatic(req, res, pathname)
   }
