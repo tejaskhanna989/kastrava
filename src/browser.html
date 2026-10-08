@@ -3613,33 +3613,36 @@ function bindSyncPanel(){
   }
   var li=$("sy-login");
   if(li)li.addEventListener("click",function(){
+    if(li.disabled)return;
     var em=$("sy-email"),pw=$("sy-pass");
     var email=em?em.value.trim():"",pass=pw?pw.value:"";
     if(!email||pass.length<8){msg("Email + 8-character password.");return;}
+    li.disabled=true;
+    function done(){try{li.disabled=false;}catch(e){}}
     msg("Logging in…");
-    function loggedIn(){if(pw)pw.value="";refresh();
+    function loggedIn(){done();if(pw)pw.value="";refresh();
       if(!isPremium()){msg("Logged in. Premium unlocks sync and activation.");return;}
       msg("Logged in. Syncing…");
       api.syncNow({apiBase:syncApiBase()}).then(function(r2){msg(r2&&r2.ok?"Synced.":"Sync will retry.");if(r2&&r2.licenseOnFile)showLic(r2.licenseOnFile);refresh();}).catch(function(){msg("Sync failed.");});
     }
     function loginOtpFlow(needTotp){
       var c=prompt("Email code sent to "+email+" — enter it:","");
-      if(c==null)return;
+      if(c==null){done();return;}
       var tcode=undefined;
       if(needTotp){var tc=$("sy-totp");tcode=((tc&&tc.value)||"").trim()||prompt("Authenticator code:","")||undefined;if(tc)tc.style.display="";}
       msg("Verifying…");
       api.syncLoginOtp({apiBase:syncApiBase(),email:email,password:pass,code:(c||"").trim(),totp:tcode}).then(function(r2){
         if(r2&&r2.ok){loggedIn();return;}
         if(r2&&r2.need_totp){msg("Authenticator code needed.");loginOtpFlow(true);return;}
-        if(r2&&r2.expired){msg("Code expired — logging in again…");api.syncLogin({apiBase:syncApiBase(),email:email,password:pass}).then(function(r3){if(r3&&r3.need_email_otp)loginOtpFlow(!!r3.totp);else msg(r3&&r3.msg?r3.msg:"Login failed.");}).catch(function(){msg("Could not reach the server.");});return;}
-        msg(r2&&r2.msg?r2.msg:"Login failed.");
-      }).catch(function(){msg("Could not reach the server.");});
+        if(r2&&r2.expired){msg("Code expired — logging in again…");api.syncLogin({apiBase:syncApiBase(),email:email,password:pass}).then(function(r3){if(r3&&r3.need_email_otp)loginOtpFlow(!!r3.totp);else{msg(r3&&r3.msg?r3.msg:"Login failed.");done();}}).catch(function(){msg("Could not reach the server.");done();});return;}
+        msg(r2&&r2.msg?r2.msg:"Login failed.");done();
+      }).catch(function(){msg("Could not reach the server.");done();});
     }
     api.syncLogin({apiBase:syncApiBase(),email:email,password:pass}).then(function(r){
       if(r&&r.need_email_otp){loginOtpFlow(!!r.totp);return;}
-      if(r&&r.need_verify){var vc=prompt("Verify your email first — code was sent to "+email+":","");if(vc==null)return;api.syncVerify({apiBase:syncApiBase(),email:email,password:pass,code:vc}).then(function(rv){if(rv&&rv.ok){loggedIn();}else msg(rv&&rv.msg?rv.msg:"Verification failed.");}).catch(function(){msg("Could not reach the server.");});return;}
+      if(r&&r.need_verify){var vc=prompt("Verify your email first — code was sent to "+email+":","");if(vc==null){done();return;}api.syncVerify({apiBase:syncApiBase(),email:email,password:pass,code:vc}).then(function(rv){if(rv&&rv.ok){loggedIn();}else msg(rv&&rv.msg?rv.msg:"Verification failed.");}).catch(function(){msg("Could not reach the server.");});return;}
       if(r&&r.ok){loggedIn();return;}
-      msg(r&&r.msg?r.msg:"Login failed.");}).catch(function(){msg("Could not reach the server.");});
+      msg(r&&r.msg?r.msg:"Login failed.");done();}).catch(function(){msg("Could not reach the server.");done();});
   });
   var lo=$("sy-logout");
   if(lo)lo.addEventListener("click",function(){if(!api||!api.syncLogout)return;api.syncLogout().then(function(){msg("Logged out.");paint(null);showLic(null);}).catch(function(){});});

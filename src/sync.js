@@ -95,6 +95,7 @@ async function login(apiBase, email, password, store, ss) {
   if (!r.json || !r.json.ok || !r.json.token) {
     const err = (r.json && r.json.error) || 'login_failed'
     if (err === 'verify_required') return { ok: false, need_verify: true, msg: (r.json && r.json.msg) || 'Verify your email first.' }
+    if (r.status === 429 || err === 'too_many') return { ok: false, msg: 'Too many tries — wait a minute.' }
     return { ok: false, msg: err === 'bad_login' ? 'Wrong email or password.' : 'Login failed.' }
   }
   store.set('syncToken', r.json.token)
