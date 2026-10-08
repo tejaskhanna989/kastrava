@@ -15,7 +15,7 @@ html[data-theme="dark"]{--bg:#12100c;--card:#1b1812;--ink:#f3eee4;--text:#cfc8ba
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.65;-webkit-font-smoothing:antialiased}
 h1,h2{font-family:'Space Grotesk',sans-serif}
 .mono{font-family:'JetBrains Mono',monospace}
-.container{max-width:760px;margin:0 auto;padding:0 28px}
+.container{max-width:1020px;margin:0 auto;padding:0 28px}
 nav{position:sticky;top:0;z-index:50;background:var(--navbg);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
 nav .container{display:flex;align-items:center;gap:12px;padding-top:13px;padding-bottom:13px}
 nav img{width:36px;height:36px;border-radius:9px}
@@ -39,6 +39,30 @@ td{padding:10px 10px 10px 0;border-bottom:1px solid var(--line);vertical-align:t
 .dev{display:flex;align-items:center;gap:8px;margin:3px 0;font-size:12.5px}
 .dev button{padding:2px 10px;font-size:11px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer}
 .fine{font-size:12.5px;color:var(--muted2);margin-top:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid .card{margin-bottom:0}
+.span2{grid-column:1/-1}
+@media(max-width:760px){.grid{grid-template-columns:1fr}}
+.pagehead{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin:6px 0 18px}
+.pagehead h1{font-size:30px;letter-spacing:-.5px;color:var(--ink)}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 16px;min-width:130px}
+.stat .k{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1.5px;color:var(--muted2)}
+.stat .v{font-size:17px;font-weight:700;color:var(--ink)}
+.pill{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.6px;padding:3px 12px;border-radius:20px;vertical-align:2px}
+.pill.on{background:rgba(46,125,50,.14);color:var(--green)}
+.pill.off{background:rgba(0,0,0,.06);color:var(--muted)}
+html[data-theme="dark"] .pill.off{background:rgba(255,255,255,.08)}
+.pill.warn{background:rgba(245,124,0,.15);color:#e65100}
+.pill.bad{background:rgba(198,40,40,.12);color:var(--red)}
+.keycard{border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-top:10px}
+.keycard .krow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.keycard .krow .mono{font-size:14px;font-weight:600;color:var(--ink)}
+.keycard .meta{font-size:12.5px;color:var(--muted);margin-top:4px}
+#nav-email{display:none;font-size:13px;color:var(--muted)}
+#nav-plan{display:none}
+#nav-out{display:none;font-size:12.5px;font-weight:600;color:var(--muted);background:none;border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer}
+#nav-out:hover{color:var(--ink)}
 footer{border-top:1px solid var(--line);padding:28px 0 44px}
 footer p{font-size:12.5px;color:var(--muted2)}
 footer a{color:var(--blue);text-decoration:none}
@@ -51,7 +75,7 @@ r.setAttribute('data-theme',s?s:(window.matchMedia&&window.matchMedia('(prefers-
 <body>
 <nav><div class="container">
 <img src="logo.png" alt="Kastrava"><span class="name">KASTRAVA</span>
-<span style="flex:1"></span><a href="/account.html" style="font-size:13px;color:var(--muted);text-decoration:none;margin-right:14px">Account</a><a href="https://kastrava.pp.ua/" style="font-size:13px;color:var(--muted);text-decoration:none">← home</a>
+<span style="flex:1"></span><span id="nav-plan" class="pill off">FREE</span><span id="nav-email"></span><button id="nav-out">Log out</button><a href="https://kastrava.pp.ua/" style="font-size:13px;color:var(--muted);text-decoration:none">← home</a>
 </div></nav>
 <main><div class="container" id="app">
 <div class="card" id="login-card">
@@ -61,11 +85,19 @@ r.setAttribute('data-theme',s?s:(window.matchMedia&&window.matchMedia('(prefers-
 <input id="ac-email" type="email" autocomplete="email" placeholder="you@example.com">
 <label for="ac-pass">Password</label>
 <input id="ac-pass" type="password" autocomplete="current-password" placeholder="••••••••">
+<input id="ac-totp" inputmode="numeric" maxlength="6" placeholder="2FA code (if enabled)" autocomplete="one-time-code" style="display:none;margin-top:10px">
 <button class="btn" id="ac-go" style="margin-top:16px">Log in</button>
 <div class="msg" id="ac-msg"></div>
 <p class="fine">No account yet? <a href="/account.html" style="color:var(--blue)">Sign up</a> first — it takes ten seconds.</p>
 </div>
 <div id="dash" style="display:none">
+<div class="pagehead"><h1>Account</h1></div>
+<div class="stats" id="stats-out">
+<div class="stat"><div class="k">PLAN</div><div class="v" id="st-plan">–</div></div>
+<div class="stat"><div class="k">KEYS</div><div class="v" id="st-keys">–</div></div>
+<div class="stat"><div class="k">DEVICES</div><div class="v" id="st-devs">–</div></div>
+<div class="stat"><div class="k">SYNC REV</div><div class="v" id="st-sync">–</div></div>
+</div>
 <div class="card"><h2>Premium keys</h2><p class="sub">One key works on up to 10 devices. Logged-in browsers pick up new keys and renewals on their own.</p>
 <div id="keys-out">Loading…</div>
 <div style="margin-top:14px;padding:14px;border:1px dashed var(--line);border-radius:14px">
@@ -86,6 +118,8 @@ r.setAttribute('data-theme',s?s:(window.matchMedia&&window.matchMedia('(prefers-
 <div class="msg" id="buy-msg"></div>
 <p class="fine" id="buy-inrnote">Charged in INR (₹670). Renewing extends your newest key — every logged-in browser follows.</p>
 </div>
+</div>
+<div class="grid" style="margin-top:16px">
 <div class="card"><h2>Sync</h2><div id="sync-out">Loading…</div></div>
 <div class="card"><h2>New devices</h2>
 <p class="sub">When on, unknown hardware waits here for your OK before it can use your keys.</p>
@@ -130,9 +164,6 @@ r.setAttribute('data-theme',s?s:(window.matchMedia&&window.matchMedia('(prefers-
 </div>
 <div class="msg" id="data-msg"></div>
 </div>
-<div class="card"><h2>Session</h2>
-<p class="sub" id="me-line"></p>
-<button class="btn ghost" id="ac-out">Log out</button>
 </div>
 </div>
 </div></main>
@@ -166,7 +197,14 @@ function tok(){try{return localStorage.getItem('kas_sync_token')||'';}catch(e){r
 function authz(){return {'Content-Type':'application/json','Authorization':'Bearer '+tok()};}
 function esc(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 var loginCard=document.getElementById('login-card'),dash=document.getElementById('dash');
-function showDash(email){loginCard.style.display='none';dash.style.display='block';document.getElementById('me-line').textContent='Signed in as '+email+'.';loadKeys();loadSync(email);loadApprovals();loadSessions();loadAudit();loadTotp();}
+function setNav(email,plan){var ne=document.getElementById('nav-email'),np=document.getElementById('nav-plan'),no=document.getElementById('nav-out');
+  if(!email){ne.style.display='none';np.style.display='none';no.style.display='none';return;}
+  ne.textContent=email;ne.style.display='inline';
+  np.textContent=plan||'FREE';np.className='pill '+((plan&&plan!=='FREE')?'on':'off');np.style.display='inline-block';
+  no.style.display='inline-block';}
+function doLogout(){fetch(KAS_API+'/api/account/logout',{method:'POST',headers:authz(),body:'{}'}).catch(function(){});try{localStorage.removeItem('kas_sync_token');}catch(e){}location.reload();}
+var dashEmail='';
+function showDash(email){dashEmail=email||'';loginCard.style.display='none';dash.style.display='block';setNav(email,'…');loadKeys();loadSync(email);loadApprovals();loadSessions();loadAudit();loadTotp();}
 function loadApprovals(){
   var out=document.getElementById('ap-out');if(!out)return;
   out.textContent='Loading…';
@@ -231,6 +269,7 @@ function loadSync(email){
   var out=document.getElementById('sync-out');
   fetch(KAS_API+'/api/sync/pull',{method:'POST',headers:authz(),body:'{}'})
   .then(function(r){return r.json();}).then(function(j){
+    try{document.getElementById('st-sync').textContent=(j&&typeof j.rev==='number')?j.rev:'–';}catch(e){}
     out.innerHTML=j&&typeof j.rev==='number'
       ?'Encrypted copy revision <b>'+j.rev+'</b>'+(j.updated_at?' · updated '+esc(j.updated_at.slice(0,16).replace('T',' ')):'')+'<br><span class="fine">Server stores it, cannot read it.</span>'
       :'No synced data yet — log in inside the apps first.';
@@ -301,12 +340,16 @@ function loadKeys(){
   .then(function(r){return r.json();}).then(function(j){
     if(!j||!j.ok){out.textContent='Could not load keys.';return;}
     if(!j.keys||!j.keys.length){out.innerHTML='No keys yet — buy one below.';return;}
-    var h='<table><tr><th>Key</th><th>Status</th><th>Expires</th><th>Devices</th></tr>';
+    var devTotal=0,premium=false;
+    var h='';
     j.keys.forEach(function(k){
+      devTotal+=(k.devices_used||0);
+      if(k.status==='activated'||k.status==='issued')premium=true;
+      var pill=k.status==='activated'||k.status==='issued'?'on':(k.status==='revoked'||k.status==='cancelled'?'bad':'warn');
       var badge=k.shared?' <span class="fine">shared by '+esc(k.owner||'owner')+'</span>':'';
-      h+='<tr><td class="mono">'+esc(k.key)+badge+'</td><td>'+esc(k.status)+'</td><td>'+esc((k.expires_at||'?').slice(0,10))+'</td><td><button data-rc="'+esc(k.key)+'" style="padding:4px 12px;font-size:11.5px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;margin-bottom:6px">Receipt</button><br><b>'+k.devices_used+'/'+(k.device_limit||10)+'</b> devices';
+      h+='<div class="keycard"><div class="krow"><span class="mono">'+esc(k.key)+'</span><span class="pill '+pill+'">'+esc(k.status).toUpperCase()+'</span>'+badge+'<span style="flex:1"></span><button data-rc="'+esc(k.key)+'" style="padding:4px 12px;font-size:11.5px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;margin-bottom:6px">Receipt</button><br><b>'+k.devices_used+'/'+(k.device_limit||10)+'</b> devices';
       (k.devices||[]).forEach(function(d){
-        h+='<div class="dev"><span>'+esc(d.name||d.id)+'</span><button data-k="'+esc(k.key)+'" data-m="'+esc(d.id)+'">Remove</button></div>';
+        h+='<div class="dev"><span>'+esc(d.name||d.id)+'</span>'+(k.shared?'':'<button data-k="'+esc(k.key)+'" data-m="'+esc(d.id)+'">Remove</button>')+'</div>';
       });
       if(!k.shared&&(k.shared_with||[]).length){
         h+='<div class="fine">Shared with: '+k.shared_with.map(function(e){return esc(e)+' <a href="#" data-unshare="'+esc(e)+'" data-ukey="'+esc(k.key)+'" style="color:var(--blue)">remove</a>';}).join(', ')+'</div>';
@@ -314,9 +357,14 @@ function loadKeys(){
       if(!k.shared){
         h+='<div style="display:flex;gap:6px;margin-top:6px"><input placeholder="family@email" data-share-in="'+esc(k.key)+'" style="flex:1;min-width:120px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);font-family:inherit;font-size:12px" spellcheck="false"><button data-share="'+esc(k.key)+'" style="padding:6px 12px;font-size:11.5px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer">Share</button></div>';
       }
-      h+='</td></tr>';
+      h+='</div>';
     });
-    out.innerHTML=h+'</table>';
+    out.innerHTML=h||'<p class="fine">No keys yet — buy one below.</p>';
+    document.getElementById('st-keys').textContent=j.keys?j.keys.length:0;
+    document.getElementById('st-devs').textContent=devTotal;
+    var plan=premium?'PREMIUM':'FREE';
+    document.getElementById('st-plan').textContent=plan;
+    setNav(dashEmail,plan);
     out.querySelectorAll('button[data-rc]').forEach(function(b){
       b.addEventListener('click',function(){downloadKeyReceipt(b.dataset.rc);});
     });
@@ -433,18 +481,17 @@ goEl.addEventListener('click',function(){
   var email=(document.getElementById('ac-email').value||'').trim(),pw=document.getElementById('ac-pass').value||'';
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email)||pw.length<8){msgEl.textContent='Valid email + 8-character password.';msgEl.className='msg err';return;}
   goEl.disabled=true;msgEl.className='msg';msgEl.textContent='Logging in…';
-  apiFetch(KAS_API+'/api/account/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,password:pw})})
+  var codeEl=document.getElementById('ac-totp');
+  var code=codeEl&&codeEl.style.display!=='none'?(codeEl.value||'').trim():'';
+  apiFetch(KAS_API+'/api/account/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,password:pw,totp:code||undefined})})
   .then(function(r){return r.json();}).then(function(j){
     goEl.disabled=false;
     if(j&&j.ok){try{localStorage.setItem('kas_sync_token',j.token);}catch(e){}showDash(j.email);}
+    else if(j&&j.error==='need_totp'){codeEl.style.display='';codeEl.focus();msgEl.className='msg';msgEl.textContent='Two-factor is on — enter the 6-digit code.';}
     else{msgEl.className='msg err';msgEl.textContent='Wrong email or password.';}
   }).catch(function(e){goEl.disabled=false;msgEl.className='msg err';msgEl.textContent=apiErr(e,'Could not reach the server.');});
 });
-document.getElementById('ac-out').addEventListener('click',function(){
-  fetch(KAS_API+'/api/account/logout',{method:'POST',headers:authz(),body:'{}'}).catch(function(){});
-  try{localStorage.removeItem('kas_sync_token');}catch(e){}
-  location.reload();
-});
+document.getElementById('nav-out').addEventListener('click',doLogout);
 var buyEl=document.getElementById('buy-go'),buyMsg=document.getElementById('buy-msg');
 var planPicked='monthly';
 var PLAN_META={monthly:{inr:670,usd:7,days:30,label:'Monthly'},daily:{inr:190,usd:2,days:1,label:'Daily'}};
@@ -457,7 +504,6 @@ function paintPlan(){
   buyEl.textContent='Buy — \u20B9'+PLAN_META[planPicked].inr+' / '+(PLAN_META[planPicked].days===1?'24 hours':'30 days');
   var note=document.getElementById('buy-inrnote');
   if(note)note.textContent='Charged in INR (\u20B9'+PLAN_META[planPicked].inr+'). Renewing extends your newest key — every logged-in browser follows.';
-}
 }
 document.querySelectorAll('.plan-pick').forEach(function(b){
   b.addEventListener('click',function(){planPicked=b.dataset.plan;paintPlan();});
@@ -494,7 +540,7 @@ buyEl.addEventListener('click',function(){
   var t=tok();if(!t)return;
   fetch(KAS_API+'/api/account/me',{method:'POST',headers:authz(),body:'{}'})
   .then(function(r){return r.json();}).then(function(j){
-    if(j&&j.ok){showDash(j.email);document.getElementById('me-line').textContent='Signed in as '+j.email+'.';}
+    if(j&&j.ok){showDash(j.email);}
   }).catch(function(){});
 })();
 })();
