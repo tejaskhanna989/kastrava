@@ -620,6 +620,16 @@ body.vtabs-collapsed .vtabs-new{border-style:solid}
   <button class="sp-ag" id="sp-ag" title="Open the downloads page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>All Downloads</span></button>
   <div class="sp-body" id="sp-body"></div>
 </div>
+<div class="modal-overlay" id="prompt-modal">
+  <div class="modal-box" style="text-align:left">
+    <div id="prompt-heading" style="font-size:15px;font-weight:600;margin-bottom:12px">Input</div>
+    <input id="prompt-input" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px;outline:none" spellcheck="false">
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+      <button class="btn-sm" id="prompt-cancel">Cancel</button>
+      <button class="btn-sm btn-accent" id="prompt-ok">OK</button>
+    </div>
+  </div>
+</div>
 <div class="modal-overlay" id="confirm-modal">
   <div class="confirm-card">
     <button class="confirm-exit" id="confirm-close" title="Close"><svg viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/></svg></button>
@@ -3485,6 +3495,25 @@ function showCtxMenu(items,x,y){
   ctx.classList.add("visible");
 }
 function hideCtxMenu(){$("ctx-menu").classList.remove("visible");}
+var __promptCb=null;
+function inlinePrompt(title,def,cb){
+  var m=$("prompt-modal");if(!m){try{cb(null);}catch(e){}return;}
+  $("prompt-heading").textContent=title||"Input";
+  var inp=$("prompt-input");inp.value=def||"";
+  __promptCb=cb;
+  m.classList.add("visible");
+  setTimeout(function(){try{inp.focus();inp.select();}catch(e){}},50);
+}
+(function(){
+  document.addEventListener("click",function(e){
+    if(e.target&&e.target.id==="prompt-cancel"){var m=$("prompt-modal");if(m)m.classList.remove("visible");var cb=__promptCb;__promptCb=null;try{cb&&cb(null);}catch(x){}return;}
+    if(e.target&&e.target.id==="prompt-ok"){var inp=$("prompt-input");var v=inp?inp.value:"";var m2=$("prompt-modal");if(m2)m2.classList.remove("visible");var cb2=__promptCb;__promptCb=null;try{cb2&&cb2(v);}catch(x){}return;}
+  });
+  document.addEventListener("keydown",function(e){
+    if(e.key==="Escape"&&__promptCb){var m=$("prompt-modal");if(m)m.classList.remove("visible");var cb=__promptCb;__promptCb=null;try{cb(null);}catch(x){}}
+    else if(e.key==="Enter"&&__promptCb&&document.activeElement===$("prompt-input")){var v=$("prompt-input").value;var m2=$("prompt-modal");if(m2)m2.classList.remove("visible");var cb2=__promptCb;__promptCb=null;try{cb2(v);}catch(x){}}
+  });
+})();
 function copyText(t){
   if(!t)return;
   try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).catch(function(){});return;}}catch(e){}
@@ -3878,7 +3907,7 @@ function openShotEditor(dataURL){
   function pos(e){var r=cv.getBoundingClientRect();return [(e.clientX-r.left)*(cv.width/r.width),(e.clientY-r.top)*(cv.height/r.height)];}
   cv.addEventListener("mousedown",function(e){
     var st=shotState;if(!st)return;var p=pos(e);
-    if(st.tool==="text"){var t=prompt("Label text:");if(t)st.texts.push({x:p[0],y:p[1],text:t,color:st.color});shotRedraw();return;}
+    if(st.tool==="text"){inlinePrompt("Label text:","",function(t){if(t)st.texts.push({x:p[0],y:p[1],text:t,color:st.color});shotRedraw();});return;}
     st.cur={color:st.color,width:st.width*st.scale,pts:[p]};st.strokes.push(st.cur);shotRedraw();
   });
   cv.addEventListener("mousemove",function(e){var st=shotState;if(!st||!st.cur)return;st.cur.pts.push(pos(e));shotRedraw();});
@@ -4818,7 +4847,7 @@ function renderWorkspaces(){
     btn.addEventListener('click',function(){workspaces.forEach(function(w,i){w.active=(i==parseInt(btn.dataset.ws));});renderWorkspaces();});
   });
   document.getElementById('ws-add').addEventListener('click',function(){
-    var name=prompt('Workspace name:');if(!name)return;workspaces.push({name:name,active:false});renderWorkspaces();
+    inlinePrompt('Workspace name:','Workspace '+(workspaces.length+1),function(name){if(!name)return;workspaces.push({name:name,active:false});renderWorkspaces();});
   });
 }
 function toggleWorkspaces(){
