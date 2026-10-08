@@ -344,6 +344,74 @@ class Store {
     }
   }
 
+  // ---- two-factor auth (TOTP, zero dependencies) ----
+  totpSetup(email) {
+    this.ensureAccountMaps()
+    const acc = this.getAccountByEmail(email)
+    if (!acc || acc.totp_secret) return null
+    const secret = require('crypto').randomBytes(20).toString('base64')
+      .replace(/\+/g, 'A').replace(/\//g, 'B').replace(/=+$/, '').toUpperCase()
+      .replace(/[^A-Z2-7]/g, '').slice(0, 32)
+    acc.totp_pending = { secret, created_at: new Date().toISOString() }
+    this.save()
+    const e = String(email).toLowerCase()
+    const url = 'otpauth://totp/Kastrava:' + encodeURIComponent(e) +
+      '?secret=' + secret + '&issuer=Kastrava&digits=6&period=30'
+    return { secret, otpauth_url: url }
+  }
+
+  totpConfirm(email, code) {
+    this.ensureAccountMaps()
+    const acc = this.getAccountByEmail(email)
+    if (!acc || !acc.totp_pending) return null
+    if (Date.now() - new Date(acc.totp_pending.created_at).getTime() > 600000) {
+      delete acc.totp_pending
+      this.save()
+      return null
+    }
+    const ok = require('./totp').verify(acc.totp_pending.secret, String(code || ''))
+    if (!ok) return false
+    acc.totp_secret = acc.totp_pending.secret
+    delete acc.totp_pending
+    const recovery = []
+    const hashes = []
+    for (let i = 0; i < 10; i++) {
+      const c = require('crypto').randomBytes(5).toString('hex').toUpperCase().slice(0, 8)
+      recovery.push(c)
+      hashes.push(require('crypto').createHash('sha256').update(c).digest('hex'))
+    }
+    acc.totp_recovery = hashes
+    this.save()
+    return recovery
+  }
+
+  totpDisable(email) {
+    const acc = this.getAccountByEmail(email)
+    if (!acc) return false
+    delete acc.totp_secret
+    delete acc.totp_pending
+    delete acc.totp_recovery
+    this.save()
+    return true
+  }
+
+  // Returns 'totp' | 'recovery' | false. Recovery codes burn on use.
+  totpCheck(email, code) {
+    const acc = this.getAccountByEmail(email)
+    if (!acc || !acc.totp_secret) return false
+    const c = String(code || '').replace(/\s/g, '')
+    if (!c) return false
+    if (require('./totp').verify(acc.totp_secret, c)) return 'totp'
+    const h = require('crypto').createHash('sha256').update(c.toUpperCase()).digest('hex')
+    const idx = (acc.totp_recovery || []).indexOf(h)
+    if (idx >= 0) {
+      acc.totp_recovery.splice(idx, 1)
+      this.save()
+      return 'recovery'
+    }
+    return false
+  }
+
   // ---- audit log (security events per account, newest last, capped) ----
   audit(email, type, detail) {
     this.ensureAccountMaps()

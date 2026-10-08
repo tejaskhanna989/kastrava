@@ -65,7 +65,8 @@ class AccountManager(private val context: Context) {
     }
 
     /** Network — must run off the main thread. Returns null on success. */
-    fun login(email: String, password: String): String? {
+    /** Returns null on success, an error message, or NEED_TOTP. */
+    fun login(email: String, password: String, totp: String = ""): String? {
         val e = email.trim().lowercase()
         if (!e.contains("@") || password.length < 8) return "Enter a valid email and 8+ character password."
         return try {
@@ -77,8 +78,10 @@ class AccountManager(private val context: Context) {
                 readTimeout = 20000
                 doOutput = true
             }
+            val payload = JSONObject().put("email", e).put("password", password)
+            if (totp.isNotBlank()) payload.put("totp", totp.trim())
             conn.outputStream.use {
-                it.write(JSONObject().put("email", e).put("password", password).toString().toByteArray(Charsets.UTF_8))
+                it.write(payload.toString().toByteArray(Charsets.UTF_8))
             }
             val code = conn.responseCode
             val text = try {
@@ -86,8 +89,11 @@ class AccountManager(private val context: Context) {
                     ?.bufferedReader()?.readText() ?: ""
             } catch (ex: Exception) { "" }
             if (code !in 200..299) {
-                val err = try { JSONObject(text).optString("error") } catch (ex: Exception) { "" }
-                return if (err == "bad_login") "Wrong email or password." else "Login failed (HTTP $code)."
+                val je = try { JSONObject(text) } catch (ex: Exception) { null }
+                val err = je?.optString("error") ?: ""
+                if (err == "need_totp") return NEED_TOTP
+                if (err == "bad_login") return "Wrong email or password."
+                return je?.optString("msg")?.takeIf { it.isNotBlank() } ?: "Login failed (HTTP $code)."
             }
             val j = JSONObject(text)
             prefs.edit()
@@ -100,6 +106,10 @@ class AccountManager(private val context: Context) {
         } catch (e: Exception) {
             "Could not reach the Kastrava server. Check your connection."
         }
+    }
+
+    companion object {
+        const val NEED_TOTP = "NEED_TOTP_SENTINEL"
     }
 
     fun logout() {

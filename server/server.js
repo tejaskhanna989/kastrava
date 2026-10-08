@@ -700,6 +700,11 @@ async function handlePost(req, res, pathname) {
       good = h.length === 32 && crypto.timingSafeEqual(h, Buffer.from(acc.pass_hash, 'hex'))
     } catch {}
     if (!good) return json(res, 401, { error: 'bad_login' })
+    if (acc.totp_secret) {
+      const how = store.totpCheck(email, body.totp)
+      if (!how) return json(res, 401, { error: 'need_totp', msg: 'Enter the 6-digit code from your authenticator app.' })
+      if (how === 'recovery') store.audit(email, 'totp_recovery', 'recovery code used')
+    }
     const token = store.createSession(email, 30 * 86400000, { label: String(body.label || '').slice(0, 60), ip: clientIp(req) })
     store.audit(email, 'login', 'login from ' + clientIp(req))
     return json(res, 200, { ok: true, token, email, auth_salt: acc.auth_salt, sync_salt: acc.sync_salt })
@@ -766,6 +771,83 @@ async function handlePost(req, res, pathname) {
     return json(res, 200, { ok: true, require_approval: store.requireApproval(acc.email),
       approvals: store.approvalsFor(acc.email) })
   }
+  if (pathname === '/api/account/totp/setup') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    if (acc.totp_secret) return json(res, 400, { error: 'already_on' })
+    const setup = store.totpSetup(acc.email)
+    if (!setup) return json(res, 400, { error: 'bad_request' })
+    store.audit(acc.email, 'totp_setup', '2FA setup started')
+    return json(res, 200, { ok: true, secret: setup.secret, otpauth_url: setup.otpauth_url })
+  }
+  if (pathname === '/api/account/totp/confirm') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    const recovery = store.totpConfirm(acc.email, body.code)
+    if (recovery === null) return json(res, 400, { error: 'bad_request', msg: 'Setup expired — start over.' })
+    if (recovery === false) return json(res, 401, { error: 'bad_code', msg: 'Wrong code — check the authenticator and retry.' })
+    store.audit(acc.email, 'totp_on', '2FA enabled')
+    return json(res, 200, { ok: true, recovery })
+  }
+  if (pathname === '/api/account/totp/disable') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    const password = String(body.password || '')
+    let good = false
+    try {
+      const h = crypto.scryptSync(password, acc.pass_salt, 32)
+      good = h.length === 32 && crypto.timingSafeEqual(h, Buffer.from(acc.pass_hash, 'hex'))
+    } catch {}
+    if (!good) return json(res, 401, { error: 'bad_login' })
+    store.totpDisable(acc.email)
+    store.audit(acc.email, 'totp_off', '2FA disabled')
+    return json(res, 200, { ok: true })
+  }
+  if (pathname === '/api/account/export') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    return json(res, 200, { ok: true, export: {
+      email: acc.email, created_at: acc.created_at,
+      totp: !!acc.totp_secret, require_approval: !!acc.require_approval,
+      keys: store.keysVisibleTo(acc.email).map((x) => ({ key: x.lic.key,
+        status: x.lic.status, expires_at: x.lic.expires_at || null,
+        shared: !!x.shared, owner: x.owner || null,
+        devices: Object.keys(x.lic.devices || {}).length })),
+      sessions: store.sessionsForAccount(acc.email).length,
+      sync_rev: store.getSync(acc.email).rev,
+      audit: store.getAudit(acc.email) } })
+  }
+  if (pathname === '/api/account/delete') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    if (String(body.confirm || '') !== 'DELETE') return json(res, 400, { error: 'bad_request', msg: 'Type DELETE to confirm.' })
+    const password = String(body.password || '')
+    let good = false
+    try {
+      const h = crypto.scryptSync(password, acc.pass_salt, 32)
+      good = h.length === 32 && crypto.timingSafeEqual(h, Buffer.from(acc.pass_hash, 'hex'))
+    } catch {}
+    if (!good) return json(res, 401, { error: 'bad_login' })
+    // Owned keys die with the account (devices lose Premium on next check);
+    // shares evaporate; sessions, sync and audit are wiped.
+    for (const l of store.keysForAccount(acc.email)) {
+      l.status = 'cancelled'
+      l.cancelled_at = new Date().toISOString()
+      l.shared_with = []
+    }
+    for (const k in store.data.licenses) {
+      const l = store.data.licenses[k]
+      if (l.shared_with) l.shared_with = (l.shared_with || []).filter((e) => e !== acc.email)
+    }
+    for (const h in store.data.sessions) {
+      if (store.data.sessions[h].email === acc.email) delete store.data.sessions[h]
+    }
+    if (store.data.sync) delete store.data.sync[acc.email]
+    if (store.data.audit) delete store.data.audit[acc.email]
+    delete store.data.accounts[acc.email]
+    store.save()
+    return json(res, 200, { ok: true })
+  }
   if (pathname === '/api/account/approval-require') {
     const acc = store.getSessionAccount(bearer(req))
     if (!acc) return json(res, 401, { error: 'unauthorized' })
@@ -794,7 +876,7 @@ async function handlePost(req, res, pathname) {
     if (pathname === '/api/account/me') {
       const allSubs = store.all().subscriptions || {}
       const auto = Object.values(allSubs).some((s) => s.account_email === acc.email && (s.status === 'active' || s.status === 'created' || s.status === 'pending'))
-      return json(res, 200, { ok: true, email: acc.email, created_at: acc.created_at, auto })
+      return json(res, 200, { ok: true, email: acc.email, created_at: acc.created_at, auto, totp: !!acc.totp_secret })
     }
     if (pathname === '/api/sync/pull') {
       const cur = store.getSync(acc.email)

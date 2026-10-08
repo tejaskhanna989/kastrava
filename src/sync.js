@@ -87,10 +87,13 @@ function stashKey(ss, store, email, keyBuf) {
   } catch {}
 }
 
-async function login(apiBase, email, password, store, ss) {
-  const r = await api('/api/account/login', apiBase, null, { email, password })
+async function login(apiBase, email, password, store, ss, totp) {
+  const body = { email, password }
+  if (totp) body.totp = totp
+  const r = await api('/api/account/login', apiBase, null, body)
   if (!r.json || !r.json.ok || !r.json.token) {
     const err = (r.json && r.json.error) || 'login_failed'
+    if (err === 'need_totp') return { ok: false, need_totp: true, msg: (r.json && r.json.msg) || 'Enter your 6-digit authenticator code.' }
     return { ok: false, msg: err === 'bad_login' ? 'Wrong email or password.' : 'Login failed.' }
   }
   store.set('syncToken', r.json.token)

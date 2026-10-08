@@ -1414,9 +1414,14 @@ function renderSetup(){
     c.innerHTML=dots+grid(ART_PREMIUM,'<div class="setup-name" style="font-size:24px;letter-spacing:2px">Account & Premium</div><div class="setup-sub">One login syncs bookmarks and settings between devices, encrypted end to end. Logging in auto-activates the account key on this device — up to 10 devices share one key, bound to your account, not the machine. Manual renewal by default — auto-renew is a choice at checkout.'+(isPremium()?' Sync is on with your Premium.':' Your login is saved now — syncing itself unlocks with Premium.')+'</div><div class="setup-sub" id="setup-sync-note"></div><input id="setup-ac-email" type="email" autocomplete="email" placeholder="you@example.com" style="width:100%;margin:2px 0 8px;padding:10px 14px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px"><input id="setup-ac-pass" type="password" autocomplete="current-password" placeholder="Password (8+ characters)" style="width:100%;margin:0 0 12px;padding:10px 14px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px"><div><button class="setup-btn" id="setup-ac-login" style="margin-right:8px">Log in</button><button class="setup-btn" id="setup-ac-signup">Sign up</button></div><div style="margin-top:14px">'+__premBox+'</div>',CONTINUE);
     (function(){
       function note(t){var n=$("setup-sync-note");if(n)n.textContent=t||"";}
-      function finishLogin(email,pass,pwEl){
+      function finishLogin(email,pass,pwEl,code){
         if(!api||!api.syncLogin){note("Sync unavailable.");return;}
-        api.syncLogin({apiBase:syncApiBase(),email:email,password:pass}).then(function(r){
+        api.syncLogin({apiBase:syncApiBase(),email:email,password:pass,totp:code||undefined}).then(function(r){
+          if(r&&r.need_totp){
+            if(code!==undefined)note("Wrong code — try again.");
+            var c=prompt("Two-factor code from your authenticator:","");
+            if(c==null)return;
+            finishLogin(email,pass,pwEl,(c||"").trim()||undefined);return;}
           if(r&&r.ok){if(pwEl)pwEl.value="";note("Signed in as "+email+".");try{if(isPremium()&&api.syncNow)api.syncNow({apiBase:syncApiBase()}).catch(function(){});}catch(e){}try{if(isPremium())activateOnAccount();}catch(e){}}
           else note(r&&r.msg?r.msg:"Login failed.");
         }).catch(function(){note("Could not reach the server.");});
@@ -3583,7 +3588,9 @@ function bindSyncPanel(){
     var email=em?em.value.trim():"",pass=pw?pw.value:"";
     if(!email||pass.length<8){msg("Email + 8-character password.");return;}
     msg("Logging in…");
-    api.syncLogin({apiBase:syncApiBase(),email:email,password:pass}).then(function(r){
+    var tc=$("sy-totp");var code=tc&&tc.style.display!=="none"?(tc.value||"").trim():"";
+    api.syncLogin({apiBase:syncApiBase(),email:email,password:pass,totp:code||undefined}).then(function(r){
+      if(r&&r.need_totp){if(tc){tc.style.display="";tc.focus();}msg("Two-factor is on — enter the 6-digit code.");return;}
       if(r&&r.ok){if(pw)pw.value="";refresh();
         if(!isPremium()){msg("Logged in. Premium unlocks sync and activation.");return;}
         msg("Logged in. Syncing…");
@@ -3921,7 +3928,7 @@ function renderSettingsSection(id){
     }
     {
       h+="<div class=\"sg\"><div class=\"lbl\">Kastrava account</div><div class=\"desc\">Same login as kastrava.pp.ua/account.html. Bookmarks and settings sync encrypted.</div><div id=\"sy-status\" class=\"desc\" style=\"margin-top:6px\">Checking…</div></div>";
-      h+="<div class=\"sg\" id=\"sy-form\"><div class=\"lbl\">Log in</div><input id=\"sy-email\" type=\"email\" placeholder=\"you@example.com\" autocomplete=\"email\" style=\"width:100%;margin:6px 0;padding:9px 12px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px\"><input id=\"sy-pass\" type=\"password\" placeholder=\"Password\" autocomplete=\"current-password\" style=\"width:100%;margin:0 0 6px;padding:9px 12px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px\"><div style=\"display:flex;gap:8px;margin-top:4px\"><button class=\"btn-sm btn-accent\" id=\"sy-login\">Log in</button><button class=\"btn-sm\" id=\"sy-logout\">Log out</button><button class=\"btn-sm\" id=\"sy-now\">Sync now</button></div><div id=\"sy-msg\" class=\"desc\" style=\"margin-top:6px\"></div></div>";
+      h+="<div class=\"sg\" id=\"sy-form\"><div class=\"lbl\">Log in</div><input id=\"sy-email\" type=\"email\" placeholder=\"you@example.com\" autocomplete=\"email\" style=\"width:100%;margin:6px 0;padding:9px 12px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px\"><input id=\"sy-totp\" inputmode=\"numeric\" maxlength=\"6\" placeholder=\"2FA code (if enabled)\" autocomplete=\"one-time-code\" style=\"width:100%;margin:0 0 6px;padding:9px 12px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px;display:none\"><input id=\"sy-pass\" type=\"password\" placeholder=\"Password\" autocomplete=\"current-password\" style=\"width:100%;margin:0 0 6px;padding:9px 12px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px\"><div style=\"display:flex;gap:8px;margin-top:4px\"><button class=\"btn-sm btn-accent\" id=\"sy-login\">Log in</button><button class=\"btn-sm\" id=\"sy-logout\">Log out</button><button class=\"btn-sm\" id=\"sy-now\">Sync now</button></div><div id=\"sy-msg\" class=\"desc\" style=\"margin-top:6px\"></div></div>";
       h+="<div class=\"sg\" id=\"sy-devrow\"><div class=\"lbl\">Devices on this key</div><div class=\"desc\">Up to 10 per key. Remove one to free its slot.</div><div id=\"sy-devices\" class=\"desc\" style=\"margin-top:6px\">—</div></div>";
       h+="<div class=\"sg\"><div class=\"lbl\">Advanced settings</div><div class=\"desc\">Devices, keys and sync on the web dashboard.</div><div style=\"margin-top:8px\"><button class=\"btn-sm\" id=\"sy-advanced\">Open account dashboard</button></div></div>";
       h+="<div class=\"sg\" id=\"sy-licrow\" style=\"display:none\"><div class=\"lbl\">Premium key on file</div><div class=\"desc\">Synced from another device — reference only. Keys stay on your account.</div><div class=\"mono\" id=\"sy-lickey\" style=\"margin:6px 0;font-size:13px\"></div><button class=\"btn-sm\" id=\"sy-activate\">Activate on this device</button></div>";

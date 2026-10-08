@@ -100,6 +100,38 @@ r.setAttribute('data-theme',s?s:(window.matchMedia&&window.matchMedia('(prefers-
 <div style="margin-top:10px"><button class="btn ghost" id="sess-out-others">Log out other sessions</button></div>
 </div>
 <div class="card"><h2>Security log</h2><div id="audit-out">Loading…</div></div>
+<div class="card"><h2>Two-factor auth</h2>
+<p class="sub" id="totp-state">Loading…</p>
+<div id="totp-setup" style="display:none">
+<p class="fine">1. Open your authenticator app (Google/Microsoft Authy, 1Password…) and add this key:</p>
+<p class="mono" id="totp-secret" style="font-size:16px;letter-spacing:1px"></p>
+<p class="fine">2. Enter the 6-digit code it shows:</p>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<input id="totp-code" inputmode="numeric" maxlength="6" placeholder="123456" style="width:130px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ink);font-family:inherit" spellcheck="false" autocomplete="off">
+<button class="btn" id="totp-confirm">Enable</button>
+</div>
+</div>
+<div id="totp-recovery" style="display:none;margin-top:10px">
+<p class="fine">Recovery codes — save these somewhere safe. Each works once if you lose the app:</p>
+<p class="mono" id="totp-codes" style="font-size:14px;line-height:1.8"></p>
+</div>
+<div id="totp-off" style="display:none;margin-top:10px">
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<input id="totp-pass" type="password" placeholder="Password to disable" style="flex:1;min-width:160px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ink);font-family:inherit" autocomplete="current-password">
+<button class="btn ghost" id="totp-disable">Disable 2FA</button>
+</div>
+</div>
+<div class="msg" id="totp-msg"></div>
+<div style="margin-top:8px"><button class="btn" id="totp-start">Set up 2FA</button></div>
+</div>
+<div class="card"><h2>Your data</h2>
+<p class="sub">Download everything on your account, or delete the account entirely (owned keys are cancelled, shared access ends).</p>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<button class="btn ghost" id="data-export">Download my data</button>
+<button class="btn ghost" id="data-delete">Delete account…</button>
+</div>
+<div class="msg" id="data-msg"></div>
+</div>
 <div class="card"><h2>Session</h2>
 <p class="sub" id="me-line"></p>
 <button class="btn ghost" id="ac-out">Log out</button>
@@ -136,7 +168,7 @@ function tok(){try{return localStorage.getItem('kas_sync_token')||'';}catch(e){r
 function authz(){return {'Content-Type':'application/json','Authorization':'Bearer '+tok()};}
 function esc(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 var loginCard=document.getElementById('login-card'),dash=document.getElementById('dash');
-function showDash(email){loginCard.style.display='none';dash.style.display='block';document.getElementById('me-line').textContent='Signed in as '+email+'.';loadKeys();loadSync(email);loadApprovals();loadSessions();loadAudit();}
+function showDash(email){loginCard.style.display='none';dash.style.display='block';document.getElementById('me-line').textContent='Signed in as '+email+'.';loadKeys();loadSync(email);loadApprovals();loadSessions();loadAudit();loadTotp();}
 function loadApprovals(){
   var out=document.getElementById('ap-out');if(!out)return;
   out.textContent='Loading…';
@@ -174,6 +206,16 @@ function loadSessions(){
       });
     });
   }).catch(function(){out.textContent='Could not load.';});
+}
+function loadTotp(){
+  var st=document.getElementById('totp-state');if(!st)return;
+  fetch(KAS_API+'/api/account/me',{method:'POST',headers:authz(),body:'{}'})
+  .then(function(r){return r.json();}).then(function(j){
+    var on=!!(j&&j.totp);
+    st.textContent=on?'On — logins need your authenticator code.':'Off.';
+    document.getElementById('totp-off').style.display=on?'block':'none';
+    document.getElementById('totp-start').style.display=on?'none':'block';
+  }).catch(function(){st.textContent='Could not load.';});
 }
 function loadAudit(){
   var out=document.getElementById('audit-out');if(!out)return;
@@ -312,6 +354,65 @@ document.getElementById('ap-require').addEventListener('change',function(){
   var on=this.checked;
   fetch(KAS_API+'/api/account/approval-require',{method:'POST',headers:authz(),body:JSON.stringify({on:on})})
   .then(function(r){return r.json();}).then(function(){}).catch(function(){});
+});
+document.getElementById('totp-start').addEventListener('click',function(){
+  var m=document.getElementById('totp-msg');m.className='msg';m.textContent='Starting…';
+  fetch(KAS_API+'/api/account/totp/setup',{method:'POST',headers:authz(),body:'{}'})
+  .then(function(r){return r.json();}).then(function(j){
+    if(!j||!j.ok){m.textContent='Could not start setup.';m.className='msg err';return;}
+    document.getElementById('totp-secret').textContent=j.secret;
+    document.getElementById('totp-setup').style.display='block';
+    m.textContent='';
+  }).catch(function(){m.textContent='Server unreachable.';m.className='msg err';});
+});
+document.getElementById('totp-confirm').addEventListener('click',function(){
+  var m=document.getElementById('totp-msg');
+  var code=(document.getElementById('totp-code').value||'').trim();
+  m.className='msg';m.textContent='Checking…';
+  fetch(KAS_API+'/api/account/totp/confirm',{method:'POST',headers:authz(),body:JSON.stringify({code:code})})
+  .then(function(r){return r.json();}).then(function(j){
+    if(!j||!j.ok){m.textContent=(j&&(j.msg||j.error))||'Wrong code.';m.className='msg err';return;}
+    document.getElementById('totp-codes').textContent=(j.recovery||[]).join('  ');
+    document.getElementById('totp-recovery').style.display='block';
+    document.getElementById('totp-setup').style.display='none';
+    m.textContent='2FA is on.';m.className='msg ok';loadTotp();
+  }).catch(function(){m.textContent='Server unreachable.';m.className='msg err';});
+});
+document.getElementById('totp-disable').addEventListener('click',function(){
+  var m=document.getElementById('totp-msg');
+  var pw=document.getElementById('totp-pass').value||'';
+  if(!pw){m.textContent='Enter your password.';m.className='msg err';return;}
+  if(!confirm('Turn off two-factor auth?'))return;
+  fetch(KAS_API+'/api/account/totp/disable',{method:'POST',headers:authz(),body:JSON.stringify({password:pw})})
+  .then(function(r){return r.json();}).then(function(j){
+    if(!j||!j.ok){m.textContent='Wrong password.';m.className='msg err';return;}
+    document.getElementById('totp-pass').value='';
+    document.getElementById('totp-recovery').style.display='none';
+    m.textContent='2FA is off.';m.className='msg';loadTotp();
+  }).catch(function(){m.textContent='Server unreachable.';m.className='msg err';});
+});
+document.getElementById('data-export').addEventListener('click',function(){
+  var m=document.getElementById('data-msg');m.className='msg';m.textContent='Preparing…';
+  fetch(KAS_API+'/api/account/export',{method:'POST',headers:authz(),body:'{}'})
+  .then(function(r){return r.json();}).then(function(j){
+    if(!j||!j.ok){m.textContent='Could not export.';m.className='msg err';return;}
+    var blob=new Blob([JSON.stringify(j.export,null,2)],{type:'application/json'});
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='kastrava-account.json';a.click();
+    setTimeout(function(){URL.revokeObjectURL(a.href);},5000);
+    m.textContent='Downloaded.';m.className='msg';
+  }).catch(function(){m.textContent='Server unreachable.';m.className='msg err';});
+});
+document.getElementById('data-delete').addEventListener('click',function(){
+  var m=document.getElementById('data-msg');
+  var pw=prompt('Enter your password to delete the account:');
+  if(pw==null)return;
+  if(prompt('This cancels your keys and wipes sync. Type DELETE to confirm:')!=='DELETE'){m.textContent='Not deleted.';m.className='msg';return;}
+  fetch(KAS_API+'/api/account/delete',{method:'POST',headers:authz(),body:JSON.stringify({password:pw,confirm:'DELETE'})})
+  .then(function(r){return r.json();}).then(function(j){
+    if(!j||!j.ok){m.textContent=(j&&(j.msg||j.error))||'Could not delete.';m.className='msg err';return;}
+    try{localStorage.removeItem('kas_sync_token');}catch(e){}
+    location.reload();
+  }).catch(function(){m.textContent='Server unreachable.';m.className='msg err';});
 });
 document.getElementById('sess-out-others').addEventListener('click',function(){
   if(!confirm('Log out every other session?'))return;

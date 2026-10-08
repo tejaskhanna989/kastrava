@@ -169,13 +169,24 @@ class SettingsActivity : AppCompatActivity() {
             }.start()
         }
         paintAccount()
+        val etTotp = findViewById<EditText>(R.id.etAccountTotp)
         btnIn.setOnClickListener {
             val em = etEmail.text.toString()
             val pw = etPass.text.toString()
+            val code = etTotp.text.toString().trim()
             tvAccount.text = "Logging in..."
             btnIn.isEnabled = false
             Thread {
-                val err = app.account.login(em, pw)
+                val err = app.account.login(em, pw, code)
+                if (err == AccountManager.NEED_TOTP) {
+                    runOnUiThread {
+                        btnIn.isEnabled = true
+                        etTotp.visibility = EditText.VISIBLE
+                        etTotp.requestFocus()
+                        tvAccount.text = "Two-factor is on — enter the 6-digit code."
+                    }
+                    return@Thread
+                }
                 runOnUiThread {
                     btnIn.isEnabled = true
                     if (err == null) {

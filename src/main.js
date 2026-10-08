@@ -1018,8 +1018,8 @@ function syncData() {
 ipcMain.handle('sync-status', () => {
   try { return Object.assign({ ok: true }, syncEngine.status(syncStore(), safeStorage)) } catch { return { ok: false } }
 })
-ipcMain.handle('sync-login', async (_, { apiBase, email, password }) => {
-  try { return await syncEngine.login(apiBase || 'https://nexufog.pp.ua', email, password, syncStore(), safeStorage) } catch { return { ok: false, msg: 'Login failed.' } }
+ipcMain.handle('sync-login', async (_, { apiBase, email, password, totp }) => {
+  try { return await syncEngine.login(apiBase || 'https://nexufog.pp.ua', email, password, syncStore(), safeStorage, totp) } catch { return { ok: false, msg: 'Login failed.' } }
 })
 ipcMain.handle('sync-logout', async () => {
   try { return await syncEngine.logout(syncStore()) } catch { return { ok: false } }
