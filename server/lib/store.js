@@ -22,6 +22,10 @@ class Store {
       this.data.accounts = raw.accounts || {}
       this.data.sessions = raw.sessions || {}
       this.data.sync = raw.sync || {}
+      // Grandfathered logins predate verification: they stay working.
+      for (const e in this.data.accounts) {
+        if (this.data.accounts[e].verified === undefined) this.data.accounts[e].verified = true
+      }
     } catch {}
   }
 
@@ -410,6 +414,104 @@ class Store {
       return 'recovery'
     }
     return false
+  }
+
+  // ---- email codes (verification, login OTP, password reset) ----
+  // One active code per (email, purpose). 10 minutes to live, 5 tries.
+  _codeMaps() {
+    this.ensureAccountMaps()
+    if (!this.data.email_codes) this.data.email_codes = {}
+    if (!this.data.email_sends) this.data.email_sends = {}
+  }
+
+  emailThrottled(email) {
+    this._codeMaps()
+    const e = String(email || '').toLowerCase()
+    const hourAgo = Date.now() - 3600000
+    const log = (this.data.email_sends[e] || []).filter((t) => t > hourAgo)
+    this.data.email_sends[e] = log
+    if (log.length >= 5) return true
+    log.push(Date.now())
+    this.save()
+    return false
+  }
+
+  // Returns the plain code (to email), or null when throttled.
+  issueEmailCode(email, purpose) {
+    this._codeMaps()
+    const e = String(email || '').toLowerCase()
+    if (this.emailThrottled(email)) return null
+    let code = ''
+    for (let i = 0; i < 6; i++) code += Math.floor(require('crypto').randomInt(0, 10))
+    this.data.email_codes[e + '|' + purpose] = {
+      hash: require('crypto').createHash('sha256').update(code).digest('hex'),
+      created_at: new Date().toISOString(), attempts: 0
+    }
+    this.save()
+    return code
+  }
+
+  // Returns true once per correct code; burns it.
+  checkEmailCode(email, purpose, code) {
+    this._codeMaps()
+    const e = String(email || '').toLowerCase()
+    const k = e + '|' + purpose
+    const rec = this.data.email_codes[k]
+    if (!rec) return false
+    if (Date.now() - new Date(rec.created_at).getTime() > 600000) {
+      delete this.data.email_codes[k]
+      this.save()
+      return false
+    }
+    rec.attempts = (rec.attempts || 0) + 1
+    if (rec.attempts > 5) {
+      delete this.data.email_codes[k]
+      this.save()
+      return false
+    }
+    const h = require('crypto').createHash('sha256').update(String(code || '').trim()).digest('hex')
+    if (h.length !== rec.hash.length) { this.save(); return false }
+    const ok = require('crypto').timingSafeEqual(Buffer.from(h), Buffer.from(rec.hash))
+    if (ok) delete this.data.email_codes[k]
+    this.save()
+    return ok
+  }
+
+  setVerified(email, on) {
+    const acc = this.getAccountByEmail(email)
+    if (!acc) return false
+    acc.verified = !!on
+    this.save()
+    return true
+  }
+
+  // Password-verified, waiting on the email code (10 minutes).
+  stageLogin(email, label, ip) {
+    this._codeMaps()
+    if (!this.data.login_pending) this.data.login_pending = {}
+    this.data.login_pending[String(email).toLowerCase()] = {
+      label: String(label || '').slice(0, 60), ip: String(ip || '').slice(0, 45),
+      created_at: new Date().toISOString()
+    }
+    this.save()
+  }
+
+  peekLogin(email) {
+    this._codeMaps()
+    if (!this.data.login_pending) return null
+    const rec = this.data.login_pending[String(email).toLowerCase()]
+    if (!rec) return null
+    if (Date.now() - new Date(rec.created_at).getTime() > 600000) return null
+    return rec
+  }
+
+  takeLogin(email) {
+    const rec = this.peekLogin(email)
+    this._codeMaps()
+    if (!this.data.login_pending) return rec
+    delete this.data.login_pending[String(email).toLowerCase()]
+    this.save()
+    return rec
   }
 
   // ---- audit log (security events per account, newest last, capped) ----

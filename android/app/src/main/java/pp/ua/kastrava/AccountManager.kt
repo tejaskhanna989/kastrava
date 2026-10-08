@@ -65,35 +65,72 @@ class AccountManager(private val context: Context) {
     }
 
     /** Network — must run off the main thread. Returns null on success. */
-    /** Returns null on success, an error message, or NEED_TOTP. */
-    fun login(email: String, password: String, totp: String = ""): String? {
+    sealed class StepResult {
+        data class CodeSent(val totpRequired: Boolean) : StepResult()
+        data class Failed(val msg: String) : StepResult()
+    }
+
+    /** Step 1: password -> emailed code. */
+    fun loginStep1(email: String, password: String): StepResult {
         val e = email.trim().lowercase()
-        if (!e.contains("@") || password.length < 8) return "Enter a valid email and 8+ character password."
+        if (!e.contains("@") || password.length < 8) return StepResult.Failed("Enter a valid email and 8+ character password.")
         return try {
-            val url = URL(LicenseManager.API + "/api/account/login")
-            val conn = (url.openConnection() as HttpURLConnection).apply {
+            val conn = (URL(LicenseManager.API + "/api/account/login").openConnection() as HttpURLConnection).apply {
                 requestMethod = "POST"
                 setRequestProperty("Content-Type", "application/json")
                 connectTimeout = 20000
                 readTimeout = 20000
                 doOutput = true
             }
-            val payload = JSONObject().put("email", e).put("password", password)
+            conn.outputStream.use {
+                it.write(JSONObject().put("email", e).put("password", password).toString().toByteArray(Charsets.UTF_8))
+            }
+            val text = try {
+                (if (conn.responseCode in 200..299) conn.inputStream else conn.errorStream)
+                    ?.bufferedReader()?.readText() ?: ""
+            } catch (ex: Exception) { "" }
+            val j = try { JSONObject(text) } catch (ex: Exception) { null }
+            if (j != null && j.optBoolean("otp_required", false)) {
+                StepResult.CodeSent(j.optBoolean("totp", false))
+            } else {
+                val err = j?.optString("error") ?: ""
+                StepResult.Failed(when (err) {
+                    "bad_login" -> "Wrong email or password."
+                    "verify_required" -> "Verify your email first — the code is in your inbox."
+                    else -> j?.optString("msg")?.takeIf { it.isNotBlank() } ?: "Login failed."
+                })
+            }
+        } catch (e: Exception) {
+            StepResult.Failed("Could not reach the Kastrava server. Check your connection.")
+        }
+    }
+
+    /** Step 2: emailed code (+authenticator when on) -> logged in. Null = ok. */
+    fun loginStep2(email: String, code: String, totp: String = ""): String? {
+        val e = email.trim().lowercase()
+        if (code.isBlank()) return "Enter the code from your email."
+        return try {
+            val conn = (URL(LicenseManager.API + "/api/account/login/otp").openConnection() as HttpURLConnection).apply {
+                requestMethod = "POST"
+                setRequestProperty("Content-Type", "application/json")
+                connectTimeout = 20000
+                readTimeout = 20000
+                doOutput = true
+            }
+            val payload = JSONObject().put("email", e).put("code", code.trim())
             if (totp.isNotBlank()) payload.put("totp", totp.trim())
             conn.outputStream.use {
                 it.write(payload.toString().toByteArray(Charsets.UTF_8))
             }
-            val code = conn.responseCode
+            val rcode = conn.responseCode
             val text = try {
-                (if (code in 200..299) conn.inputStream else conn.errorStream)
+                (if (rcode in 200..299) conn.inputStream else conn.errorStream)
                     ?.bufferedReader()?.readText() ?: ""
             } catch (ex: Exception) { "" }
-            if (code !in 200..299) {
+            if (rcode !in 200..299) {
                 val je = try { JSONObject(text) } catch (ex: Exception) { null }
                 val err = je?.optString("error") ?: ""
-                if (err == "need_totp") return NEED_TOTP
-                if (err == "bad_login") return "Wrong email or password."
-                return je?.optString("msg")?.takeIf { it.isNotBlank() } ?: "Login failed (HTTP $code)."
+                return if (err == "need_totp") NEED_TOTP else (je?.optString("msg")?.takeIf { it.isNotBlank() } ?: "Login failed.")
             }
             val j = JSONObject(text)
             prefs.edit()

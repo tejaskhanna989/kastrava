@@ -58,9 +58,12 @@ r.setAttribute('data-theme',s?s:(window.matchMedia&&window.matchMedia('(prefers-
 <input id="ac-email" type="email" autocomplete="email" placeholder="you@example.com">
 <label for="ac-pass">Password (8+ characters)</label>
 <input id="ac-pass" type="password" autocomplete="current-password" placeholder="••••••••">
+<input id="ac-code" inputmode="numeric" maxlength="6" placeholder="Email code" autocomplete="one-time-code" style="display:none;margin-top:10px">
+<input id="ac-totp" inputmode="numeric" maxlength="6" placeholder="2FA code (if enabled)" autocomplete="one-time-code" style="display:none;margin-top:10px">
+<div class="msg" id="ac-verify" style="display:none">Check your inbox, then <a href="#" id="ac-resend">resend code</a></div>
 <button class="go" id="ac-go">Log in</button>
 <div class="msg" id="ac-msg"></div>
-<p class="fine">No email verification, no newsletters, nothing else. Forget your password and the sync copy is unrecoverable — email <a href="mailto:khannatejas989@gmail.com" style="color:var(--blue)">support</a> and we'll reset the account (the old synced data stays locked).</p>
+<p class="fine">Email verification, no newsletters, nothing else. Forget your password and the sync copy is unrecoverable — email <a href="mailto:khannatejas989@gmail.com" style="color:var(--blue)">support</a> and we'll reset the account (the old synced data stays locked).</p>
 </div>
 <div id="me-box" style="display:none">
 <p style="font-size:15px;color:var(--ink)">Signed in as <b id="me-email"></b></p>
@@ -96,9 +99,33 @@ function refresh(){
     else{try{localStorage.removeItem('kas_sync_token');}catch(e){}}
   }).catch(function(){});
 }
+var codeEl=document.getElementById('ac-code'),totpEl=document.getElementById('ac-totp'),vw=document.getElementById('ac-verify');
+document.getElementById('ac-resend').addEventListener('click',function(ev){
+  ev.preventDefault();
+  fetch(KAS_API+'/api/account/verify/resend',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:(emailEl.value||'').trim()})}).catch(function(){});
+});
+function finishToken(j){
+  try{localStorage.setItem('kas_sync_token',j.token);}catch(e){}
+  passEl.value='';
+  showMe(j.email,null);refresh();
+}
 goEl.addEventListener('click',function(){
   var email=(emailEl.value||'').trim(),pw=passEl.value||'';
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email)){msgEl.textContent='Enter a valid email.';msgEl.className='msg err';return;}
+  if(codeEl.style.display!=='none'&&codeEl.value.trim()){
+    var code=codeEl.value.trim(),tc=totpEl.style.display!=='none'?(totpEl.value||'').trim():'';
+    goEl.disabled=true;
+    var url=codeEl.dataset.mode==='verify'?'/api/account/verify':'/api/account/login/otp';
+    var payload=codeEl.dataset.mode==='verify'?{email:email,code:code}:{email:email,code:code,totp:tc||undefined};
+    fetch(KAS_API+url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+    .then(function(r){return r.json();}).then(function(j){
+      goEl.disabled=false;
+      if(j&&j.ok&&j.token){finishToken(j);return;}
+      if(j&&j.error==='need_totp'){totpEl.style.display='';totpEl.focus();msgEl.textContent='Also enter your authenticator code.';return;}
+      msgEl.className='msg err';msgEl.textContent=(j&&(j.msg||j.error))||'Wrong code.';
+    }).catch(function(){goEl.disabled=false;msgEl.className='msg err';msgEl.textContent='Could not reach the server.';});
+    return;
+  }
   if(pw.length<8){msgEl.textContent='Password needs 8+ characters.';msgEl.className='msg err';return;}
   goEl.disabled=true;msgEl.className='msg';msgEl.textContent=mode==='login'?'Logging in…':'Creating account…';
   fetch(KAS_API+'/api/account/'+mode,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,password:pw})})
@@ -106,6 +133,12 @@ goEl.addEventListener('click',function(){
   .then(function(r){
     goEl.disabled=false;
     var j=r.json||{};
+    if(j.ok&&j.token){finishToken(j);return;}
+    if(j.ok&&(j.verify_required||j.otp_required)){
+      codeEl.dataset.mode=j.verify_required?'verify':'login';codeEl.dataset.email=email;
+      codeEl.style.display='';vw.style.display='';codeEl.value='';codeEl.focus();
+      if(j.totp)totpEl.style.display='';
+      msgEl.className='msg';msgEl.textContent='Code sent to your email — enter it above.';return;}
     if(!j.ok){msgEl.className='msg err';
       msgEl.textContent=r.status===409?'That email already has an account — log in instead.':(r.status===429?'Too many tries — wait a minute.':(j.error==='bad_login'?'Wrong email or password.':'Something went wrong.'));return;}
     try{localStorage.setItem('kas_sync_token',j.token);}catch(e){}

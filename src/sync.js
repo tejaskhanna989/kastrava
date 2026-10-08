@@ -87,13 +87,14 @@ function stashKey(ss, store, email, keyBuf) {
   } catch {}
 }
 
-async function login(apiBase, email, password, store, ss, totp) {
-  const body = { email, password }
-  if (totp) body.totp = totp
-  const r = await api('/api/account/login', apiBase, null, body)
+async function login(apiBase, email, password, store, ss) {
+  const r = await api('/api/account/login', apiBase, null, { email, password })
+  if (r.json && r.json.ok && r.json.otp_required) {
+    return { ok: false, need_email_otp: true, totp: !!r.json.totp, msg: 'Code sent to your email.' }
+  }
   if (!r.json || !r.json.ok || !r.json.token) {
     const err = (r.json && r.json.error) || 'login_failed'
-    if (err === 'need_totp') return { ok: false, need_totp: true, msg: (r.json && r.json.msg) || 'Enter your 6-digit authenticator code.' }
+    if (err === 'verify_required') return { ok: false, need_verify: true, msg: (r.json && r.json.msg) || 'Verify your email first.' }
     return { ok: false, msg: err === 'bad_login' ? 'Wrong email or password.' : 'Login failed.' }
   }
   store.set('syncToken', r.json.token)
@@ -105,6 +106,44 @@ async function login(apiBase, email, password, store, ss, totp) {
   store.set('syncBase', {})
   store.set('syncHash', '')
   return { ok: true, email: r.json.email }
+}
+
+async function loginOtp(apiBase, email, password, code, totp, store, ss) {
+  const body = { email, code }
+  if (totp) body.totp = totp
+  const r = await api('/api/account/login/otp', apiBase, null, body)
+  if (r.json && r.json.ok && r.json.token) {
+    store.set('syncToken', r.json.token)
+    store.set('syncEmail', r.json.email)
+    store.set('syncSalts', { auth: r.json.auth_salt, sync: r.json.sync_salt })
+    const key = deriveKey(password, r.json.sync_salt)
+    stashKey(ss, store, r.json.email, key)
+    store.set('syncRev', 0)
+    store.set('syncBase', {})
+    store.set('syncHash', '')
+    return { ok: true, email: r.json.email }
+  }
+  const err = (r.json && r.json.error) || 'login_failed'
+  if (err === 'need_totp') return { ok: false, need_totp: true, msg: (r.json && r.json.msg) || 'Enter your authenticator code.' }
+  if (err === 'expired') return { ok: false, expired: true, msg: 'Code expired — start the login over.' }
+  return { ok: false, msg: 'Wrong or expired email code.' }
+}
+
+async function verifyEmail(apiBase, email, password, code, store, ss) {
+  const r = await api('/api/account/verify', apiBase, null, { email, code })
+  if (r.json && r.json.ok && r.json.token) {
+    store.set('syncToken', r.json.token)
+    store.set('syncEmail', r.json.email)
+    if (r.json.sync_salt) {
+      store.set('syncSalts', { auth: r.json.auth_salt, sync: r.json.sync_salt })
+      try {
+        const key = deriveKey(password, r.json.sync_salt)
+        stashKey(ss, store, r.json.email, key)
+      } catch {}
+    }
+    return { ok: true, email: r.json.email }
+  }
+  return { ok: false, msg: ((r.json && (r.json.msg || r.json.error)) || 'Wrong code.') }
 }
 
 async function logout(store) {
@@ -230,4 +269,4 @@ async function syncNow(apiBase, store, ss, data) {
   return out
 }
 
-module.exports = { login, logout, status, syncNow }
+module.exports = { login, loginOtp, verifyEmail, logout, status, syncNow }

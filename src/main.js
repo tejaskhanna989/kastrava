@@ -1018,8 +1018,14 @@ function syncData() {
 ipcMain.handle('sync-status', () => {
   try { return Object.assign({ ok: true }, syncEngine.status(syncStore(), safeStorage)) } catch { return { ok: false } }
 })
-ipcMain.handle('sync-login', async (_, { apiBase, email, password, totp }) => {
-  try { return await syncEngine.login(apiBase || 'https://nexufog.pp.ua', email, password, syncStore(), safeStorage, totp) } catch { return { ok: false, msg: 'Login failed.' } }
+ipcMain.handle('sync-login', async (_, { apiBase, email, password }) => {
+  try { return await syncEngine.login(apiBase || 'https://nexufog.pp.ua', email, password, syncStore(), safeStorage) } catch { return { ok: false, msg: 'Login failed.' } }
+})
+ipcMain.handle('sync-login-otp', async (_, { apiBase, email, password, code, totp }) => {
+  try { return await syncEngine.loginOtp(apiBase || 'https://nexufog.pp.ua', email, password, code, totp, syncStore(), safeStorage) } catch { return { ok: false, msg: 'Login failed.' } }
+})
+ipcMain.handle('sync-verify', async (_, { apiBase, email, password, code }) => {
+  try { return await syncEngine.verifyEmail(apiBase || 'https://nexufog.pp.ua', email, password, code, syncStore(), safeStorage) } catch { return { ok: false, msg: 'Verification failed.' } }
 })
 ipcMain.handle('sync-logout', async () => {
   try { return await syncEngine.logout(syncStore()) } catch { return { ok: false } }

@@ -408,6 +408,25 @@
             android:textSize="15sp" />
 
         <EditText
+            android:id="@+id/etEmailCode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/field_bg"
+            android:hint="Email code"
+            android:inputType="number"
+            android:maxLines="1"
+            android:maxLength="6"
+            android:singleLine="true"
+            android:importantForAutofill="no"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:textColor="@color/chrome_text"
+            android:textColorHint="@color/chrome_hint"
+            android:textSize="15sp"
+            android:visibility="gone" />
+
+        <EditText
             android:id="@+id/etAccountTotp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

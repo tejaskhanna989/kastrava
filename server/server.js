@@ -19,6 +19,7 @@ const crypto = require('crypto')
 require('./lib/env').loadEnv()
 const sign = require('./lib/sign')
 const razorpay = require('./lib/razorpay')
+const mailer = require('./lib/mailer')
 
 const port = parseInt(process.env.PORT || '8787', 10)
 const BIND_HOST = process.env.BIND_HOST || '127.0.0.1'
@@ -224,6 +225,15 @@ function finalizePayment(orderId, paymentId, machineIdRaw, accountEmailRaw) {
   } else if (account) {
     const lic = store.getLicense(key)
     if (lic && !lic.account_email) store.setAccountEmail(key, account)
+  }
+  if (account && key) {
+    const lic = store.getLicense(key)
+    const exp = lic && lic.expires_at ? new Date(lic.expires_at).toDateString() : 'lifetime'
+    mailer.sendAsync(account, renewed ? 'Kastrava Premium renewed' : 'Your Kastrava Premium key',
+      (renewed ? 'Your Premium was renewed.\n\n' : 'Thanks for buying Kastrava Premium.\n\n') +
+      'License key: ' + key + '\nValid until: ' + exp + '\nDevices: up to 10 on your account.\n\n' +
+      'Manage everything at https://account.kastrava.pp.ua/\n\nIf you did not make this purchase, reply to this email at once.')
+    try { store.audit(account, 'purchase', 'key ' + (renewed ? 'renewed' : 'issued')) } catch {}
   }
   return { key, renewed, plan: (order && order.plan) || 'legacy' }
 }
@@ -638,11 +648,18 @@ async function handlePost(req, res, pathname) {
       const authSalt = crypto.randomBytes(16).toString('hex')
       const syncSalt = crypto.randomBytes(16).toString('hex')
       const passHash = crypto.scryptSync(password, passSalt, 32).toString('hex')
-      store.createAccount(email, passHash, passSalt, authSalt, syncSalt)
-      const token = store.createSession(email, 30 * 86400000, { label: String(body.label || '').slice(0, 60), ip: clientIp(req) })
+      const created = store.createAccount(email, passHash, passSalt, authSalt, syncSalt)
+      if (created) created.verified = false
+      store.save()
+      const code = store.issueEmailCode(email, 'verify')
+      if (code) {
+        mailer.sendAsync(email, 'Verify your Kastrava account',
+          'Welcome to Kastrava.\n\nYour verification code (valid 10 minutes):\n\n' + code + '\n\nIf you did not sign up, ignore this email.')
+      }
       store.audit(email, 'signup', 'account created')
-      return json(res, 200, { ok: true, token, email, auth_salt: authSalt, sync_salt: syncSalt })
+      return json(res, 200, { ok: true, email, verify_required: true, auth_salt: authSalt, sync_salt: syncSalt })
     }
+
     const acc = store.getAccountByEmail(email)
     if (!acc) return json(res, 401, { error: 'bad_login' })
     let good = false
@@ -651,14 +668,92 @@ async function handlePost(req, res, pathname) {
       good = h.length === 32 && crypto.timingSafeEqual(h, Buffer.from(acc.pass_hash, 'hex'))
     } catch {}
     if (!good) return json(res, 401, { error: 'bad_login' })
+    if (!acc.verified) return json(res, 401, { error: 'verify_required', msg: 'Verify your email first — the code is in your inbox.' })
+    // Step 1 done: email yourself the one-time code, token comes at step 2.
+    store.stageLogin(email, String(body.label || ''), clientIp(req))
+    const lcode = store.issueEmailCode(email, 'login')
+    if (!lcode) return json(res, 429, { error: 'too_many', msg: 'Too many codes — try again later.' })
+    mailer.sendAsync(email, 'Your Kastrava login code',
+      'Someone (hopefully you) just entered the right password from ' + clientIp(req) + '.\n\nYour login code (valid 10 minutes):\n\n' + lcode + '\n\nIf this was not you, change your password right away.')
+    return json(res, 200, { ok: true, email, otp_required: true, totp: !!acc.totp_secret })
+  }
+    if (pathname === '/api/account/verify' || pathname === '/api/account/verify/resend') {
+    const email = String(body.email || '').trim().toLowerCase()
+    const acc0 = store.getAccountByEmail(email)
+    if (!acc0) return json(res, 401, { error: 'bad_login' })
+    if (acc0.verified) {
+      const token0 = store.createSession(email, 30 * 86400000, { label: String(body.label || '').slice(0, 60), ip: clientIp(req) })
+      return json(res, 200, { ok: true, token: token0, email })
+    }
+    if (pathname === '/api/account/verify/resend') {
+      const code0 = store.issueEmailCode(email, 'verify')
+      if (!code0) return json(res, 429, { error: 'too_many', msg: 'Too many codes — try again later.' })
+      mailer.sendAsync(email, 'Your Kastrava code',
+        'Your verification code (valid 10 minutes):\n\n' + code0 + '\n\nIf you did not request this, ignore this email.')
+      return json(res, 200, { ok: true, email, verify_required: true })
+    }
+    if (!store.checkEmailCode(email, 'verify', body.code)) {
+      return json(res, 401, { error: 'bad_code', msg: 'Wrong or expired code.' })
+    }
+    store.setVerified(email, true)
+    store.audit(email, 'verified', 'email verified')
+    const token0 = store.createSession(email, 30 * 86400000, { label: String(body.label || '').slice(0, 60), ip: clientIp(req) })
+    return json(res, 200, { ok: true, token: token0, email, auth_salt: acc0.auth_salt, sync_salt: acc0.sync_salt })
+  }
+  if (pathname === '/api/account/login/otp') {
+    if (!authThrottle(req)) return json(res, 429, { error: 'too_many' })
+    const email = String(body.email || '').trim().toLowerCase()
+    const acc = store.getAccountByEmail(email)
+    if (!acc || !acc.verified) return json(res, 401, { error: 'bad_login' })
+    const staged = store.peekLogin(email)
+    if (!staged) return json(res, 401, { error: 'expired', msg: 'Start the login over.' })
     if (acc.totp_secret) {
       const how = store.totpCheck(email, body.totp)
       if (!how) return json(res, 401, { error: 'need_totp', msg: 'Enter the 6-digit code from your authenticator app.' })
       if (how === 'recovery') store.audit(email, 'totp_recovery', 'recovery code used')
     }
-    const token = store.createSession(email, 30 * 86400000, { label: String(body.label || '').slice(0, 60), ip: clientIp(req) })
-    store.audit(email, 'login', 'login from ' + clientIp(req))
+    if (!store.checkEmailCode(email, 'login', body.code)) {
+      return json(res, 401, { error: 'bad_code', msg: 'Wrong or expired email code.' })
+    }
+    store.takeLogin(email)
+    const token = store.createSession(email, 30 * 86400000, { label: staged.label, ip: staged.ip })
+    store.audit(email, 'login', 'login from ' + (staged.ip || 'unknown'))
     return json(res, 200, { ok: true, token, email, auth_salt: acc.auth_salt, sync_salt: acc.sync_salt })
+  }
+  if (pathname === '/api/account/reset/request') {
+    const email = String(body.email || '').trim().toLowerCase()
+    if (!validEmail(email)) return json(res, 400, { error: 'bad_email' })
+    const acc = store.getAccountByEmail(email)
+    if (acc) {
+      const code = store.issueEmailCode(email, 'reset')
+      if (code) {
+        mailer.sendAsync(email, 'Reset your Kastrava password',
+          'Your password-reset code (valid 10 minutes):\n\n' + code + '\n\nIf you did not ask for this, ignore this email — your password stays as is.')
+      }
+    }
+    return json(res, 200, { ok: true })
+  }
+  if (pathname === '/api/account/reset/confirm') {
+    const email = String(body.email || '').trim().toLowerCase()
+    const password = String(body.password || '')
+    if (password.length < 8) return json(res, 400, { error: 'weak_password' })
+    const acc = store.getAccountByEmail(email)
+    if (!acc || !store.checkEmailCode(email, 'reset', body.code)) {
+      return json(res, 401, { error: 'bad_code', msg: 'Wrong or expired code.' })
+    }
+    const passSalt = crypto.randomBytes(16).toString('hex')
+    acc.pass_salt = passSalt
+    acc.pass_hash = crypto.scryptSync(password, passSalt, 32).toString('hex')
+    // New password cannot read the old sync blob: rotate the salt so every
+    // device starts a fresh encrypted copy instead of failing on garbage.
+    acc.sync_salt = crypto.randomBytes(16).toString('hex')
+    if (store.data.sync) delete store.data.sync[email]
+    for (const h in store.data.sessions) {
+      if (store.data.sessions[h].email === email) delete store.data.sessions[h]
+    }
+    store.save()
+    store.audit(email, 'password_reset', 'password changed, sessions ended')
+    return json(res, 200, { ok: true, email })
   }
   if (pathname === '/api/account/logout') {
     const tok = bearer(req)

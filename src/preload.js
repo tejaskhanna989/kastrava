@@ -82,6 +82,8 @@ contextBridge.exposeInMainWorld('api', {
   // In-app sync (Phase 2): login + push/pull. Key material stays main-side.
   syncStatus: () => ipcRenderer.invoke('sync-status'),
   syncLogin: (d) => ipcRenderer.invoke('sync-login', d),
+  syncLoginOtp: (d) => ipcRenderer.invoke('sync-login-otp', d),
+  syncVerify: (d) => ipcRenderer.invoke('sync-verify', d),
   syncLogout: () => ipcRenderer.invoke('sync-logout'),
   syncNow: (d) => ipcRenderer.invoke('sync-now', d),
 

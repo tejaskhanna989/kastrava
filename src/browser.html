@@ -1414,15 +1414,28 @@ function renderSetup(){
     c.innerHTML=dots+grid(ART_PREMIUM,'<div class="setup-name" style="font-size:24px;letter-spacing:2px">Account & Premium</div><div class="setup-sub">One login syncs bookmarks and settings between devices, encrypted end to end. Logging in auto-activates the account key on this device — up to 10 devices share one key, bound to your account, not the machine. Manual renewal — you pay each time, nothing auto-charges.'+(isPremium()?' Sync is on with your Premium.':' Your login is saved now — syncing itself unlocks with Premium.')+'</div><div class="setup-sub" id="setup-sync-note"></div><input id="setup-ac-email" type="email" autocomplete="email" placeholder="you@example.com" style="width:100%;margin:2px 0 8px;padding:10px 14px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px"><input id="setup-ac-pass" type="password" autocomplete="current-password" placeholder="Password (8+ characters)" style="width:100%;margin:0 0 12px;padding:10px 14px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px"><div><button class="setup-btn" id="setup-ac-login" style="margin-right:8px">Log in</button><button class="setup-btn" id="setup-ac-signup">Sign up</button></div><div style="margin-top:14px">'+__premBox+'</div>',CONTINUE);
     (function(){
       function note(t){var n=$("setup-sync-note");if(n)n.textContent=t||"";}
-      function finishLogin(email,pass,pwEl,code){
+      function loginDone(email,pass,pwEl){if(pwEl)pwEl.value="";note("Signed in as "+email+".");try{if(isPremium()&&api.syncNow)api.syncNow({apiBase:syncApiBase()}).catch(function(){});}catch(e){}}
+      function finishLogin(email,pass,pwEl){
         if(!api||!api.syncLogin){note("Sync unavailable.");return;}
-        api.syncLogin({apiBase:syncApiBase(),email:email,password:pass,totp:code||undefined}).then(function(r){
-          if(r&&r.need_totp){
-            if(code!==undefined)note("Wrong code — try again.");
-            var c=prompt("Two-factor code from your authenticator:","");
+        api.syncLogin({apiBase:syncApiBase(),email:email,password:pass}).then(function(r){
+          if(r&&r.need_email_otp){
+            var c=prompt("Email code sent to "+email+" — enter it:","");
             if(c==null)return;
-            finishLogin(email,pass,pwEl,(c||"").trim()||undefined);return;}
-          if(r&&r.ok){if(pwEl)pwEl.value="";note("Signed in as "+email+".");try{if(isPremium()&&api.syncNow)api.syncNow({apiBase:syncApiBase()}).catch(function(){});}catch(e){}try{if(isPremium())activateOnAccount();}catch(e){}}
+            var tcode=r.totp?(prompt("Authenticator code:","")||undefined):undefined;
+            api.syncLoginOtp({apiBase:syncApiBase(),email:email,password:pass,code:(c||"").trim(),totp:tcode}).then(function(r2){
+              if(r2&&r2.ok){loginDone(email,pass,pwEl);return;}
+              note(r2&&r2.msg?r2.msg:"Login failed.");
+            }).catch(function(){note("Could not reach the server.");});
+            return;}
+          if(r&&r.need_verify){
+            var vc=prompt("Verify your email first — code was sent to "+email+":","");
+            if(vc==null)return;
+            api.syncVerify({apiBase:syncApiBase(),email:email,password:pass,code:vc}).then(function(rv){
+              if(rv&&rv.ok){loginDone(email,pass,pwEl);return;}
+              note(rv&&rv.msg?rv.msg:"Verification failed.");
+            }).catch(function(){note("Could not reach the server.");});
+            return;}
+          if(r&&r.ok){loginDone(email,pass,pwEl);try{if(isPremium())activateOnAccount();}catch(e){}}
           else note(r&&r.msg?r.msg:"Login failed.");
         }).catch(function(){note("Could not reach the server.");});
       }
@@ -3588,15 +3601,29 @@ function bindSyncPanel(){
     var email=em?em.value.trim():"",pass=pw?pw.value:"";
     if(!email||pass.length<8){msg("Email + 8-character password.");return;}
     msg("Logging in…");
-    var tc=$("sy-totp");var code=tc&&tc.style.display!=="none"?(tc.value||"").trim():"";
-    api.syncLogin({apiBase:syncApiBase(),email:email,password:pass,totp:code||undefined}).then(function(r){
-      if(r&&r.need_totp){if(tc){tc.style.display="";tc.focus();}msg("Two-factor is on — enter the 6-digit code.");return;}
-      if(r&&r.ok){if(pw)pw.value="";refresh();
-        if(!isPremium()){msg("Logged in. Premium unlocks sync and activation.");return;}
-        msg("Logged in. Syncing…");
-        api.syncNow({apiBase:syncApiBase()}).then(function(r2){msg(r2&&r2.ok?"Synced.":"Sync will retry.");if(r2&&r2.licenseOnFile)showLic(r2.licenseOnFile);refresh();activateOnAccount(function(){refresh();});}).catch(function(){msg("Sync will retry.");});
-      }else{msg(r&&r.msg?r.msg:"Login failed.");}
-    }).catch(function(){msg("Could not reach the server.");});
+    function loggedIn(){if(pw)pw.value="";refresh();
+      if(!isPremium()){msg("Logged in. Premium unlocks sync and activation.");return;}
+      msg("Logged in. Syncing…");
+      api.syncNow({apiBase:syncApiBase()}).then(function(r2){msg(r2&&r2.ok?"Synced.":"Sync will retry.");if(r2&&r2.licenseOnFile)showLic(r2.licenseOnFile);refresh();}).catch(function(){msg("Sync failed.");});
+    }
+    function loginOtpFlow(needTotp){
+      var c=prompt("Email code sent to "+email+" — enter it:","");
+      if(c==null)return;
+      var tcode=undefined;
+      if(needTotp){var tc=$("sy-totp");tcode=((tc&&tc.value)||"").trim()||prompt("Authenticator code:","")||undefined;if(tc)tc.style.display="";}
+      msg("Verifying…");
+      api.syncLoginOtp({apiBase:syncApiBase(),email:email,password:pass,code:(c||"").trim(),totp:tcode}).then(function(r2){
+        if(r2&&r2.ok){loggedIn();return;}
+        if(r2&&r2.need_totp){msg("Authenticator code needed.");loginOtpFlow(true);return;}
+        if(r2&&r2.expired){msg("Code expired — logging in again…");api.syncLogin({apiBase:syncApiBase(),email:email,password:pass}).then(function(r3){if(r3&&r3.need_email_otp)loginOtpFlow(!!r3.totp);else msg(r3&&r3.msg?r3.msg:"Login failed.");}).catch(function(){msg("Could not reach the server.");});return;}
+        msg(r2&&r2.msg?r2.msg:"Login failed.");
+      }).catch(function(){msg("Could not reach the server.");});
+    }
+    api.syncLogin({apiBase:syncApiBase(),email:email,password:pass}).then(function(r){
+      if(r&&r.need_email_otp){loginOtpFlow(!!r.totp);return;}
+      if(r&&r.need_verify){var vc=prompt("Verify your email first — code was sent to "+email+":","");if(vc==null)return;api.syncVerify({apiBase:syncApiBase(),email:email,password:pass,code:vc}).then(function(rv){if(rv&&rv.ok){loggedIn();}else msg(rv&&rv.msg?rv.msg:"Verification failed.");}).catch(function(){msg("Could not reach the server.");});return;}
+      if(r&&r.ok){loggedIn();return;}
+      msg(r&&r.msg?r.msg:"Login failed.");}).catch(function(){msg("Could not reach the server.");});
   });
   var lo=$("sy-logout");
   if(lo)lo.addEventListener("click",function(){if(!api||!api.syncLogout)return;api.syncLogout().then(function(){msg("Logged out.");paint(null);showLic(null);}).catch(function(){});});

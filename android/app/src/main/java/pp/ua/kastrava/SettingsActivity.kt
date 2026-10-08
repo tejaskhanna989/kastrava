@@ -170,45 +170,79 @@ class SettingsActivity : AppCompatActivity() {
         }
         paintAccount()
         val etTotp = findViewById<EditText>(R.id.etAccountTotp)
+        val etCode = findViewById<EditText>(R.id.etEmailCode)
+        var lastPw = ""
+        fun afterLogin() {
+            etPass.text.clear()
+            paintAccount()
+            // Auto-activate the account key on this device.
+            Thread {
+                app.license.activateAccount(app.account.token() ?: "")
+                runOnUiThread { paintAccount() }
+            }.start()
+            // Unlock sync: derive the key once, keep it in the OS keystore.
+            val pwCopy = lastPw
+            lastPw = ""
+            Thread {
+                try {
+                    val salt = app.account.syncSalt()
+                    if (salt != null) {
+                        app.account.saveSyncKey(Sync.derive(pwCopy, salt))
+                    }
+                } catch (e: Exception) { }
+                runOnUiThread { paintSync() }
+            }.start()
+        }
         btnIn.setOnClickListener {
             val em = etEmail.text.toString()
             val pw = etPass.text.toString()
-            val code = etTotp.text.toString().trim()
+            lastPw = pw
+            val emailCode = etCode.text.toString().trim()
+            val totp = etTotp.text.toString().trim()
+            if (emailCode.isNotEmpty() || etCode.visibility == EditText.VISIBLE) {
+                tvAccount.text = "Verifying..."
+                btnIn.isEnabled = false
+                Thread {
+                    val err = app.account.loginStep2(em, emailCode, totp)
+                    if (err == AccountManager.NEED_TOTP) {
+                        runOnUiThread {
+                            btnIn.isEnabled = true
+                            etTotp.visibility = EditText.VISIBLE
+                            etTotp.requestFocus()
+                            tvAccount.text = "Also enter your authenticator code."
+                        }
+                        return@Thread
+                    }
+                    runOnUiThread {
+                        btnIn.isEnabled = true
+                        if (err == null) {
+                            etPass.text.clear()
+                            etCode.text.clear()
+                            etCode.visibility = EditText.GONE
+                            etTotp.text.clear()
+                            etTotp.visibility = EditText.GONE
+                            afterLogin()
+                        } else {
+                            tvAccount.text = err
+                        }
+                    }
+                }.start()
+                return@setOnClickListener
+            }
             tvAccount.text = "Logging in..."
             btnIn.isEnabled = false
             Thread {
-                val err = app.account.login(em, pw, code)
-                if (err == AccountManager.NEED_TOTP) {
-                    runOnUiThread {
+                when (val r = app.account.loginStep1(em, pw)) {
+                    is AccountManager.StepResult.CodeSent -> runOnUiThread {
                         btnIn.isEnabled = true
-                        etTotp.visibility = EditText.VISIBLE
-                        etTotp.requestFocus()
-                        tvAccount.text = "Two-factor is on — enter the 6-digit code."
+                        etCode.visibility = EditText.VISIBLE
+                        etCode.requestFocus()
+                        if (r.totpRequired) etTotp.visibility = EditText.VISIBLE
+                        tvAccount.text = "Code sent to your email — enter it above."
                     }
-                    return@Thread
-                }
-                runOnUiThread {
-                    btnIn.isEnabled = true
-                    if (err == null) {
-                        etPass.text.clear()
-                        paintAccount()
-                        // Auto-activate the account key on this device.
-                        Thread {
-                            app.license.activateAccount(app.account.token() ?: "")
-                            runOnUiThread { paintAccount() }
-                        }.start()
-                        // Unlock sync: derive the key once, keep it in the OS keystore.
-                        Thread {
-                            try {
-                                val salt = app.account.syncSalt()
-                                if (salt != null) {
-                                    app.account.saveSyncKey(Sync.derive(pw, salt))
-                                }
-                            } catch (e: Exception) { }
-                            runOnUiThread { paintSync() }
-                        }.start()
-                    } else {
-                        tvAccount.text = err
+                    is AccountManager.StepResult.Failed -> runOnUiThread {
+                        btnIn.isEnabled = true
+                        tvAccount.text = r.msg
                     }
                 }
             }.start()
