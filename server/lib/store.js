@@ -283,8 +283,8 @@ class Store {
     this.ensureAccountMaps()
     const e = String(email || '').toLowerCase()
     return Object.entries(this.data.sessions)
-      .filter(([, s]) => s.email === e && new Date(s.expires_at).getTime() >= Date.now())
-      .map(([, s]) => ({ id: s.id, created_at: s.created_at, last_seen: s.last_seen,
+      .filter(([h, s]) => s.email === e && new Date(s.expires_at).getTime() >= Date.now())
+      .map(([h, s]) => ({ id: s.id || h.slice(0, 12), created_at: s.created_at, last_seen: s.last_seen,
         label: s.label || null, ip: s.ip || null, expires_at: s.expires_at }))
   }
 
