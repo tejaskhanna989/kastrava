@@ -1413,29 +1413,34 @@ function renderSetup(){
     var __premBox=__premActive
       ?'<div class="setup-priv"><div><span class="ok">\u2713</span>Premium is active on this machine</div></div>'
       :'<div style="margin:10px auto 4px;padding:8px 24px;border-radius:999px;border:1px solid rgba(255,179,0,.45);background:rgba(255,179,0,.08);color:#ffb300;font-weight:700;font-size:20px;display:inline-block">$7 \u00B7 \u20B9670 <span style="font-size:12px;color:var(--c-text2);font-weight:500">/ 30 days \u00B7 10 devices</span><div style="font-size:12px;color:var(--c-text2);margin-top:8px">Radar · Cursor FX · Workspaces · Split View · 20 themes · Brave/Google/Ecosia · PiP · Screenshots · Localhost · Vertical tabs</div></div><div><button class="setup-btn" id="setup-prem-go" style="background:linear-gradient(135deg,#ffb300,#f57c00);box-shadow:0 6px 24px rgba(255,179,0,.35)">Get Premium</button></div><div class="setup-sub" style="margin-top:10px">Opens the buying page after setup finishes.</div>';
-    c.innerHTML=dots+grid(ART_PREMIUM,'<div class="setup-name" style="font-size:24px;letter-spacing:2px">Account & Premium</div><div class="setup-sub">One login syncs bookmarks and settings between devices, encrypted end to end. Logging in auto-activates the account key on this device — up to 10 devices share one key, bound to your account, not the machine. Manual renewal — you pay each time, nothing auto-charges.'+(isPremium()?' Sync is on with your Premium.':' Your login is saved now — syncing itself unlocks with Premium.')+'</div><div class="setup-sub" id="setup-sync-note"></div><input id="setup-ac-email" type="email" autocomplete="email" placeholder="you@example.com" style="width:100%;margin:2px 0 8px;padding:10px 14px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px"><input id="setup-ac-pass" type="password" autocomplete="current-password" placeholder="Password (8+ characters)" style="width:100%;margin:0 0 12px;padding:10px 14px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px"><div><button class="setup-btn" id="setup-ac-login" style="margin-right:8px">Log in</button><button class="setup-btn" id="setup-ac-signup">Sign up</button></div><div style="margin-top:14px">'+__premBox+'</div>',CONTINUE);
+    c.innerHTML=dots+grid(ART_PREMIUM,'<div class="setup-name" style="font-size:24px;letter-spacing:2px">Account & Premium</div><div class="setup-sub">One login syncs bookmarks and settings between devices, encrypted end to end. Logging in auto-activates the account key on this device — up to 10 devices share one key, bound to your account, not the machine. Manual renewal — you pay each time, nothing auto-charges.'+(isPremium()?' Sync is on with your Premium.':' Your login is saved now — syncing itself unlocks with Premium.')+'</div><div class="setup-sub" id="setup-sync-note"></div><input id="setup-ac-email" type="email" autocomplete="email" placeholder="you@example.com" style="width:100%;margin:2px 0 8px;padding:10px 14px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px"><input id="setup-ac-pass" type="password" autocomplete="current-password" placeholder="Password (8+ characters)" style="width:100%;margin:0 0 8px;padding:10px 14px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px"><input id="setup-ac-code" inputmode="numeric" maxlength="6" placeholder="Email code" autocomplete="one-time-code" style="display:none;width:100%;margin:0 0 8px;padding:10px 14px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px"><input id="setup-ac-totp" inputmode="numeric" maxlength="6" placeholder="2FA code (if enabled)" autocomplete="one-time-code" style="display:none;width:100%;margin:0 0 12px;padding:10px 14px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px"><div><button class="setup-btn" id="setup-ac-login" style="margin-right:8px">Log in</button><button class="setup-btn" id="setup-ac-signup">Sign up</button></div><div style="margin-top:14px">'+__premBox+'</div>',CONTINUE);
     (function(){
       function note(t){var n=$("setup-sync-note");if(n)n.textContent=t||"";}
       function loginDone(email,pass,pwEl){if(pwEl)pwEl.value="";note("Signed in as "+email+".");try{if(isPremium()&&api.syncNow)api.syncNow({apiBase:syncApiBase()}).catch(function(){});}catch(e){}}
+      var oobePending=null;
       function finishLogin(email,pass,pwEl){
         if(!api||!api.syncLogin){note("Sync unavailable.");return;}
+        var codeEl=$("setup-ac-code"),totpEl=$("setup-ac-totp");
+        if(oobePending&&codeEl&&codeEl.value.trim()){
+          var code=codeEl.value.trim();
+          var tcode=totpEl&&totpEl.style.display!=="none"?(totpEl.value||"").trim():"";
+          note(oobePending.mode==="verify"?"Verifying…":"Verifying…");
+          var call=oobePending.mode==="verify"
+            ?api.syncVerify({apiBase:syncApiBase(),email:oobePending.email,password:oobePending.pass,code:code})
+            :api.syncLoginOtp({apiBase:syncApiBase(),email:oobePending.email,password:oobePending.pass,code:code,totp:tcode||undefined});
+          call.then(function(r2){
+            if(r2&&r2.ok){var doneEmail=oobePending?oobePending.email:email;codeEl.value="";codeEl.style.display="none";if(totpEl){totpEl.value="";totpEl.style.display="none";}oobePending=null;loginDone(doneEmail,pass,pwEl);return;}
+            if(r2&&r2.need_totp&&totpEl){totpEl.style.display="";totpEl.focus();note("Also enter your authenticator code.");return;}
+            note(r2&&r2.msg?r2.msg:"Login failed.");
+          }).catch(function(){note("Could not reach the server.");});
+          return;
+        }
         api.syncLogin({apiBase:syncApiBase(),email:email,password:pass}).then(function(r){
-          if(r&&r.need_email_otp){
-            var c=prompt("Email code sent to "+email+" — enter it:","");
-            if(c==null)return;
-            var tcode=r.totp?(prompt("Authenticator code:","")||undefined):undefined;
-            api.syncLoginOtp({apiBase:syncApiBase(),email:email,password:pass,code:(c||"").trim(),totp:tcode}).then(function(r2){
-              if(r2&&r2.ok){loginDone(email,pass,pwEl);return;}
-              note(r2&&r2.msg?r2.msg:"Login failed.");
-            }).catch(function(){note("Could not reach the server.");});
-            return;}
-          if(r&&r.need_verify){
-            var vc=prompt("Verify your email first — code was sent to "+email+":","");
-            if(vc==null)return;
-            api.syncVerify({apiBase:syncApiBase(),email:email,password:pass,code:vc}).then(function(rv){
-              if(rv&&rv.ok){loginDone(email,pass,pwEl);return;}
-              note(rv&&rv.msg?rv.msg:"Verification failed.");
-            }).catch(function(){note("Could not reach the server.");});
+          if(r&&(r.need_email_otp||r.need_verify)){
+            oobePending={mode:r.need_verify?"verify":"otp",email:email,pass:pass};
+            if(codeEl){codeEl.style.display="";codeEl.value="";codeEl.focus();}
+            if(r.totp&&totpEl){totpEl.style.display="";}
+            note(r.need_verify?"Verify your email first — code was sent. Enter it above, then Log in again.":"Email code sent — enter it above, then Log in again.");
             return;}
           if(r&&r.ok){loginDone(email,pass,pwEl);try{if(isPremium())activateOnAccount();}catch(e){}}
           else note(r&&r.msg?r.msg:"Login failed.");
@@ -3612,35 +3617,45 @@ function bindSyncPanel(){
     }).catch(function(){});
   }
   var li=$("sy-login");
+  var pendingAuth=null;
   if(li)li.addEventListener("click",function(){
     if(li.disabled)return;
     var em=$("sy-email"),pw=$("sy-pass");
     var email=em?em.value.trim():"",pass=pw?pw.value:"";
     if(!email||pass.length<8){msg("Email + 8-character password.");return;}
+    var codeEl=$("sy-code"),tcEl=$("sy-totp");
+    function showCode(hint){if(codeEl){codeEl.style.display="";codeEl.value="";codeEl.focus();}msg(hint);}
+    function hideCode(){if(codeEl){codeEl.style.display="none";codeEl.value="";}if(tcEl){tcEl.style.display="none";tcEl.value="";}}
     li.disabled=true;
     function done(){try{li.disabled=false;}catch(e){}}
+    if(pendingAuth&&codeEl&&codeEl.value.trim()){
+      var code=codeEl.value.trim();
+      var tcode=tcEl&&tcEl.style.display!=="none"?(tcEl.value||"").trim():"";
+      msg("Verifying…");
+      if(pendingAuth.mode==="verify"){
+        api.syncVerify({apiBase:syncApiBase(),email:pendingAuth.email,password:pendingAuth.pass,code:code}).then(function(rv){
+          if(rv&&rv.ok){hideCode();pendingAuth=null;loggedIn();return;}
+          msg(rv&&rv.msg?rv.msg:"Verification failed.");done();
+        }).catch(function(){msg("Could not reach the server.");done();});
+      }else{
+        api.syncLoginOtp({apiBase:syncApiBase(),email:pendingAuth.email,password:pendingAuth.pass,code:code,totp:tcode||undefined}).then(function(r2){
+          if(r2&&r2.ok){hideCode();pendingAuth=null;loggedIn();return;}
+          if(r2&&r2.need_totp){if(tcEl){tcEl.style.display="";tcEl.focus();}msg("Authenticator code needed.");done();return;}
+          if(r2&&r2.expired){hideCode();pendingAuth=null;msg("Code expired — click Log in to retry.");done();return;}
+          msg(r2&&r2.msg?r2.msg:"Login failed.");done();
+        }).catch(function(){msg("Could not reach the server.");done();});
+      }
+      return;
+    }
     msg("Logging in…");
     function loggedIn(){done();if(pw)pw.value="";refresh();
       if(!isPremium()){msg("Logged in. Premium unlocks sync and activation.");return;}
       msg("Logged in. Syncing…");
       api.syncNow({apiBase:syncApiBase()}).then(function(r2){msg(r2&&r2.ok?"Synced.":"Sync will retry.");if(r2&&r2.licenseOnFile)showLic(r2.licenseOnFile);refresh();}).catch(function(){msg("Sync failed.");});
     }
-    function loginOtpFlow(needTotp){
-      var c=prompt("Email code sent to "+email+" — enter it:","");
-      if(c==null){done();return;}
-      var tcode=undefined;
-      if(needTotp){var tc=$("sy-totp");tcode=((tc&&tc.value)||"").trim()||prompt("Authenticator code:","")||undefined;if(tc)tc.style.display="";}
-      msg("Verifying…");
-      api.syncLoginOtp({apiBase:syncApiBase(),email:email,password:pass,code:(c||"").trim(),totp:tcode}).then(function(r2){
-        if(r2&&r2.ok){loggedIn();return;}
-        if(r2&&r2.need_totp){msg("Authenticator code needed.");loginOtpFlow(true);return;}
-        if(r2&&r2.expired){msg("Code expired — logging in again…");api.syncLogin({apiBase:syncApiBase(),email:email,password:pass}).then(function(r3){if(r3&&r3.need_email_otp)loginOtpFlow(!!r3.totp);else{msg(r3&&r3.msg?r3.msg:"Login failed.");done();}}).catch(function(){msg("Could not reach the server.");done();});return;}
-        msg(r2&&r2.msg?r2.msg:"Login failed.");done();
-      }).catch(function(){msg("Could not reach the server.");done();});
-    }
     api.syncLogin({apiBase:syncApiBase(),email:email,password:pass}).then(function(r){
-      if(r&&r.need_email_otp){loginOtpFlow(!!r.totp);return;}
-      if(r&&r.need_verify){var vc=prompt("Verify your email first — code was sent to "+email+":","");if(vc==null){done();return;}api.syncVerify({apiBase:syncApiBase(),email:email,password:pass,code:vc}).then(function(rv){if(rv&&rv.ok){loggedIn();}else msg(rv&&rv.msg?rv.msg:"Verification failed.");}).catch(function(){msg("Could not reach the server.");});return;}
+      if(r&&r.need_email_otp){pendingAuth={mode:"otp",email:email,pass:pass};showCode("Code sent to your email — enter it above, then Log in again.");if(r.totp&&tcEl){tcEl.style.display="";}done();return;}
+      if(r&&r.need_verify){pendingAuth={mode:"verify",email:email,pass:pass};showCode("Verify your email first — code was sent. Enter it above, then Log in again.");done();return;}
       if(r&&r.ok){loggedIn();return;}
       msg(r&&r.msg?r.msg:"Login failed.");done();}).catch(function(){msg("Could not reach the server.");done();});
   });
@@ -3974,7 +3989,7 @@ function renderSettingsSection(id){
     }
     {
       h+="<div class=\"sg\"><div class=\"lbl\">Kastrava account</div><div class=\"desc\">Same login as kastrava.pp.ua/account.html. Bookmarks and settings sync encrypted.</div><div id=\"sy-status\" class=\"desc\" style=\"margin-top:6px\">Checking…</div></div>";
-      h+="<div class=\"sg\" id=\"sy-form\"><div class=\"lbl\">Log in</div><input id=\"sy-email\" type=\"email\" placeholder=\"you@example.com\" autocomplete=\"email\" style=\"width:100%;margin:6px 0;padding:9px 12px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px\"><input id=\"sy-totp\" inputmode=\"numeric\" maxlength=\"6\" placeholder=\"2FA code (if enabled)\" autocomplete=\"one-time-code\" style=\"width:100%;margin:0 0 6px;padding:9px 12px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px;display:none\"><input id=\"sy-pass\" type=\"password\" placeholder=\"Password\" autocomplete=\"current-password\" style=\"width:100%;margin:0 0 6px;padding:9px 12px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px\"><div style=\"display:flex;gap:8px;margin-top:4px\"><button class=\"btn-sm btn-accent\" id=\"sy-login\">Log in</button><button class=\"btn-sm\" id=\"sy-logout\">Log out</button><button class=\"btn-sm\" id=\"sy-now\">Sync now</button></div><div id=\"sy-msg\" class=\"desc\" style=\"margin-top:6px\"></div></div>";
+      h+="<div class=\"sg\" id=\"sy-form\"><div class=\"lbl\">Log in</div><input id=\"sy-email\" type=\"email\" placeholder=\"you@example.com\" autocomplete=\"email\" style=\"width:100%;margin:6px 0;padding:9px 12px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px\"><input id=\"sy-code\" inputmode=\"numeric\" maxlength=\"6\" placeholder=\"Email code\" autocomplete=\"one-time-code\" style=\"width:100%;margin:0 0 6px;padding:9px 12px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px;display:none\"><input id=\"sy-totp\" inputmode=\"numeric\" maxlength=\"6\" placeholder=\"2FA code (if enabled)\" autocomplete=\"one-time-code\" style=\"width:100%;margin:0 0 6px;padding:9px 12px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px;display:none\"><input id=\"sy-pass\" type=\"password\" placeholder=\"Password\" autocomplete=\"current-password\" style=\"width:100%;margin:0 0 6px;padding:9px 12px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px\"><div style=\"display:flex;gap:8px;margin-top:4px\"><button class=\"btn-sm btn-accent\" id=\"sy-login\">Log in</button><button class=\"btn-sm\" id=\"sy-logout\">Log out</button><button class=\"btn-sm\" id=\"sy-now\">Sync now</button></div><div id=\"sy-msg\" class=\"desc\" style=\"margin-top:6px\"></div></div>";
       h+="<div class=\"sg\" id=\"sy-devrow\"><div class=\"lbl\">Devices on this key</div><div class=\"desc\">Up to 10 per key. Remove one to free its slot.</div><div id=\"sy-devices\" class=\"desc\" style=\"margin-top:6px\">—</div></div>";
       h+="<div class=\"sg\"><div class=\"lbl\">Advanced settings</div><div class=\"desc\">Devices, keys and sync on the web dashboard.</div><div style=\"margin-top:8px\"><button class=\"btn-sm\" id=\"sy-advanced\">Open account dashboard</button></div></div>";
       h+="<div class=\"sg\" id=\"sy-licrow\" style=\"display:none\"><div class=\"lbl\">Premium key on file</div><div class=\"desc\">Synced from another device — reference only. Keys stay on your account.</div><div class=\"mono\" id=\"sy-lickey\" style=\"margin:6px 0;font-size:13px\"></div><button class=\"btn-sm\" id=\"sy-activate\">Activate on this device</button></div>";
