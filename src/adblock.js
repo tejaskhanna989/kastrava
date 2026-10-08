@@ -188,7 +188,7 @@ function getStats() {
 
 function install(sessionObj) {
   if (!sessionObj) return
-  sessionObj.webRequest.onBeforeRequest({ urls: ['*://*'] }, (details, callback) => {
+  sessionObj.webRequest.onBeforeRequest({ urls: ['<all_urls>'] }, (details, callback) => {
     if (details.resourceType === 'mainFrame' || details.resourceType === 'subFrame') {
       callback({})
       return

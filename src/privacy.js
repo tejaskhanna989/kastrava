@@ -84,7 +84,7 @@ function upgradeUrl(url) {
 // === COOKIE AUTO-DELETE ===
 function autoDeleteCookies(ses) {
   if (!ses) return
-  ses.webRequest.onHeadersReceived({ urls: ['*://*'] }, (details, callback) => {
+  ses.webRequest.onHeadersReceived({ urls: ['<all_urls>'] }, (details, callback) => {
     callback({})
   })
 }
@@ -132,7 +132,7 @@ const FONT_FINGERPRINT_SCRIPT = `
       };
     }
     Object.defineProperty(navigator,'fonts',{
-      get:function(){return{check:function(f){var fnt=f.replace(/^\\d+\\w+\\s+/,'');return _getFonts().indexOf(fnt)!==-1;},add:function(){},entries:function(){return _getFonts()[Symbol.iterator]();},values:function(){return _getFonts()[Symbol.iterator]();},size:_getFonts().length,has:function(f){return _getFonts().indexOf(f)!==-1},forEach:function(cb){_getFonts().forEach(cb)};};}
+      get:function(){return{check:function(f){var fnt=f.replace(/^\\d+\\w+\\s+/,'');return _getFonts().indexOf(fnt)!==-1;},add:function(){},entries:function(){return _getFonts()[Symbol.iterator]();},values:function(){return _getFonts()[Symbol.iterator]();},size:_getFonts().length,has:function(f){return _getFonts().indexOf(f)!==-1},forEach:function(cb){_getFonts().forEach(cb)}};}
     });
   }
 })();
@@ -543,7 +543,7 @@ function installPrivacyFilter(ses) {
   if (!ses) return
 
   // SINGLE unified onBeforeRequest: Ad Blocker + HTTPS + Trackers + URL Cleaning + Script Blocking + Request Rules + Radar
-  ses.webRequest.onBeforeRequest({ urls: ['*://*'] }, (details, callback) => {
+  ses.webRequest.onBeforeRequest({ urls: ['<all_urls>'] }, (details, callback) => {
     // Radar tracking (fire-and-forget, don't block)
     if (radarCallback) {
       try { radarCallback(details) } catch {}
