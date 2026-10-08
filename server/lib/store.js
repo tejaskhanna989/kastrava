@@ -249,17 +249,70 @@ class Store {
     return this.data.accounts[e]
   }
 
-  createSession(email, ttlMs) {
+  createSession(email, ttlMs, meta) {
     this.ensureAccountMaps()
     const tokenHashKey = (t) => require('crypto').createHash('sha256').update(t).digest('hex')
     const token = 'kas_' + require('crypto').randomBytes(32).toString('hex')
-    this.data.sessions[tokenHashKey(token)] = {
+    const h = tokenHashKey(token)
+    this.data.sessions[h] = {
+      id: h.slice(0, 12),
       email: String(email).toLowerCase(),
       created_at: new Date().toISOString(),
-      expires_at: new Date(Date.now() + ttlMs).toISOString()
+      expires_at: new Date(Date.now() + ttlMs).toISOString(),
+      last_seen: new Date().toISOString(),
+      label: String((meta && meta.label) || '').slice(0, 60) || null,
+      ip: String((meta && meta.ip) || '').slice(0, 45) || null
     }
     this.save()
     return token
+  }
+
+  // Refresh last_seen at most every 10 minutes to avoid a disk write per call.
+  touchSession(token) {
+    this.ensureAccountMaps()
+    if (!token || !token.startsWith('kas_')) return
+    const h = require('crypto').createHash('sha256').update(token).digest('hex')
+    const s = this.data.sessions[h]
+    if (!s) return
+    if (Date.now() - new Date(s.last_seen || 0).getTime() < 600000) return
+    s.last_seen = new Date().toISOString()
+    this.save()
+  }
+
+  sessionsForAccount(email) {
+    this.ensureAccountMaps()
+    const e = String(email || '').toLowerCase()
+    return Object.entries(this.data.sessions)
+      .filter(([, s]) => s.email === e && new Date(s.expires_at).getTime() >= Date.now())
+      .map(([, s]) => ({ id: s.id, created_at: s.created_at, last_seen: s.last_seen,
+        label: s.label || null, ip: s.ip || null, expires_at: s.expires_at }))
+  }
+
+  // Revoke one session by id prefix, or everything except the caller's token.
+  revokeSession(email, id) {
+    this.ensureAccountMaps()
+    const e = String(email || '').toLowerCase()
+    const idp = String(id || '')
+    let n = 0
+    for (const h in this.data.sessions) {
+      const s = this.data.sessions[h]
+      if (s.email === e && h.startsWith(idp) && idp.length >= 6) { delete this.data.sessions[h]; n++ }
+    }
+    if (n) this.save()
+    return n
+  }
+
+  revokeOtherSessions(email, keepToken) {
+    this.ensureAccountMaps()
+    const e = String(email || '').toLowerCase()
+    const keepH = keepToken ? require('crypto').createHash('sha256').update(String(keepToken)).digest('hex') : null
+    let n = 0
+    for (const h in this.data.sessions) {
+      const s = this.data.sessions[h]
+      if (s.email === e && h !== keepH) { delete this.data.sessions[h]; n++ }
+    }
+    if (n) this.save()
+    return n
   }
 
   getSessionAccount(token) {
@@ -273,6 +326,11 @@ class Store {
       this.save()
       return null
     }
+    // Session list stays fresh without a write on every request.
+    if (Date.now() - new Date(s.last_seen || 0).getTime() > 600000) {
+      s.last_seen = new Date().toISOString()
+      this.save()
+    }
     return this.getAccountByEmail(s.email)
   }
 
@@ -284,6 +342,132 @@ class Store {
       delete this.data.sessions[h]
       this.save()
     }
+  }
+
+  // ---- audit log (security events per account, newest last, capped) ----
+  audit(email, type, detail) {
+    this.ensureAccountMaps()
+    const e = String(email || '').toLowerCase()
+    if (!e) return
+    if (!this.data.audit) this.data.audit = {}
+    const log = this.data.audit[e] || []
+    log.push({ t: new Date().toISOString(), type: String(type).slice(0, 32),
+      detail: String(detail || '').slice(0, 160) })
+    this.data.audit[e] = log.slice(-100)
+    this.save()
+  }
+
+  getAudit(email) {
+    this.ensureAccountMaps()
+    if (!this.data.audit) this.data.audit = {}
+    return (this.data.audit[String(email || '').toLowerCase()] || []).slice().reverse()
+  }
+
+  // ---- family sharing: owner lends a key, same 10-device pool ----
+  shareKey(key, email) {
+    const l = this.getLicense(key)
+    if (!l) return null
+    if (!l.shared_with) l.shared_with = []
+    const e = String(email || '').toLowerCase()
+    if (!this.getAccountByEmail(e)) return 'no_account'
+    if (l.account_email === e) return 'self'
+    if (!l.shared_with.includes(e)) l.shared_with.push(e)
+    this.save()
+    return l
+  }
+
+  unshareKey(key, email) {
+    const l = this.getLicense(key)
+    if (!l || !l.shared_with) return 0
+    const e = String(email || '').toLowerCase()
+    const before = l.shared_with.length
+    l.shared_with = l.shared_with.filter((x) => x !== e)
+    // Family devices leave with the share.
+    if (l.devices && l.device_owners && l.device_owners[e]) {
+      for (const m of l.device_owners[e]) delete l.devices[m]
+      delete l.device_owners[e]
+    }
+    this.save()
+    return before - l.shared_with.length
+  }
+
+  // Keys visible to an account: owned plus shared (flagged, read-only).
+  keysVisibleTo(email) {
+    const e = String(email || '').toLowerCase()
+    const owned = this.keysForAccount(e).map((l) => ({ lic: l, shared: false }))
+    const lent = Object.values(this.data.licenses)
+      .filter((l) => (l.shared_with || []).includes(e))
+      .map((l) => ({ lic: l, shared: true, owner: l.account_email || null }))
+    return owned.concat(lent)
+  }
+
+  // Who put each device on a key (owner vs family member email).
+  noteDeviceOwner(key, machineId, email) {
+    const l = this.getLicense(key)
+    if (!l) return
+    if (!l.device_owners) l.device_owners = {}
+    const m = String(machineId || '').toUpperCase()
+    const e = String(email || '').toLowerCase()
+    for (const k in l.device_owners) {
+      l.device_owners[k] = (l.device_owners[k] || []).filter((x) => x !== m)
+      if (!l.device_owners[k].length) delete l.device_owners[k]
+    }
+    if (!l.device_owners[e]) l.device_owners[e] = []
+    if (!l.device_owners[e].includes(m)) l.device_owners[e].push(m)
+    this.save()
+  }
+
+  // ---- device approvals: new hardware waits for the key owner's OK ----
+  setRequireApproval(email, on) {
+    this.ensureAccountMaps()
+    const acc = this.getAccountByEmail(email)
+    if (!acc) return null
+    acc.require_approval = !!on
+    this.save()
+    return acc.require_approval
+  }
+
+  requireApproval(email) {
+    const acc = this.getAccountByEmail(email)
+    return !!(acc && acc.require_approval)
+  }
+
+  createApproval(accountEmail, key, machineId, deviceName) {
+    this.ensureAccountMaps()
+    if (!this.data.approvals) this.data.approvals = {}
+    const id = require('crypto').randomBytes(8).toString('hex')
+    // One pending request per device: re-taps refresh instead of piling up.
+    for (const k in this.data.approvals) {
+      const a = this.data.approvals[k]
+      if (a.account_email === accountEmail && a.key === key && a.machine_id === machineId) {
+        a.created_at = new Date().toISOString()
+        if (deviceName) a.device_name = String(deviceName).slice(0, 60)
+        this.save()
+        return { id: k, refreshed: true }
+      }
+    }
+    this.data.approvals[id] = { id, account_email: accountEmail, key,
+      machine_id: machineId, device_name: String(deviceName || '').slice(0, 60) || null,
+      created_at: new Date().toISOString() }
+    this.save()
+    return { id, refreshed: false }
+  }
+
+  approvalsFor(email) {
+    this.ensureAccountMaps()
+    if (!this.data.approvals) this.data.approvals = {}
+    const e = String(email || '').toLowerCase()
+    return Object.values(this.data.approvals).filter((a) => a.account_email === e)
+  }
+
+  resolveApproval(email, id, approve) {
+    this.ensureAccountMaps()
+    if (!this.data.approvals) this.data.approvals = {}
+    const a = this.data.approvals[String(id)]
+    if (!a || a.account_email !== String(email).toLowerCase()) return null
+    delete this.data.approvals[String(id)]
+    this.save()
+    return { approval: a, approved: !!approve }
   }
 
   getSync(email) {

@@ -439,8 +439,10 @@ async function handlePost(req, res, pathname) {
     const acc = store.getSessionAccount(bearer(req))
     if (!acc) return json(res, 401, { error: 'unauthorized' })
     if (pathname === '/api/account/devices') {
-      const keys = store.keysForAccount(acc.email).map((l) => ({
+      const keys = store.keysVisibleTo(acc.email).map(({ lic: l, shared, owner }) => ({
         key: l.key, status: l.status, expires_at: l.expires_at || null,
+        shared: !!shared, owner: owner || null,
+        shared_with: l.account_email === acc.email ? (l.shared_with || []) : undefined,
         devices_used: Object.keys(l.devices || {}).length, device_limit: DEVICE_LIMIT,
         devices: Object.entries(l.devices || {}).map(([id, d]) => ({
           id, name: (d && d.name) || null,
@@ -491,7 +493,10 @@ async function handlePost(req, res, pathname) {
     if (lic.account_email && lic.account_email !== acc.email) {
       return json(res, 403, { error: 'wrong_account', msg: 'This key belongs to a different account.' })
     }
-    if (!lic.account_email) store.setAccountEmail(key, acc.email)
+    if (!lic.account_email) {
+      store.setAccountEmail(key, acc.email)
+      store.audit(acc.email, 'key_claim', 'key added manually')
+    }
     return json(res, 200, { ok: true, key, expires_at: lic.expires_at || null, status: lic.status })
   }
 
@@ -572,14 +577,16 @@ async function handlePost(req, res, pathname) {
         if (!lic) return json(res, 404, { error: 'invalid_key', msg: 'No such license key.' })
         if (lic.status === 'revoked') return json(res, 403, { error: 'license_revoked', msg: 'This license was revoked. Contact support.' })
         if (lic.status === 'cancelled') return json(res, 403, { error: 'license_cancelled', msg: 'This license was cancelled. Buy again to restart Premium.' })
-        if (lic.account_email && lic.account_email !== acc.email) {
+        const ownerEmail = lic.account_email || null
+        const shared = !ownerEmail ? false : ((lic.shared_with || []).includes(acc.email))
+        if (ownerEmail && ownerEmail !== acc.email && !shared) {
           return json(res, 403, { error: 'wrong_account', msg: 'This key belongs to a different account.' })
         }
         // First touch claims a loose key for the account (whoever holds the
         // key could already activate it anywhere, so this grants nothing new).
         if (!lic.account_email) store.setAccountEmail(reqKey, acc.email)
       } else {
-        const cands = store.keysForAccount(acc.email)
+        const cands = store.keysVisibleTo(acc.email).map((x) => x.lic)
           .filter((l) => l.status !== 'revoked' && l.status !== 'cancelled')
           .sort((a, b) => String(b.expires_at || '') < String(a.expires_at || '') ? -1 : 1)
         if (!cands.length) return json(res, 404, { error: 'no_key', msg: 'No Premium key on this account yet.' })
@@ -589,11 +596,22 @@ async function handlePost(req, res, pathname) {
       if (!live || live * 1000 < Date.now()) {
         return json(res, 402, { error: 'key_expired', msg: 'The key on this account expired. Renew to keep Premium on all devices.', key: lic.key })
       }
+      // Device approvals: unknown hardware waits for the key owner's OK.
+      if (!lic.devices) lic.devices = {}
+      const ownerForGate = lic.account_email || acc.email
+      if (!lic.devices[machineId] && store.requireApproval(ownerForGate)) {
+        const pend = store.createApproval(ownerForGate, lic.key, machineId, deviceName)
+        store.audit(ownerForGate, 'approval_wait', 'new device waiting' + (pend.refreshed ? '' : ''))
+        return json(res, 403, { error: 'approval_pending', msg: 'New device — approve it on your account dashboard, then retry.', key: lic.key })
+      }
       const devs = lic.devices || {}
       if (!devs[machineId] && Object.keys(devs).length >= DEVICE_LIMIT) {
         return json(res, 403, { error: 'device_limit', msg: 'All ' + DEVICE_LIMIT + ' device slots are used. Remove one or buy a new key.', key: lic.key, devices_used: Object.keys(devs).length, device_limit: DEVICE_LIMIT })
       }
+      const isNew = !((lic.devices || {})[machineId])
       const used = store.touchDevice(lic.key, machineId, deviceName)
+      store.noteDeviceOwner(lic.key, machineId, acc.email)
+      if (isNew) store.audit(lic.account_email || acc.email, 'device_add', 'device activated')
       if (!lic.machine_id) store.bindLicense(lic.key, machineId)
       const payload = makeLicensePayload(lic.key, machineId, acc.email)
       const sig = sign.signPayload(payload, keys.privateKey)
@@ -644,6 +662,12 @@ async function handlePost(req, res, pathname) {
     if (authHits.size > 5000) authHits.clear()
     return hits.length <= AUTH_MAX
   }
+  function clientIp(req) {
+    const cf = (req.headers['cf-connecting-ip'] || '').toString().trim()
+    if (cf) return cf
+    const fwd = (req.headers['x-forwarded-for'] || '').toString().split(',')[0].trim()
+    return fwd || (req.socket && req.socket.remoteAddress) || 'unknown'
+  }
   function bearer(req) {
     const h = (req.headers.authorization || req.headers.Authorization || '').toString()
     const m = h.match(/^Bearer\s+(kas_[A-Za-z0-9]+)$/)
@@ -664,7 +688,8 @@ async function handlePost(req, res, pathname) {
       const syncSalt = crypto.randomBytes(16).toString('hex')
       const passHash = crypto.scryptSync(password, passSalt, 32).toString('hex')
       store.createAccount(email, passHash, passSalt, authSalt, syncSalt)
-      const token = store.createSession(email, 30 * 86400000)
+      const token = store.createSession(email, 30 * 86400000, { label: String(body.label || '').slice(0, 60), ip: clientIp(req) })
+      store.audit(email, 'signup', 'account created')
       return json(res, 200, { ok: true, token, email, auth_salt: authSalt, sync_salt: syncSalt })
     }
     const acc = store.getAccountByEmail(email)
@@ -675,12 +700,93 @@ async function handlePost(req, res, pathname) {
       good = h.length === 32 && crypto.timingSafeEqual(h, Buffer.from(acc.pass_hash, 'hex'))
     } catch {}
     if (!good) return json(res, 401, { error: 'bad_login' })
-    const token = store.createSession(email, 30 * 86400000)
+    const token = store.createSession(email, 30 * 86400000, { label: String(body.label || '').slice(0, 60), ip: clientIp(req) })
+    store.audit(email, 'login', 'login from ' + clientIp(req))
     return json(res, 200, { ok: true, token, email, auth_salt: acc.auth_salt, sync_salt: acc.sync_salt })
   }
   if (pathname === '/api/account/logout') {
-    store.destroySession(bearer(req))
+    const tok = bearer(req)
+    const who = tok ? store.getSessionAccount(tok) : null
+    store.destroySession(tok)
+    if (who) store.audit(who.email, 'logout', 'session ended')
     return json(res, 200, { ok: true })
+  }
+
+  // Sessions, audit log, family sharing, device approvals.
+  if (pathname === '/api/account/sessions') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    const tok = bearer(req)
+    const cur = tok ? require('crypto').createHash('sha256').update(tok).digest('hex').slice(0, 12) : null
+    return json(res, 200, { ok: true, current: cur,
+      sessions: store.sessionsForAccount(acc.email).map((x) => ({ ...x, current: x.id === cur })) })
+  }
+  if (pathname === '/api/account/session/revoke') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    const n = store.revokeSession(acc.email, String(body.id || ''))
+    if (n) store.audit(acc.email, 'session_revoke', 'session ended remotely')
+    return json(res, 200, { ok: true, revoked: n })
+  }
+  if (pathname === '/api/account/sessions/revoke-others') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    const n = store.revokeOtherSessions(acc.email, bearer(req))
+    if (n) store.audit(acc.email, 'session_revoke', n + ' other session(s) ended')
+    return json(res, 200, { ok: true, revoked: n })
+  }
+  if (pathname === '/api/account/audit') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    return json(res, 200, { ok: true, events: store.getAudit(acc.email) })
+  }
+  if (pathname === '/api/account/key/share' || pathname === '/api/account/key/unshare') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    const key = String(body.key || '').trim().toUpperCase()
+    const lic = store.getLicense(key)
+    if (!lic || lic.account_email !== acc.email) return json(res, 404, { error: 'invalid_key' })
+    const email = String(body.email || '').trim().toLowerCase()
+    if (!validEmail(email)) return json(res, 400, { error: 'bad_email' })
+    if (pathname === '/api/account/key/share') {
+      const r = store.shareKey(key, email)
+      if (r === 'no_account') return json(res, 404, { error: 'no_account', msg: 'No Kastrava account with that email yet.' })
+      if (r === 'self') return json(res, 400, { error: 'bad_request', msg: 'That is your own account.' })
+      store.audit(acc.email, 'share_add', 'key shared with ' + email)
+      store.audit(email, 'share_add', 'key shared by ' + acc.email)
+      return json(res, 200, { ok: true, key })
+    }
+    store.unshareKey(key, email)
+    store.audit(acc.email, 'share_remove', 'key unshared from ' + email)
+    return json(res, 200, { ok: true, key })
+  }
+  if (pathname === '/api/account/approvals') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    return json(res, 200, { ok: true, require_approval: store.requireApproval(acc.email),
+      approvals: store.approvalsFor(acc.email) })
+  }
+  if (pathname === '/api/account/approval-require') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    const on = !!body.on
+    store.setRequireApproval(acc.email, on)
+    store.audit(acc.email, 'approval_require', on ? 'device approvals on' : 'device approvals off')
+    return json(res, 200, { ok: true, require_approval: on })
+  }
+  if (pathname === '/api/account/approval/resolve') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    const r = store.resolveApproval(acc.email, String(body.id || ''), !!body.approve)
+    if (!r) return json(res, 404, { error: 'not_found' })
+    if (r.approved) {
+      store.touchDevice(r.approval.key, r.approval.machine_id, r.approval.device_name)
+      store.noteDeviceOwner(r.approval.key, r.approval.machine_id, acc.email)
+      store.audit(acc.email, 'approval_ok', 'device approved')
+    } else {
+      store.audit(acc.email, 'approval_deny', 'device denied')
+    }
+    return json(res, 200, { ok: true, approved: r.approved })
   }
   if (pathname === '/api/account/me' || pathname === '/api/sync/pull' || pathname === '/api/sync/push') {
     const acc = store.getSessionAccount(bearer(req))

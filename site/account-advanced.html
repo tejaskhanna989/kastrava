@@ -90,6 +90,16 @@ r.setAttribute('data-theme',s?s:(window.matchMedia&&window.matchMedia('(prefers-
 <p class="fine" id="buy-inrnote">Charged in INR (₹670). Renewing extends your newest key — every logged-in browser follows.</p>
 </div>
 <div class="card"><h2>Sync</h2><div id="sync-out">Loading…</div></div>
+<div class="card"><h2>New devices</h2>
+<p class="sub">When on, unknown hardware waits here for your OK before it can use your keys.</p>
+<label style="display:flex;gap:8px;align-items:center;font-size:14px;margin-bottom:10px"><input type="checkbox" id="ap-require"> Approve new devices</label>
+<div id="ap-out">Loading…</div>
+</div>
+<div class="card"><h2>Sessions</h2><p class="sub">Everywhere this account is logged in.</p>
+<div id="sess-out">Loading…</div>
+<div style="margin-top:10px"><button class="btn ghost" id="sess-out-others">Log out other sessions</button></div>
+</div>
+<div class="card"><h2>Security log</h2><div id="audit-out">Loading…</div></div>
 <div class="card"><h2>Session</h2>
 <p class="sub" id="me-line"></p>
 <button class="btn ghost" id="ac-out">Log out</button>
@@ -126,7 +136,57 @@ function tok(){try{return localStorage.getItem('kas_sync_token')||'';}catch(e){r
 function authz(){return {'Content-Type':'application/json','Authorization':'Bearer '+tok()};}
 function esc(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 var loginCard=document.getElementById('login-card'),dash=document.getElementById('dash');
-function showDash(email){loginCard.style.display='none';dash.style.display='block';document.getElementById('me-line').textContent='Signed in as '+email+'.';loadKeys();loadSync(email);}
+function showDash(email){loginCard.style.display='none';dash.style.display='block';document.getElementById('me-line').textContent='Signed in as '+email+'.';loadKeys();loadSync(email);loadApprovals();loadSessions();loadAudit();}
+function loadApprovals(){
+  var out=document.getElementById('ap-out');if(!out)return;
+  out.textContent='Loading…';
+  fetch(KAS_API+'/api/account/approvals',{method:'POST',headers:authz(),body:'{}'})
+  .then(function(r){return r.json();}).then(function(j){
+    if(!j||!j.ok){out.textContent='Could not load.';return;}
+    document.getElementById('ap-require').checked=!!j.require_approval;
+    if(!j.approvals||!j.approvals.length){out.textContent='No devices waiting.';return;}
+    out.innerHTML=j.approvals.map(function(a){
+      return '<div class="dev"><span>'+esc(a.device_name||a.machine_id)+'<br><span class="fine">'+esc(a.machine_id)+' · '+esc((a.created_at||'').slice(0,16).replace('T',' '))+'</span></span><span><button data-ap="'+esc(a.id)+'" data-ok="1" style="padding:4px 12px;font-size:11.5px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer">Approve</button> <button data-ap="'+esc(a.id)+'" data-ok="" style="padding:4px 12px;font-size:11.5px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer">Deny</button></span></div>';
+    }).join('');
+    out.querySelectorAll('button[data-ap]').forEach(function(b){
+      b.addEventListener('click',function(){
+        fetch(KAS_API+'/api/account/approval/resolve',{method:'POST',headers:authz(),body:JSON.stringify({id:b.dataset.ap,approve:!!b.dataset.ok})})
+        .then(function(r){return r.json();}).then(function(){loadApprovals();loadKeys();}).catch(function(){});
+      });
+    });
+  }).catch(function(){out.textContent='Could not load.';});
+}
+function loadSessions(){
+  var out=document.getElementById('sess-out');if(!out)return;
+  out.textContent='Loading…';
+  fetch(KAS_API+'/api/account/sessions',{method:'POST',headers:authz(),body:'{}'})
+  .then(function(r){return r.json();}).then(function(j){
+    if(!j||!j.ok){out.textContent='Could not load.';return;}
+    if(!j.sessions||!j.sessions.length){out.textContent='No sessions.';return;}
+    out.innerHTML=j.sessions.map(function(x){
+      return '<div class="dev"><span>'+esc(x.label||'Browser')+(x.current?' (this one)':'')+'<br><span class="fine">'+esc((x.last_seen||x.created_at||'').slice(0,16).replace('T',' '))+(x.ip?' · '+esc(x.ip):'')+'</span></span>'+(x.current?'':'<button data-sess="'+esc(x.id)+'" style="padding:4px 12px;font-size:11.5px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer">Revoke</button>')+'</div>';
+    }).join('');
+    out.querySelectorAll('button[data-sess]').forEach(function(b){
+      b.addEventListener('click',function(){
+        if(!confirm('End this session? That device logs out.'))return;
+        fetch(KAS_API+'/api/account/session/revoke',{method:'POST',headers:authz(),body:JSON.stringify({id:b.dataset.sess})})
+        .then(function(r){return r.json();}).then(function(){loadSessions();}).catch(function(){});
+      });
+    });
+  }).catch(function(){out.textContent='Could not load.';});
+}
+function loadAudit(){
+  var out=document.getElementById('audit-out');if(!out)return;
+  out.textContent='Loading…';
+  fetch(KAS_API+'/api/account/audit',{method:'POST',headers:authz(),body:'{}'})
+  .then(function(r){return r.json();}).then(function(j){
+    if(!j||!j.ok){out.textContent='Could not load.';return;}
+    if(!j.events||!j.events.length){out.textContent='No events yet.';return;}
+    out.innerHTML=j.events.slice(0,30).map(function(e){
+      return '<div class="dev"><span>'+esc(e.type)+'<br><span class="fine">'+esc((e.t||'').slice(0,16).replace('T',' '))+(e.detail?' · '+esc(e.detail):'')+'</span></span></div>';
+    }).join('');
+  }).catch(function(){out.textContent='Could not load.';});
+}
 function loadSync(email){
   var out=document.getElementById('sync-out');
   fetch(KAS_API+'/api/sync/pull',{method:'POST',headers:authz(),body:'{}'})
@@ -203,15 +263,41 @@ function loadKeys(){
     if(!j.keys||!j.keys.length){out.innerHTML='No keys yet — buy one below.';return;}
     var h='<table><tr><th>Key</th><th>Status</th><th>Expires</th><th>Devices</th></tr>';
     j.keys.forEach(function(k){
-      h+='<tr><td class="mono">'+esc(k.key)+'</td><td>'+esc(k.status)+'</td><td>'+esc((k.expires_at||'?').slice(0,10))+'</td><td><button data-rc="'+esc(k.key)+'" style="padding:4px 12px;font-size:11.5px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;margin-bottom:6px">Receipt</button><br><b>'+k.devices_used+'/'+(k.device_limit||10)+'</b> devices';
+      var badge=k.shared?' <span class="fine">shared by '+esc(k.owner||'owner')+'</span>':'';
+      h+='<tr><td class="mono">'+esc(k.key)+badge+'</td><td>'+esc(k.status)+'</td><td>'+esc((k.expires_at||'?').slice(0,10))+'</td><td><button data-rc="'+esc(k.key)+'" style="padding:4px 12px;font-size:11.5px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;margin-bottom:6px">Receipt</button><br><b>'+k.devices_used+'/'+(k.device_limit||10)+'</b> devices';
       (k.devices||[]).forEach(function(d){
         h+='<div class="dev"><span>'+esc(d.name||d.id)+'</span><button data-k="'+esc(k.key)+'" data-m="'+esc(d.id)+'">Remove</button></div>';
       });
+      if(!k.shared&&(k.shared_with||[]).length){
+        h+='<div class="fine">Shared with: '+k.shared_with.map(function(e){return esc(e)+' <a href="#" data-unshare="'+esc(e)+'" data-ukey="'+esc(k.key)+'" style="color:var(--blue)">remove</a>';}).join(', ')+'</div>';
+      }
+      if(!k.shared){
+        h+='<div style="display:flex;gap:6px;margin-top:6px"><input placeholder="family@email" data-share-in="'+esc(k.key)+'" style="flex:1;min-width:120px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);font-family:inherit;font-size:12px" spellcheck="false"><button data-share="'+esc(k.key)+'" style="padding:6px 12px;font-size:11.5px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer">Share</button></div>';
+      }
       h+='</td></tr>';
     });
     out.innerHTML=h+'</table>';
     out.querySelectorAll('button[data-rc]').forEach(function(b){
       b.addEventListener('click',function(){downloadKeyReceipt(b.dataset.rc);});
+    });
+    out.querySelectorAll('a[data-unshare]').forEach(function(a){
+      a.addEventListener('click',function(ev){
+        ev.preventDefault();
+        fetch(KAS_API+'/api/account/key/unshare',{method:'POST',headers:authz(),body:JSON.stringify({key:a.dataset.ukey,email:a.dataset.unshare})})
+        .then(function(r){return r.json();}).then(function(){loadKeys();}).catch(function(){});
+      });
+    });
+    out.querySelectorAll('button[data-share]').forEach(function(b){
+      b.addEventListener('click',function(){
+        var inp=out.querySelector('input[data-share-in="'+b.dataset.share+'"]');
+        var em=inp?(inp.value||'').trim():'';
+        if(!em)return;
+        fetch(KAS_API+'/api/account/key/share',{method:'POST',headers:authz(),body:JSON.stringify({key:b.dataset.share,email:em})})
+        .then(function(r){return r.json();}).then(function(j){
+          if(!j||!j.ok){alert((j&&(j.msg||j.error))||'Could not share.');return;}
+          loadKeys();
+        }).catch(function(){});
+      });
     });
     out.querySelectorAll('button[data-k]').forEach(function(b){
       b.addEventListener('click',function(){
@@ -222,6 +308,16 @@ function loadKeys(){
     });
   }).catch(function(){out.textContent='Could not load keys.';});
 }
+document.getElementById('ap-require').addEventListener('change',function(){
+  var on=this.checked;
+  fetch(KAS_API+'/api/account/approval-require',{method:'POST',headers:authz(),body:JSON.stringify({on:on})})
+  .then(function(r){return r.json();}).then(function(){}).catch(function(){});
+});
+document.getElementById('sess-out-others').addEventListener('click',function(){
+  if(!confirm('Log out every other session?'))return;
+  fetch(KAS_API+'/api/account/sessions/revoke-others',{method:'POST',headers:authz(),body:'{}'})
+  .then(function(r){return r.json();}).then(function(){loadSessions();}).catch(function(){});
+});
 document.getElementById('claim-go').addEventListener('click',function(){
   var inp=document.getElementById('claim-key'),m=document.getElementById('claim-msg');
   var key=(inp.value||'').trim().toUpperCase();
