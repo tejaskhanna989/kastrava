@@ -81,10 +81,7 @@ r.setAttribute('data-theme',s?s:(window.matchMedia&&window.matchMedia('(prefers-
 <div class="plan-pick" data-plan="monthly" style="padding:14px;border-radius:14px;border:2px solid var(--ink);cursor:pointer"><div style="font-weight:700;font-size:15px">Monthly — $7</div><div style="font-size:12.5px;color:var(--muted)">₹670 · 30 days</div></div>
 <div class="plan-pick" data-plan="daily" style="padding:14px;border-radius:14px;border:1px solid var(--line);cursor:pointer"><div style="font-weight:700;font-size:15px">Daily — $2</div><div style="font-size:12.5px;color:var(--muted)">₹190 · 24 hours</div></div>
 </div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 4px">
-<label style="padding:12px;border-radius:12px;border:2px solid var(--ink);cursor:pointer;font-size:14px" id="renew-man-lab"><input type="radio" name="renew" value="manual" checked style="margin-right:6px">Manual<div style="font-size:11.5px;color:var(--muted)">Pay each time</div></label>
-<label style="padding:12px;border-radius:12px;border:1px solid var(--line);cursor:pointer;font-size:14px" id="renew-auto-lab"><input type="radio" name="renew" value="auto" style="margin-right:6px">Auto<div style="font-size:11.5px;color:var(--muted)">Mandate, cancel anytime</div></label>
-</div>
+<p class="fine" style="margin:0 0 4px">Manual renewal — you pay each time, nothing auto-charges.</p>
 <div style="margin-top:14px"><button class="btn" id="buy-go">Buy — ₹670 / 30 days</button></div>
 <div class="msg" id="buy-msg"></div>
 <p class="fine" id="buy-inrnote">Charged in INR (₹670). Renewing extends your newest key — every logged-in browser follows.</p>
@@ -460,51 +457,15 @@ function paintPlan(){
   buyEl.textContent='Buy — \u20B9'+PLAN_META[planPicked].inr+' / '+(PLAN_META[planPicked].days===1?'24 hours':'30 days');
   var note=document.getElementById('buy-inrnote');
   if(note)note.textContent='Charged in INR (\u20B9'+PLAN_META[planPicked].inr+'). Renewing extends your newest key — every logged-in browser follows.';
-  var autoLab=document.getElementById('renew-auto-lab');
-  if(autoLab){
-    var dis=planPicked==='daily';
-    autoLab.style.opacity=dis?'.45':'1';
-    var ar=autoLab.querySelector('input');if(ar){if(dis&&ar.checked){var mr=document.querySelector('input[name=renew][value=manual]');if(mr)mr.checked=true;}ar.disabled=dis;}
-  }
-  document.querySelectorAll('input[name=renew]').forEach(function(r){
-    var lab=r.closest('label');if(!lab)return;
-    lab.style.borderWidth=r.checked?'2px':'1px';
-    lab.style.borderColor=r.checked?'var(--ink)':'var(--line)';
-    r.addEventListener('change',function(){paintPlan();});
-  });
+}
 }
 document.querySelectorAll('.plan-pick').forEach(function(b){
   b.addEventListener('click',function(){planPicked=b.dataset.plan;paintPlan();});
 });
 paintPlan();
-function openSubscribe(){
-  buyMsg.className='msg';buyMsg.textContent='Starting auto-renew…';
-  apiFetch(KAS_API+'/api/subscribe',{method:'POST',headers:authz(),body:JSON.stringify({plan:planPicked,account_token:tok()})})
-  .then(function(r){return r.json();}).then(function(sb){
-    if(!sb||!sb.subscription_id){buyMsg.textContent=(sb&&sb.msg)||'Could not start auto-renew.';buyEl.disabled=false;return;}
-    var rzp=new Razorpay({key:sb.key_id,subscription_id:sb.subscription_id,
-      name:'Kastrava Premium',description:'Auto-renew '+PLAN_META[planPicked].label+' - cancel anytime',
-      theme:{color:document.documentElement.getAttribute('data-theme')==='dark'?'#f3eee4':'#16130e'},
-      handler:function(res){
-        apiFetch(KAS_API+'/api/subscribe/verify',{method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({subscription_id:res.razorpay_subscription_id,payment_id:res.razorpay_payment_id,signature:res.razorpay_signature,account_token:tok()})})
-        .then(function(r){return r.json();}).then(function(v){
-          buyEl.disabled=false;
-          if(v&&v.ok&&v.key){buyMsg.textContent='Auto-renew on. Downloading receipt…';downloadKeyReceipt(v.key);buyMsg.textContent='Auto-renew on. Key '+v.key+' is on your account — browsers pick it up automatically.';loadKeys();}
-          else{buyMsg.textContent='Mandate setup failed.';}
-        }).catch(function(e){buyEl.disabled=false;buyMsg.textContent=apiErr(e,'Verification failed.');});
-      },
-      modal:{ondismiss:function(){buyEl.disabled=false;buyMsg.textContent='';}}});
-    rzp.on('payment.failed',function(){buyEl.disabled=false;buyMsg.textContent='Mandate setup failed. No charge was made.';});
-    rzp.open();
-  }).catch(function(e){buyEl.disabled=false;buyMsg.textContent=apiErr(e,'Could not start auto-renew.');});
-}
 buyEl.addEventListener('click',function(){
   if(!window.Razorpay){buyMsg.textContent='Checkout failed to load. Refresh and try again.';return;}
   buyMsg.className='msg';buyMsg.textContent='Contacting store…';buyEl.disabled=true;
-  var autoPick=document.querySelector('input[name=renew]:checked');
-  var auto=autoPick&&autoPick.value==='auto'&&planPicked!=='daily';
-  if(auto){openSubscribe();return;}
   manualPay();
   function manualPay(){
   apiFetch(KAS_API+'/api/order',{method:'POST',headers:authz(),body:JSON.stringify({account_token:tok(),plan:planPicked})})

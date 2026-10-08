@@ -61,9 +61,8 @@ What to check in the dashboard (Settings → Webhooks → the configured webhook
   event, so nothing else is needed)
 - Status is **Active** (not paused)
 
-The old subscription webhook `TeNWHxS4YEW54S` is dead weight: the server
-ignores its events and the API can't delete it — manual dashboard removal is
-optional cosmetic cleanup.
+Auto-renew is discontinued: untick every `subscription.*` event if still
+enabled — only `payment.captured` is processed.
 
 If the webhook secret is ever regenerated in the dashboard, it must be copied
 into `RAZORPAY_WEBHOOK_SECRET` in `server/.env` and the service restarted.

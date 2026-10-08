@@ -206,13 +206,13 @@ footer a:hover{color:var(--ink)}
 <section id="premium">
   <div class="wrap">
     <h2 class="sec-title">Premium.</h2>
-    <p class="sec-sub">Free forever. Premium is <b>$7 for 30 days or $2 for a day</b>. Your key stays on your account and covers 10 devices. Manual renewal by default, auto-renew if you pick it.</p>
+    <p class="sec-sub">Free forever. Premium is <b>$7 for 30 days or $2 for a day</b>. Your key stays on your account and covers 10 devices. Manual renewal — you pay each time, nothing auto-charges.</p>
     <div class="prem-card">
       <div class="tag">KASTRAVA PREMIUM · 34-DAY</div>
       <h3>Unlock everything</h3>
       <div class="sub">Tracking Radar · Cursor FX · Workspaces · Split View · all 20 themes</div>
       <div class="beta-free">Want it free? Contact the maintainer — <a href="mailto:khannatejas989@gmail.com">khannatejas989@gmail.com</a></div>
-      <div class="prem-price"><span class="rup">$7<span style="font-size:22px;color:var(--muted)">/mo</span> · $2<span style="font-size:22px;color:var(--muted)">/day</span></span><span class="usd">Pick a plan below · manual or auto-renew</span></div>
+      <div class="prem-price"><span class="rup">$7<span style="font-size:22px;color:var(--muted)">/mo</span> · $2<span style="font-size:22px;color:var(--muted)">/day</span></span><span class="usd">Pick a plan below · manual renewal</span></div>
       <ul class="prem-feats">
         <li><b>Tracking Radar</b> — counts requests and cookies per tab</li>
         <li><b>Cursor Effects</b> — 8 effects and a custom arrow</li>
@@ -237,10 +237,7 @@ footer a:hover{color:var(--ink)}
           <div style="font-size:12.5px;color:var(--muted)">₹190 · 24 hours</div>
         </button>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 4px">
-        <label style="padding:14px;border-radius:14px;border:2px solid var(--ink);background:transparent;color:var(--ink);cursor:pointer;font-family:inherit" id="renew-man-lab"><input type="radio" name="renew" value="manual" checked style="margin-right:6px">Manual<div style="font-size:12px;color:var(--muted);margin-top:2px">Pay each time</div></label>
-        <label style="padding:14px;border-radius:14px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;font-family:inherit" id="renew-auto-lab"><input type="radio" name="renew" value="auto" style="margin-right:6px">Auto<div style="font-size:12px;color:var(--muted);margin-top:2px">Mandate, cancel anytime</div></label>
-      </div>
+      <p class="os-note" style="margin:0 0 4px">Manual renewal — you pay each time, nothing auto-charges.</p>
       <div id="prem-login" style="display:none;border:1px solid var(--line);border-radius:14px;padding:18px;margin:14px 0 4px">
         <div style="font-weight:700;font-size:15px;color:var(--ink);margin-bottom:2px">Log in to pay</div>
         <div style="font-size:12.5px;color:var(--muted);margin-bottom:10px">Premium needs an account — the key lives on it.</div>
@@ -474,25 +471,11 @@ footer a:hover{color:var(--ink)}
       b.style.borderColor=on?'var(--ink)':'var(--line)';
     });
     if(buyBtn)buyBtn.textContent='Pay \u20B9'+PLAN_META[planPicked].inr+' with Razorpay — '+PLAN_META[planPicked].days+(PLAN_META[planPicked].days===1?' day':' days');
-    var autoLab=document.getElementById('renew-auto-lab');
-    if(autoLab){
-      var dis=planPicked==='daily';
-      autoLab.style.opacity=dis?'.45':'1';
-      var ar=autoLab.querySelector('input');if(ar){if(dis&&ar.checked){var mr=document.querySelector('input[name=renew][value=manual]');if(mr)mr.checked=true;}ar.disabled=dis;}
-    }
-    document.querySelectorAll('input[name=renew]').forEach(function(r){
-      var lab=r.closest('label');if(!lab)return;
-      lab.style.borderWidth=r.checked?'2px':'1px';
-      lab.style.borderColor=r.checked?'var(--ink)':'var(--line)';
-    });
     var note=document.getElementById('prem-inrnote');
     if(note)note.textContent='Charged in INR (\u20B9'+PLAN_META[planPicked].inr+') — your bank converts the $'+PLAN_META[planPicked].usd+' at checkout.';
   }
   document.querySelectorAll('.plan-pick').forEach(function(b){
     b.addEventListener('click',function(){planPicked=b.dataset.plan;paintPlan();});
-  });
-  document.querySelectorAll('input[name=renew]').forEach(function(r){
-    r.addEventListener('change',function(){paintPlan();});
   });
   paintPlan();
   function machineValue(){return machineInput&&machineInput.value?machineInput.value.trim():'';}
@@ -585,14 +568,8 @@ footer a:hover{color:var(--ink)}
         .catch(function(e){fail(apiErr(e,'Dev checkout failed.'));});
         return;
       }
-      var goPay=function(auto){
-        if(auto){openSubscribe(o);return;}
-        if(!window.__razorpayLoaded){loadRazorpay(function(){openRazorpay(o);});}
-        else openRazorpay(o);
-      };
-      var autoPick=document.querySelector('input[name=renew]:checked');
-      var auto=autoPick&&autoPick.value==='auto'&&planPicked!=='daily';
-      goPay(auto);
+      if(!window.__razorpayLoaded){loadRazorpay(function(){openRazorpay(o);});}
+      else openRazorpay(o);
     })
     .catch(function(e){fail(apiErr(e,e&&e.message));});
   });
@@ -620,52 +597,6 @@ footer a:hover{color:var(--ink)}
     return fallback||'Something went wrong. Please try again.';
   }
   function syncToken(){try{return localStorage.getItem('kas_sync_token')||'';}catch(e){return '';}}
-  function openSubscribe(o){
-    var t=syncToken();
-    if(!t){fail('Log in on the account page first — auto-renew attaches to your account.');return;}
-    var meta=PLAN_META[planPicked]||PLAN_META.monthly;
-    function doneSub(v){
-      setBusy(false);
-      if(v&&v.ok&&v.key){
-        var rb=document.getElementById('prem-receipt');if(rb)rb.style.display='none';
-        var pt=document.getElementById('prem-plan');
-        if(pt){pt.style.display='block';pt.textContent='AUTO-RENEW · '+(v.plan==='daily'?'DAILY':'MONTHLY');}
-        showKey(v.key,!!v.renewed,null);
-        var kd=document.querySelector('.prem-keyout .k');if(kd)kd.textContent=v.key;
-      }
-      else fail((v&&v.msg)||'Mandate setup failed.');
-    }
-    if(o.dev){
-      apiFetch(KAS_API+'/api/subscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan:planPicked,account_token:t})})
-      .then(function(r){return r.json();}).then(function(sb){
-        if(!sb||!sb.subscription_id){fail('Dev subscribe failed.');return;}
-        apiFetch(KAS_API+'/api/subscribe/verify',{method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({subscription_id:sb.subscription_id,payment_id:'pay_dev_'+Date.now(),signature:'dev',account_token:t})})
-        .then(function(r){return r.json();}).then(doneSub).catch(function(e){fail(apiErr(e,'Dev checkout failed.'));});
-      }).catch(function(e){fail(apiErr(e,'Dev checkout failed.'));});
-      return;
-    }
-    var startSub=function(){
-      apiFetch(KAS_API+'/api/subscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan:planPicked,account_token:t})})
-      .then(function(r){return r.json();}).then(function(sb){
-        if(!sb||!sb.subscription_id){fail((sb&&sb.msg)||'Could not start auto-renew.');return;}
-        var rzp=new Razorpay({key:sb.key_id,subscription_id:sb.subscription_id,
-          name:'Kastrava Premium',description:'Auto-renew '+meta.label+' - cancel anytime',
-          theme:{color:document.documentElement.getAttribute('data-theme')==='dark'?'#f3eee4':'#16130e'},
-          handler:function(res){
-            setBusy(true);
-            apiFetch(KAS_API+'/api/subscribe/verify',{method:'POST',headers:{'Content-Type':'application/json'},
-              body:JSON.stringify({subscription_id:res.razorpay_subscription_id,payment_id:res.razorpay_payment_id,signature:res.razorpay_signature,account_token:t})})
-            .then(function(r){return r.json();}).then(doneSub)
-            .catch(function(e){fail(apiErr(e,'Could not verify mandate.'));});
-          },
-          modal:{ondismiss:function(){setBusy(false);}}});
-        rzp.on('payment.failed',function(){setBusy(false);alert('Mandate setup failed. No charge was made.');});
-        rzp.open();
-      }).catch(function(){fail('Could not start auto-renew.');});
-    };
-    if(!window.__razorpayLoaded){loadRazorpay(startSub);}else startSub();
-  }
   function loadRazorpay(cb){
     if(window.__razorpayLoading){var t=checker.t||null;checker.t=setInterval(function(){if(window.__razorpayLoaded){clearInterval(t);cb();}},150);return;}
     window.__razorpayLoading=true;
