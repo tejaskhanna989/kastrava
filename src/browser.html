@@ -3566,7 +3566,7 @@ function shieldItems(){
 }
 function syncApiBase(){try{if(typeof KAS_API!=="undefined"&&KAS_API)return KAS_API;}catch(e){}return "https://nexufog.pp.ua";}
 function bindSyncPanel(){
-  var goPrem=$("s-syncgo");if(goPrem){goPrem.addEventListener("click",function(){openPremiumSection();});return;}
+  var goPrem=$("s-syncgo");if(goPrem){goPrem.addEventListener("click",function(){openPremiumSection();});}
   function msg(t){var m=$("sy-msg");if(m)m.textContent=t||"";}
   function paint(st){
     var s=$("sy-status");if(!s)return;
