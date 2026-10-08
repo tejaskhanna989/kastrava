@@ -33,30 +33,14 @@ jobs:
           KAS_STORE: https://kastrava.pp.ua
       - name: Package Windows installers (unsigned)
         run: npx electron-builder --win nsis portable --x64 --publish never
-      - name: Generate self-signed cert for MSIX (Store re-signs at ingestion)
-        shell: pwsh
-        run: |
-          # Subject MUST equal the manifest Publisher (your Store publisher ID);
-          # signtool refuses to sign an .appx otherwise. The Store replaces
-          # this signature with the real Store cert (same subject) at ingestion.
-          $cwd = ConvertTo-SecureString -String "kasbuild" -Force -AsPlainText
-          $cert = New-SelfSignedCertificate -Type CodeSigningCert -Subject "CN=B98E4B5A-8E53-46C4-BED3-FB49CC746FAC" -KeyAlgorithm RSA -KeyLength 2048 -HashAlgorithm SHA256 -FriendlyName "Kastrava MSIX" -CertStoreLocation "Cert:\CurrentUser\My" -KeyExportPolicy Exportable
-          Export-PfxCertificate -Cert $cert -FilePath "$env:RUNNER_TEMP\kastrava.pfx" -Password $cwd | Out-Null
-          Write-Host "self-signed code-signing cert exported"
-      - name: Package MSIX (store-ready)
-        shell: pwsh
-        run: |
-          $env:CSC_LINK = "$env:RUNNER_TEMP\kastrava.pfx"
-          $env:CSC_KEY_PASSWORD = "kasbuild"
-          npx electron-builder --win appx --x64 --publish never
+      # MSIX paused: no .appx built until Store submission resumes.
+      # (Identity kept in package.json so the next appx keeps its Store name.)
       - uses: actions/upload-artifact@v4
         with:
           name: Kastrava-win
           path: |
             release/Kastrava-Setup-*.exe
             release/Kastrava-*.exe
-            release/*.msix
-            release/*.appx
             release/latest.yml
             release/*.blockmap
           if-no-files-found: error
