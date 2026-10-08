@@ -3931,7 +3931,7 @@ function renderSettingsSection(id){
     h+="<div class=\"sg\"><div class=\"lbl\">Startup</div><select id=\"s-startup\"><option value=\"last\">Restore previous session</option><option value=\"blank\">New tab</option><option value=\"urls\">Open specific pages</option></select></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Startup Pages</div><textarea id=\"s-startupurls\" rows=\"3\" placeholder=\"https://example.com\" style=\"width:100%;margin-top:6px\"></textarea><div class=\"desc\">One URL per line. Used when Startup is set to specific pages.</div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Font Size</div><select id=\"s-fontsize\"><option value=\"11\">Small</option><option value=\"12\">Medium</option><option value=\"14\">Large</option></select></div>";
-    h+="<div class=\"sg\"><div class=\"lbl\">Default Zoom</div><select id=\"s-zoom\"><option value=\"100\">100%</option><option value=\"110\">110%</option><option value=\"125\">125%</option><option value=\"150\">150%</option><option value=\"175\">175%</option><option value=\"200\">200%</option></select><div class=\"desc\">Applied to all new tabs.</div></div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">Default Zoom</div><div style=\"display:flex;gap:8px;align-items:center\"><button class=\"btn-sm\" id=\"s-zoomout\" title=\"Zoom out\">&minus;</button><input type=\"range\" id=\"s-zoom\" min=\"50\" max=\"200\" step=\"5\" value=\"100\" style=\"flex:1\"><span id=\"s-zoomval\" style=\"min-width:44px;text-align:right;font-size:13px\">100%</span><button class=\"btn-sm\" id=\"s-zoomin\" title=\"Zoom in\">+</button><button class=\"btn-sm\" id=\"s-zoomreset\" title=\"Reset to 100%\">Reset</button></div><div class=\"desc\">Zoom in or out — applies to the current page and all new tabs.</div></div>";
     h+="<div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Confirm Close</div><div class=\"desc\">Ask before closing multiple tabs.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-confirmclose\" class=\"tgl tgl-flip\"><label for=\"s-confirmclose\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Tab Limit</div><select id=\"s-maxtabs\"><option value=\"0\">No limit</option><option value=\"20\">20 tabs</option><option value=\"50\">50 tabs</option><option value=\"100\">100 tabs</option></select><div class=\"desc\">Refuse new tabs past the limit.</div></div><div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Always Show Full URLs</div><div class=\"desc\">Show the complete address instead of just the site name.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-fullurls\" class=\"tgl tgl-flip\"><label for=\"s-fullurls\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div><div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Clear History on Exit</div><div class=\"desc\">Wipe history every time the browser closes.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-clearhistexit\" class=\"tgl tgl-flip\"><label for=\"s-clearhistexit\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div><div class=\"sg\"><div class=\"lbl\">Keep History</div><select id=\"s-historykeep\"><option value=\"0\">Forever</option><option value=\"7\">7 days</option><option value=\"30\">30 days</option><option value=\"90\">90 days</option></select></div>";
   }
@@ -4105,11 +4105,17 @@ function bindSettingsEvents(id){
     else if(id==="general"){
       setSel("s-startup",settings.startup);
       setSel("s-fontsize",settings.fontSize);
-      setSel("s-zoom",settings.zoom||"100");
+      (function(){var z=parseInt(settings.zoom)||100;var r=$("s-zoom");if(r)r.value=String(z);var l=$("s-zoomval");if(l)l.textContent=z+"%";})();
       setCheck("s-confirmclose","on",settings.confirmClose);
       bindChange("s-startup",function(v){sv("startup",v);});
       bindChange("s-fontsize",function(v){sv("fontSize",v);applyFontSize(v);});
-      bindChange("s-zoom",function(v){sv("zoom",v);});
+      (function(){
+        function zApply(z){z=Math.max(50,Math.min(200,z));settings.zoom=String(z);sv("zoom",z);var r=$("s-zoom");if(r)r.value=String(z);var l=$("s-zoomval");if(l)l.textContent=z+"%";try{if(activeTab&&activeTab.wv){activeTab.zoom=z;activeTab.wv.setZoomFactor(z/100);}}catch(e){}}
+        var r=$("s-zoom");if(r)r.addEventListener("input",function(e){zApply(parseInt(e.target.value)||100);});
+        var zo=$("s-zoomout");if(zo)zo.addEventListener("click",function(){zApply((parseInt(settings.zoom)||100)-10);});
+        var zi=$("s-zoomin");if(zi)zi.addEventListener("click",function(){zApply((parseInt(settings.zoom)||100)+10);});
+        var zr=$("s-zoomreset");if(zr)zr.addEventListener("click",function(){zApply(100);});
+      })();
       bindCheck("s-confirmclose","on","off",function(v){sv("confirmClose",v);});
       setSel("s-maxtabs",settings.maxTabs||"0");
       bindChange("s-maxtabs",function(v){sv("maxTabs",v);});
