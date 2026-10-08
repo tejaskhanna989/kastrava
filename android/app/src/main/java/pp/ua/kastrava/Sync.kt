@@ -102,7 +102,9 @@ object Sync {
         if (o is JSONArray) {
             return "[" + (0 until o.length()).joinToString(",") { stable(o.opt(it)) } + "]"
         }
-        return JSONObject.valueToString(o)
+        if (o is String) return JSONObject.quote(o)
+        if (o is Number || o is Boolean) return o.toString()
+        return JSONObject.quote(o.toString())
     }
 
     private fun sha(s: String): String {

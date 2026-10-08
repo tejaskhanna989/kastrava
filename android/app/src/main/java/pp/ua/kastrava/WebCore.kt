@@ -107,7 +107,8 @@ fun buildWebView(context: Context, prefs: Prefs): WebView {
                 else android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
         } catch (e: Exception) { }
         try { settings.safeBrowsingEnabled = prefs.safeBrowsing } catch (e: Exception) { }
-        try { settings.geolocationEnabled = prefs.geoEnabled } catch (e: Exception) { }
+        // Setter-only API on WebSettings: no property access.
+        try { settings.setGeolocationEnabled(prefs.geoEnabled) } catch (e: Exception) { }
         // Local file access stays off unless the user opts in.
         try { settings.allowFileAccess = prefs.fileAccess } catch (e: Exception) { }
         try { settings.allowContentAccess = true } catch (e: Exception) { }

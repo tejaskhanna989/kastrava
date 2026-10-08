@@ -303,7 +303,7 @@ class MainActivity : AppCompatActivity() {
                     else android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
             } catch (e: Exception) { }
             try { s.safeBrowsingEnabled = app.prefs.safeBrowsing } catch (e: Exception) { }
-            try { s.geolocationEnabled = app.prefs.geoEnabled } catch (e: Exception) { }
+            try { s.setGeolocationEnabled(app.prefs.geoEnabled) } catch (e: Exception) { }
             try { s.allowFileAccess = app.prefs.fileAccess } catch (e: Exception) { }
             try {
                 wv.setLayerType(

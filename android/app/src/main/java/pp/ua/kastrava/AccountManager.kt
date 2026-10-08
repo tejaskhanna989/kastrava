@@ -21,18 +21,16 @@ class AccountManager(private val context: Context) {
 
     fun syncSalt(): String? = prefs.getString("sync_salt", null)?.takeIf { it.isNotBlank() }
 
-    fun syncSalt(): String? = prefs.getString("sync_salt", null)?.takeIf { it.isNotBlank() }
-
     fun loggedIn(): Boolean = !token().isNullOrBlank()
 
-    /** Sync encryption key vault (OS keystore). Null when unavailable. */
+    /** Sync encryption key vault (AndroidKeyStore). Null when unavailable. */
     fun saveSyncKey(key: ByteArray): Boolean {
         return try {
-            val master = androidx.security.crypto.MasterKey.Builder(context, androidx.security.crypto.MasterKey.DEFAULT_MASTER_KEY_ALIAS)
-                .setKeyScheme(androidx.security.crypto.MasterKey.KeyScheme.AES256_GCM)
-                .build()
+            val alias = androidx.security.crypto.MasterKeys.getOrCreate(
+                androidx.security.crypto.MasterKeys.AES256_GCM_SPEC,
+            )
             val enc = androidx.security.crypto.EncryptedSharedPreferences.create(
-                context, "kastrava_synckey", master,
+                "kastrava_synckey", alias, context,
                 androidx.security.crypto.EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
                 androidx.security.crypto.EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
             )
@@ -45,11 +43,11 @@ class AccountManager(private val context: Context) {
 
     fun loadSyncKey(): ByteArray? {
         return try {
-            val master = androidx.security.crypto.MasterKey.Builder(context, androidx.security.crypto.MasterKey.DEFAULT_MASTER_KEY_ALIAS)
-                .setKeyScheme(androidx.security.crypto.MasterKey.KeyScheme.AES256_GCM)
-                .build()
+            val alias = androidx.security.crypto.MasterKeys.getOrCreate(
+                androidx.security.crypto.MasterKeys.AES256_GCM_SPEC,
+            )
             val enc = androidx.security.crypto.EncryptedSharedPreferences.create(
-                context, "kastrava_synckey", master,
+                "kastrava_synckey", alias, context,
                 androidx.security.crypto.EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
                 androidx.security.crypto.EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
             )
