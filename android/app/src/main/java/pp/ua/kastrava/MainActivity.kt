@@ -509,6 +509,11 @@ class MainActivity : AppCompatActivity() {
                     ),
                 )
                 if (idx == current) switchTo(idx)
+                else {
+                    // Background tab: keep it hidden or it would overlay
+                    // whatever is on screen.
+                    try { tabs[idx].view.visibility = WebView.GONE } catch (e: Exception) { }
+                }
                 if (!url.isNullOrBlank()) wv.loadUrl(url)
                 Toast.makeText(this, "Tab recovered after a crash", Toast.LENGTH_SHORT).show()
             } catch (e: Exception) { }
