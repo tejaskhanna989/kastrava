@@ -476,6 +476,25 @@ async function handlePost(req, res, pathname) {
         first_seen: d && d.first_seen, last_seen: d && d.last_seen })) })
   }
 
+  // Manual key claim ("Add a key manually"): attach a loose key handed out
+  // by support to your own account. Same rule as activation first-touch:
+  // unbound keys can be claimed by whoever holds them; bound keys stay put.
+  if (pathname === '/api/account/key/claim') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    const key = String(body.key || '').trim().toUpperCase()
+    if (!key) return json(res, 400, { error: 'bad_request', msg: 'Enter the license key.' })
+    const lic = store.getLicense(key)
+    if (!lic) return json(res, 404, { error: 'invalid_key', msg: 'No such license key.' })
+    if (lic.status === 'revoked') return json(res, 403, { error: 'license_revoked', msg: 'This license was revoked. Contact support.' })
+    if (lic.status === 'cancelled') return json(res, 403, { error: 'license_cancelled', msg: 'This license was cancelled.' })
+    if (lic.account_email && lic.account_email !== acc.email) {
+      return json(res, 403, { error: 'wrong_account', msg: 'This key belongs to a different account.' })
+    }
+    if (!lic.account_email) store.setAccountEmail(key, acc.email)
+    return json(res, 200, { ok: true, key, expires_at: lic.expires_at || null, status: lic.status })
+  }
+
   // Full order dossier for the admin panel: order + license + a freshly
   // signed receipt. Powers PDF cross-checks (extracted PDF fields are
   // compared against this server truth).

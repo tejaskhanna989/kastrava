@@ -32,6 +32,7 @@ input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--lin
 .btn.danger{background:transparent;border:1px solid var(--red);color:var(--red);padding:8px 16px;font-size:13px}
 .msg{font-size:13.5px;color:var(--muted);margin-top:12px;min-height:20px}
 .msg.err{color:var(--red)}
+.msg.ok{color:#2e7d32}
 table{width:100%;border-collapse:collapse;font-size:13.5px}
 th{text-align:left;font-size:11px;letter-spacing:1px;color:var(--muted2);padding:8px 10px 8px 0;border-bottom:1px solid var(--line)}
 td{padding:10px 10px 10px 0;border-bottom:1px solid var(--line);vertical-align:top}
@@ -67,6 +68,15 @@ r.setAttribute('data-theme',s?s:(window.matchMedia&&window.matchMedia('(prefers-
 <div id="dash" style="display:none">
 <div class="card"><h2>Premium keys</h2><p class="sub">One key works on up to 10 devices. Logged-in browsers pick up new keys and renewals on their own.</p>
 <div id="keys-out">Loading…</div>
+<div style="margin-top:14px;padding:14px;border:1px dashed var(--line);border-radius:14px">
+<div style="font-weight:700;font-size:14px">Add a key manually</div>
+<p class="fine" style="margin:4px 0 8px">Got a key from support? Paste it here to attach it to this account.</p>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<input id="claim-key" placeholder="XXXX-XXXX-XXXX" style="flex:1;min-width:200px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ink);font-family:inherit" spellcheck="false" autocomplete="off">
+<button class="btn" id="claim-go" style="white-space:nowrap">Add key</button>
+</div>
+<div class="msg" id="claim-msg"></div>
+</div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 4px">
 <div class="plan-pick" data-plan="monthly" style="padding:14px;border-radius:14px;border:2px solid var(--ink);cursor:pointer"><div style="font-weight:700;font-size:15px">Monthly — $7</div><div style="font-size:12.5px;color:var(--muted)">₹670 · 30 days</div></div>
 <div class="plan-pick" data-plan="daily" style="padding:14px;border-radius:14px;border:1px solid var(--line);cursor:pointer"><div style="font-weight:700;font-size:15px">Daily — $2</div><div style="font-size:12.5px;color:var(--muted)">₹190 · 24 hours</div></div>
@@ -212,6 +222,17 @@ function loadKeys(){
     });
   }).catch(function(){out.textContent='Could not load keys.';});
 }
+document.getElementById('claim-go').addEventListener('click',function(){
+  var inp=document.getElementById('claim-key'),m=document.getElementById('claim-msg');
+  var key=(inp.value||'').trim().toUpperCase();
+  if(!key){m.textContent='Paste the key first.';m.className='msg err';return;}
+  m.className='msg';m.textContent='Adding…';
+  fetch(KAS_API+'/api/account/key/claim',{method:'POST',headers:authz(),body:JSON.stringify({key:key})})
+  .then(function(r){return r.json();}).then(function(j){
+    if(!j||!j.ok){m.textContent=(j&&(j.msg||j.error))||'Could not add this key.';m.className='msg err';return;}
+    m.textContent='Key added — it is on your account now.';m.className='msg ok';inp.value='';loadKeys();
+  }).catch(function(){m.textContent='Server unreachable.';m.className='msg err';});
+});
 var goEl=document.getElementById('ac-go'),msgEl=document.getElementById('ac-msg');
 goEl.addEventListener('click',function(){
   var email=(document.getElementById('ac-email').value||'').trim(),pw=document.getElementById('ac-pass').value||'';

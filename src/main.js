@@ -30,10 +30,20 @@ async function initDatabase() {
     const dbDir = path.join(app.getPath('userData'), 'data')
     fs.mkdirSync(dbDir, { recursive: true })
     const dbPath = path.join(dbDir, 'kastrava.db')
+    const bakPath = path.join(dbDir, 'kastrava.db.bak')
     let buffer
     try { buffer = fs.readFileSync(dbPath) } catch {}
-
-    db = new SQL.Database(buffer)
+    // A kill mid-write (or a deleted file) must never boot the user into a
+    // factory-fresh profile: fall back to the last good backup.
+    if (!buffer || !buffer.length) {
+      try { buffer = fs.readFileSync(bakPath) } catch {}
+    }
+    try {
+      db = new SQL.Database(buffer)
+    } catch {
+      try { db = new SQL.Database(fs.readFileSync(bakPath)) } catch {}
+      if (!db) db = new SQL.Database()
+    }
     db.run(`CREATE TABLE IF NOT EXISTS bookmarks (
       id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, url TEXT NOT NULL,
       pos INTEGER DEFAULT 0, created_at TEXT DEFAULT (datetime('now'))
@@ -49,6 +59,12 @@ async function initDatabase() {
       id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, url TEXT NOT NULL,
       icon TEXT, pos INTEGER DEFAULT 0
     )`)
+    // Snapshot the good copy: next launch can recover from this if the
+    // live file is ever truncated or deleted underneath us.
+    try {
+      const n = db.exec(`SELECT COUNT(*) AS c FROM settings`)[0].values[0][0]
+      if (n > 0) fs.writeFileSync(bakPath, Buffer.from(fs.readFileSync(dbPath)))
+    } catch {}
   } catch (e) {
     console.error('DB init error:', e)
   }
