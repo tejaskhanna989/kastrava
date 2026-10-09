@@ -908,9 +908,10 @@ function applyBookmarkBar(v){
 function applyHistoryEnabled(v){settings.historyEnabled=v;document.body.classList.toggle("no-history",v==="off");}
 function applyBookmarksEnabled(v){settings.bookmarksEnabled=v;document.body.classList.toggle("no-bookmarks",v==="off");}
 var UI_STYLES=["kastrava","chrome","firefox","zen","brave","safari"];
+var UI_FREE=["kastrava","chrome"];
 function applyUiStyle(v){
   if(UI_STYLES.indexOf(v)<0)v="kastrava";
-  if(v!=="kastrava"&&!isPremium())v="kastrava";
+  if(UI_FREE.indexOf(v)<0&&!isPremium())v="kastrava";
   settings.uiStyle=v;
   document.body.classList.toggle("ui-firefox",v==="firefox");
   document.body.classList.toggle("ui-chrome",v==="chrome");
@@ -4103,7 +4104,7 @@ function renderSettingsSection(id){
     h+="<div class=\"sg\"><div class=\"lbl\">Corner Radius</div><select id=\"s-radius\"><option value=\"small\">Small</option><option value=\"medium\">Medium</option><option value=\"large\">Large</option></select><div class=\"desc\">Rounding of tabs, panels and menus.</div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Speed Dial Size</div><select id=\"s-scsize\"><option value=\"comfortable\">Comfortable</option><option value=\"compact\">Compact</option></select></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Shortcut Tiles</div><select id=\"s-ntptiles\"><option value=\"4\">4</option><option value=\"8\">8</option><option value=\"12\">12</option></select><div class=\"desc\">How many shortcut tiles to show.</div></div><div class=\"sg\"><div class=\"lbl\">New Tab Background</div><select id=\"s-ntpbg\"><option value=\"default\">Default</option><option value=\"#15181d\">Graphite</option><option value=\"#0d1b2a\">Midnight</option><option value=\"#10231a\">Forest</option></select></div><div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">New Tab Search</div><div class=\"desc\">Show the search box on new tabs.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-ntpsearch\" class=\"tgl tgl-flip\"><label for=\"s-ntpsearch\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div><div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">New Tab Shortcuts</div><div class=\"desc\">Show the shortcut tiles on new tabs.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-ntpquick\" class=\"tgl tgl-flip\"><label for=\"s-ntpquick\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div><div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Tab Favicons</div><div class=\"desc\">Show site icons on tabs.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-tabfav\" class=\"tgl tgl-flip\"><label for=\"s-tabfav\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
-    h+="<div class=\"sg\"><div class=\"lbl\">Interface Style</div><select id=\"s-uistyle\"><option value=\"kastrava\">Kastrava</option><option value=\"chrome\">Chrome</option><option value=\"firefox\">Firefox</option><option value=\"zen\">Zen</option><option value=\"brave\">Brave</option><option value=\"safari\">Safari</option></select><div class=\"desc\">Kastrava is free. Chrome, Firefox, Zen, Brave and Safari styles need Premium.</div></div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">Interface Style</div><select id=\"s-uistyle\"><option value=\"kastrava\">Kastrava</option><option value=\"chrome\">Chrome</option><option value=\"firefox\">Firefox</option><option value=\"zen\">Zen</option><option value=\"brave\">Brave</option><option value=\"safari\">Safari</option></select><div class=\"desc\">Kastrava and Chrome are free. Firefox, Zen, Brave and Safari styles need Premium.</div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Tab Layout</div><select id=\"s-tablayout\"><option value=\"horizontal\">Horizontal (top)</option><option value=\"vertical\">Vertical (side)</option></select><div class=\"desc\">Vertical tabs show a sidebar with full titles, count and drag-to-reorder. Shortcut: Ctrl+Shift+V.</div></div>";
     h+="<div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Collapse Vertical Sidebar</div><div class=\"desc\">Show icons only in vertical mode.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-vtabscollapse\" class=\"tgl tgl-flip\"><label for=\"s-vtabscollapse\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
     h+="<div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Show Home Button</div><div class=\"desc\">Adds a home button to the toolbar.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-homebtn\" class=\"tgl tgl-flip\"><label for=\"s-homebtn\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
@@ -4309,7 +4310,7 @@ function bindSettingsEvents(id){
       setSel("s-ntptiles",settings.ntpTiles||"8");
       bindChange("s-ntptiles",function(v){sv("ntpTiles",v);applyNtpTiles(v);});
       setSel("s-uistyle",settings.uiStyle||"firefox");
-      bindChange("s-uistyle",function(v){if(v!=="kastrava"&&!isPremium()){setSel("s-uistyle","kastrava");requirePremium();return;}sv("uiStyle",v);applyUiStyle(v);toast("Interface: "+v);});
+      bindChange("s-uistyle",function(v){if(UI_FREE.indexOf(v)<0&&!isPremium()){setSel("s-uistyle",settings.uiStyle||"kastrava");requirePremium();return;}sv("uiStyle",v);applyUiStyle(v);toast("Interface: "+v);});
       setSel("s-tablayout",settings.tabLayout||"horizontal");
       bindChange("s-tablayout",function(v){if(v==="vertical"&&!isPremium()){setSel("s-tablayout","horizontal");requirePremium();return;}sv("tabLayout",v);applyTabLayout(v);});
       setCheck("s-vtabscollapse","on",settings.vtabsCollapsed);
