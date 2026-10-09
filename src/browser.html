@@ -4018,7 +4018,7 @@ function renderSettingsSection(id){
       if(LIC.reason==="expired"){
         h+="<div class=\"sg\"><div class=\"lbl\">Status</div><div class=\"desc\" style=\"font-weight:600;color:#c62828\">\u2716 Premium expired \u2014 renew from \u20B9190/day. Manual by default.</div></div>";
       }
-      h+="<div class=\"sg\"><div class=\"lbl\">Premium needs an account</div><div class=\"desc\">Log in under Account — the account key activates this device itself, up to 10 devices. No keys to paste, even after updating.</div><div style=\"margin-top:8px;display:flex;gap:8px;flex-wrap:wrap\"><button class=\"btn-sm btn-accent\" id=\"s-licgoacc\">Open Account</button></div></div>";
+      h+="<div class=\"sg\" id=\"s-licneed\"><div class=\"lbl\">Premium needs an account</div><div class=\"desc\">Log in under Account — the account key activates this device itself, up to 10 devices. No keys to paste, even after updating.</div><div style=\"margin-top:8px;display:flex;gap:8px;flex-wrap:wrap\"><button class=\"btn-sm btn-accent\" id=\"s-licgoacc\">Open Account</button></div></div>";
       h+="<div class=\"sg\" style=\"display:flex;gap:8px;flex-wrap:wrap\">"+(LIC.reason==="expired"?"<button class=\"btn-sm btn-accent\" id=\"s-licrenew\">Renew Premium</button>":"")+"<button class=\"btn-sm\" id=\"s-licbuy\">Buy Premium \u2014 $7/30d</button></div>";
       h+="<div class=\"desc\" style=\"margin-top:6px\">No key yet? Buy at <a href=\"#\" id=\"s-licbuylink\" style=\"color:var(--accent)\">kastrava.pp.ua/#premium</a> \u2014 you'll get a key instantly via Razorpay. Plans from \u20B9190/day. Manual renewal.</div>";
     }
@@ -4430,6 +4430,17 @@ function bindSettingsEvents(id){
       });
     }else if(id==="premium"){
       var pc=$("pm-copy");if(pc)pc.addEventListener("click",function(){copyText(LIC.machine);toast("Device ID copied");});
+      try{if(api&&api.syncStatus)api.syncStatus().then(function(st){
+        if(st&&st.loggedIn){var nb=$("s-licneed");if(nb){
+          var lb=nb.querySelector(".lbl");if(lb)lb.textContent="Logged in as "+st.email;
+          var ds=nb.querySelector(".desc");if(ds)ds.textContent="This device has not picked up Premium yet — activate it now.";
+          var wrap=nb.querySelector("div");if(wrap&&!$("s-licactivate-now")){
+            var btn=document.createElement("button");btn.className="btn-sm btn-accent";btn.id="s-licactivate-now";btn.textContent="Activate this device";
+            btn.addEventListener("click",function(){btn.disabled=true;try{activateOnAccount(function(){try{if(window.loadLicense)loadLicense();}catch(e){}try{renderSettingsSection("premium");bindSettingsEvents("premium");}catch(e){}});}catch(e){btn.disabled=false;}});
+            wrap.appendChild(btn);
+          }
+        }}
+      }).catch(function(){});}catch(e){}
       var ga=$("s-licgoacc");if(ga)ga.addEventListener("click",function(){var it=document.querySelector('.settings-nav .sn-item[data-s="sync"]');if(it)it.click();else renderSettingsSection("sync");});
       var mce=$("s-lickey");
       var act=$("s-licactivate");if(act)act.addEventListener("click",function(){activatePremium(mce?mce.value.trim():"");});
