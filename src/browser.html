@@ -224,9 +224,9 @@ body.no-bookmarks #bm-bar{display:none!important}
 .sp-item .sp-title{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sp-item .sp-url{font-size:10px;color:var(--c-text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sp-empty{text-align:center;color:var(--c-text2);padding:32px;font-size:12px}
-.ctx-menu{position:fixed;z-index:10000;background:var(--c-bg);border:1px solid var(--c-border);border-radius:var(--radius);padding:4px 0;min-width:200px;box-shadow:0 8px 32px rgba(0,0,0,.45);display:none;font-size:13px;color:var(--c-text)}
+.ctx-menu{position:fixed;z-index:10000;max-height:min(70vh,560px);overflow-y:auto;background:var(--c-bg);border:1px solid var(--c-border);border-radius:var(--radius);padding:4px 0;min-width:200px;box-shadow:0 8px 32px rgba(0,0,0,.45);display:none;font-size:13px;color:var(--c-text)}
 .ctx-menu.visible{display:block}
-.ctx-menu .item{padding:6px 14px;cursor:pointer;transition:background .08s;border-radius:4px;margin:0 4px}
+.ctx-menu .item{padding:6px 14px;cursor:pointer;transition:background .08s;border-radius:4px;margin:0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:340px}
 .ctx-menu .item:hover{background:var(--c-hover)}
 .ctx-menu .item.disabled{opacity:.38;cursor:default}
 .ctx-menu .item.disabled:hover{background:none}
@@ -398,7 +398,9 @@ body.chrome-dark{--c-bg:#202124;--c-toolbar:#35363a;--c-tab-active:#35363a;--c-o
 /* ===== FIREFOX PROTON UI ===== */
 body.ui-firefox .titlebar.chrome-tabs{height:36px;min-height:36px;max-height:36px;padding:2px 4px 0;overflow:hidden;background:var(--c-toolbar)}
 body.ui-firefox .tab-strip{gap:6px;padding:0 4px;align-items:flex-end;min-height:0}
-body.ui-firefox #tab-list{display:flex;align-items:flex-end;flex:1;min-width:0;min-height:0}
+body.ui-firefox #tab-list{display:flex;align-items:flex-end;flex:1;min-width:0;min-height:0;overflow-x:auto;overflow-y:hidden}
+#tab-list{scrollbar-width:none}
+#tab-list::-webkit-scrollbar{height:0;width:0}
 body.ui-firefox .tab-item{height:29px;border-radius:10px;margin-top:0;background:transparent}
 body.ui-firefox .tab-item:hover{background:var(--c-hover);color:var(--c-text)}
 body.ui-firefox .tab-item.active{background:var(--c-toolbar);color:var(--c-text);box-shadow:0 1px 4px rgba(0,0,0,.25)}
@@ -506,6 +508,7 @@ body.vtabs-collapsed .vtabs-new{border-style:solid}
   <div class="tab-strip" id="tab-strip">
     <div id="tab-list"></div>
   </div>
+  <button class="new-tab-btn" id="tab-overflow-btn" title="List all tabs" style="display:none"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
   <div class="win-ctrls">
     <button class="win-btn" data-act="min"><svg viewBox="0 0 12 12"><rect x="1" y="5.5" width="10" height="1" fill="currentColor"/></svg></button>
     <button class="win-btn" data-act="max"><svg viewBox="0 0 12 12"><rect x="1.5" y="1.5" width="9" height="9" rx="1" fill="none" stroke="currentColor" stroke-width="1"/></svg></button>
@@ -1247,7 +1250,13 @@ function moveTab(srcId,dstId){
 }
 function renderTabs(){
   var html=tabs.map(tabHTML).join("");
-  var list=$("tab-list");if(list){list.innerHTML=html;bindTabList(list);}
+  var list=$("tab-list");if(list){list.innerHTML=html;bindTabList(list);
+    try{
+      var _tob2=$("tab-overflow-btn");
+      if(_tob2)_tob2.style.display=(list.scrollWidth>list.clientWidth+4)?"":"none";
+      if(activeTab){var _ae=list.querySelector('.tab-item[data-id="'+activeTab.id+'"]');if(_ae)_ae.scrollIntoView({block:"nearest",inline:"nearest"});}
+    }catch(e){}
+  }
   var vlist=$("vtabs-list");
   if(vlist){
     bindVtabSearch();
@@ -4679,6 +4688,17 @@ function init(){
   try{setInterval(checkSleepTabs,60000);}catch(e){}
   try{$("btn-back").addEventListener("click",goBack);$("btn-fwd").addEventListener("click",goForward);$("btn-reload").addEventListener("click",reloadPage);$("btn-home").addEventListener("click",goHome);}catch(e){}
   try{$("new-tab-btn").addEventListener("click",function(){addTab();});}catch(e){}
+  try{
+    var _tl=$("tab-list");
+    if(_tl&&!_tl._wheelBound){_tl._wheelBound=true;_tl.addEventListener("wheel",function(e){
+      if(Math.abs(e.deltaY)>Math.abs(e.deltaX)){e.preventDefault();_tl.scrollLeft+=e.deltaY;}
+    },{passive:false});}
+    var _tob=$("tab-overflow-btn");
+    if(_tob)_tob.addEventListener("click",function(e){
+      e.stopPropagation();
+      showCtxMenu(tabs.map(function(t){return {text:(t.title||t.url||"New Tab"),action:(function(id){return function(){selectTab(id);};})(t.id)};}),_tob.getBoundingClientRect().left-140,_tob.getBoundingClientRect().bottom+6);
+    });
+  }catch(e){}
   try{var _vtn=$("vtabs-new");if(_vtn)_vtn.addEventListener("click",function(){addTab();});}catch(e){}
   try{var _vtc=$("vtabs-collapse");if(_vtc)_vtc.addEventListener("click",function(){var nv=settings.vtabsCollapsed==="on"?"off":"on";saveSetting("vtabsCollapsed",nv);applyVtabsCollapsed(nv);});}catch(e){}
   try{$("btn-pip").addEventListener("click",togglePip);$("btn-reader").addEventListener("click",toggleReader);$("btn-split").addEventListener("click",toggleSplit);$("btn-radar").addEventListener("click",toggleRadar);}catch(e){}
