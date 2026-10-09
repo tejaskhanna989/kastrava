@@ -806,6 +806,16 @@ app.whenReady().then(async () => {
     applyProxyAll(session)
   } catch {}
 
+  // Human mode: per-site shields-down suspends fingerprint spoofing there
+  // (CAPTCHAs, banking) while cookies/js shields keep their own rules.
+  try {
+    privacy.setShieldChecker((host) => {
+      try {
+        const m = (settingsBackend && settingsBackend.get('siteShields')) || {}
+        return (host && m[host]) || null
+      } catch { return null }
+    })
+  } catch {}
   app.on('web-contents-created', (_, wc) => {
     // Privacy spoofs (UA already set per-session below; page-level props
     // like connection/battery are neutered per document here).

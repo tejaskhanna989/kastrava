@@ -458,10 +458,24 @@ function applyUserAgent(sessionObj) {
 
 let webrtcAllowed = false
 function setWebrtcAllowed(v) { webrtcAllowed = !!v }
+// Per-site shields: when the user drops shields for a host (human mode for
+// CAPTCHAs/banking), fingerprint spoofing stays off there. Set once from
+// main.js; receives a hostname, returns its shield row or null.
+let shieldCheckFn = null
+function setShieldChecker(fn) { shieldCheckFn = (typeof fn === 'function') ? fn : null }
+function shieldsDownFor(url) {
+  try {
+    if (!shieldCheckFn) return false
+    const h = new URL(url || '').hostname
+    const sh = h && shieldCheckFn(h)
+    return !!(sh && sh.master === 'off')
+  } catch { return false }
+}
 function installWebRTCProtection(webContents) {
   if (!webContents || webContents.isDestroyed()) return
   if (webrtcAllowed) return
   webContents.on('dom-ready', () => {
+    if (shieldsDownFor(webContents.getURL())) return
     webContents.executeJavaScript(WEBRTC_BLOCK_SCRIPT).catch(() => {})
   })
 }
@@ -469,6 +483,7 @@ function installWebRTCProtection(webContents) {
 function installCanvasProtection(webContents) {
   if (!webContents || webContents.isDestroyed()) return
   webContents.on('dom-ready', () => {
+    if (shieldsDownFor(webContents.getURL())) return
     webContents.executeJavaScript(CANVAS_NOISE_SCRIPT).catch(() => {})
   })
 }
@@ -476,6 +491,7 @@ function installCanvasProtection(webContents) {
 function installNavigatorSpoof(webContents) {
   if (!webContents || webContents.isDestroyed()) return
   webContents.on('dom-ready', () => {
+    if (shieldsDownFor(webContents.getURL())) return
     webContents.executeJavaScript(NAVIGATOR_SPOOF_SCRIPT).catch(() => {})
   })
 }
@@ -484,6 +500,7 @@ function installFontProtection(webContents) {
   if (!webContents || webContents.isDestroyed()) return
   if (!featureState.fontFingerprint) return
   webContents.on('dom-ready', () => {
+    if (shieldsDownFor(webContents.getURL())) return
     webContents.executeJavaScript(FONT_FINGERPRINT_SCRIPT).catch(() => {})
   })
 }
@@ -492,6 +509,7 @@ function installCookieBannerDismissal(webContents) {
   if (!webContents || webContents.isDestroyed()) return
   if (!featureState.cookieBannerDismiss) return
   webContents.on('dom-ready', () => {
+    if (shieldsDownFor(webContents.getURL())) return
     webContents.executeJavaScript(COOKIE_BANNER_SCRIPT).catch(() => {})
   })
 }
@@ -664,7 +682,7 @@ module.exports = {
   CHROME_UA, CANVAS_NOISE_SCRIPT, WEBRTC_BLOCK_SCRIPT, NAVIGATOR_SPOOF_SCRIPT,
   applyUserAgent, installWebRTCProtection, setWebrtcAllowed, installCanvasProtection,
   installNavigatorSpoof, installWebviewProtection, configureWebRTC,
-  installPrivacyProtections, installPrivacyFilter, installFontProtection,
+  installPrivacyProtections, installPrivacyFilter, installFontProtection, setShieldChecker,
   installCookieBannerDismissal, loadFeatureState, saveFeatureState,
   setFeature, getFeatures, addToWhitelist, removeFromWhitelist, getWhitelist,
   addRequestRule, removeRequestRule, getRequestRules,
