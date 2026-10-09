@@ -411,6 +411,30 @@ body.ui-firefox .toolbar.chrome-bar{height:46px;background:var(--c-toolbar)}
 body.ui-firefox .omnibox.chrome-omnibox{height:32px;border-radius:18px;max-width:760px;margin-left:auto;margin-right:auto}
 body.ui-firefox .new-tab-btn{border-radius:8px}
 body.ui-firefox .new-tab-btn:hover{transform:none}
+/* ===== FULL CHROME (attached tabs, merged bar) ===== */
+body.ui-chrome .titlebar.chrome-tabs{height:38px;background:var(--c-toolbar)}
+body.ui-chrome .tab-item{height:34px;margin-top:4px;border-radius:8px 8px 0 0;background:transparent}
+body.ui-chrome .tab-item.active{background:var(--c-bg);box-shadow:none}
+body.ui-chrome .toolbar.chrome-bar{background:var(--c-bg);height:46px}
+body.ui-chrome .omnibox.chrome-omnibox{border-radius:24px;height:32px;background:var(--c-omni)}
+/* ===== ZEN (floating pills, translucent) ===== */
+body.ui-zen .titlebar.chrome-tabs{background:transparent;height:44px;padding:6px 8px 0}
+body.ui-zen .tab-item{height:34px;border-radius:12px;margin:0 3px;background:var(--c-surface);box-shadow:0 1px 6px rgba(0,0,0,.25)}
+body.ui-zen .tab-item.active{background:var(--c-toolbar);box-shadow:0 2px 12px rgba(0,0,0,.35),inset 0 0 0 1px var(--accent)}
+body.ui-zen .toolbar.chrome-bar{background:transparent;height:48px}
+body.ui-zen .omnibox.chrome-omnibox{border-radius:14px;max-width:680px;margin-left:auto;margin-right:auto;background:var(--c-surface)}
+/* ===== BRAVE (tall attached tabs) ===== */
+body.ui-brave .titlebar.chrome-tabs{height:38px;background:var(--c-bg)}
+body.ui-brave .tab-item{height:32px;margin-top:6px;border-radius:8px 8px 0 0}
+body.ui-brave .tab-item.active{background:var(--c-toolbar)}
+body.ui-brave .tab-item:not(.active):hover{background:var(--c-hover)}
+body.ui-brave .new-tab-btn{border-radius:50%}
+/* ===== SAFARI (compact pills, frosted) ===== */
+body.ui-safari .titlebar.chrome-tabs{height:34px;background:var(--c-toolbar)}
+body.ui-safari .tab-item{height:26px;border-radius:14px;background:var(--c-surface)}
+body.ui-safari .tab-item.active{background:var(--c-hover);box-shadow:inset 0 0 0 1px var(--c-border)}
+body.ui-safari .toolbar.chrome-bar{height:40px}
+body.ui-safari .omnibox.chrome-omnibox{border-radius:12px;height:28px;max-width:560px;margin-left:auto;margin-right:auto}
 .toolbar.chrome-bar{height:40px}
 .omnibox.chrome-omnibox{height:28px;border-radius:24px}
 .ntp.chrome-ntp{background:var(--c-toolbar)}
@@ -754,7 +778,7 @@ function applyEditionUI(){
     if(settings.theme!=="dark-0"&&settings.theme!=="light-0"){settings.theme="dark-0";saveSetting("theme","dark-0");}
     if(PREMIUM_ENGINES[settings.searchEngine]){settings.searchEngine="kastravasearch";saveSetting("searchEngine","kastravasearch");}
     if(settings.tabLayout==="vertical"){settings.tabLayout="horizontal";saveSetting("tabLayout","horizontal");applyTabLayout("horizontal");}
-    if(settings.uiStyle==="firefox"){settings.uiStyle="chrome";saveSetting("uiStyle","chrome");applyUiStyle("chrome");}
+    if(settings.uiStyle!=="kastrava"){settings.uiStyle="kastrava";saveSetting("uiStyle","kastrava");applyUiStyle("kastrava");}
     if(!applyThemeKey(settings.theme||"dark-0")&&settings.accent){document.documentElement.style.setProperty("--accent",settings.accent);}
     ["cursorFx","blobFx","glassFx","particleFx","clickSparkFx","pixelTrailFx","ribbonsFx"].forEach(function(k){if(settings[k]==="on"){settings[k]="off";saveSetting(k,"off");}});
     if(settings.cursorStyle==="custom"){settings.cursorStyle="system";saveSetting("cursorStyle","system");applyCursorStyle();}
@@ -883,10 +907,16 @@ function applyBookmarkBar(v){
 }
 function applyHistoryEnabled(v){settings.historyEnabled=v;document.body.classList.toggle("no-history",v==="off");}
 function applyBookmarksEnabled(v){settings.bookmarksEnabled=v;document.body.classList.toggle("no-bookmarks",v==="off");}
+var UI_STYLES=["kastrava","chrome","firefox","zen","brave","safari"];
 function applyUiStyle(v){
-  if(v==="firefox"&&!isPremium())v="chrome";
-  settings.uiStyle=(v==="chrome")?"chrome":"firefox";
-  document.body.classList.toggle("ui-firefox",settings.uiStyle==="firefox");
+  if(UI_STYLES.indexOf(v)<0)v="kastrava";
+  if(v!=="kastrava"&&!isPremium())v="kastrava";
+  settings.uiStyle=v;
+  document.body.classList.toggle("ui-firefox",v==="firefox");
+  document.body.classList.toggle("ui-chrome",v==="chrome");
+  document.body.classList.toggle("ui-zen",v==="zen");
+  document.body.classList.toggle("ui-brave",v==="brave");
+  document.body.classList.toggle("ui-safari",v==="safari");
 }
 function applyTabLayout(v){
   settings.tabLayout=(v==="vertical")?"vertical":"horizontal";
@@ -4073,7 +4103,7 @@ function renderSettingsSection(id){
     h+="<div class=\"sg\"><div class=\"lbl\">Corner Radius</div><select id=\"s-radius\"><option value=\"small\">Small</option><option value=\"medium\">Medium</option><option value=\"large\">Large</option></select><div class=\"desc\">Rounding of tabs, panels and menus.</div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Speed Dial Size</div><select id=\"s-scsize\"><option value=\"comfortable\">Comfortable</option><option value=\"compact\">Compact</option></select></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Shortcut Tiles</div><select id=\"s-ntptiles\"><option value=\"4\">4</option><option value=\"8\">8</option><option value=\"12\">12</option></select><div class=\"desc\">How many shortcut tiles to show.</div></div><div class=\"sg\"><div class=\"lbl\">New Tab Background</div><select id=\"s-ntpbg\"><option value=\"default\">Default</option><option value=\"#15181d\">Graphite</option><option value=\"#0d1b2a\">Midnight</option><option value=\"#10231a\">Forest</option></select></div><div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">New Tab Search</div><div class=\"desc\">Show the search box on new tabs.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-ntpsearch\" class=\"tgl tgl-flip\"><label for=\"s-ntpsearch\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div><div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">New Tab Shortcuts</div><div class=\"desc\">Show the shortcut tiles on new tabs.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-ntpquick\" class=\"tgl tgl-flip\"><label for=\"s-ntpquick\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div><div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Tab Favicons</div><div class=\"desc\">Show site icons on tabs.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-tabfav\" class=\"tgl tgl-flip\"><label for=\"s-tabfav\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
-    h+="<div class=\"sg\"><div class=\"lbl\">Interface Style</div><select id=\"s-uistyle\"><option value=\"firefox\">Firefox</option><option value=\"chrome\">Chrome</option></select><div class=\"desc\">Rounded floating tabs and pill address bar, or classic Chrome tabs.</div></div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">Interface Style</div><select id=\"s-uistyle\"><option value=\"kastrava\">Kastrava</option><option value=\"chrome\">Chrome</option><option value=\"firefox\">Firefox</option><option value=\"zen\">Zen</option><option value=\"brave\">Brave</option><option value=\"safari\">Safari</option></select><div class=\"desc\">Kastrava is free. Chrome, Firefox, Zen, Brave and Safari styles need Premium.</div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Tab Layout</div><select id=\"s-tablayout\"><option value=\"horizontal\">Horizontal (top)</option><option value=\"vertical\">Vertical (side)</option></select><div class=\"desc\">Vertical tabs show a sidebar with full titles, count and drag-to-reorder. Shortcut: Ctrl+Shift+V.</div></div>";
     h+="<div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Collapse Vertical Sidebar</div><div class=\"desc\">Show icons only in vertical mode.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-vtabscollapse\" class=\"tgl tgl-flip\"><label for=\"s-vtabscollapse\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
     h+="<div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Show Home Button</div><div class=\"desc\">Adds a home button to the toolbar.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-homebtn\" class=\"tgl tgl-flip\"><label for=\"s-homebtn\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
@@ -4279,7 +4309,7 @@ function bindSettingsEvents(id){
       setSel("s-ntptiles",settings.ntpTiles||"8");
       bindChange("s-ntptiles",function(v){sv("ntpTiles",v);applyNtpTiles(v);});
       setSel("s-uistyle",settings.uiStyle||"firefox");
-      bindChange("s-uistyle",function(v){if(v==="firefox"&&!isPremium()){setSel("s-uistyle","chrome");requirePremium();return;}sv("uiStyle",v);applyUiStyle(v);toast("Interface: "+v);});
+      bindChange("s-uistyle",function(v){if(v!=="kastrava"&&!isPremium()){setSel("s-uistyle","kastrava");requirePremium();return;}sv("uiStyle",v);applyUiStyle(v);toast("Interface: "+v);});
       setSel("s-tablayout",settings.tabLayout||"horizontal");
       bindChange("s-tablayout",function(v){if(v==="vertical"&&!isPremium()){setSel("s-tablayout","horizontal");requirePremium();return;}sv("tabLayout",v);applyTabLayout(v);});
       setCheck("s-vtabscollapse","on",settings.vtabsCollapsed);
