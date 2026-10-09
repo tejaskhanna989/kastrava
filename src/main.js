@@ -214,7 +214,34 @@ function createWindow() {
       return
     }
     radar.add(details.webContentsId, { kind: 'req', host, t: Date.now() })
+    // CAPTCHA providers: ping the UI once per site so it can offer
+    // one-tap human mode instead of failing the check silently.
+    try {
+      if (isCaptchaUrl(details.url)) {
+        const top = topHostOf(details)
+        if (top && !captchaNotified.has(top) && mainWindow && !mainWindow.isDestroyed()) {
+          captchaNotified.add(top)
+          mainWindow.webContents.send('captcha-found', top)
+        }
+      }
+    } catch {}
   })
+  const captchaNotified = new Set()
+  function isCaptchaUrl(u) {
+    try {
+      const uu = new URL(u)
+      const h = (uu.hostname || '').toLowerCase()
+      const p = (uu.pathname || '').toLowerCase()
+      if (h.endsWith('recaptcha.net')) return true
+      if ((h.endsWith('google.com') || h.endsWith('gstatic.com')) && p.indexOf('recaptcha') !== -1) return true
+      if (h.endsWith('hcaptcha.com')) return true
+      if (h === 'challenges.cloudflare.com') return true
+      if (h.endsWith('friendlycaptcha.com')) return true
+      if (h.endsWith('captcha-delivery.com')) return true
+      if (h.endsWith('funcaptcha.com')) return true
+      return false
+    } catch { return false }
+  }
   ses.webRequest.onHeadersReceived((details, callback) => {
     const rh = details.responseHeaders
     // Cookie policy: off = block all, third = first-party only, on = allow.

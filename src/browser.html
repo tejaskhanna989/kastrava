@@ -3797,6 +3797,20 @@ function toggleSplit(){
 }
 
 /* Tracking Radar */
+var captchaAsked={};
+function onCaptchaFound(host){
+  try{
+    if(!host||captchaAsked[host])return;
+    var sh=((settings&&settings.siteShields)||{})[host];
+    if(sh&&sh.master==="off")return;
+    captchaAsked[host]=true;
+    showConfirmModal(function(){
+      setShield(host,{master:"off"});
+      toast("Human mode on for "+host+" — reloading.");
+      try{if(activeTab&&activeTab.wv)activeTab.wv.reload();}catch(e){}
+    },{title:"CAPTCHA detected",desc:"This page shows a human check. Turn shields DOWN for "+host+" so it can pass? The rest of the web stays hardened.",confirmText:"Enable human mode"});
+  }catch(e){}
+}
 function onRadarUpdate(wcId,ev){
   if(!wcId)return;
   if(!radarEvents[wcId])radarEvents[wcId]=[];
@@ -4725,6 +4739,7 @@ function init(){
     try{if(api.onAgUpdate)api.onAgUpdate(handleAgUpdate);}catch(e){}
     try{if(api.onAgUpdate)api.onAgUpdate(handleAgUpdate);}catch(e){}
     try{if(api.onRadarUpdate)api.onRadarUpdate(onRadarUpdate);}catch(e){}
+    try{if(api.onCaptchaFound)api.onCaptchaFound(onCaptchaFound);}catch(e){}
   }
 
   loadSavedSession();
