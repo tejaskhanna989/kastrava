@@ -91,8 +91,8 @@ function verifyPayload(payload, sig) {
     // v2 account-bound: the device cap lives server-side, not in the
     // signature. The app layer matches acc against the logged-in account.
     if (typeof payload.acc !== 'string' || !payload.acc.includes('@')) return { ok: false, reason: 'bad_issuer' }
-  } else if ((payload.mid || '').toUpperCase() !== machineCode()) {
-    // v1 legacy machine-bound: unchanged.
+  } else if ((payload.mid || '').toUpperCase() !== machineIdRaw()) {
+    // v1 legacy machine-bound: compare raw hex, not the KAS2- display form.
     return { ok: false, reason: 'machine_mismatch' }
   }
   // Grace period: the billing period ended (sub_end) but exp (sub_end +
@@ -124,7 +124,7 @@ function status() {
 
 function appVersion() { try { return require('electron').app.getVersion() } catch { return null } }
 async function activate(key) {
-  const machine = machineCode()
+  const machine = machineIdRaw()
   try {
     const res = await fetch(API.replace(/\/$/, '') + '/api/activate', {
       method: 'POST',
@@ -155,7 +155,7 @@ async function activate(key) {
 // device — no per-machine keys, no machine check. Legacy activate(key)
 // above is kept for old key-entry flows.
 async function activateAccount(accountToken) {
-  const machine = machineCode()
+  const machine = machineIdRaw()
   let deviceName = ''
   try { deviceName = os.hostname() || '' } catch {}
   try {
@@ -190,7 +190,7 @@ async function activateAccount(accountToken) {
 async function cancel() {
   const lic = loadLicense()
   if (!lic || !lic.key) return { ok: false, error: 'no_license', msg: 'No active license on this machine.' }
-  const machine = machineCode()
+  const machine = machineIdRaw()
   try {
     const res = await fetch(API.replace(/\/$/, '') + '/api/cancel', {
       method: 'POST',
