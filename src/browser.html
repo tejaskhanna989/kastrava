@@ -1461,7 +1461,7 @@ function renderSetup(){
             if(r.totp&&totpEl){totpEl.style.display="";}
             note(r.need_verify?"Verify your email first — code was sent. Enter it above, then Log in again.":"Email code sent — enter it above, then Log in again.");
             return;}
-          if(r&&r.ok){loginDone(email,pass,pwEl);try{if(isPremium())activateOnAccount();}catch(e){}}
+          if(r&&r.ok){loginDone(email,pass,pwEl);try{activateOnAccount();}catch(e){}}
           else note(r&&r.msg?r.msg:"Login failed.");
         }).catch(function(){note("Could not reach the server.");});
       }
@@ -3686,10 +3686,13 @@ function bindSyncPanel(){
       return;
     }
     msg("Logging in…");
-    function loggedIn(){done();if(pw)pw.value="";refresh();
-      if(!isPremium()){msg("Logged in. Premium unlocks sync and activation.");return;}
-      msg("Logged in. Syncing…");
-      api.syncNow({apiBase:syncApiBase()}).then(function(r2){msg(r2&&r2.ok?"Synced.":"Sync will retry.");if(r2&&r2.licenseOnFile)showLic(r2.licenseOnFile);refresh();}).catch(function(){msg("Sync failed.");});
+    function loggedIn(){done();if(pw)pw.value="";
+      function go(){refresh();
+        if(!isPremium()){msg("Logged in. Premium unlocks sync and activation.");return;}
+        msg("Logged in. Syncing…");
+        api.syncNow({apiBase:syncApiBase()}).then(function(r2){msg(r2&&r2.ok?"Synced.":"Sync will retry.");if(r2&&r2.licenseOnFile)showLic(r2.licenseOnFile);refresh();}).catch(function(){msg("Sync failed.");});
+      }
+      try{activateOnAccount(function(){go();});}catch(e){go();}
     }
     api.syncLogin({apiBase:syncApiBase(),email:email,password:pass}).then(function(r){
       if(r&&r.need_email_otp){pendingAuth={mode:"otp",email:email,pass:pass};showCode("Code sent to your email — enter it above, then Log in again.");if(r.totp&&tcEl){tcEl.style.display="";}done();return;}
