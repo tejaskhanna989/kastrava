@@ -820,7 +820,7 @@ function showRenewModal(s){
   var due=s.expiresAt?new Date(s.expiresAt).toLocaleDateString():"soon";
   var desc=s.grace
     ?"Plan ended \u2014 grace runs until "+due+". Renew to keep Premium on all devices; the key stays the same."
-    :"Your Premium plan ended"+(s.expiresAt?" ("+due+")":"")+". Renew to unlock Premium again. Manual renewal is default \u2014 that's why reminders like this exist.";
+    :"Your Premium plan ended"+(s.expiresAt?" ("+due+")":"")+". Renew to unlock Premium again. Renewal is manual-only \u2014 nothing auto-charges, so reminders like this exist.";
   showConfirmModal(function(){openOobBuy(s.machine||LIC.machine||"");},{
     title:s.grace?"Renew Kastrava Premium":"Kastrava Premium expired",
     desc:desc,
