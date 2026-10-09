@@ -129,7 +129,7 @@ r.setAttribute('data-theme',s?s:(window.matchMedia&&window.matchMedia('(prefers-
 <p class="fine" style="margin:0 0 4px">Manual renewal — you pay each time, nothing auto-charges.</p>
 <div style="margin-top:14px"><button class="btn" id="buy-go">Buy — ₹670 / 30 days</button></div>
 <div class="msg" id="buy-msg"></div>
-<p class="fine" id="buy-inrnote">Charged in INR (₹670). Renewing extends your newest key — every logged-in browser follows.</p>
+<p class="fine" id="buy-inrnote">Charged in INR (₹670). Renewing extends your newest key — every logged-in browser follows. By paying you agree to the <a href="/terms.html" style="color:var(--blue)">Terms</a> and <a href="/refunds.html" style="color:var(--blue)">Refund Policy</a>.</p>
 </div>
 </div>
 <div class="grid" style="margin-top:16px">
@@ -180,7 +180,7 @@ r.setAttribute('data-theme',s?s:(window.matchMedia&&window.matchMedia('(prefers-
 </div>
 </div>
 </div></main>
-<footer><div class="container"><p>Kastrava 101 RC · <a href="https://kastrava.pp.ua/">home</a></p></div></footer>
+<footer><div class="container"><p>Kastrava 101 RC · <a href="https://kastrava.pp.ua/">home</a> · <a href="/terms.html">Terms</a> · <a href="/privacy.html">Privacy</a> · <a href="/refunds.html">Refunds</a> · <a href="/contact.html">Contact</a></p></div></footer>
 <script>
 (function(){
 var KAS_API=((window.KAS_API)||(location.search.match(/[?&]api=([^&]+)/)||[])[1]||'https://nexufog.pp.ua').replace(/\/$/,'');
@@ -581,7 +581,7 @@ function paintPlan(){
   });
   buyEl.textContent='Buy — \u20B9'+PLAN_META[planPicked].inr+' / '+(PLAN_META[planPicked].days===1?'24 hours':'30 days');
   var note=document.getElementById('buy-inrnote');
-  if(note)note.textContent='Charged in INR (\u20B9'+PLAN_META[planPicked].inr+'). Renewing extends your newest key — every logged-in browser follows.';
+  if(note)note.innerHTML='Charged in INR (\u20B9'+PLAN_META[planPicked].inr+'). Renewing extends your newest key — every logged-in browser follows. By paying you agree to the <a href="/terms.html" style="color:var(--blue)">Terms</a> and <a href="/refunds.html" style="color:var(--blue)">Refund Policy</a>.';
 }
 document.querySelectorAll('.plan-pick').forEach(function(b){
   b.addEventListener('click',function(){planPicked=b.dataset.plan;paintPlan();});
