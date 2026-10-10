@@ -11,3 +11,4 @@ Kastrava is created and maintained by Planetofoses989.
 ## Bug Testers
 * LEMON - Live QA: caught the vertical-tabs gating bypass and the missing app-grid icon
 * Not'CLASSY - Live QA: bookmark back-navigation, broken JS-heavy pages
+* kinsleydev - Live QA: caught the navigator.connection/getBattery leaks and the Electron UA token
