@@ -167,13 +167,26 @@ class Prefs(context: Context) {
         fun searchUrl(engine: String, premium: Boolean, query: String, custom: String = ""): String {
             if (engine == "custom") {
                 val t = custom.trim()
-                if (t.isNotEmpty()) {
+                if (t.isNotEmpty() && (premium || !customIsPremium(t))) {
                     return if (t.contains("%s")) t.replace("%s", query) else t + query
                 }
                 return KASTRA_SEARCH + query
             }
             val key = if (!premium && engine !in FREE_ENGINES) "kastrava" else engine
             return (ENGINES[key]?.second ?: KASTRA_SEARCH) + query
+        }
+
+        /** True when a custom template points at a Premium engine's domain. */
+        fun customIsPremium(template: String): Boolean {
+            return try {
+                val h = android.net.Uri.parse(template.trim()).host?.lowercase() ?: return false
+                h == "search.brave.com" || h == "brave.com" ||
+                    h == "ecosia.org" || h == "www.ecosia.org" ||
+                    h == "google.com" || h.startsWith("google.") || h.endsWith(".google.com") ||
+                    (h.startsWith("www.google.") || h.startsWith("maps.google."))
+            } catch (e: Exception) {
+                false
+            }
         }
     }
 }

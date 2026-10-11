@@ -731,6 +731,16 @@ var cursorFxDispose=null;
 var SEARCH_ENGINES={kastravasearch:"https://kastravasearch.pp.ua/search?q=%s",duckduckgo:"https://duckduckgo.com/?q=%s",brave:"https://search.brave.com/search?q=%s",google:"https://www.google.com/search?q=%s",ecosia:"https://www.ecosia.org/search?q=%s"};
 // Premium-only extras. Free ships KastravaSearch + DuckDuckGo.
 var PREMIUM_ENGINES={brave:1,google:1,ecosia:1};
+function customEngineIsPremium(tpl){
+  try{
+    var u=new URL(tpl);
+    var h=(u.hostname||"").toLowerCase();
+    if(/(^|\.)google\.[a-z.]+$/.test(h))return true;
+    if(h==="search.brave.com"||h==="brave.com")return true;
+    if(h==="ecosia.org"||h==="www.ecosia.org")return true;
+    return false;
+  }catch(e){return false;}
+}
 function loadSettings(){
   if(!api||!api.getSettings)return Promise.resolve();
   return api.getSettings().then(function(saved){
@@ -1106,7 +1116,10 @@ function resolveUrl(url){
   if(url.match(/^10\.\d+\.\d+\.\d+(:\d+)?(\/.*)?$/))return "http://"+url;
   if(url.match(/^[a-zA-Z0-9][a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(\/.*)?$/))return "https://"+url;
   var e=SEARCH_ENGINES[settings.searchEngine]||SEARCH_ENGINES.kastravasearch;
-  if(settings.searchEngine==="custom"&&settings.customEngine)e=settings.customEngine;
+  if(settings.searchEngine==="custom"&&settings.customEngine){
+    if(customEngineIsPremium(settings.customEngine)&&!isPremium())e=SEARCH_ENGINES.kastravasearch;
+    else e=settings.customEngine;
+  }
   return e.replace("%s",encodeURIComponent(url));
 }
 function errInfo(code){
@@ -1144,6 +1157,7 @@ function addTab(url,opts){
   wrap.className="webview-wrap";
   wrap.id="wv-"+id;
   var wv=document.createElement("webview");
+  try{if(window.__guestPreload)wv.setAttribute("preload",window.__guestPreload);}catch(e){}
   wv.setAttribute("autosize","on");
   wv.setAttribute("partition","kastrava");
   wv.style.cssText="position:absolute;inset:0;border:none;width:100%;height:100%";
@@ -3789,7 +3803,7 @@ function buildReaderHtml(d,origUrl){
   var imgs="";
   (d.imgs||[]).slice(0,20).forEach(function(i){imgs+="<img src=\""+esc(i.src)+"\" alt=\""+esc(i.alt||"")+"\" loading=\"lazy\">";});
   var host="";try{host=new URL(origUrl).hostname;}catch(e){}
-  return "<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>"+esc(d.title||"Reader Mode")+"</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Georgia,'Times New Roman',serif;background:#0d1117;color:#c9d1d9;line-height:1.75;font-size:18px}.rb{position:sticky;top:0;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 20px;background:#161b22;border-bottom:1px solid rgba(255,255,255,.06);font-family:'Segoe UI',system-ui,sans-serif}.rb .host{font-size:13px;color:#8b949e;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rb button{background:rgba(138,180,248,.15);color:#8ab4f8;border:none;border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;font-family:inherit;flex-shrink:0}.rb button:hover{background:rgba(138,180,248,.25)}.art{max-width:720px;margin:0 auto;padding:40px 24px 80px}h1{font-size:34px;line-height:1.25;color:#e6edf3;margin-bottom:16px}.meta{font-size:13px;color:#8b949e;margin-bottom:28px}.art img{max-width:100%;height:auto;border-radius:8px;margin:12px 0}h1,h2,h3,h4{line-height:1.3;color:#e6edf3;margin:24px 0 12px;font-family:'Segoe UI',system-ui,sans-serif}p{margin:0 0 18px}a{color:#8ab4f8}pre{background:#161b22;border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:14px;overflow-x:auto;font-size:14px}code{font-family:'Courier New',monospace}blockquote{border-left:3px solid #30363d;padding-left:16px;color:#8b949e;font-style:italic}</style></head><body><div class='rb'><span class='host'>"+esc(host)+"</span><button onclick='location.href=decodeURIComponent(escape(atob(b64)))'>Exit reader mode</button></div><div class='art'><h1>"+esc(d.title||"")+"</h1><div class='meta'>"+esc(host)+"</div>"+d.html+imgs+"</div><scr"+"ipt></scr"+"ipt></body></html>"
+  return "<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>"+esc(d.title||"Reader Mode")+"</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Georgia,'Times New Roman',serif;background:#0d1117;color:#c9d1d9;line-height:1.75;font-size:18px}.rb{position:sticky;top:0;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 20px;background:#161b22;border-bottom:1px solid rgba(255,255,255,.06);font-family:'Segoe UI',system-ui,sans-serif}.rb .host{font-size:13px;color:#8b949e;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rb button{background:rgba(138,180,248,.15);color:#8ab4f8;border:none;border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;font-family:inherit;flex-shrink:0}.rb button:hover{background:rgba(138,180,248,.25)}.art{max-width:720px;margin:0 auto;padding:40px 24px 80px}h1{font-size:34px;line-height:1.25;color:#e6edf3;margin-bottom:16px}.meta{font-size:13px;color:#8b949e;margin-bottom:28px}.art img{max-width:100%;height:auto;border-radius:8px;margin:12px 0}h1,h2,h3,h4{line-height:1.3;color:#e6edf3;margin:24px 0 12px;font-family:'Segoe UI',system-ui,sans-serif}p{margin:0 0 18px}a{color:#8ab4f8}pre{background:#161b22;border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:14px;overflow-x:auto;font-size:14px}code{font-family:'Courier New',monospace}blockquote{border-left:3px solid #30363d;padding-left:16px;color:#8b949e;font-style:italic}</style></head><body><div class='rb'><span class='host'>"+esc(host)+"</span><button onclick='location.href=decodeURIComponent(escape(atob(b64)))'>Exit reader mode</button></div><div class='art'><h1>"+esc(d.title||"")+"</h1><div class='meta'>"+esc(host)+"</div>"+d.html+imgs+"</div><scr"+"ipt>var b64=\""+b64+"\";</scr"+"ipt></body></html>"
 }
 function toggleReader(){
   // Free for everyone: reader mode is table stakes in every browser,
@@ -4404,7 +4418,7 @@ function bindSettingsEvents(id){
       bindChange("s-bmbar",function(v){sv("bookmarkBar",v);applyBookmarkBar(v);});
     }else if(id==="search"){
       var se=$("s-se");if(se)se.value=settings.searchEngine||"kastravasearch";
-      var ce=$("s-customengine");if(ce){ce.value=settings.customEngine||"";ce.addEventListener("change",function(e){sv("customEngine",e.target.value.trim());});}
+      var ce=$("s-customengine");if(ce){ce.value=settings.customEngine||"";ce.addEventListener("change",function(e){var v=e.target.value.trim();if(v&&customEngineIsPremium(v)&&!isPremium()){e.target.value=settings.customEngine||"";requirePremium();toast("That search belongs to Premium — pick it directly with Premium.");return;}sv("customEngine",v);});}
       var seCh=$("s-se");if(seCh)seCh.addEventListener("change",function(e){var v=e.target.value;if(PREMIUM_ENGINES[v]&&!isPremium()){e.target.value=settings.searchEngine||"kastravasearch";requirePremium();return;}sv("searchEngine",v);});
     }else if(id==="privacy"){
       setSel("s-tracking",settings.tracking);
@@ -4773,6 +4787,7 @@ function init(){
     try{if(api.onCaptchaFound)api.onCaptchaFound(onCaptchaFound);}catch(e){}
   }
 
+  try{if(api&&api.getGuestPreload)api.getGuestPreload().then(function(u){if(u)window.__guestPreload=u;}).catch(function(){});}catch(e){}
   loadSavedSession();
 }
 if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",init);}else{init();}

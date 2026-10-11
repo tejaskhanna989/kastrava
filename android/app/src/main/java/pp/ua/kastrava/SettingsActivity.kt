@@ -47,7 +47,13 @@ class SettingsActivity : AppCompatActivity() {
         etCustom.setText(app.prefs.customEngine)
         etCustom.visibility = if (app.prefs.engine == "custom") EditText.VISIBLE else EditText.GONE
         etCustom.setOnFocusChangeListener { v, focused ->
-            if (!focused) app.prefs.customEngine = (v as EditText).text.toString().trim()
+            if (!focused) {
+                val t = (v as EditText).text.toString().trim()
+                app.prefs.customEngine = t
+                if (t.isNotEmpty() && Prefs.customIsPremium(t) && !app.license.status().activated) {
+                    Toast.makeText(this, "That search belongs to Premium", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
 
         val themeGroup: RadioGroup = findViewById(R.id.themeGroup)

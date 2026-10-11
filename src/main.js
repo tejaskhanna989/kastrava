@@ -1055,6 +1055,18 @@ function syncData() {
 ipcMain.handle('sync-status', () => {
   try { return Object.assign({ ok: true }, syncEngine.status(syncStore(), safeStorage)) } catch { return { ok: false } }
 })
+function guestPreloadUrl() {
+  // Navigator spoof must win the race against page scripts, so it ships as
+  // a guest preload (document_start) instead of only dom-ready injection.
+  // Written fresh every launch so the UA never goes stale across upgrades.
+  try {
+    const dir = app.getPath('userData')
+    const fp = path.join(dir, 'guest-preload.js')
+    fs.writeFileSync(fp, privacy.NAVIGATOR_SPOOF_SCRIPT, 'utf8')
+    return 'file://' + fp.split(path.sep).join('/')
+  } catch { return null }
+}
+ipcMain.handle('get-guest-preload', async () => guestPreloadUrl());
 ipcMain.handle('sync-login', async (_, { apiBase, email, password }) => {
   try { return await syncEngine.login(apiBase || 'https://nexufog.pp.ua', email, password, syncStore(), safeStorage) } catch { return { ok: false, msg: 'Login failed.' } }
 })
