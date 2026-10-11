@@ -386,7 +386,15 @@ const NAVIGATOR_SPOOF_SCRIPT = `
     // Battery Status API leaks charge level and charging state — a known
     // fingerprinting vector with zero legitimate use in a browser UI.
     // Frozen generic full-charge profile, matching function shape exactly.
-    Object.defineProperty(navigator,'getBattery',{value:function(){return Promise.resolve(Object.freeze({charging:true,chargingTime:0,dischargingTime:Number.POSITIVE_INFINITY,level:1,addEventListener:function(){},removeEventListener:function(){},dispatchEvent:function(){return false;}}));},configurable:true});
+    // Two-pronged install: defineProperty can throw where the embedder
+    // locked the slot, plain assignment covers the rest. Verified in place.
+    (function(){
+      var frozenProfile=function(){return Promise.resolve(Object.freeze({charging:true,chargingTime:0,dischargingTime:Number.POSITIVE_INFINITY,level:1,addEventListener:function(){},removeEventListener:function(){},dispatchEvent:function(){return false;}}));};
+      var installed=false;
+      try{Object.defineProperty(navigator,'getBattery',{value:frozenProfile,configurable:true});installed=(navigator.getBattery===frozenProfile);}catch(e){}
+      if(!installed){try{navigator.getBattery=frozenProfile;installed=(navigator.getBattery===frozenProfile);}catch(e){}}
+      try{window.__kastrava_battery_ok=!!installed;}catch(e){}
+    })();
   }
 })();
 `
