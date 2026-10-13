@@ -102,6 +102,27 @@
       "languages": [
         "en-US"
       ]
+    },
+    "snap": {
+      "confinement": "strict",
+      "grade": "stable",
+      "summary": "Private browser with zero persistent web storage",
+      "description": "Kastrava keeps zero persistent web storage. Cookies, cache and site data live in memory and are wiped on quit. No telemetry. Free core, optional Premium.",
+      "plugs": [
+        "desktop",
+        "desktop-legacy",
+        "gsettings",
+        "home",
+        "x11",
+        "wayland",
+        "opengl",
+        "network",
+        "network-bind",
+        "audio-playback",
+        "audio-record",
+        "camera",
+        "removable-media"
+      ]
     }
   },
   "devDependencies": {
