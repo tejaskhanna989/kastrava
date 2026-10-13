@@ -47,4 +47,28 @@ function convertPaise(paise, currency, rates) {
   return { amount: Math.max(0.5, major).toFixed(2), currency }
 }
 
-module.exports = { fromInrPaise, getRates, convertPaise }
+async function getUsdRates() {
+  try {
+    const r = await fetch('https://open.er-api.com/v6/latest/USD', { signal: AbortSignal.timeout(8000) })
+    const j = await r.json().catch(() => null)
+    if (j && j.result === 'ok' && j.rates) return j.rates
+  } catch {}
+  const perUsd = FALLBACK_PER_INR.USD
+  const out = {}
+  for (const k in FALLBACK_PER_INR) out[k] = FALLBACK_PER_INR[k] / perUsd
+  return out
+}
+
+// USD dollars -> { amount, currency } for PayPal.
+async function fromUsd(usd, currency) {
+  if (currency === 'INR') return { amount: String(usd), currency: 'INR' }
+  const rates = await getUsdRates()
+  const perUsd = Number(rates[currency]) || 1
+  const major = usd * perUsd
+  if (currency === 'JPY' || currency === 'HUF' || currency === 'TWD') {
+    return { amount: String(Math.max(1, Math.round(major))), currency }
+  }
+  return { amount: Math.max(0.5, major).toFixed(2), currency }
+}
+
+module.exports = { fromInrPaise, getRates, convertPaise, fromUsd }

@@ -711,7 +711,7 @@ var LIC={activated:false,machine:"",key:null,reason:"no_license",expiresAt:null,
 var licRefreshed=false;
 function editionLabel(){if(EDITION==="free")return "Free";return LIC.activated?"Premium":"Free";}
 function isPremium(){if(EDITION==="free")return false;return !!(LIC&&LIC.activated);}
-function requirePremium(){if(isPremium())return true;toast("Kastrava Premium — from ₹190/day, 10 devices");setTimeout(function(){openPremiumSection();},600);return false;}
+function requirePremium(){if(isPremium())return true;toast("Kastrava Premium — from ₹29/day, 10 devices");setTimeout(function(){openPremiumSection();},600);return false;}
 function $(id){return document.getElementById(id)}
 function qa(sel){return document.querySelectorAll(sel)}
 function esc(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
@@ -1524,7 +1524,7 @@ function renderSetup(){
     var __premActive=isPremium();
     var __premBox=__premActive
       ?'<div class="setup-priv"><div><span class="ok">\u2713</span>Premium is active on this machine</div></div>'
-      :'<div style="margin:10px auto 4px;padding:8px 24px;border-radius:999px;border:1px solid rgba(255,179,0,.45);background:rgba(255,179,0,.08);color:#ffb300;font-weight:700;font-size:20px;display:inline-block">$7 \u00B7 \u20B9670 <span style="font-size:12px;color:var(--c-text2);font-weight:500">/ 30 days \u00B7 10 devices</span><div style="font-size:12px;color:var(--c-text2);margin-top:8px">Radar · Cursor FX · Workspaces · Split View · 20 themes · Brave/Google/Ecosia · PiP · Screenshots · Localhost · Vertical tabs</div></div><div><button class="setup-btn" id="setup-prem-go" style="background:linear-gradient(135deg,#ffb300,#f57c00);box-shadow:0 6px 24px rgba(255,179,0,.35)">Get Premium</button></div><div class="setup-sub" style="margin-top:10px">Opens the buying page after setup finishes.</div>';
+      :'<div style="margin:10px auto 4px;padding:8px 24px;border-radius:999px;border:1px solid rgba(255,179,0,.45);background:rgba(255,179,0,.08);color:#ffb300;font-weight:700;font-size:20px;display:inline-block">$19 \u00B7 \u20B9299 <span style="font-size:12px;color:var(--c-text2);font-weight:500">/ 30 days \u00B7 10 devices</span><div style="font-size:12px;color:var(--c-text2);margin-top:8px">Radar · Cursor FX · Workspaces · Split View · 20 themes · Brave/Google/Ecosia · PiP · Screenshots · Localhost · Vertical tabs</div></div><div><button class="setup-btn" id="setup-prem-go" style="background:linear-gradient(135deg,#ffb300,#f57c00);box-shadow:0 6px 24px rgba(255,179,0,.35)">Get Premium</button></div><div class="setup-sub" style="margin-top:10px">Opens the buying page after setup finishes.</div>';
     c.innerHTML=dots+grid(ART_PREMIUM,'<div class="setup-name" style="font-size:24px;letter-spacing:2px">Account & Premium</div><div class="setup-sub">One login syncs bookmarks and settings between devices, encrypted end to end. Logging in auto-activates the account key on this device — up to 10 devices share one key, bound to your account, not the machine. Manual renewal — you pay each time, nothing auto-charges.'+(isPremium()?' Sync is on with your Premium.':' Your login is saved now — syncing itself unlocks with Premium.')+'</div><div class="setup-sub" id="setup-sync-note"></div><input id="setup-ac-email" type="email" autocomplete="email" placeholder="you@example.com" style="width:100%;margin:2px 0 8px;padding:10px 14px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px"><input id="setup-ac-pass" type="password" autocomplete="current-password" placeholder="Password (8+ characters)" style="width:100%;margin:0 0 8px;padding:10px 14px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px"><input id="setup-ac-code" inputmode="numeric" maxlength="6" placeholder="Email code" autocomplete="one-time-code" style="display:none;width:100%;margin:0 0 8px;padding:10px 14px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px"><input id="setup-ac-totp" inputmode="numeric" maxlength="6" placeholder="2FA code (if enabled)" autocomplete="one-time-code" style="display:none;width:100%;margin:0 0 12px;padding:10px 14px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px"><div><button class="setup-btn" id="setup-ac-login" style="margin-right:8px">Log in</button><button class="setup-btn" id="setup-ac-signup">Sign up</button></div><div style="margin-top:14px">'+__premBox+'</div>',CONTINUE);
     (function(){
       function note(t){var n=$("setup-sync-note");if(n)n.textContent=t||"";}
@@ -4136,7 +4136,7 @@ try{if(!window.__chromeVer){var m=navigator.userAgent.match(/Chrome\/([\d.]+)/);
 function renderSettingsSection(id){
   var p=$("settings-panel");var h="";
   if(id==="premium"){h="<h3>Kastrava Premium</h3>";
-    h+="<div class=\"desc\" style=\"margin-bottom:12px\">Unlock Tracking Radar, Cursor FX, Workspaces, Split View and every theme \u2014 <b>\u20B9670 for 30 days (~$7), up to 10 devices. Manual renewal by default.</b></div>";
+    h+="<div class=\"desc\" style=\"margin-bottom:12px\">Unlock Tracking Radar, Cursor FX, Workspaces, Split View and every theme \u2014 <b>\u20B9299 for 30 days (~$19), up to 10 devices. Manual renewal by default.</b></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Your Machine Code</div><div style=\"display:flex;gap:8px;align-items:center\"><code id=\"pm-machine\" style=\"flex:1;word-break:break-all;font-size:12px\">"+(LIC.machine||"…")+"</code><button class=\"btn-sm\" id=\"pm-copy\">Copy</button></div><div class=\"desc\">This code identifies <b>this device</b> on your account. One key covers up to 10 devices.</div></div>";
     if(LIC.activated){
       var stColor=LIC.grace?"#e65100":"#2e7d32";
@@ -4145,11 +4145,11 @@ function renderSettingsSection(id){
       h+="<div class=\"sg\" style=\"display:flex;gap:8px;flex-wrap:wrap\"><button class=\"btn-sm btn-accent\" id=\"s-licrenew\">Renew Premium</button><button class=\"btn-sm\" id=\"s-liccopy\">Copy device ID</button><button class=\"btn-sm btn-danger\" id=\"s-licstop\">Stop Premium</button></div>";
     }else{
       if(LIC.reason==="expired"){
-        h+="<div class=\"sg\"><div class=\"lbl\">Status</div><div class=\"desc\" style=\"font-weight:600;color:#c62828\">\u2716 Premium expired \u2014 renew from \u20B9190/day. Manual by default.</div></div>";
+        h+="<div class=\"sg\"><div class=\"lbl\">Status</div><div class=\"desc\" style=\"font-weight:600;color:#c62828\">\u2716 Premium expired \u2014 renew from \u20B929/day. Manual by default.</div></div>";
       }
       h+="<div class=\"sg\" id=\"s-licneed\"><div class=\"lbl\">Premium needs an account</div><div class=\"desc\">Log in under Account — the account key activates this device itself, up to 10 devices. No keys to paste, even after updating.</div><div style=\"margin-top:8px;display:flex;gap:8px;flex-wrap:wrap\"><button class=\"btn-sm btn-accent\" id=\"s-licgoacc\">Open Account</button></div></div>";
       h+="<div class=\"sg\" style=\"display:flex;gap:8px;flex-wrap:wrap\">"+(LIC.reason==="expired"?"<button class=\"btn-sm btn-accent\" id=\"s-licrenew\">Renew Premium</button>":"")+"<button class=\"btn-sm\" id=\"s-licbuy\">Buy Premium</button></div>";
-      h+="<div class=\"desc\" id=\"s-licgeo\" style=\"margin-top:6px\">No key yet? Buy at <a href=\"#\" id=\"s-licbuylink\" style=\"color:var(--accent)\">kastrava.pp.ua/#premium</a> \u2014 you'll get a key instantly after payment (Razorpay in India, PayPal elsewhere). Plans from \u20B9190/day. Manual renewal.</div>";
+      h+="<div class=\"desc\" id=\"s-licgeo\" style=\"margin-top:6px\">No key yet? Buy at <a href=\"#\" id=\"s-licbuylink\" style=\"color:var(--accent)\">kastrava.pp.ua/#premium</a> \u2014 you'll get a key instantly after payment (Razorpay in India, PayPal elsewhere). Plans from \u20B929/day. Manual renewal.</div>";
     }
     h+="<div class=\"sg\"><div class=\"lbl\">What's in Premium</div><div class=\"desc\">\u2022 Tracking Radar (live per-tab tracker score)<br>\u2022 Cursor Effects: Mouse Style, Fluid Splash, Blob Trail, Glass Lens, Particle Trail, Click Spark, Pixel Trail, Ribbons<br>\u2022 Workspaces<br>\u2022 Split View<br>\u2022 All 20 dark + light themes<br>\u2022 Extra search engines: Brave, Google, Ecosia<br>\u2022 Custom cursor arrow<br>\u2022 Picture-in-Picture, Screenshot<br>\u2022 Localhost Dashboard<br>\u2022 Vertical tabs layout<br>\u2022 Bookmark import &amp; export<br>\u2022 Custom shortcut remapping</div></div>";
   }
@@ -4607,7 +4607,7 @@ function bindSettingsEvents(id){
             var b=$("s-licbuy");if(!b)return;
             if(g.provider==="paypal"&&g.prices&&g.prices.monthly){
               b.textContent="Buy Premium \u2014 "+g.prices.monthly.amount+" "+g.currency+"/30d (PayPal)";
-            }else{b.textContent="Buy Premium \u2014 \u20B9670/30d (Razorpay)";}
+            }else{b.textContent="Buy Premium \u2014 \u20B9299/30d (Razorpay)";}
           }).catch(function(){});
         }
       }catch(e){}

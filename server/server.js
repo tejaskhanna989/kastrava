@@ -56,8 +56,8 @@ const DEVICE_LIMIT = 10
 // builds working: no plan sent -> 34 days for INR 248, exactly as before.
 const PLANS = {
   legacy: { usd: 2.8, inr: 248, days: 34, label: 'Legacy 34-day' },
-  monthly: { usd: 7, inr: 670, days: 30, label: 'Monthly', interval: 'monthly' },
-  daily: { usd: 2, inr: 190, days: 1, label: 'Daily', interval: 'daily' }
+  monthly: { usd: 19, inr: 299, days: 30, label: 'Monthly', interval: 'monthly' },
+  daily: { usd: 7, inr: 29, days: 1, label: 'Daily', interval: 'daily' }
 }
 function planOf(name) {
   return PLANS[name] || PLANS.legacy
@@ -165,7 +165,8 @@ function makeReceipt(orderId, machineRaw) {
     key: key,
     machine_id: machine,
     amount_paise: order.amount_paise || plan.inr * 100,
-    currency: 'INR',
+    currency: order.currency || 'INR',
+    charged: order.pp_amount ? (order.pp_amount + ' ' + (order.currency || '')) : null,
     plan: 'premium-' + ((order.plan || 'legacy') === 'legacy' ? '34d' : order.plan),
     product: 'kastrava-premium',
     iss: 'kastrasoft',
@@ -278,7 +279,7 @@ async function handlePost(req, res, pathname) {
       for (const pn of ['monthly', 'daily']) {
         const pl = planOf(pn)
         prices[pn] = g.provider === 'paypal'
-          ? await fx.fromInrPaise(pl.inr * 100, g.currency)
+          ? await fx.fromUsd(pl.usd, g.currency)
           : { amount: String(pl.inr), currency: 'INR' }
       }
       return json(res, 200, { ok: true, country: g.country, currency: g.currency,
@@ -296,7 +297,7 @@ async function handlePost(req, res, pathname) {
       const wantPaypal = String(body.provider || '') === 'paypal'
       if (wantPaypal) {
         const g = await geo.resolveGeo(req)
-        const conv = await fx.fromInrPaise(plan.inr * 100, g.currency)
+        const conv = await fx.fromUsd(plan.usd, g.currency)
         const o = await paypal.createOrder(conv.amount, conv.currency, 'Kastrava Premium ' + planName)
         const meta = { plan: planName, provider: 'paypal', amount_paise: plan.inr * 100,
           currency: conv.currency, pp_amount: conv.amount }

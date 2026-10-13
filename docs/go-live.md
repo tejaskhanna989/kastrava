@@ -10,7 +10,7 @@ Target state after this runbook:
 - `RAZORPAY_KEY_ID=rzp_live_…` / `RAZORPAY_KEY_SECRET=…` in `server/.env`
 - Existing webhook delivers `payment.captured` (account-wide; see §2)
 - `curl https://nexufog.pp.ua/api/health` → `{"dev":false,"price":248,"period_days":34,"grace_days":3,…}`
-- A real purchase (₹670/30d monthly or ₹190/1d daily) mints a license, activation binds it to the first
+- A real purchase (₹299/30d monthly or ₹29/1d daily) mints a license, activation binds it to the first
   machine, a second ₹248 payment with the same machine code **extends the same
   key**.
 
