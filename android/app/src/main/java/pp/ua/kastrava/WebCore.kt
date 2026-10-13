@@ -88,6 +88,13 @@ class KastraWebClient(
 @SuppressLint("SetJavaScriptEnabled")
 fun buildWebView(context: Context, prefs: Prefs): WebView {
     return WebView(context).apply {
+        // Kastrava token for the Store install gate (same shape as desktop).
+        try {
+            val base = settings.userAgentString ?: ""
+            if (!base.contains("Kastrava/")) {
+                settings.userAgentString = "$base Kastrava/${BuildConfig.VERSION_NAME}".trim()
+            }
+        } catch (e: Exception) { }
         settings.javaScriptEnabled = prefs.javaScript
         settings.domStorageEnabled = true
         settings.databaseEnabled = true

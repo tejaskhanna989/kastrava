@@ -459,9 +459,12 @@ function getWhitelist() {
 }
 
 // === CORE FUNCTIONS ===
-function applyUserAgent(sessionObj) {
+function applyUserAgent(sessionObj, ver) {
   if (!sessionObj) return
-  sessionObj.setUserAgent(CHROME_UA)
+  // Kastrava token: honest client identification (the Store install gate
+  // looks for it). Same shape as stock Electron/Chrome product tokens.
+  const ua = ver ? CHROME_UA + ' Kastrava/' + String(ver) : CHROME_UA
+  sessionObj.setUserAgent(ua)
 }
 
 let webrtcAllowed = false

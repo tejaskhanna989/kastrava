@@ -827,9 +827,11 @@ app.whenReady().then(async () => {
   // the app as Electron on every request.
   try {
     const { session } = require('electron')
-    privacy.applyUserAgent(session.fromPartition('kastrava'))
-    privacy.applyUserAgent(session.fromPartition('kastrava-shell'))
-    privacy.applyUserAgent(session.defaultSession)
+    let appVer = null
+    try { appVer = require('electron').app.getVersion() } catch {}
+    privacy.applyUserAgent(session.fromPartition('kastrava'), appVer)
+    privacy.applyUserAgent(session.fromPartition('kastrava-shell'), appVer)
+    privacy.applyUserAgent(session.defaultSession, appVer)
     applyProxyAll(session)
   } catch {}
 

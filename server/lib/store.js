@@ -22,6 +22,7 @@ class Store {
       this.data.accounts = raw.accounts || {}
       this.data.sessions = raw.sessions || {}
       this.data.sync = raw.sync || {}
+      if (!this.data.entitlements) this.data.entitlements = {}
       // Grandfathered logins predate verification: they stay working.
       for (const e in this.data.accounts) {
         if (this.data.accounts[e].verified === undefined) this.data.accounts[e].verified = true
@@ -513,6 +514,37 @@ class Store {
     delete this.data.login_pending[String(email).toLowerCase()]
     this.save()
     return rec
+  }
+
+  // ---- store entitlements (themes, accents — data-only products) ----
+  owns(email, productId) {
+    this.ensureAccountMaps()
+    const e = String(email || '').toLowerCase()
+    return !!((this.data.entitlements || {})[e] || {})[String(productId)]
+  }
+
+  grant(email, productId, orderId) {
+    this.ensureAccountMaps()
+    const e = String(email || '').toLowerCase()
+    if (!this.data.entitlements) this.data.entitlements = {}
+    if (!this.data.entitlements[e]) this.data.entitlements[e] = {}
+    this.data.entitlements[e][String(productId)] = {
+      at: new Date().toISOString(), order_id: orderId || null
+    }
+    this.save()
+    return true
+  }
+
+  itemsFor(email) {
+    this.ensureAccountMaps()
+    const e = String(email || '').toLowerCase()
+    const owned = (this.data.entitlements || {})[e] || {}
+    const prods = require('./products')
+    return Object.keys(owned).map((id) => {
+      const p = prods.get(id)
+      if (!p) return null
+      return { id, name: p.name, kind: p.kind, data: p.data, at: owned[id].at }
+    }).filter(Boolean)
   }
 
   // ---- audit log (security events per account, newest last, capped) ----

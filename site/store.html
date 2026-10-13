@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Store — Kastrava</title>
+<meta name="description" content="Kastrava terms: free GPLv3 software, paid Premium service terms.">
+<style>
+:root{
+  --bg:#faf7f1; --card:#ffffff; --ink:#14110b; --text:#2b2620; --muted:#5c564a; --muted2:#8a8474;
+  --line:#f0ede6; --deep:#16130e; --cream:#faf7f1; --navbg:rgba(250,247,241,.9);
+  --pill:#16130e; --pill-fg:#ffffff; --blue:#0288d1; color-scheme:light;
+}
+html[data-theme="dark"]{
+  --bg:#12100c; --card:#1b1812; --ink:#f3eee4; --text:#cfc8ba; --muted:#9d9484; --muted2:#7c7466;
+  --line:#262117; --deep:#3b3428; --cream:#f3eee4; --navbg:rgba(18,16,12,.9);
+  --pill:#f3eee4; --pill-fg:#14110b; --blue:#4fc3f7; color-scheme:dark;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.65;overflow-x:hidden;-webkit-font-smoothing:antialiased;transition:background .25s,color .25s}
+h1,h2{font-family:'Space Grotesk',sans-serif}
+.container{max-width:860px;margin:0 auto;padding:0 28px;position:relative;z-index:1}
+nav{position:sticky;top:0;z-index:50;background:var(--navbg);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+nav .container{display:flex;align-items:center;gap:12px;padding-top:13px;padding-bottom:13px}
+nav img{width:36px;height:36px;border-radius:9px}
+nav .name{font-size:15px;font-weight:700;letter-spacing:4px;color:var(--ink);text-decoration:none}
+nav .sp{flex:1}
+nav a.btn{font-size:13px;font-weight:600;color:var(--pill-fg);background:var(--pill);padding:10px 24px;border-radius:10px;text-decoration:none;font-family:'Space Grotesk',sans-serif}
+.theme-btn{display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer}
+html[data-theme="light"] .theme-btn .ic-sun{display:none}
+html[data-theme="dark"] .theme-btn .ic-moon{display:none}
+main{padding:56px 0 30px}
+.back{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--blue);text-decoration:none}
+.kick{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--cream);background:var(--pill);padding:6px 14px;border-radius:8px;letter-spacing:1px;margin:22px 0 16px}
+html[data-theme="dark"] .kick{color:var(--pill-fg);background:var(--pill)}
+h1{font-size:38px;font-weight:700;letter-spacing:-1px;line-height:1.05;color:var(--ink);margin-bottom:12px}
+.sub{font-size:15px;color:var(--muted);max-width:760px}
+.sub a,.lic-card a{color:var(--blue);text-decoration:none}
+.lic-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:28px 30px;margin-top:22px}
+.lic-card h2{font-size:20px;color:var(--ink);margin-bottom:8px}
+.lic-card p{font-size:14.5px;margin-bottom:10px}
+.lic-card ul{font-size:14.5px;margin:0 0 10px 22px}
+.lic-card li{margin-bottom:6px}
+footer{border-top:1px solid var(--line);margin-top:64px;padding:36px 0 48px;background:var(--card)}
+footer p{font-size:12.5px;color:var(--muted2)}
+footer a{color:var(--blue);text-decoration:none}
+@media(max-width:600px){h1{font-size:30px}.lic-card{padding:22px 18px}}
+</style>
+<script>
+(function(){
+  var root=document.documentElement;
+  var saved=null;try{saved=localStorage.getItem('kas-theme');}catch(e){}
+  var dark=saved?saved==='dark':!!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);
+  root.setAttribute('data-theme',dark?'dark':'light');
+  document.addEventListener('DOMContentLoaded',function(){
+    var btn=document.getElementById('theme-btn');
+    if(!btn)return;
+    btn.addEventListener('click',function(){
+      var next=root.getAttribute('data-theme')==='dark'?'light':'dark';
+      root.setAttribute('data-theme',next);
+      try{localStorage.setItem('kas-theme',next);}catch(e){}
+    });
+  });
+})();
+</script>
+</head>
+<body>
+<nav>
+  <div class="container">
+    <a href="/"><img src="logo.png" alt="Kastrava"></a>
+    <a class="name" href="/">KASTRAVA</a>
+    <button id="theme-btn" class="theme-btn" title="Toggle dark mode" aria-label="Toggle dark mode">
+      <svg class="ic-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="ic-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+    <span class="sp"></span>
+    <a class="btn" href="/#download">Download</a>
+  </div>
+</nav>
+<main>
+  <div class="container">
+    <div class="kick">STORE</div>
+    <h1>Kastrava Store</h1>
+    <p class="sub" id="store-sub">Themes and accents for Kastrava. Installs only work inside the Kastrava browser — 10 items free, everything open with Premium.</p>
+    <div id="browser-warn" class="lic-card" style="display:none;margin-top:18px"><h2 style="font-size:17px">You are not in Kastrava</h2><p>Install buttons are greyed out here. Open this page inside the Kastrava browser to get items instantly.</p></div>
+    <div class="card" id="store-login" style="margin-top:18px">
+      <h2 style="font-size:18px;margin-bottom:4px">Log in to get items</h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+        <input id="st-email" type="email" placeholder="you@example.com" style="flex:2;min-width:180px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ink);font-family:inherit">
+        <input id="st-pass" type="password" placeholder="Password" style="flex:1;min-width:140px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ink);font-family:inherit" autocomplete="current-password">
+        <input id="st-code" inputmode="numeric" maxlength="6" placeholder="Email code" style="display:none;width:130px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ink);font-family:inherit">
+        <input id="st-totp" inputmode="numeric" maxlength="6" placeholder="2FA" style="display:none;width:110px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ink);font-family:inherit">
+        <button class="btn" id="st-go" style="padding:10px 22px">Log in</button>
+      </div>
+      <div class="msg" id="st-msg"></div>
+    </div>
+    <div id="store-grid" class="authors-grid" style="margin-top:18px"></div>
+  </div>
+</main>
+
+<footer>
+  <div class="container">
+    <p>Kastrava 101 RC · Built By The Community for the Community</p>
+    <p style="margin-top:6px"><a href="/terms.html">Terms</a> · <a href="/privacy.html">Privacy</a> · <a href="/refunds.html">Refunds</a> · <a href="/contact.html">Contact</a> · <a href="https://github.com/tejaskhanna989/kastrava" target="_blank" rel="noopener">100% Open Source (GPLv3)</a></p>
+  </div>
+</footer>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+(function(){
+var KAS_API='https://nexufog.pp.ua';
+var IS_KASTRAVA=/kastrava\/\d/i.test(navigator.userAgent||'');
+function tok(){try{return localStorage.getItem('kas_store_token')||'';}catch(e){return '';}}
+function authz(){return {'Content-Type':'application/json','Authorization':'Bearer '+tok()};}
+function esc(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function inr(p){return '\u20B9'+(p/100);}
+if(!IS_KASTRAVA){document.getElementById('browser-warn').style.display='block';}
+var owned={};
+function paint(items){
+  var grid=document.getElementById('store-grid');
+  grid.innerHTML=items.map(function(p){
+    var locked=!p.free&&!window.__isPremium;
+    var has=!!owned[p.id];
+    var price=p.free?'Free':(window.__isPremium?'Premium · included':inr(p.price_paise));
+    var btn=has?'<button class="btn ghost" data-got="'+esc(p.id)+'" style="padding:8px 16px;font-size:13px">Installed ✓</button>'
+      :(locked?'<button class="btn ghost" data-buy="'+esc(p.id)+'" style="padding:8px 16px;font-size:13px"'+(IS_KASTRAVA?'':' disabled')+'>'+esc(price)+'</button>'
+      :'<button class="btn" data-get="'+esc(p.id)+'" style="padding:8px 16px;font-size:13px"'+(IS_KASTRAVA?'':' disabled')+'>Get</button>');
+    return '<div class="lic-card" style="margin-top:0"><div style="height:64px;border-radius:12px;margin-bottom:12px;background:linear-gradient(135deg,'+esc(p.preview.bg)+' 55%,'+esc(p.preview.ac)+' 55%)"></div>'
+      +'<h2 style="font-size:17px;margin-bottom:2px">'+esc(p.name)+'</h2>'
+      +'<p style="font-size:13px">'+esc(p.blurb)+'</p>'
+      +'<p style="font-size:12px;color:var(--muted)">'+esc(p.kind)+' · '+(p.free?'free':(esc(p.tier||'premium')+' · '+esc(price)))+'</p>'
+      +'<div style="margin-top:10px">'+btn+'</div></div>';
+  }).join('');
+  grid.querySelectorAll('button[data-get]').forEach(function(b){
+    b.addEventListener('click',function(){claim(b.dataset.get,false);});
+  });
+  grid.querySelectorAll('button[data-buy]').forEach(function(b){
+    b.addEventListener('click',function(){buy(b.dataset.buy);});
+  });
+  grid.querySelectorAll('button[data-got]').forEach(function(b){
+    b.addEventListener('click',function(){copyOwned(b.dataset.got);});
+  });
+}
+function load(){
+  fetch(KAS_API+'/api/store/catalog',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})
+  .then(function(r){return r.json();}).then(function(j){
+    var items=(j&&j.items)||[];
+    if(!tok()){window.__isPremium=false;paint(items);return;}
+    fetch(KAS_API+'/api/account/items',{method:'POST',headers:authz(),body:'{}'})
+    .then(function(r){return r.json();}).then(function(k){
+      owned={};(k.items||[]).forEach(function(x){owned[x.id]=x.data;});
+      return fetch(KAS_API+'/api/account/devices',{method:'POST',headers:authz(),body:'{}'}).then(function(r){return r.json();}).catch(function(){return {};});
+    }).then(function(d){
+      var el=document.getElementById('store-login');if(el)el.style.display='none';
+      var now=Date.now();window.__isPremium=((d&&d.keys)||[]).some(function(k){
+        return (k.status==='activated'||k.status==='issued')&&(!k.expires_at||new Date(k.expires_at).getTime()>now);
+      });
+      paint(items);
+    }).catch(function(){paint(items);});
+  }).catch(function(){document.getElementById('store-grid').textContent='Store unreachable.';});
+}
+function claim(id,paid){
+  fetch(KAS_API+'/api/store/claim',{method:'POST',headers:authz(),body:JSON.stringify({id:id})})
+  .then(function(r){return r.json();}).then(function(j){
+    if(j&&j.ok){owned[id]=j.data;load();}
+  }).catch(function(){});
+}
+function copyOwned(id){
+  var txt=JSON.stringify(owned[id]||{});
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).catch(function(){});}
+}
+function buy(id){
+  fetch(KAS_API+'/api/store/buy',{method:'POST',headers:authz(),body:JSON.stringify({id:id})})
+  .then(function(r){return r.json();}).then(function(o){
+    if(o&&o.ok&&o.data){owned[id]=o.data;load();return;}
+    if(!o||!o.order_id)return;
+    var rzp=new Razorpay({key:o.key_id,amount:o.amount,currency:o.currency,order_id:o.order_id,
+      name:'Kastrava Store',description:id,
+      handler:function(res){
+        fetch(KAS_API+'/api/store/verify',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({order_id:res.razorpay_order_id,payment_id:res.razorpay_payment_id,signature:res.razorpay_signature,account_token:tok()})})
+        .then(function(r){return r.json();}).then(function(v){
+          if(v&&v.ok){owned[id]=v.data;load();}
+        }).catch(function(){});
+      },
+      modal:{ondismiss:function(){}}});
+    rzp.open();
+  }).catch(function(){});
+}
+var goEl=document.getElementById('st-go');
+goEl.addEventListener('click',function(){
+  var email=(document.getElementById('st-email').value||'').trim();
+  var pw=document.getElementById('st-pass').value||'';
+  var codeEl=document.getElementById('st-code'),totpEl=document.getElementById('st-totp');
+  var code=codeEl.style.display!=='none'?(codeEl.value||'').trim():'';
+  if(code){
+    var tc=totpEl.style.display!=='none'?(totpEl.value||'').trim():'';
+    fetch(KAS_API+'/api/account/login/otp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,code:code,totp:tc||undefined})})
+    .then(function(r){return r.json();}).then(function(j){
+      if(j&&j.ok&&j.token){try{localStorage.setItem('kas_store_token',j.token);}catch(e){}location.reload();return;}
+      if(j&&j.error==='need_totp'){totpEl.style.display='';totpEl.focus();return;}
+    }).catch(function(){});
+    return;
+  }
+  fetch(KAS_API+'/api/account/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,password:pw})})
+  .then(function(r){return r.json();}).then(function(j){
+    if(j&&j.ok&&j.token){try{localStorage.setItem('kas_store_token',j.token);}catch(e){}location.reload();return;}
+    if(j&&j.ok&&j.otp_required){codeEl.style.display='';codeEl.focus();if(j.totp)totpEl.style.display='';return;}
+    if(j&&j.error==='verify_required'){codeEl.style.display='';codeEl.focus();codeEl.dataset.mode='verify';return;}
+  }).catch(function(){});
+});
+document.getElementById('st-code').addEventListener('keydown',function(e){
+  if(e.key!=='Enter')return;
+  var email=(document.getElementById('st-email').value||'').trim();
+  var code=(this.value||'').trim();
+  if(this.dataset.mode==='verify'){
+    fetch(KAS_API+'/api/account/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,code:code})})
+    .then(function(r){return r.json();}).then(function(j){
+      if(j&&j.ok&&j.token){try{localStorage.setItem('kas_store_token',j.token);}catch(e){}location.reload();}
+    }).catch(function(){});
+  }
+});
+load();
+})();
+</script>
+</body>
+</html>

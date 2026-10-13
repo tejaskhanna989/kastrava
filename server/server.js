@@ -20,6 +20,26 @@ require('./lib/env').loadEnv()
 const sign = require('./lib/sign')
 const razorpay = require('./lib/razorpay')
 const mailer = require('./lib/mailer')
+const products = require('./lib/products')
+
+// Store install gate: only the Kastrava browser (desktop UA token or the
+// Android WebView token) can claim or buy. Everyone else sees grey.
+function isKastravaUA(req) {
+  try { return /kastrava\/\d/i.test((req.headers['user-agent'] || '').toString()) } catch { return false }
+}
+
+// Premium = any live owned-or-shared key (same rule as activation).
+function hasLivePremium(email) {
+  try {
+    const now = Date.now()
+    return store.keysVisibleTo(email).some((x) => {
+      const l = x.lic
+      if (l.status !== 'activated' && l.status !== 'issued') return false
+      if (!l.expires_at) return true
+      return new Date(l.expires_at).getTime() > now
+    })
+  } catch { return false }
+}
 
 const port = parseInt(process.env.PORT || '8787', 10)
 const BIND_HOST = process.env.BIND_HOST || '127.0.0.1'
@@ -849,6 +869,74 @@ async function handlePost(req, res, pathname) {
     store.totpDisable(acc.email)
     store.audit(acc.email, 'totp_off', '2FA disabled')
     return json(res, 200, { ok: true })
+  }
+  // Storefront: public catalog (paid item data stays gated), claim free
+  // or Premium items, buy the rest one-time. Installs only work inside the
+  // Kastrava browser; old builds simply never call these routes.
+  if (pathname === '/api/store/catalog') {
+    return json(res, 200, { ok: true, items: products.catalog() })
+  }
+  if (pathname === '/api/store/claim') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    if (!isKastravaUA(req)) return json(res, 403, { error: 'wrong_browser', msg: 'Open the Store in Kastrava to install.' })
+    const prod = products.get(String(body.id || ''))
+    if (!prod) return json(res, 404, { error: 'no_item' })
+    if (store.owns(acc.email, String(body.id))) {
+      return json(res, 200, { ok: true, id: String(body.id), data: prod.data })
+    }
+    if (prod.price_paise !== 0 && !hasLivePremium(acc.email)) {
+      return json(res, 402, { error: 'need_payment', amount: prod.price_paise, msg: 'Premium unlocks this, or buy it once.' })
+    }
+    store.grant(acc.email, String(body.id), null)
+    store.audit(acc.email, 'store_claim', String(body.id))
+    return json(res, 200, { ok: true, id: String(body.id), data: prod.data })
+  }
+  if (pathname === '/api/store/buy') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    if (!isKastravaUA(req)) return json(res, 403, { error: 'wrong_browser', msg: 'Open the Store in Kastrava to install.' })
+    const prod = products.get(String(body.id || ''))
+    if (!prod) return json(res, 404, { error: 'no_item' })
+    if (store.owns(acc.email, String(body.id))) {
+      return json(res, 200, { ok: true, id: String(body.id), data: prod.data })
+    }
+    if (prod.price_paise === 0 || hasLivePremium(acc.email)) {
+      store.grant(acc.email, String(body.id), null)
+      return json(res, 200, { ok: true, id: String(body.id), data: prod.data })
+    }
+    try {
+      const o = await razorpay.createOrder(prod.price_paise)
+      store.createOrder(o.order_id, { provider: 'store', product: String(body.id),
+        account_email: acc.email, amount_paise: prod.price_paise })
+      return json(res, 200, { ok: true, order_id: o.order_id, amount: o.amount,
+        currency: o.currency, key_id: o.key_id, dev: !!o.dev, id: String(body.id) })
+    } catch (e) {
+      return json(res, 500, { error: 'order_failed', msg: String(e.message || e) })
+    }
+  }
+  if (pathname === '/api/store/verify') {
+    const { order_id, payment_id, signature, account_token } = body
+    if (!order_id || !payment_id) return json(res, 400, { error: 'bad_request' })
+    const order = store.getOrder(String(order_id))
+    if (!order || order.provider !== 'store') return json(res, 404, { error: 'bad_order' })
+    const acc = store.getSessionAccount(String(account_token || bearer(req) || ''))
+    const email = acc ? acc.email : (order.account_email || null)
+    if (!email) return json(res, 401, { error: 'unauthorized' })
+    if (!razorpay.verifySignature(String(order_id), String(payment_id), String(signature || ''))) {
+      return json(res, 403, { error: 'bad_signature' })
+    }
+    const prod = products.get(order.product)
+    if (!prod) return json(res, 404, { error: 'no_item' })
+    store.markPaid(String(order_id), String(payment_id), order.amount_paise || 0)
+    store.grant(email, order.product, String(order_id))
+    store.audit(email, 'store_buy', order.product)
+    return json(res, 200, { ok: true, id: order.product, data: prod.data })
+  }
+  if (pathname === '/api/account/items') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    return json(res, 200, { ok: true, items: store.itemsFor(acc.email) })
   }
   if (pathname === '/api/account/export') {
     const acc = store.getSessionAccount(bearer(req))
