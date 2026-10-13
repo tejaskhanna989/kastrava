@@ -626,7 +626,7 @@ document.querySelectorAll('.plan-pick').forEach(function(b){
 paintPlan();
 var GEO=null;
 function money(a,c){return (c==='INR'?'₹':c+' ')+a;}
-apiFetch(KAS_API+'/api/geo',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})
+apiFetch(KAS_API+'/api/geo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tz:(function(){try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'';}catch(e){return '';}})()})})
 .then(function(r){return r.json();}).then(function(g){
   if(!g||!g.ok)return;
   GEO=g;

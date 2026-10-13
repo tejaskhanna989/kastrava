@@ -298,7 +298,7 @@ function copyOwned(id){
   if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).catch(function(){});}
 }
 var GEO=null;
-fetch(KAS_API+'/api/geo',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})
+fetch(KAS_API+'/api/geo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tz:(function(){try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'';}catch(e){return '';}})()})})
 .then(function(r){return r.json();}).then(function(g){if(g&&g.ok){GEO=g;}load();})
 .catch(function(){if(!window.__storeLoaded)load();});
 function loadPpSdk(clientId,currency,cb){

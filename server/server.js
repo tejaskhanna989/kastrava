@@ -274,7 +274,8 @@ async function handlePost(req, res, pathname) {
 
   if (pathname === '/api/geo') {
     try {
-      const g = await geo.resolveGeo(req)
+      const g = await geo.resolveGeo(req, body.tz)
+      try { console.log('[geo]', g.country, g.currency, g.provider, 'via=' + g.via) } catch {}
       const prices = {}
       for (const pn of ['monthly', 'daily']) {
         const pl = planOf(pn)
@@ -285,7 +286,7 @@ async function handlePost(req, res, pathname) {
       prices.pass = g.provider === 'paypal'
         ? await fx.fromUsd(999, g.currency)
         : { amount: '8999', currency: 'INR' }
-      return json(res, 200, { ok: true, country: g.country, currency: g.currency,
+      return json(res, 200, { ok: true, country: g.country, currency: g.currency, via: g.via,
         provider: g.provider, paypal_client_id: g.provider === 'paypal' ? paypal.clientId() : null,
         paypal_dev: paypal.isDev(), prices })
     } catch (e) {
@@ -299,7 +300,7 @@ async function handlePost(req, res, pathname) {
       const plan = planOf(planName)
       const wantPaypal = String(body.provider || '') === 'paypal'
       if (wantPaypal) {
-        const g = await geo.resolveGeo(req)
+        const g = await geo.resolveGeo(req, body.tz)
         const conv = await fx.fromUsd(plan.usd, g.currency)
         const o = await paypal.createOrder(conv.amount, conv.currency, 'Kastrava Premium ' + planName)
         const meta = { plan: planName, provider: 'paypal', amount_paise: plan.inr * 100,
@@ -1014,7 +1015,7 @@ async function handlePost(req, res, pathname) {
     }
     try {
       if (String(body.provider || '') === 'paypal') {
-        const g = await geo.resolveGeo(req)
+        const g = await geo.resolveGeo(req, body.tz)
         const conv = await fx.fromUsd(prod.price_usd || 5, g.currency)
         const po = await paypal.createOrder(conv.amount, conv.currency, 'Kastrava Store: ' + prod.name)
         store.createOrder(po.order_id, { provider: 'store-paypal', product: String(body.id),

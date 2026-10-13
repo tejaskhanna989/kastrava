@@ -49,14 +49,24 @@ function clientIp(req) {
   return (req.socket && req.socket.remoteAddress || '').replace(/^::ffff:/, '')
 }
 
-async function resolveGeo(req) {
+async function resolveGeo(req, bodyTz) {
+  let via = 'cf'
   let country = ((req.headers['cf-ipcountry'] || '').toString().toUpperCase() || null)
   if (country === 'XX' || country === 'T1') country = null
   if (!country || !/^[A-Z]{2}$/.test(country)) {
+    via = 'ip'
     country = (await countryFromIp(clientIp(req))) || 'US'
   }
+  // VPN safety net: a device set to IST is treated as India even when the
+  // IP egresses elsewhere (PayPal can't take domestic Indian payments, so
+  // Razorpay is the only rail that works for these buyers).
+  const tz = String(bodyTz || '').trim()
+  if ((tz === 'Asia/Kolkata' || tz === 'Asia/Calcutta') && country !== 'IN') {
+    country = 'IN'
+    via = 'tz'
+  }
   const currency = currencyFor(country)
-  return { country, currency, provider: providerFor(country) }
+  return { country, currency, provider: providerFor(country), via }
 }
 
 module.exports = { resolveGeo, currencyFor, providerFor, ZERO_DECIMAL }

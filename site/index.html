@@ -177,7 +177,7 @@ footer a:hover{color:var(--ink)}
     <p class="lede">Kastrava keeps <b>zero</b> persistent web storage. No cache, no cookies, no site databases on your disk — everything runs in memory and is <b>wiped when you quit</b>. It is Chromium underneath, so sites work.</p>
     <div class="cta-row">
       <a class="btn btn-primary" href="#download">Download Free</a>
-      <a class="btn btn-ghost" href="#premium">Go Premium — $49/mo</a>
+      <a class="btn btn-ghost" href="#premium" id="hero-prem">Go Premium — $49/mo</a>
     </div>
     <p class="mono hero-meta">Linux · Windows · Android · Free core, forever · Premium $49/mo · $4.99/day · 100% Open Source (GPLv3)</p>
     <div class="spec">
@@ -229,12 +229,12 @@ footer a:hover{color:var(--ink)}
       </ul>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0 4px">
         <button class="plan-pick" data-plan="monthly" style="padding:14px;border-radius:14px;border:2px solid var(--ink);background:transparent;color:var(--ink);cursor:pointer;text-align:left;font-family:inherit">
-          <div style="font-weight:700;font-size:15px">Monthly — $49</div>
-          <div style="font-size:12.5px;color:var(--muted)">₹499 · 30 days</div>
+          <div style="font-weight:700;font-size:15px" id="pm-m-main">Monthly — $49</div>
+          <div style="font-size:12.5px;color:var(--muted)" id="pm-m-sub">₹499 · 30 days</div>
         </button>
         <button class="plan-pick" data-plan="daily" style="padding:14px;border-radius:14px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;text-align:left;font-family:inherit">
-          <div style="font-weight:700;font-size:15px">Daily — $4.99</div>
-          <div style="font-size:12.5px;color:var(--muted)">₹49 · 24 hours</div>
+          <div style="font-weight:700;font-size:15px" id="pm-d-main">Daily — $4.99</div>
+          <div style="font-size:12.5px;color:var(--muted)" id="pm-d-sub">₹49 · 24 hours</div>
         </button>
       </div>
       <p class="os-note" style="margin:0 0 4px">Manual renewal — you pay each time, nothing auto-charges.</p>
@@ -471,10 +471,28 @@ footer a:hover{color:var(--ink)}
   var PLAN_META={monthly:{inr:499,usd:49,days:30,label:'Monthly'},daily:{inr:49,usd:4.99,days:1,label:'Daily'}};
   var GEO=null;
   function money(a,c){return (c==='INR'?'\u20B9':c+' ')+a;}
-  apiFetch(KAS_API+'/api/geo',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})
+  apiFetch(KAS_API+'/api/geo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tz:(function(){try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'';}catch(e){return '';}})()})})
   .then(function(r){return r.json();}).then(function(g){
     if(!g||!g.ok)return;
-    GEO=g;paintPlan();
+    GEO=g;
+    (function(){
+      var inr=g.currency==='INR';
+      var mm=document.getElementById('pm-m-main'),ms=document.getElementById('pm-m-sub');
+      var dm=document.getElementById('pm-d-main'),ds=document.getElementById('pm-d-sub');
+      var hb=document.getElementById('hero-prem');
+      if(g.prices&&g.prices.monthly&&g.prices.daily){
+        if(mm)mm.textContent='Monthly — '+money(g.prices.monthly.amount,g.currency);
+        if(dm)dm.textContent='Daily — '+money(g.prices.daily.amount,g.currency);
+        if(ms)ms.textContent=inr?'$49 · 30 days':'\u20B9499 · 30 days';
+        if(ds)ds.textContent=inr?'$4.99 · 24 hours':'\u20B949 · 24 hours';
+        if(hb)hb.textContent=inr?'Go Premium — \u20B9499/mo':('Go Premium — '+money(g.prices.monthly.amount,g.currency)+'/mo');
+      }else if(inr){
+        if(mm)mm.textContent='Monthly — \u20B9499';if(ms)ms.textContent='$49 · 30 days';
+        if(dm)dm.textContent='Daily — \u20B949';if(ds)ds.textContent='$4.99 · 24 hours';
+        if(hb)hb.textContent='Go Premium — \u20B9499/mo';
+      }
+    })();
+    paintPlan();
     if(g.provider==='paypal')mountPaypal();
   }).catch(function(){});
   function loadPpSdk(clientId,currency,cb){

@@ -4601,7 +4601,7 @@ function bindSettingsEvents(id){
       try{
         if(!$("s-licbuy").dataset.geo&&window.fetch){
           $("s-licbuy").dataset.geo="1";
-          fetch(KAS_API+"/api/geo",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"})
+          fetch(KAS_API+"/api/geo",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({tz:(function(){try{return Intl.DateTimeFormat().resolvedOptions().timeZone||"";}catch(e){return "";}})()})})
           .then(function(r){return r.json();}).then(function(g){
             if(!g||!g.ok)return;
             var b=$("s-licbuy");if(!b)return;
