@@ -230,11 +230,11 @@ footer a:hover{color:var(--ink)}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0 4px">
         <button class="plan-pick" data-plan="monthly" style="padding:14px;border-radius:14px;border:2px solid var(--ink);background:transparent;color:var(--ink);cursor:pointer;text-align:left;font-family:inherit">
           <div style="font-weight:700;font-size:15px">Monthly — $7</div>
-          <div style="font-size:12.5px;color:var(--muted)">₹299 · 30 days</div>
+          <div style="font-size:12.5px;color:var(--muted)">₹499 · 30 days</div>
         </button>
         <button class="plan-pick" data-plan="daily" style="padding:14px;border-radius:14px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;text-align:left;font-family:inherit">
           <div style="font-weight:700;font-size:15px">Daily — $2</div>
-          <div style="font-size:12.5px;color:var(--muted)">₹29 · 24 hours</div>
+          <div style="font-size:12.5px;color:var(--muted)">₹49 · 24 hours</div>
         </button>
       </div>
       <p class="os-note" style="margin:0 0 4px">Manual renewal — you pay each time, nothing auto-charges.</p>
@@ -247,10 +247,10 @@ footer a:hover{color:var(--ink)}
         <div id="prem-log-msg" style="font-size:12.5px;color:var(--muted);margin-top:8px"></div>
         <div style="font-size:12.5px;color:var(--muted);margin-top:6px">No account? <a href="/account.html" style="color:var(--accent)">Sign up</a></div>
       </div>
-      <button class="prem-buy" id="prem-buy">Pay ₹299 with Razorpay — 30 days</button>
+      <button class="prem-buy" id="prem-buy">Pay ₹499 with Razorpay — 30 days</button>
       <div id="prem-pp" style="display:none;margin-top:4px"></div>
       <p style="margin-top:10px;font-size:13px;color:var(--muted)">Already Premium and want out? <a href="#" id="prem-stop" style="color:var(--accent)">Stop Premium</a> — ends immediately, no refund.</p>
-      <p id="prem-inrnote" style="font-size:12px;color:var(--muted2);margin-top:8px">Charged in INR (₹299) — your bank converts the $19 at checkout. By paying you agree to the <a href="/terms.html" style="color:var(--blue)">Terms</a> and <a href="/refunds.html" style="color:var(--blue)">Refund Policy</a>.</p>
+      <p id="prem-inrnote" style="font-size:12px;color:var(--muted2);margin-top:8px">Charged in INR (₹499) — your bank converts the $49 at checkout. By paying you agree to the <a href="/terms.html" style="color:var(--blue)">Terms</a> and <a href="/refunds.html" style="color:var(--blue)">Refund Policy</a>.</p>
       <div class="prem-keyout" id="prem-keyout">
         <div class="tag" style="color:var(--accent)">PAYMENT VERIFIED</div>
         <div style="font-size:13px;color:var(--muted);margin-top:4px">Your license key:</div>
@@ -468,7 +468,7 @@ footer a:hover{color:var(--ink)}
   })();
 
   var planPicked='monthly';
-  var PLAN_META={monthly:{inr:299,usd:19,days:30,label:'Monthly'},daily:{inr:29,usd:7,days:1,label:'Daily'}};
+  var PLAN_META={monthly:{inr:499,usd:49,days:30,label:'Monthly'},daily:{inr:49,usd:4.99,days:1,label:'Daily'}};
   var GEO=null;
   function money(a,c){return (c==='INR'?'\u20B9':c+' ')+a;}
   apiFetch(KAS_API+'/api/geo',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})

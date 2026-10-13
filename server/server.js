@@ -56,8 +56,8 @@ const DEVICE_LIMIT = 10
 // builds working: no plan sent -> 34 days for INR 248, exactly as before.
 const PLANS = {
   legacy: { usd: 2.8, inr: 248, days: 34, label: 'Legacy 34-day' },
-  monthly: { usd: 19, inr: 299, days: 30, label: 'Monthly', interval: 'monthly' },
-  daily: { usd: 7, inr: 29, days: 1, label: 'Daily', interval: 'daily' }
+  monthly: { usd: 49, inr: 499, days: 30, label: 'Monthly', interval: 'monthly' },
+  daily: { usd: 4.99, inr: 49, days: 1, label: 'Daily', interval: 'daily' }
 }
 function planOf(name) {
   return PLANS[name] || PLANS.legacy
