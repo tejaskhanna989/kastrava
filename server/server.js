@@ -275,7 +275,10 @@ async function handlePost(req, res, pathname) {
   if (pathname === '/api/geo') {
     try {
       const g = await geo.resolveGeo(req, body.tz)
-      try { console.log('[geo]', g.country, g.currency, g.provider, 'via=' + g.via) } catch {}
+      try {
+        const seenIp = (await geo.clientIpForLog(req)) || '?'
+        console.log('[geo]', g.country, g.currency, g.provider, 'via=' + g.via, 'ip=' + seenIp)
+      } catch {}
       const prices = {}
       for (const pn of ['monthly', 'daily']) {
         const pl = planOf(pn)

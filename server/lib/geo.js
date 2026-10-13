@@ -102,4 +102,13 @@ async function resolveGeo(req, bodyTz) {
   return { country, currency, provider: providerFor(country), via, ip: ip || null }
 }
 
-module.exports = { resolveGeo, currencyFor, providerFor, ZERO_DECIMAL }
+async function clientIpForLog(req) {
+  // Masked for privacy: first 2 octets / first IPv6 hextets only.
+  const ip = clientIp(req)
+  if (!ip) return null
+  if (ip.includes('.')) return ip.split('.').slice(0, 2).join('.') + '.x.x'
+  return ip.split(':').slice(0, 3).join(':') + '::x'
+}
+
+module.exports = { resolveGeo, currencyFor, providerFor, ZERO_DECIMAL, clientIpForLog, clientIp }
+
