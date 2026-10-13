@@ -29,18 +29,48 @@ function currencyFor(country) {
   return COUNTRY_CURRENCY[country] || 'USD'
 }
 
-async function countryFromIp(ip) {
-  if (!ip || ip === '127.0.0.1' || ip === '::1' || ip.startsWith('192.168.') || ip.startsWith('10.')) {
-    return null
-  }
+function isPrivateIp(ip) {
+  if (!ip) return true
+  if (ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1') return true
+  if (ip.startsWith('10.') || ip.startsWith('192.168.')) return true
+  if (/^172\.(1[6-9]|2[0-9]|3[01])\./.test(ip)) return true
+  if (/^(fc|fd)/i.test(ip)) return true
+  return false
+}
+
+// IP -> country cache (24h) so lookups never rate-limit checkout.
+const ipCache = new Map()
+
+async function lookupIp(ip) {
+  const hit = ipCache.get(ip)
+  if (hit && Date.now() - hit.at < 24 * 3600 * 1000) return hit.cc
+  let cc = null
   try {
     const r = await fetch('http://ip-api.com/json/' + encodeURIComponent(ip) + '?fields=countryCode,status', {
-      signal: AbortSignal.timeout(6000)
+      signal: AbortSignal.timeout(5000)
     })
     const j = await r.json().catch(() => null)
-    if (j && j.status === 'success' && /^[A-Z]{2}$/.test(j.countryCode || '')) return j.countryCode
+    if (j && j.status === 'success' && /^[A-Z]{2}$/.test(j.countryCode || '')) cc = j.countryCode
   } catch {}
-  return null
+  if (!cc) {
+    try {
+      const r2 = await fetch('https://ipwho.is/' + encodeURIComponent(ip) + '?fields=country_code', {
+        signal: AbortSignal.timeout(5000)
+      })
+      const j2 = await r2.json().catch(() => null)
+      if (j2 && j2.success !== false && /^[A-Z]{2}$/.test(j2.country_code || '')) cc = j2.country_code
+    } catch {}
+  }
+  if (cc) {
+    ipCache.set(ip, { cc, at: Date.now() })
+    if (ipCache.size > 20000) ipCache.clear()
+  }
+  return cc
+}
+
+async function countryFromIp(ip) {
+  if (isPrivateIp(ip)) return null
+  return lookupIp(ip)
 }
 
 function clientIp(req) {
@@ -50,23 +80,26 @@ function clientIp(req) {
 }
 
 async function resolveGeo(req, bodyTz) {
-  let via = 'cf'
-  let country = ((req.headers['cf-ipcountry'] || '').toString().toUpperCase() || null)
-  if (country === 'XX' || country === 'T1') country = null
-  if (!country || !/^[A-Z]{2}$/.test(country)) {
-    via = 'ip'
-    country = (await countryFromIp(clientIp(req))) || 'US'
-  }
-  // VPN safety net: a device set to IST is treated as India even when the
-  // IP egresses elsewhere (PayPal can't take domestic Indian payments, so
-  // Razorpay is the only rail that works for these buyers).
-  const tz = String(bodyTz || '').trim()
-  if ((tz === 'Asia/Kolkata' || tz === 'Asia/Calcutta') && country !== 'IN') {
-    country = 'IN'
-    via = 'tz'
+  // IP location only: the country comes from our own lookup of the
+  // visitor's IP (first entry of X-Forwarded-For). The Cloudflare
+  // CF-IPCountry header is ignored by design.
+  const ip = clientIp(req)
+  let country = await countryFromIp(ip)
+  let via = 'ip'
+  if (!country) {
+    // Lookup failed (private/local IP, provider down): device timezone
+    // as a last resort, otherwise default to US/PayPal.
+    const tz = String(bodyTz || '').trim()
+    if (tz === 'Asia/Kolkata' || tz === 'Asia/Calcutta') {
+      country = 'IN'
+      via = 'tz'
+    } else {
+      country = 'US'
+      via = 'default'
+    }
   }
   const currency = currencyFor(country)
-  return { country, currency, provider: providerFor(country), via }
+  return { country, currency, provider: providerFor(country), via, ip: ip || null }
 }
 
 module.exports = { resolveGeo, currencyFor, providerFor, ZERO_DECIMAL }
