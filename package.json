@@ -15,8 +15,7 @@
     "license:keygen": "node server/keygen.js",
     "server": "node server/server.js",
     "admin": "node server/admin.js",
-    "dist": "electron-builder",
-    "postinstall": "patch-package"
+    "dist": "electron-builder"
   },
   "build": {
     "appId": "com.kastrasoft.kastrava",
@@ -104,27 +103,6 @@
       "languages": [
         "en-US"
       ]
-    },
-    "snap": {
-      "confinement": "strict",
-      "grade": "stable",
-      "summary": "Private browser with zero persistent web storage",
-      "description": "Kastrava keeps zero persistent web storage. Cookies, cache and site data live in memory and are wiped on quit. No telemetry. Free core, optional Premium.",
-      "plugs": [
-        "desktop",
-        "desktop-legacy",
-        "gsettings",
-        "home",
-        "x11",
-        "wayland",
-        "opengl",
-        "network",
-        "network-bind",
-        "audio-playback",
-        "audio-record",
-        "camera",
-        "removable-media"
-      ]
     }
   },
   "devDependencies": {
@@ -132,7 +110,6 @@
     "electron": "^44.5.1",
     "electron-builder": "^26.15.3",
     "html-webpack-plugin": "^5.6.3",
-    "patch-package": "^8.0.1",
     "webpack": "^5.108.4",
     "webpack-cli": "^6.0.1"
   },
