@@ -712,10 +712,20 @@ function get(id) {
 }
 
 function catalog() {
-  return Object.entries(PRODUCTS).map(([id, p]) => ({
-    id, name: p.name, kind: p.kind, tier: p.tier, price_paise: p.price_paise,
-    free: p.price_paise === 0, blurb: p.blurb, preview: p.preview
-  }))
+  return Object.entries(PRODUCTS).map(([id, p]) => {
+    const pv = { bg: p.preview.bg, ac: p.preview.ac }
+    if (p.data) {
+      if (p.kind === 'theme') { pv.tbg = p.data.tbg; pv.tb = p.data.tb; pv.mode = p.data.mode }
+      else if (p.kind === 'accents') { pv.accents = p.data.accents }
+      else if (p.kind === 'logos') { pv.logos = p.data.logos }
+      else if (p.kind === 'wallpaper') { pv.css = p.data.css }
+      else if (p.kind === 'combo') { pv.n = (p.data.items || []).length }
+    }
+    return {
+      id, name: p.name, kind: p.kind, tier: p.tier, price_paise: p.price_paise,
+      free: p.price_paise === 0, blurb: p.blurb, preview: pv
+    }
+  })
 }
 
 module.exports = { PRODUCTS, get, catalog }
