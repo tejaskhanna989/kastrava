@@ -528,8 +528,20 @@ class Store {
     const e = String(email || '').toLowerCase()
     if (!this.data.entitlements) this.data.entitlements = {}
     if (!this.data.entitlements[e]) this.data.entitlements[e] = {}
-    this.data.entitlements[e][String(productId)] = {
-      at: new Date().toISOString(), order_id: orderId || null
+    const ids = [String(productId)]
+    // Combo packs unfold into every member item.
+    try {
+      const prod = require('./products').get(productId)
+      if (prod && prod.kind === 'combo' && Array.isArray(prod.data.items)) {
+        for (const m of prod.data.items) {
+          if (typeof m === 'string' && m && !ids.includes(m)) ids.push(m)
+        }
+      }
+    } catch {}
+    for (const id of ids) {
+      this.data.entitlements[e][id] = {
+        at: new Date().toISOString(), order_id: orderId || null
+      }
     }
     this.save()
     return true

@@ -78,6 +78,7 @@ contextBridge.exposeInMainWorld('api', {
   licCancel: () => ipcRenderer.invoke('lic-cancel'),
   licActivateAccount: () => ipcRenderer.invoke('lic-activate-account'),
   licDevices: () => ipcRenderer.invoke('lic-devices'),
+  storeItems: () => ipcRenderer.invoke('store-items'),
   licDeviceRemove: (d) => ipcRenderer.invoke('lic-device-remove', d),
 
   // In-app sync (Phase 2): login + push/pull. Key material stays main-side.

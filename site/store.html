@@ -78,12 +78,20 @@ footer a{color:var(--blue);text-decoration:none}
   </div>
 </nav>
 <main>
-  <div class="container">
-    <div class="kick">STORE</div>
-    <h1>Kastrava Store</h1>
-    <p class="sub" id="store-sub">Themes and accents for Kastrava. Installs only work inside the Kastrava browser — 10 items free, everything open with Premium.</p>
+  <div class="container" style="max-width:1100px">
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:22px">
+      <div style="flex:1;min-width:220px;display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:24px;padding:10px 18px">
+        <span style="color:var(--muted)">&#x1F50D;</span>
+        <input id="store-q" placeholder="Search the store — try \"ocean\" or \"cursor\"" style="flex:1;border:none;background:transparent;color:var(--ink);font-size:15px;outline:none;font-family:inherit">
+      </div>
+      <span class="pill" id="store-count" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)">…</span>
+    </div>
+    <h1 style="margin-top:18px">Kastrava Store</h1>
+    <p class="sub" id="store-sub">Themes, accents, logos, wallpapers and cursors for Kastrava. Installs only work inside the Kastrava browser — 10 items free, everything open with Premium.</p>
     <div id="browser-warn" class="lic-card" style="display:none;margin-top:18px"><h2 style="font-size:17px">You are not in Kastrava</h2><p>Install buttons are greyed out here. Open this page inside the Kastrava browser to get items instantly.</p></div>
-    <div class="card" id="store-login" style="margin-top:18px">
+    <div id="store-cats" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px"></div>
+    <div id="store-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;margin-top:16px"></div>
+    <div class="card" id="store-login" style="margin-top:22px">
       <h2 style="font-size:18px;margin-bottom:4px">Log in to get items</h2>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
         <input id="st-email" type="email" placeholder="you@example.com" style="flex:2;min-width:180px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ink);font-family:inherit">
@@ -94,10 +102,11 @@ footer a{color:var(--blue);text-decoration:none}
       </div>
       <div class="msg" id="st-msg"></div>
     </div>
-    <div id="store-grid" class="authors-grid" style="margin-top:18px"></div>
+  </div>
+  <div class="modal-overlay" id="item-modal" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.5);align-items:center;justify-content:center">
+    <div class="lic-card" id="item-body" style="margin:20px;max-width:440px;width:100%"></div>
   </div>
 </main>
-
 <footer>
   <div class="container">
     <p>Kastrava 101 RC · Built By The Community for the Community</p>
@@ -115,7 +124,56 @@ function esc(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'
 function inr(p){return '\u20B9'+(p/100);}
 if(!IS_KASTRAVA){document.getElementById('browser-warn').style.display='block';}
 var owned={};
+var ALL_ITEMS=[];
+var activeCat='all', query='';
+var CATS=[['all','All'],['theme','Themes'],['accents','Accents'],['logos','Logos'],['wallpaper','Wallpapers'],['cursor','Cursors'],['combo','Combos']];
+function paintCats(){
+  var el=document.getElementById('store-cats');if(!el)return;
+  el.innerHTML=CATS.map(function(c){
+    var on=c[0]===activeCat;
+    return '<button data-cat="'+c[0]+'" style="padding:8px 18px;border-radius:20px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;border:1px solid '+(on?'var(--pill)':'var(--line)')+';background:'+(on?'var(--pill)':'transparent')+';color:'+(on?'var(--pill-fg)':'var(--muted)')+'">'+c[1]+'</button>';
+  }).join('');
+  el.querySelectorAll('button[data-cat]').forEach(function(b){
+    b.addEventListener('click',function(){activeCat=b.dataset.cat;paintCats();paint(ALL_ITEMS);});
+  });
+}
+function filtered(){
+  var q=query.trim().toLowerCase();
+  return ALL_ITEMS.filter(function(p){
+    if(activeCat!=='all'&&p.kind!==activeCat)return false;
+    if(q&&(p.name+' '+p.blurb+' '+p.kind).toLowerCase().indexOf(q)<0)return false;
+    return true;
+  });
+}
+function openDetail(id){
+  var p=null;for(var i=0;i<ALL_ITEMS.length;i++)if(ALL_ITEMS[i].id===id)p=ALL_ITEMS[i];
+  if(!p)return;
+  var has=!!owned[id];
+  var locked=!p.free&&!window.__isPremium&&!has;
+  var price=p.free?'Free':(window.__isPremium?'Premium \u00B7 included':'\u20B9'+(p.price_paise/100));
+  var btn=has?'<button class="btn ghost" id="dt-copy" style="padding:10px 22px">Copy data</button>'
+    :(locked?'<button class="btn" id="dt-buy" style="padding:10px 22px">'+esc(price)+'</button>'
+    :'<button class="btn" id="dt-get" style="padding:10px 22px">Get</button>');
+  document.getElementById('item-body').innerHTML=
+    '<div style="height:120px;border-radius:12px;margin-bottom:14px;background:linear-gradient(135deg,'+esc(p.preview.bg)+' 55%,'+esc(p.preview.ac)+' 55%)"></div>'
+    +'<h2 style="font-size:20px">'+esc(p.name)+'</h2>'
+    +'<p style="font-size:13px;color:var(--muted)">'+esc(p.kind)+' \u00B7 '+(p.free?'free':esc(p.tier||'premium'))+'</p>'
+    +'<p style="font-size:14px;margin:8px 0 14px">'+esc(p.blurb)+'</p>'
+    +'<div style="display:flex;gap:8px"><div id="dt-logo"></div>'+btn+'<button class="btn ghost" id="dt-close" style="padding:10px 22px">Close</button></div>';
+  if(p.kind==='logos'&&p.preview){document.getElementById('dt-logo').innerHTML='';}
+  document.getElementById('item-modal').style.display='flex';
+  document.getElementById('dt-close').addEventListener('click',closeDetail);
+  var g=document.getElementById('dt-get');if(g)g.addEventListener('click',function(){closeDetail();claim(id,false);});
+  var bb=document.getElementById('dt-buy');if(bb)bb.addEventListener('click',function(){closeDetail();buy(id);});
+  var cp=document.getElementById('dt-copy');if(cp)cp.addEventListener('click',function(){copyOwned(id);});
+}
+function closeDetail(){document.getElementById('item-modal').style.display='none';}
 function paint(items){
+  ALL_ITEMS=items||[];
+  var cnt=document.getElementById('store-count');
+  if(cnt)cnt.textContent=ALL_ITEMS.length+' items';
+  paintCats();
+  items=filtered();
   var grid=document.getElementById('store-grid');
   grid.innerHTML=items.map(function(p){
     var locked=!p.free&&!window.__isPremium;
@@ -124,12 +182,18 @@ function paint(items){
     var btn=has?'<button class="btn ghost" data-got="'+esc(p.id)+'" style="padding:8px 16px;font-size:13px">Installed ✓</button>'
       :(locked?'<button class="btn ghost" data-buy="'+esc(p.id)+'" style="padding:8px 16px;font-size:13px"'+(IS_KASTRAVA?'':' disabled')+'>'+esc(price)+'</button>'
       :'<button class="btn" data-get="'+esc(p.id)+'" style="padding:8px 16px;font-size:13px"'+(IS_KASTRAVA?'':' disabled')+'>Get</button>');
-    return '<div class="lic-card" style="margin-top:0"><div style="height:64px;border-radius:12px;margin-bottom:12px;background:linear-gradient(135deg,'+esc(p.preview.bg)+' 55%,'+esc(p.preview.ac)+' 55%)"></div>'
+    return '<div class="lic-card store-card" data-open="'+esc(p.id)+'" style="margin-top:0;cursor:pointer"><div style="height:64px;border-radius:12px;margin-bottom:12px;background:linear-gradient(135deg,'+esc(p.preview.bg)+' 55%,'+esc(p.preview.ac)+' 55%)"></div>'
       +'<h2 style="font-size:17px;margin-bottom:2px">'+esc(p.name)+'</h2>'
       +'<p style="font-size:13px">'+esc(p.blurb)+'</p>'
       +'<p style="font-size:12px;color:var(--muted)">'+esc(p.kind)+' · '+(p.free?'free':(esc(p.tier||'premium')+' · '+esc(price)))+'</p>'
       +'<div style="margin-top:10px">'+btn+'</div></div>';
   }).join('');
+  grid.querySelectorAll('.store-card').forEach(function(c){
+    c.addEventListener('click',function(e){
+      if(e.target&&e.target.tagName==='BUTTON')return;
+      openDetail(c.dataset.open);
+    });
+  });
   grid.querySelectorAll('button[data-get]').forEach(function(b){
     b.addEventListener('click',function(){claim(b.dataset.get,false);});
   });
@@ -219,8 +283,11 @@ document.getElementById('st-code').addEventListener('keydown',function(e){
     }).catch(function(){});
   }
 });
+var qEl=document.getElementById('store-q');
+if(qEl)qEl.addEventListener('input',function(){query=qEl.value;paint(ALL_ITEMS);});
 load();
 })();
+
 </script>
 </body>
 </html>

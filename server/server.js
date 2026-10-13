@@ -411,6 +411,11 @@ async function handlePost(req, res, pathname) {
     const expires = new Date(Date.now() + issueDays * 86400000).toISOString()
     store.issueLicense(key, orderId, null, expires)
     if (machine) store.bindLicense(key, machine)
+    const issueEmail = String(body.account_email || '').trim().toLowerCase()
+    if (issueEmail && store.getAccountByEmail(issueEmail)) {
+      store.setAccountEmail(key, issueEmail)
+      store.audit(issueEmail, 'admin_grant', key)
+    }
     const rc = makeReceipt(orderId)
     return json(res, 200, { ok: true, key, order_id: orderId, expires_at: expires,
       receipt: rc && rc.receipt, receipt_sig: rc && rc.receipt_sig })
@@ -937,6 +942,103 @@ async function handlePost(req, res, pathname) {
     const acc = store.getSessionAccount(bearer(req))
     if (!acc) return json(res, 401, { error: 'unauthorized' })
     return json(res, 200, { ok: true, items: store.itemsFor(acc.email) })
+  }
+  // ---- Admin: accounts, grants, broadcast ----
+  if (pathname === '/api/admin/accounts') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const out = Object.values(store.all().accounts || {}).map((a) => ({
+      email: a.email, created_at: a.created_at, verified: !!a.verified,
+      totp: !!a.totp_secret,
+      keys: store.keysForAccount(a.email).map((l) => l.key),
+      devices: store.keysForAccount(a.email).reduce((n, l) => n + Object.keys(l.devices || {}).length, 0),
+      items: Object.keys(((store.all().entitlements || {})[a.email]) || {}).length
+    }))
+    return json(res, 200, { ok: true, accounts: out })
+  }
+  if (pathname === '/api/admin/account') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const email = String(body.email || '').trim().toLowerCase()
+    const acc = store.getAccountByEmail(email)
+    if (!acc) return json(res, 404, { error: 'no_account' })
+    return json(res, 200, { ok: true, account: {
+      email: acc.email, created_at: acc.created_at, verified: !!acc.verified,
+      totp: !!acc.totp_secret, require_approval: !!acc.require_approval,
+      keys: store.keysVisibleTo(email).map((x) => ({ key: x.lic.key, status: x.lic.status,
+        expires_at: x.lic.expires_at || null, shared: !!x.shared,
+        devices: Object.keys(x.lic.devices || {}).length })),
+      sessions: store.sessionsForAccount(email).length,
+      items: store.itemsFor(email).map((x) => x.id),
+      audit: store.getAudit(email).slice(0, 20) } })
+  }
+  if (pathname === '/api/admin/account/delete') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const email = String(body.email || '').trim().toLowerCase()
+    const acc = store.getAccountByEmail(email)
+    if (!acc) return json(res, 404, { error: 'no_account' })
+    for (const l of store.keysForAccount(email)) {
+      l.status = 'cancelled'
+      l.cancelled_at = new Date().toISOString()
+      l.shared_with = []
+    }
+    for (const k in store.data.licenses) {
+      const l = store.data.licenses[k]
+      if (l.shared_with) l.shared_with = (l.shared_with || []).filter((e) => e !== email)
+    }
+    for (const h in store.data.sessions) {
+      if (store.data.sessions[h].email === email) delete store.data.sessions[h]
+    }
+    if (store.data.sync) delete store.data.sync[email]
+    if (store.data.audit) delete store.data.audit[email]
+    if (store.data.entitlements) delete store.data.entitlements[email]
+    delete store.data.accounts[email]
+    store.save()
+    return json(res, 200, { ok: true })
+  }
+  if (pathname === '/api/admin/grant') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const email = String(body.email || '').trim().toLowerCase()
+    const id = String(body.id || body.key || '')
+    if (!store.getAccountByEmail(email)) return json(res, 404, { error: 'no_account' })
+    // Store item grant (free, direct to account).
+    const prod = products.get(id)
+    if (prod) {
+      store.grant(email, id, 'admin')
+      store.audit(email, 'admin_grant', id)
+      return json(res, 200, { ok: true, granted: id })
+    }
+    // Otherwise treat as a license key grant.
+    const lic = store.getLicense(id.toUpperCase())
+    if (!lic) return json(res, 404, { error: 'unknown_id' })
+    if (lic.account_email && lic.account_email !== email) {
+      return json(res, 403, { error: 'wrong_account', msg: 'Key belongs elsewhere.' })
+    }
+    store.setAccountEmail(lic.key, email)
+    store.audit(email, 'admin_grant', lic.key)
+    return json(res, 200, { ok: true, granted: lic.key })
+  }
+  if (pathname === '/api/admin/email') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const subject = String(body.subject || '').replace(/[\r\n]/g, ' ').slice(0, 120)
+    const text = String(body.text || '').slice(0, 5000)
+    if (!subject || !text) return json(res, 400, { error: 'bad_request' })
+    let targets = []
+    if (body.to === 'all') {
+      targets = Object.keys(store.all().accounts || {})
+    } else if (typeof body.to === 'string' && body.to.includes('@')) {
+      if (!store.getAccountByEmail(body.to.trim().toLowerCase())) return json(res, 404, { error: 'no_account' })
+      targets = [body.to.trim().toLowerCase()]
+    } else {
+      return json(res, 400, { error: 'bad_request' })
+    }
+    let sent = 0
+    for (const em of targets.slice(0, 5000)) {
+      try {
+        const ok = await mailer.sendAsync(em, subject, text + '\n\n— Kastrava')
+        if (ok) sent++
+      } catch {}
+      await new Promise((r) => setTimeout(r, 120))
+    }
+    return json(res, 200, { ok: true, sent, total: targets.length })
   }
   if (pathname === '/api/account/export') {
     const acc = store.getSessionAccount(bearer(req))

@@ -1015,6 +1015,19 @@ ipcMain.handle('lic-devices', async () => {
     return await r.json().catch(() => ({ ok: false }))
   } catch { return { ok: false } }
 })
+ipcMain.handle('store-items', async () => {
+  try {
+    const t = settingsBackend.get('syncToken')
+    if (!t) return { ok: false, error: 'no_login' }
+    const r = await fetch(license.API.replace(/\/$/, '') + '/api/account/items', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t },
+      body: '{}',
+      signal: AbortSignal.timeout(20000)
+    })
+    return await r.json().catch(() => ({ ok: false }))
+  } catch { return { ok: false } }
+})
 ipcMain.handle('lic-device-remove', async (_, { key, machine_id }) => {
   try {
     const t = settingsBackend.get('syncToken')
