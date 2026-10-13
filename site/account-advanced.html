@@ -645,6 +645,25 @@ function mountPaypal(){
   buyEl.style.display='none';
   box.style.display='block';
   box.innerHTML='';
+  if(GEO.paypal_dev){
+    var t=document.createElement('button');
+    t.className='btn';t.style.cssText='padding:10px 22px';t.textContent='Pay (test mode) — no real charge';
+    t.addEventListener('click',function(){
+      buyMsg.className='msg';buyMsg.textContent='Contacting store…';
+      apiFetch(KAS_API+'/api/order',{method:'POST',headers:authz(),body:JSON.stringify({account_token:tok(),plan:planPicked,provider:'paypal'})})
+      .then(function(r){return r.json();}).then(function(o){
+        if(!o||!o.order_id){buyMsg.textContent='Order failed.';return;}
+        return apiFetch(KAS_API+'/api/verify',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({order_id:o.order_id,pp_order_id:o.order_id,machine_id:'',account_token:tok()})})
+        .then(function(r){return r.json();}).then(function(v){
+          if(v&&v.ok&&v.key){buyMsg.textContent='Paid. Key '+v.key+' is on your account — logged-in browsers pick it up automatically.';loadKeys();}
+          else{buyMsg.className='msg err';buyMsg.textContent='Payment could not be verified.';}
+        });
+      }).catch(function(e){buyMsg.textContent=apiErr(e,'Order failed.');});
+    });
+    box.appendChild(t);
+    return;
+  }
   loadPpSdk(GEO.paypal_client_id,GEO.currency,function(){
     window.paypal.Buttons({
       style:{layout:'vertical',color:'gold',shape:'rect',label:'paypal'},

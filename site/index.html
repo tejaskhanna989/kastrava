@@ -248,6 +248,7 @@ footer a:hover{color:var(--ink)}
         <div style="font-size:12.5px;color:var(--muted);margin-top:6px">No account? <a href="/account.html" style="color:var(--accent)">Sign up</a></div>
       </div>
       <button class="prem-buy" id="prem-buy">Pay ₹670 with Razorpay — 30 days</button>
+      <div id="prem-pp" style="display:none;margin-top:4px"></div>
       <p style="margin-top:10px;font-size:13px;color:var(--muted)">Already Premium and want out? <a href="#" id="prem-stop" style="color:var(--accent)">Stop Premium</a> — ends immediately, no refund.</p>
       <p id="prem-inrnote" style="font-size:12px;color:var(--muted2);margin-top:8px">Charged in INR (₹670) — your bank converts the $7 at checkout. By paying you agree to the <a href="/terms.html" style="color:var(--blue)">Terms</a> and <a href="/refunds.html" style="color:var(--blue)">Refund Policy</a>.</p>
       <div class="prem-keyout" id="prem-keyout">
@@ -468,13 +469,89 @@ footer a:hover{color:var(--ink)}
 
   var planPicked='monthly';
   var PLAN_META={monthly:{inr:670,usd:7,days:30,label:'Monthly'},daily:{inr:190,usd:2,days:1,label:'Daily'}};
+  var GEO=null;
+  function money(a,c){return (c==='INR'?'\u20B9':c+' ')+a;}
+  apiFetch(KAS_API+'/api/geo',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})
+  .then(function(r){return r.json();}).then(function(g){
+    if(!g||!g.ok)return;
+    GEO=g;paintPlan();
+    if(g.provider==='paypal')mountPaypal();
+  }).catch(function(){});
+  function loadPpSdk(clientId,currency,cb){
+    if(window.paypal){cb();return;}
+    var sc=document.createElement('script');
+    sc.src='https://www.paypal.com/sdk/js?client-id='+encodeURIComponent(clientId)+'&currency='+encodeURIComponent(currency)+'&intent=capture';
+    sc.onload=cb;sc.onerror=function(){fail('PayPal failed to load. Refresh and try again.');};
+    document.head.appendChild(sc);
+  }
+  function ppVerify(ours,ppOrderId,mach,amount,currency){
+    setBusy(true);
+    apiFetch(KAS_API+'/api/verify',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({order_id:ours,pp_order_id:ppOrderId,machine_id:mach})})
+    .then(function(r){return r.json();}).then(function(v){
+      if(v.ok&&v.key){var pt=document.getElementById("prem-plan");if(pt&&v.plan){pt.style.display="block";pt.textContent=(v.plan==="daily"?"DAILY · 24 HOURS":"MONTHLY · 30 DAYS");}showKey(v.key,!!v.renewed,{order_id:ours,payment_id:ppOrderId,amount:amount,currency:currency,machine_id:mach,account_email:v.account_email||null,server_receipt:v.receipt||null,receipt_sig:v.receipt_sig||null});setBusy(false);}
+      else fail((v&&v.msg)||'Payment could not be verified.');
+    }).catch(function(e){fail(apiErr(e,'Could not verify payment - your payment may still have gone through. Email the payment ID to khannatejas989@gmail.com'));});
+  }
+  function mountPaypal(){
+    var box=document.getElementById('prem-pp');
+    if(buyBtn)buyBtn.style.display='none';
+    box.style.display='block';box.innerHTML='';
+    if(GEO.paypal_dev){
+      // No PayPal keys yet: test button simulates approval through dev capture.
+      var t=document.createElement('button');
+      t.className='prem-buy';t.textContent='Pay (test mode) — no real charge';
+      t.addEventListener('click',function(){
+        if(!syncToken()){var lb=document.getElementById('prem-login');if(lb){lb.style.display='block';lb.scrollIntoView({block:'nearest'});}return;}
+        setBusy(true);
+        var mach=machineValue();
+        apiFetch(KAS_API+'/api/order',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({machine_id:mach,plan:planPicked,provider:'paypal'})})
+        .then(function(r){return r.json();}).then(function(o){
+          if(!o||!o.order_id)throw new Error('no order');
+          ppVerify(o.order_id,o.order_id,mach,o.amount,o.currency);
+        }).catch(function(e){fail(apiErr(e,e&&e.message));});
+      });
+      box.appendChild(t);
+      return;
+    }
+    loadPpSdk(GEO.paypal_client_id,GEO.currency,function(){
+      window.paypal.Buttons({
+        style:{layout:'vertical',color:'gold',shape:'rect',label:'paypal'},
+        createOrder:function(){
+          if(!syncToken()){var lb=document.getElementById('prem-login');if(lb){lb.style.display='block';lb.scrollIntoView({block:'nearest'});}throw new Error('login');}
+          setBusy(true);primeReceiptLib();
+          var mach=machineValue();
+          return apiFetch(KAS_API+'/api/order',{method:'POST',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({machine_id:mach,plan:planPicked,provider:'paypal'})})
+          .then(function(r){return r.json();}).then(function(o){
+            if(!o||!o.order_id)throw new Error(o&&o.msg||'no order');
+            box.dataset.ours=o.order_id;box.dataset.amt=o.amount;box.dataset.cur=o.currency;box.dataset.mach=mach;
+            setBusy(false);
+            return o.order_id;
+          });
+        },
+        onApprove:function(data){ppVerify(box.dataset.ours,data.orderID,box.dataset.mach,box.dataset.amt,box.dataset.cur);},
+        onCancel:function(){setBusy(false);},
+        onError:function(){fail('PayPal error. No charge was made.');}
+      }).render('#prem-pp');
+    });
+  }
   function paintPlan(){
     document.querySelectorAll('.plan-pick').forEach(function(b){
       var on=b.dataset.plan===planPicked;
       b.style.borderWidth=on?'2px':'1px';
       b.style.borderColor=on?'var(--ink)':'var(--line)';
     });
-    if(buyBtn)buyBtn.textContent='Pay \u20B9'+PLAN_META[planPicked].inr+' with Razorpay — '+PLAN_META[planPicked].days+(PLAN_META[planPicked].days===1?' day':' days');
+    var per=PLAN_META[planPicked].days+(PLAN_META[planPicked].days===1?' day':' days');
+    if(GEO&&GEO.provider==='paypal'&&GEO.prices&&GEO.prices[planPicked]){
+      var pr=GEO.prices[planPicked];
+      if(buyBtn)buyBtn.textContent='Pay '+money(pr.amount,pr.currency)+' with PayPal — '+per;
+      var note2=document.getElementById('prem-inrnote');
+      if(note2)note2.innerHTML='Charged in '+pr.currency+' ('+money(pr.amount,pr.currency)+') via PayPal. By paying you agree to the <a href="/terms.html" style="color:var(--blue)">Terms</a> and <a href="/refunds.html" style="color:var(--blue)">Refund Policy</a>.';
+      return;
+    }
+    if(buyBtn)buyBtn.textContent='Pay \u20B9'+PLAN_META[planPicked].inr+' with Razorpay — '+per;
     var note=document.getElementById('prem-inrnote');
     if(note)note.innerHTML='Charged in INR (\u20B9'+PLAN_META[planPicked].inr+') — your bank converts the $'+PLAN_META[planPicked].usd+' at checkout. By paying you agree to the <a href="/terms.html" style="color:var(--blue)">Terms</a> and <a href="/refunds.html" style="color:var(--blue)">Refund Policy</a>.';
   }
@@ -550,6 +627,7 @@ footer a:hover{color:var(--ink)}
   }
 
   if(buyBtn)buyBtn.addEventListener('click',function(){
+    if(GEO&&GEO.provider==='paypal')return;
     if(!syncToken()){
       var lb=document.getElementById('prem-login');
       if(lb){lb.style.display='block';lb.scrollIntoView({block:'nearest'});}

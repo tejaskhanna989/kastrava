@@ -4148,8 +4148,8 @@ function renderSettingsSection(id){
         h+="<div class=\"sg\"><div class=\"lbl\">Status</div><div class=\"desc\" style=\"font-weight:600;color:#c62828\">\u2716 Premium expired \u2014 renew from \u20B9190/day. Manual by default.</div></div>";
       }
       h+="<div class=\"sg\" id=\"s-licneed\"><div class=\"lbl\">Premium needs an account</div><div class=\"desc\">Log in under Account — the account key activates this device itself, up to 10 devices. No keys to paste, even after updating.</div><div style=\"margin-top:8px;display:flex;gap:8px;flex-wrap:wrap\"><button class=\"btn-sm btn-accent\" id=\"s-licgoacc\">Open Account</button></div></div>";
-      h+="<div class=\"sg\" style=\"display:flex;gap:8px;flex-wrap:wrap\">"+(LIC.reason==="expired"?"<button class=\"btn-sm btn-accent\" id=\"s-licrenew\">Renew Premium</button>":"")+"<button class=\"btn-sm\" id=\"s-licbuy\">Buy Premium \u2014 $7/30d</button></div>";
-      h+="<div class=\"desc\" style=\"margin-top:6px\">No key yet? Buy at <a href=\"#\" id=\"s-licbuylink\" style=\"color:var(--accent)\">kastrava.pp.ua/#premium</a> \u2014 you'll get a key instantly via Razorpay. Plans from \u20B9190/day. Manual renewal.</div>";
+      h+="<div class=\"sg\" style=\"display:flex;gap:8px;flex-wrap:wrap\">"+(LIC.reason==="expired"?"<button class=\"btn-sm btn-accent\" id=\"s-licrenew\">Renew Premium</button>":"")+"<button class=\"btn-sm\" id=\"s-licbuy\">Buy Premium</button></div>";
+      h+="<div class=\"desc\" id=\"s-licgeo\" style=\"margin-top:6px\">No key yet? Buy at <a href=\"#\" id=\"s-licbuylink\" style=\"color:var(--accent)\">kastrava.pp.ua/#premium</a> \u2014 you'll get a key instantly after payment (Razorpay in India, PayPal elsewhere). Plans from \u20B9190/day. Manual renewal.</div>";
     }
     h+="<div class=\"sg\"><div class=\"lbl\">What's in Premium</div><div class=\"desc\">\u2022 Tracking Radar (live per-tab tracker score)<br>\u2022 Cursor Effects: Mouse Style, Fluid Splash, Blob Trail, Glass Lens, Particle Trail, Click Spark, Pixel Trail, Ribbons<br>\u2022 Workspaces<br>\u2022 Split View<br>\u2022 All 20 dark + light themes<br>\u2022 Extra search engines: Brave, Google, Ecosia<br>\u2022 Custom cursor arrow<br>\u2022 Picture-in-Picture, Screenshot<br>\u2022 Localhost Dashboard<br>\u2022 Vertical tabs layout<br>\u2022 Bookmark import &amp; export<br>\u2022 Custom shortcut remapping</div></div>";
   }
@@ -4598,6 +4598,19 @@ function bindSettingsEvents(id){
       var mce=$("s-lickey");
       var act=$("s-licactivate");if(act)act.addEventListener("click",function(){activatePremium(mce?mce.value.trim():"");});
       var buy=$("s-licbuy");if(buy)buy.addEventListener("click",function(){openOobBuy(LIC.machine);});
+      try{
+        if(!$("s-licbuy").dataset.geo&&window.fetch){
+          $("s-licbuy").dataset.geo="1";
+          fetch(KAS_API+"/api/geo",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"})
+          .then(function(r){return r.json();}).then(function(g){
+            if(!g||!g.ok)return;
+            var b=$("s-licbuy");if(!b)return;
+            if(g.provider==="paypal"&&g.prices&&g.prices.monthly){
+              b.textContent="Buy Premium \u2014 "+g.prices.monthly.amount+" "+g.currency+"/30d (PayPal)";
+            }else{b.textContent="Buy Premium \u2014 \u20B9670/30d (Razorpay)";}
+          }).catch(function(){});
+        }
+      }catch(e){}
       var renew=$("s-licrenew");if(renew)renew.addEventListener("click",function(){openOobBuy(LIC.machine);});
       var buylink=$("s-licbuylink");if(buylink)buylink.addEventListener("click",function(e){e.preventDefault();openOobBuy(LIC.machine);});
       var ccm=$("s-liccopy");if(ccm)ccm.addEventListener("click",function(){copyText(LIC.machine);toast("Machine code copied");});
