@@ -187,7 +187,7 @@ function openDetail(id){
   if(!p)return;
   var has=!!owned[id];
   var locked=!p.free&&!window.__isPremium&&!has;
-  var price=p.free?'Free':(window.__isPremium?'Premium \u00B7 included':'\u20B9'+(p.price_paise/100));
+  var price=p.free?'Free':(window.__isPremium?'Premium \u00B7 included':dispPrice(p));
   var btn=has?'<button class="btn ghost" id="dt-copy" style="padding:10px 22px">Copy data</button>'
     :(locked?'<button class="btn" id="dt-buy" style="padding:10px 22px">'+esc(price)+'</button>'
     :'<button class="btn" id="dt-get" style="padding:10px 22px">Get</button>');
@@ -215,7 +215,7 @@ function paint(items){
   grid.innerHTML=items.map(function(p){
     var locked=!p.free&&!window.__isPremium;
     var has=!!owned[p.id];
-    var price=p.free?'Free':(window.__isPremium?'Premium · included':inr(p.price_paise));
+    var price=p.free?'Free':(window.__isPremium?'Premium · included':dispPrice(p));
     var btn=has?'<button class="btn ghost" data-got="'+esc(p.id)+'" style="padding:8px 16px;font-size:13px">Installed ✓</button>'
       :(locked?'<button class="btn ghost" data-buy="'+esc(p.id)+'" style="padding:8px 16px;font-size:13px"'+(IS_KASTRAVA?'':' disabled')+'>'+esc(price)+'</button>'
       :'<button class="btn" data-get="'+esc(p.id)+'" style="padding:8px 16px;font-size:13px"'+(IS_KASTRAVA?'':' disabled')+'>Get</button>');
@@ -242,8 +242,14 @@ function paint(items){
     b.addEventListener('click',function(){copyOwned(b.dataset.got);});
   });
 }
+function dispPrice(p){
+  if(p.disp&&p.disp.amount)return p.disp.amount+' '+p.disp.currency;
+  return inr(p.price_paise);
+}
 function load(){
-  fetch(KAS_API+'/api/store/catalog',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})
+  window.__storeLoaded=true;
+  var cur=(GEO&&GEO.currency)||'';
+  fetch(KAS_API+'/api/store/catalog',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cur?{currency:cur}:{})})
   .then(function(r){return r.json();}).then(function(j){
     var items=(j&&j.items)||[];
     if(!tok()){window.__isPremium=false;paint(items);return;}
@@ -270,11 +276,48 @@ function copyOwned(id){
   var txt=JSON.stringify(owned[id]||{});
   if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).catch(function(){});}
 }
+var GEO=null;
+fetch(KAS_API+'/api/geo',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})
+.then(function(r){return r.json();}).then(function(g){if(g&&g.ok){GEO=g;}load();})
+.catch(function(){if(!window.__storeLoaded)load();});
+function loadPpSdk(clientId,currency,cb){
+  if(window.paypal){cb();return;}
+  var sc=document.createElement('script');
+  sc.src='https://www.paypal.com/sdk/js?client-id='+encodeURIComponent(clientId)+'&currency='+encodeURIComponent(currency)+'&intent=capture';
+  sc.onload=cb;sc.onerror=function(){};
+  document.head.appendChild(sc);
+}
+function buyPaypal(id,o){
+  var p=null;for(var i=0;i<ALL_ITEMS.length;i++)if(ALL_ITEMS[i].id===id)p=ALL_ITEMS[i];
+  document.getElementById('item-body').innerHTML=
+    '<h2 style="font-size:20px">'+esc(p?p.name:id)+'</h2>'
+    +'<p style="font-size:14px;margin:8px 0">'+esc((o.amount||'')+' '+(o.currency||''))+' via PayPal</p>'
+    +'<div id="pp-buy-box"></div>'
+    +'<div style="margin-top:10px"><button class="btn ghost" id="dt-close" style="padding:10px 22px">Cancel</button></div>';
+  document.getElementById('item-modal').style.display='flex';
+  document.getElementById('dt-close').addEventListener('click',closeDetail);
+  loadPpSdk(o.client_id||(GEO&&GEO.paypal_client_id),o.currency,function(){
+    window.paypal.Buttons({
+      style:{layout:'vertical',color:'gold',shape:'rect',label:'paypal'},
+      createOrder:function(){return o.order_id;},
+      onApprove:function(data){
+        return fetch(KAS_API+'/api/store/verify',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({order_id:o.order_id,pp_order_id:data.orderID,account_token:tok()})})
+        .then(function(r){return r.json();}).then(function(v){
+          if(v&&v.ok){owned[id]=v.data;closeDetail();load();}
+        });
+      },
+      onError:function(){}
+    }).render('#pp-buy-box');
+  });
+}
 function buy(id){
-  fetch(KAS_API+'/api/store/buy',{method:'POST',headers:authz(),body:JSON.stringify({id:id})})
+  var wantPp=GEO&&GEO.provider==='paypal';
+  fetch(KAS_API+'/api/store/buy',{method:'POST',headers:authz(),body:JSON.stringify(wantPp?{id:id,provider:'paypal'}:{id:id})})
   .then(function(r){return r.json();}).then(function(o){
     if(o&&o.ok&&o.data){owned[id]=o.data;load();return;}
     if(!o||!o.order_id)return;
+    if(o.provider==='paypal'||wantPp){buyPaypal(id,o);return;}
     var rzp=new Razorpay({key:o.key_id,amount:o.amount,currency:o.currency,order_id:o.order_id,
       name:'Kastrava Store',description:id,
       handler:function(res){
@@ -323,7 +366,7 @@ document.getElementById('st-code').addEventListener('keydown',function(e){
 });
 var qEl=document.getElementById('store-q');
 if(qEl)qEl.addEventListener('input',function(){query=qEl.value;paint(ALL_ITEMS);});
-load();
+setTimeout(function(){if(!ALL_ITEMS.length&&!window.__storeLoaded)load();},4000);
 })();
 
 </script>

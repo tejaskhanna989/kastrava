@@ -129,6 +129,7 @@ r.setAttribute('data-theme',s?s:(window.matchMedia&&window.matchMedia('(prefers-
 <p class="fine" style="margin:0 0 4px">Manual renewal — you pay each time, nothing auto-charges.</p>
 <div style="margin-top:14px"><button class="btn" id="buy-go">Buy — ₹670 / 30 days</button></div>
 <div class="msg" id="buy-msg"></div>
+<div id="pp-buttons" style="margin-top:12px;display:none"></div>
 <p class="fine" id="buy-inrnote">Charged in INR (₹670). Renewing extends your newest key — every logged-in browser follows. By paying you agree to the <a href="/terms.html" style="color:var(--blue)">Terms</a> and <a href="/refunds.html" style="color:var(--blue)">Refund Policy</a>.</p>
 </div>
 </div>
@@ -607,7 +608,15 @@ function paintPlan(){
     b.style.borderWidth=on?'2px':'1px';
     b.style.borderColor=on?'var(--ink)':'var(--line)';
   });
-  buyEl.textContent='Buy — \u20B9'+PLAN_META[planPicked].inr+' / '+(PLAN_META[planPicked].days===1?'24 hours':'30 days');
+  var per=PLAN_META[planPicked].days===1?'24 hours':'30 days';
+  if(GEO&&GEO.provider==='paypal'&&GEO.prices&&GEO.prices[planPicked]){
+    var pr=GEO.prices[planPicked];
+    buyEl.textContent='Buy — '+money(pr.amount,pr.currency)+' / '+per;
+    var note2=document.getElementById('buy-inrnote');
+    if(note2)note2.innerHTML='Charged in '+pr.currency+' ('+money(pr.amount,pr.currency)+') via PayPal. Renewing extends your newest key — every logged-in browser follows. By paying you agree to the <a href="/terms.html" style="color:var(--blue)">Terms</a> and <a href="/refunds.html" style="color:var(--blue)">Refund Policy</a>.';
+    return;
+  }
+  buyEl.textContent='Buy — \u20B9'+PLAN_META[planPicked].inr+' / '+per;
   var note=document.getElementById('buy-inrnote');
   if(note)note.innerHTML='Charged in INR (\u20B9'+PLAN_META[planPicked].inr+'). Renewing extends your newest key — every logged-in browser follows. By paying you agree to the <a href="/terms.html" style="color:var(--blue)">Terms</a> and <a href="/refunds.html" style="color:var(--blue)">Refund Policy</a>.';
 }
@@ -615,7 +624,55 @@ document.querySelectorAll('.plan-pick').forEach(function(b){
   b.addEventListener('click',function(){planPicked=b.dataset.plan;paintPlan();});
 });
 paintPlan();
+var GEO=null;
+function money(a,c){return (c==='INR'?'₹':c+' ')+a;}
+apiFetch(KAS_API+'/api/geo',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})
+.then(function(r){return r.json();}).then(function(g){
+  if(!g||!g.ok)return;
+  GEO=g;
+  paintPlan();
+  if(g.provider==='paypal')mountPaypal();
+}).catch(function(){});
+function loadPpSdk(clientId,currency,cb){
+  if(window.paypal){cb();return;}
+  var sc=document.createElement('script');
+  sc.src='https://www.paypal.com/sdk/js?client-id='+encodeURIComponent(clientId)+'&currency='+encodeURIComponent(currency)+'&intent=capture';
+  sc.onload=cb;sc.onerror=function(){buyMsg.textContent='PayPal failed to load. Refresh and try again.';};
+  document.head.appendChild(sc);
+}
+function mountPaypal(){
+  var box=document.getElementById('pp-buttons');
+  buyEl.style.display='none';
+  box.style.display='block';
+  box.innerHTML='';
+  loadPpSdk(GEO.paypal_client_id,GEO.currency,function(){
+    window.paypal.Buttons({
+      style:{layout:'vertical',color:'gold',shape:'rect',label:'paypal'},
+      createOrder:function(){
+        buyMsg.className='msg';buyMsg.textContent='Contacting store…';
+        return apiFetch(KAS_API+'/api/order',{method:'POST',headers:authz(),body:JSON.stringify({account_token:tok(),plan:planPicked,provider:'paypal'})})
+        .then(function(r){return r.json();}).then(function(o){
+          if(!o||!o.order_id){buyMsg.textContent='Order failed.';throw new Error('order');}
+          box.dataset.ours=o.order_id;
+          return o.order_id;
+        });
+      },
+      onApprove:function(data){
+        buyMsg.textContent='Capturing payment…';
+        return apiFetch(KAS_API+'/api/verify',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({order_id:box.dataset.ours,pp_order_id:data.orderID,machine_id:'',account_token:tok()})})
+        .then(function(r){return r.json();}).then(function(v){
+          if(v&&v.ok&&v.key){buyMsg.textContent='Paid. Key '+v.key+' is on your account'+(v.renewed?' (renewal extended)':'')+' — logged-in browsers pick it up automatically.';loadKeys();}
+          else{buyMsg.className='msg err';buyMsg.textContent='Payment could not be verified.';}
+        });
+      },
+      onCancel:function(){buyMsg.textContent='';},
+      onError:function(){buyMsg.className='msg err';buyMsg.textContent='PayPal error. No charge was made.';}
+    }).render('#pp-buttons');
+  });
+}
 buyEl.addEventListener('click',function(){
+  if(GEO&&GEO.provider==='paypal'){buyMsg.textContent='Use the PayPal button below.';return;}
   if(!window.Razorpay){buyMsg.textContent='Checkout failed to load. Refresh and try again.';return;}
   buyMsg.className='msg';buyMsg.textContent='Contacting store…';buyEl.disabled=true;
   manualPay();

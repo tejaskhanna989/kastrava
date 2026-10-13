@@ -19,6 +19,9 @@ const crypto = require('crypto')
 require('./lib/env').loadEnv()
 const sign = require('./lib/sign')
 const razorpay = require('./lib/razorpay')
+const paypal = require('./lib/paypal')
+const geo = require('./lib/geo')
+const fx = require('./lib/fx')
 const mailer = require('./lib/mailer')
 const products = require('./lib/products')
 
@@ -268,10 +271,47 @@ const authHits = new Map()
 async function handlePost(req, res, pathname) {
   const { raw, parsed: body } = await readBody(req)
 
+  if (pathname === '/api/geo') {
+    try {
+      const g = await geo.resolveGeo(req)
+      const prices = {}
+      for (const pn of ['monthly', 'daily']) {
+        const pl = planOf(pn)
+        prices[pn] = g.provider === 'paypal'
+          ? await fx.fromInrPaise(pl.inr * 100, g.currency)
+          : { amount: String(pl.inr), currency: 'INR' }
+      }
+      return json(res, 200, { ok: true, country: g.country, currency: g.currency,
+        provider: g.provider, paypal_client_id: g.provider === 'paypal' ? paypal.clientId() : null,
+        paypal_dev: paypal.isDev(), prices })
+    } catch (e) {
+      return json(res, 200, { ok: true, country: 'US', currency: 'USD', provider: 'paypal',
+        paypal_client_id: paypal.clientId(), paypal_dev: paypal.isDev() })
+    }
+  }
   if (pathname === '/api/order') {
     try {
       const planName = (body.plan === 'monthly' || body.plan === 'daily') ? body.plan : 'legacy'
       const plan = planOf(planName)
+      const wantPaypal = String(body.provider || '') === 'paypal'
+      if (wantPaypal) {
+        const g = await geo.resolveGeo(req)
+        const conv = await fx.fromInrPaise(plan.inr * 100, g.currency)
+        const o = await paypal.createOrder(conv.amount, conv.currency, 'Kastrava Premium ' + planName)
+        const meta = { plan: planName, provider: 'paypal', amount_paise: plan.inr * 100,
+          currency: conv.currency, pp_amount: conv.amount }
+        if (typeof body.name === 'string' && body.name) meta.name = body.name
+        if (typeof body.email === 'string' && body.email) meta.email = body.email
+        if (typeof body.machine_id === 'string' && body.machine_id.trim()) meta.machine_id = body.machine_id.trim().toUpperCase()
+        if (typeof body.account_token === 'string' && body.account_token) {
+          const acc = store.getSessionAccount(body.account_token)
+          if (acc) meta.account_email = acc.email
+        }
+        store.createOrder(o.order_id, meta)
+        return json(res, 200, { ok: true, provider: 'paypal', order_id: o.order_id,
+          amount: conv.amount, currency: conv.currency, dev: !!o.dev, plan: planName,
+          plan_days: plan.days, client_id: paypal.clientId() })
+      }
       const o = await razorpay.createOrder(plan.inr * 100)
       const meta = { plan: planName, amount_paise: plan.inr * 100 }
       if (typeof body.name === 'string' && body.name) meta.name = body.name
@@ -282,7 +322,7 @@ async function handlePost(req, res, pathname) {
         if (acc) meta.account_email = acc.email
       }
       store.createOrder(o.order_id, meta)
-      return json(res, 200, { order_id: o.order_id, amount: o.amount, currency: o.currency, key_id: o.key_id, dev: !!o.dev, plan: planName, plan_usd: plan.usd, plan_days: plan.days })
+      return json(res, 200, { ok: true, provider: 'razorpay', order_id: o.order_id, amount: o.amount, currency: o.currency, key_id: o.key_id, dev: !!o.dev, plan: planName, plan_usd: plan.usd, plan_days: plan.days })
     } catch (e) {
       return json(res, 500, { error: 'order_failed', msg: String(e.message || e) })
     }
@@ -290,9 +330,27 @@ async function handlePost(req, res, pathname) {
 
   if (pathname === '/api/verify') {
     const { order_id, payment_id, signature, machine_id, account_token } = body
-    if (!order_id || !payment_id) return json(res, 400, { error: 'bad_request' })
+    if (!order_id) return json(res, 400, { error: 'bad_request' })
     const order = store.getOrder(order_id)
     if (!order) return json(res, 404, { error: 'order_not_found' })
+    if (order.provider === 'paypal') {
+      if (order.status === 'paid') {
+        const k = store.keyForOrder(order_id)
+        if (k) {
+          const rc0 = makeReceipt(String(order_id), machine_id)
+          return json(res, 200, { ok: true, already_paid: true, key: k, plan: order.plan || 'legacy',
+            receipt: rc0 && rc0.receipt, receipt_sig: rc0 && rc0.receipt_sig })
+        }
+      }
+      const cap = await paypal.captureOrder(String(body.pp_order_id || payment_id || ''))
+      if (!cap.ok) return json(res, 402, { error: 'capture_failed', msg: 'PayPal payment was not completed.' })
+      const vacc0 = account_token ? store.getSessionAccount(String(account_token)) : null
+      const r0 = finalizePayment(String(order_id), String(cap.capture_id || ''), machine_id, vacc0 ? vacc0.email : null)
+      const rc0 = makeReceipt(String(order_id), machine_id)
+      return json(res, 200, { ok: true, key: r0.key, renewed: r0.renewed, already_paid: false, plan: r0.plan, plan_days: planOf(r0.plan).days,
+        receipt: rc0 && rc0.receipt, receipt_sig: rc0 && rc0.receipt_sig })
+    }
+    if (!payment_id) return json(res, 400, { error: 'bad_request' })
     if (order.status === 'paid') {
       const k = store.keyForOrder(order_id)
       if (k) {
@@ -334,6 +392,31 @@ async function handlePost(req, res, pathname) {
       // and ignored. Only payment.captured (one-time orders) is processed.
     } catch (e) {
       console.error('[webhook] error:', e)
+    }
+    return json(res, 200, { ok: true })
+  }
+  if (pathname === '/api/webhook-paypal') {
+    const okSig = await paypal.verifyWebhook(req.headers, body)
+    if (!okSig && !paypal.isDev()) return json(res, 400, { error: 'bad_signature' })
+    try {
+      if (body.event_type === 'PAYMENT.CAPTURE.COMPLETED') {
+        const cap = (body.resource || {})
+        const rel = (cap.supplementary_data && cap.supplementary_data.related_ids) || {}
+        const ppOrder = String(rel.order_id || cap.invoice_id || '')
+        const ours = ppOrder && store.getOrder(ppOrder)
+        if (ours && ours.status !== 'paid') {
+          if (ours.provider === 'store-paypal' && ours.account_email) {
+            store.markPaid(ppOrder, String(cap.id || ''), ours.amount_paise || 0)
+            store.grant(ours.account_email, ours.product, ppOrder)
+            store.audit(ours.account_email, 'store_buy', ours.product)
+          } else {
+            finalizePayment(ppOrder, String(cap.id || ''), ours.machine_id || '', ours.account_email || '')
+          }
+          console.log('[webhook-paypal] captured', ppOrder)
+        }
+      }
+    } catch (e) {
+      console.error('[webhook-paypal] error:', e)
     }
     return json(res, 200, { ok: true })
   }
@@ -879,7 +962,17 @@ async function handlePost(req, res, pathname) {
   // or Premium items, buy the rest one-time. Installs only work inside the
   // Kastrava browser; old builds simply never call these routes.
   if (pathname === '/api/store/catalog') {
-    return json(res, 200, { ok: true, items: products.catalog() })
+    const items = products.catalog()
+    const cur = String(body.currency || '').toUpperCase()
+    if (cur && cur !== 'INR' && /^[A-Z]{3}$/.test(cur)) {
+      try {
+        const rates = await fx.getRates()
+        for (const it of items) {
+          if (!it.free) it.disp = fx.convertPaise(it.price_paise, cur, rates)
+        }
+      } catch {}
+    }
+    return json(res, 200, { ok: true, items })
   }
   if (pathname === '/api/store/claim') {
     const acc = store.getSessionAccount(bearer(req))
