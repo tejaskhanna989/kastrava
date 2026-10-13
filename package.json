@@ -14,7 +14,8 @@
     "license:keygen": "node server/keygen.js",
     "server": "node server/server.js",
     "admin": "node server/admin.js",
-    "dist": "electron-builder"
+    "dist": "electron-builder",
+    "postinstall": "patch-package"
   },
   "build": {
     "appId": "com.kastrasoft.kastrava",
@@ -130,6 +131,7 @@
     "electron": "^44.5.1",
     "electron-builder": "^26.15.3",
     "html-webpack-plugin": "^5.6.3",
+    "patch-package": "^8.0.1",
     "webpack": "^5.108.4",
     "webpack-cli": "^6.0.1"
   },

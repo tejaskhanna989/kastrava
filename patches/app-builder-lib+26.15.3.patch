@@ -1,0 +1,57 @@
+diff --git a/node_modules/app-builder-lib/out/targets/snap/coreLegacy.js b/node_modules/app-builder-lib/out/targets/snap/coreLegacy.js
+index 0000000..1111111 100644
+--- a/node_modules/app-builder-lib/out/targets/snap/coreLegacy.js
++++ b/node_modules/app-builder-lib/out/targets/snap/coreLegacy.js
+@@ -245,6 +245,16 @@ class SnapCoreLegacy extends snapCore_1.SnapCore {
+         const templateDir = await (0, electronGet_1.downloadBuilderToolset)({ releaseName, filenameWithExt, checksums, githubOrgRepo: "electron-userland/electron-builder-binaries" });
+         await this.stageSnapFiles({ stageDir, appOutDir, hooksDir, extraAppArgs, isTemplate: true });
++        // Template builds write command.sh expecting desktop-*.sh at the snap
++        // root, but nothing stages them (upstream omission): copy from our
++        // own templates so the launcher works.
++        for (const script of ["desktop-init.sh", "desktop-common.sh", "desktop-gnome-specific.sh"]) {
++            const src = path.join((0, pathManager_1.getTemplatePath)("snap"), script);
++            const dest = path.join(stageDir, script);
++            await (0, promises_1.copyFile)(src, dest);
++            await (0, promises_1.chmod)(dest, 0o755);
++        }
+         // Best-effort: remove chrome-sandbox from app dir before mksquashfs scans it.
+         await (0, promises_1.rm)(path.join(appOutDir, "chrome-sandbox"), { force: true });
+@@ -242,6 +252,34 @@ class SnapCoreLegacy extends snapCore_1.SnapCore {
+         const { releaseName, filenameWithExt, checksums } = SNAP_TEMPLATES[templateArch];
+         const templateDir = await (0, electronGet_1.downloadBuilderToolset)({ releaseName, filenameWithExt, checksums, githubOrgRepo: "electron-userland/electron-builder-binaries" });
++        // The template ships as .tar.7z; the 7z layer may already be peeled,
++        // leaving a bare .tar that would be packed as a blob. Unpack it
++        // wherever it sits (top level or one helper dir down).
++        try {
++            const tarMod = require("tar");
++            const roots = [templateDir];
++            try {
++                for (const n of await (0, promises_1.readdir)(templateDir)) {
++                    try {
++                        const st = await (0, promises_1.stat)(path.join(templateDir, n));
++                        if (st.isDirectory()) roots.push(path.join(templateDir, n));
++                    }
++                    catch (e) { }
++                }
++            }
++            catch (e) { }
++            for (const root of roots) {
++                let names = [];
++                try {
++                    names = await (0, promises_1.readdir)(root);
++                }
++                catch (e) {
++                    continue;
++                }
++                for (const n of names) {
++                    if (n.endsWith(".tar")) {
++                        await tarMod.extract({ file: path.join(root, n), cwd: root });
++                        await (0, promises_1.rm)(path.join(root, n), { force: true });
++                    }
++                }
++            }
++        }
++        catch (e) {
++            builder_util_1.log.warn({ error: e.message }, "snap template tar extract failed");
++        }
+         await this.stageSnapFiles({ stageDir, appOutDir, hooksDir, extraAppArgs, isTemplate: true });
