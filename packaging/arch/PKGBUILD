@@ -22,7 +22,7 @@ Exec=/opt/Kastrava/kastrava %U
 Terminal=false
 Type=Application
 Icon=kastrava
-StartupWMClass=Kastrava
+StartupWMClass=kastrava
 Comment=Privacy-first browser
 Categories=Network;
 DESK
