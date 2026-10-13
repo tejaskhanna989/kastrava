@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Kastrava Store catalog generator: 700 data-only products.
 Kinds: theme, accents, logos, wallpaper, cursor, combo.
-  free tier (10): claimable by any login.
-  premium tier: Premium members claim free, others pay once.
+  free tier (5): claimable by any login.
+  pro tier (10): Premium members claim free, others pay once.
+  premium tier: Premium members claim free, others pay once
+    (INR Rs150-300 via Razorpay, USD $5-10 via PayPal).
 Run:  python3 scripts/make-store-catalog.py   (writes server/lib/products.js)
 """
 import colorsys
@@ -45,32 +47,33 @@ products = []
 seen = set()
 
 
-def add(pid, name, kind, price, blurb, preview, data):
+def add(pid, name, kind, price_paise, price_usd, blurb, preview, data, pro_free=False):
     assert pid not in seen and name not in seen, (pid, name)
     seen.add(pid)
     seen.add(name)
-    products.append(dict(id=pid, name=name, kind=kind, price_paise=price,
-                          blurb=blurb, preview=preview, data=data))
+    products.append(dict(id=pid, name=name, kind=kind, price_paise=price_paise,
+                           price_usd=price_usd,
+                          blurb=blurb, preview=preview, data=data, pro_free=pro_free))
 
 
 def seednum(s):
     return int(hashlib.sha256(s.encode()).hexdigest()[:8], 16)
 
 
-# --- 10 free tier: 3 hand originals + 7 generated ---
-add('theme-midnight-bloom', 'Midnight Bloom', 'theme', 0, 'Deep violet night with a lavender accent.',
+# --- free tier (5): 3 hand originals + 2 generated ---
+add('theme-midnight-bloom', 'Midnight Bloom', 'theme', 0, 0, 'Deep violet night with a lavender accent.',
     {'bg': '#0d0a1a', 'ac': '#b388ff'},
     {'mode': 'dark', 'bg': '#0d0a1a', 'tbg': '#16122b', 'tb': '#1e1840', 'om': '#0d0a1a', 'ac': '#b388ff'})
-add('theme-arctic-mist', 'Arctic Mist', 'theme', 0, 'Pale frost light theme, easy on the eyes.',
+add('theme-arctic-mist', 'Arctic Mist', 'theme', 0, 0, 'Pale frost light theme, easy on the eyes.',
     {'bg': '#eef3f6', 'ac': '#0288d1'},
     {'mode': 'light', 'bg': '#eef3f6', 'tbg': '#f7fafc', 'tb': '#ffffff', 'om': '#eef3f6', 'ac': '#0288d1'})
-add('accent-neon-pack', 'Neon Accents', 'accents', 0, 'Six loud accent colors for any theme.',
+add('accent-neon-pack', 'Neon Accents', 'accents', 0, 0, 'Six loud accent colors for any theme.',
     {'bg': '#101010', 'ac': '#ff2d95'},
     {'accents': ['#ff2d95', '#00e5ff', '#b6ff2e', '#ffab00', '#7c4dff', '#ff5252']})
 
 name_pool = [a + ' ' + b for a in ADJ for b in NOUN]
 ni = 0
-while len([p for p in products if p['price_paise'] == 0]) < 10:
+while len([p for p in products if p['price_paise'] == 0]) < 5:
     name = name_pool[ni]
     ni += 1
     if name in seen:
@@ -79,25 +82,26 @@ while len([p for p in products if p['price_paise'] == 0]) < 10:
     dark = (h % 2) == 0
     hue = h % 360
     data = dark_theme(hue, 22, (hue + 150) % 360) if dark else light_theme(hue, 18, (hue + 210) % 360)
-    add('theme-' + name.lower().replace(' ', '-'), name, 'theme', 0,
+    add('theme-' + name.lower().replace(' ', '-'), name, 'theme', 0, 0,
         'Community %s theme.' % ('dark' if dark else 'light'),
         {'bg': data['bg'], 'ac': data['ac']}, data)
 
-# --- logo packs (free + premium) ---
-add('logos-warm-pack', 'Warm Logo Pack', 'logos', 4900,
+# --- logo packs ---
+add('logos-warm-pack', 'Warm Logo Pack', 'logos', 19900, 6,
     'Ember, amber, rose and grape app badges.',
     {'bg': '#7a1f1f', 'ac': '#ffffff'},
     {'logos': [LOGO_URL % x for x in ['ember', 'amber', 'rose', 'grape']]})
-add('logos-cool-pack', 'Cool Logo Pack', 'logos', 4900,
+add('logos-cool-pack', 'Cool Logo Pack', 'logos', 19900, 6,
     'Ocean, teal, forest and slate app badges.',
     {'bg': '#123a6d', 'ac': '#ffffff'},
     {'logos': [LOGO_URL % x for x in ['ocean', 'teal', 'forest', 'slate']]})
-add('logos-full-set', 'Full Logo Set', 'logos', 9900,
+add('logos-full-set', 'Full Logo Set', 'logos', 29900, 10,
     'All eight app badges in one pack.',
     {'bg': '#101010', 'ac': '#b388ff'},
     {'logos': [LOGO_URL % x for x in LOGO_FILES]})
 
-prices = [2900, 4900, 9900]
+INR_TIERS = [15000, 19900, 24900, 29900]
+USD_TIERS = [5, 6, 8, 10]
 idx = 0
 for name in name_pool:
     if len(products) >= 696 or name in seen:
@@ -111,7 +115,7 @@ for name in name_pool:
         aname = name + ' Accents'
         if aname in seen:
             continue
-        add('accents-' + aname.lower().replace(' ', '-'), aname, 'accents', prices[slot % 3],
+        add('accents-' + aname.lower().replace(' ', '-'), aname, 'accents', INR_TIERS[slot % 4], USD_TIERS[slot % 4],
             'Six harmonious accents.', {'bg': '#101010', 'ac': accents[0]}, {'accents': accents})
     elif slot % 14 == 12:
         c1, c2 = hx(h % 360, 60, 12), hx((h + 60) % 360, 65, 30)
@@ -119,7 +123,7 @@ for name in name_pool:
         if wname in seen:
             continue
         css = 'linear-gradient(135deg, %s, %s)' % (c1, c2)
-        add('wallpaper-' + wname.lower().replace(' ', '-'), wname, 'wallpaper', prices[slot % 3],
+        add('wallpaper-' + wname.lower().replace(' ', '-'), wname, 'wallpaper', INR_TIERS[slot % 4], USD_TIERS[slot % 4],
             'Gradient new-tab backdrop.', {'bg': c1, 'ac': c2}, {'css': css})
     elif slot % 14 == 11:
         cc = hx(h % 360, 90, 60)
@@ -128,7 +132,7 @@ for name in name_pool:
             continue
         svg = ("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24'>"
                "<circle cx='12' cy='12' r='7' fill='%s'/></svg>" % cc).replace('#', '%23')
-        add('cursor-' + cname.lower().replace(' ', '-'), cname, 'cursor', prices[slot % 3],
+        add('cursor-' + cname.lower().replace(' ', '-'), cname, 'cursor', INR_TIERS[slot % 4], USD_TIERS[slot % 4],
             'Color-dot pointer set.', {'bg': '#101010', 'ac': cc},
             {'cursors': {'default': svg, 'pointer': svg}})
     else:
@@ -136,30 +140,40 @@ for name in name_pool:
         hue = h % 360
         sat = 16 + (h % 5) * 4
         data = dark_theme(hue, sat, (hue + 140 + h) % 360) if dark else light_theme(hue, sat, (hue + 200 + h) % 360)
-        add('theme-' + name.lower().replace(' ', '-'), name, 'theme', prices[slot % 3],
+        add('theme-' + name.lower().replace(' ', '-'), name, 'theme', INR_TIERS[slot % 4], USD_TIERS[slot % 4],
             'Hand-tuned %s theme.' % ('dark' if dark else 'light'),
             {'bg': data['bg'], 'ac': data['ac']}, data)
 
 # --- combo packs (bundle ids that exist by now) ---
 theme_ids = [p['id'] for p in products if p['kind'] == 'theme' and p['price_paise'] != 0][:40]
-combos = [('combo-night-shift', 'Night Shift Bundle', 'Ten dark themes, one price.', 19900, theme_ids[0:10]),
-          ('combo-daybreak', 'Daybreak Bundle', 'Ten light themes, one price.', 19900,
+combos = [('combo-night-shift', 'Night Shift Bundle', 'Ten dark themes, one price.', 49900, 15, theme_ids[0:10]),
+          ('combo-daybreak', 'Daybreak Bundle', 'Ten light themes, one price.', 49900, 15,
            [p['id'] for p in products if p['kind'] == 'theme' and p['data'].get('mode') == 'light' and p['price_paise'] != 0][:10]),
-          ('combo-full-spectrum', 'Full Spectrum', 'Twenty themes across every hue.', 29900, theme_ids[10:30]),
-          ('combo-creator', 'Creator Combo', 'Themes, accents and wallpapers for setup lovers.', 14900,
+          ('combo-full-spectrum', 'Full Spectrum', 'Twenty themes across every hue.', 99900, 25, theme_ids[10:30]),
+          ('combo-creator', 'Creator Combo', 'Themes, accents and wallpapers for setup lovers.', 29900, 10,
            [p['id'] for p in products if p['kind'] == 'accents' and p['price_paise'] != 0][:3] +
            [p['id'] for p in products if p['kind'] == 'wallpaper'][:3] +
            theme_ids[30:36])]
-for pid, name, blurb, price, members in combos:
+for pid, name, blurb, price_inr, price_usd, members in combos:
     members = [m for m in members if m in seen]
     if len(members) < 3:
         continue
     first = next(p for p in products if p['id'] == members[0])
-    add(pid, name, 'combo', price, blurb,
+    add(pid, name, 'combo', price_inr, price_usd, blurb,
         {'bg': first['preview']['bg'], 'ac': first['preview']['ac']},
         {'items': members})
 
 assert len(products) >= 700, len(products)
+pro_marked = 0
+for p in products:
+    if pro_marked >= 10:
+        break
+    if p['kind'] == 'theme' and p['price_paise'] != 0 and not p['pro_free']:
+        p['pro_free'] = True
+        pro_marked += 1
+add('catalogue-pass', 'Full Catalogue Pass', 'pass', 899900, 999,
+    'Every store item, 30 days. Manual renewal.',
+    {'bg': '#16130e', 'ac': '#ffb300'}, {'days': 30})
 free_n = len([p for p in products if p['price_paise'] == 0])
 print('total:', len(products), 'free:', free_n)
 
@@ -170,8 +184,9 @@ lines = ["// Kastrava Store catalog: data-only products (theme, accents, logos,"
          "'use strict'", "",
          "const PRODUCTS = {"]
 for p in products:
-    tier = 'free' if p['price_paise'] == 0 else 'premium'
+    tier = 'free' if p['price_paise'] == 0 else ('pro' if p['pro_free'] else 'premium')
     entry = dict(name=p['name'], kind=p['kind'], tier=tier, price_paise=p['price_paise'],
+                 price_usd=p['price_usd'], pro_free=p['pro_free'],
                  blurb=p['blurb'], preview=p['preview'], data=p['data'])
     lines.append("  '%s': %s," % (p['id'], json.dumps(entry, separators=(',', ':'))))
 lines += ["};", "",
@@ -190,6 +205,7 @@ lines += ["};", "",
           "    }",
           "    return {",
           "      id, name: p.name, kind: p.kind, tier: p.tier, price_paise: p.price_paise,",
+          "      price_usd: p.price_usd, pro_free: !!p.pro_free,",
           "      free: p.price_paise === 0, blurb: p.blurb, preview: pv",
           "    }",
           "  })",

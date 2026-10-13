@@ -282,6 +282,9 @@ async function handlePost(req, res, pathname) {
           ? await fx.fromUsd(pl.usd, g.currency)
           : { amount: String(pl.inr), currency: 'INR' }
       }
+      prices.pass = g.provider === 'paypal'
+        ? await fx.fromUsd(999, g.currency)
+        : { amount: '8999', currency: 'INR' }
       return json(res, 200, { ok: true, country: g.country, currency: g.currency,
         provider: g.provider, paypal_client_id: g.provider === 'paypal' ? paypal.clientId() : null,
         paypal_dev: paypal.isDev(), prices })
@@ -967,9 +970,8 @@ async function handlePost(req, res, pathname) {
     const cur = String(body.currency || '').toUpperCase()
     if (cur && cur !== 'INR' && /^[A-Z]{3}$/.test(cur)) {
       try {
-        const rates = await fx.getRates()
         for (const it of items) {
-          if (!it.free) it.disp = fx.convertPaise(it.price_paise, cur, rates)
+          if (!it.free && it.price_usd) it.disp = await fx.fromUsd(it.price_usd, cur)
         }
       } catch {}
     }
@@ -984,8 +986,10 @@ async function handlePost(req, res, pathname) {
     if (store.owns(acc.email, String(body.id))) {
       return json(res, 200, { ok: true, id: String(body.id), data: prod.data })
     }
-    if (prod.price_paise !== 0 && !hasLivePremium(acc.email)) {
-      return json(res, 402, { error: 'need_payment', amount: prod.price_paise, msg: 'Premium unlocks this, or buy it once.' })
+    const priced = (prod.price_paise || 0) !== 0 || (prod.price_usd || 0) !== 0
+    if (priced && !hasLivePremium(acc.email)) {
+      return json(res, 402, { error: 'need_payment', amount: prod.price_paise || 0,
+        amount_usd: prod.price_usd || 0, msg: 'Premium unlocks this, or buy it once.' })
     }
     store.grant(acc.email, String(body.id), null)
     store.audit(acc.email, 'store_claim', String(body.id))
@@ -1001,14 +1005,29 @@ async function handlePost(req, res, pathname) {
       return json(res, 200, { ok: true, id: String(body.id), data: prod.data })
     }
     if (prod.price_paise === 0 || hasLivePremium(acc.email)) {
-      store.grant(acc.email, String(body.id), null)
+      if (prod.kind === 'pass') {
+        store.grantPass(acc.email, null, (prod.data && prod.data.days) || 30)
+      } else {
+        store.grant(acc.email, String(body.id), null)
+      }
       return json(res, 200, { ok: true, id: String(body.id), data: prod.data })
     }
     try {
+      if (String(body.provider || '') === 'paypal') {
+        const g = await geo.resolveGeo(req)
+        const conv = await fx.fromUsd(prod.price_usd || 5, g.currency)
+        const po = await paypal.createOrder(conv.amount, conv.currency, 'Kastrava Store: ' + prod.name)
+        store.createOrder(po.order_id, { provider: 'store-paypal', product: String(body.id),
+          account_email: acc.email, amount_paise: prod.price_paise || 0,
+          currency: conv.currency, pp_amount: conv.amount })
+        return json(res, 200, { ok: true, provider: 'paypal', order_id: po.order_id,
+          amount: conv.amount, currency: conv.currency, dev: !!po.dev,
+          id: String(body.id), client_id: paypal.clientId() })
+      }
       const o = await razorpay.createOrder(prod.price_paise)
       store.createOrder(o.order_id, { provider: 'store', product: String(body.id),
         account_email: acc.email, amount_paise: prod.price_paise })
-      return json(res, 200, { ok: true, order_id: o.order_id, amount: o.amount,
+      return json(res, 200, { ok: true, provider: 'razorpay', order_id: o.order_id, amount: o.amount,
         currency: o.currency, key_id: o.key_id, dev: !!o.dev, id: String(body.id) })
     } catch (e) {
       return json(res, 500, { error: 'order_failed', msg: String(e.message || e) })
@@ -1016,19 +1035,42 @@ async function handlePost(req, res, pathname) {
   }
   if (pathname === '/api/store/verify') {
     const { order_id, payment_id, signature, account_token } = body
-    if (!order_id || !payment_id) return json(res, 400, { error: 'bad_request' })
+    if (!order_id) return json(res, 400, { error: 'bad_request' })
     const order = store.getOrder(String(order_id))
-    if (!order || order.provider !== 'store') return json(res, 404, { error: 'bad_order' })
+    if (!order || (order.provider !== 'store' && order.provider !== 'store-paypal')) return json(res, 404, { error: 'bad_order' })
     const acc = store.getSessionAccount(String(account_token || bearer(req) || ''))
     const email = acc ? acc.email : (order.account_email || null)
     if (!email) return json(res, 401, { error: 'unauthorized' })
+    if (order.provider === 'store-paypal') {
+      if (order.status === 'paid') {
+        const prod0 = products.get(order.product)
+        return json(res, 200, { ok: true, already_paid: true, id: order.product, data: prod0 && prod0.data })
+      }
+      const cap = await paypal.captureOrder(String(body.pp_order_id || payment_id || ''))
+      if (!cap.ok) return json(res, 402, { error: 'capture_failed' })
+      const prod0 = products.get(order.product)
+      if (!prod0) return json(res, 404, { error: 'no_item' })
+      store.markPaid(String(order_id), String(cap.capture_id || ''), order.amount_paise || 0)
+      if (prod0.kind === 'pass') {
+        store.grantPass(email, String(order_id), (prod0.data && prod0.data.days) || 30)
+      } else {
+        store.grant(email, order.product, String(order_id))
+      }
+      store.audit(email, 'store_buy', order.product)
+      return json(res, 200, { ok: true, id: order.product, data: prod0.data })
+    }
+    if (!payment_id) return json(res, 400, { error: 'bad_request' })
     if (!razorpay.verifySignature(String(order_id), String(payment_id), String(signature || ''))) {
       return json(res, 403, { error: 'bad_signature' })
     }
     const prod = products.get(order.product)
     if (!prod) return json(res, 404, { error: 'no_item' })
     store.markPaid(String(order_id), String(payment_id), order.amount_paise || 0)
-    store.grant(email, order.product, String(order_id))
+    if (prod.kind === 'pass') {
+      store.grantPass(email, String(order_id), (prod.data && prod.data.days) || 30)
+    } else {
+      store.grant(email, order.product, String(order_id))
+    }
     store.audit(email, 'store_buy', order.product)
     return json(res, 200, { ok: true, id: order.product, data: prod.data })
   }

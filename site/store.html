@@ -87,8 +87,17 @@ footer a{color:var(--blue);text-decoration:none}
       <span class="pill" id="store-count" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)">…</span>
     </div>
     <h1 style="margin-top:18px">Kastrava Store</h1>
-    <p class="sub" id="store-sub">Themes, accents, logos, wallpapers and cursors for Kastrava. Installs only work inside the Kastrava browser — 10 items free, everything open with Premium.</p>
+    <p class="sub" id="store-sub">Themes, accents, logos, wallpapers and cursors for Kastrava. Installs only work inside the Kastrava browser — 5 items free, 10 more free with Pro. Want everything? Grab the Full Catalogue Pass or buy items once.</p>
     <div id="browser-warn" class="lic-card" style="display:none;margin-top:18px"><h2 style="font-size:17px">You are not in Kastrava</h2><p>Install buttons are greyed out here. Open this page inside the Kastrava browser to get items instantly.</p></div>
+    <div class="lic-card" id="pass-banner" style="display:none;margin-top:18px;border:2px solid var(--pill)">
+      <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+        <div style="flex:1;min-width:200px">
+          <h2 style="font-size:19px;margin-bottom:2px">Full Catalogue Pass</h2>
+          <p style="font-size:13.5px;margin:0">Every item in the store, 30 days. Renews manually, never automatic.</p>
+        </div>
+        <button class="btn" id="pass-buy" style="padding:12px 26px;font-size:15px">Get the pass</button>
+      </div>
+    </div>
     <div id="store-cats" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px"></div>
     <div id="store-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;margin-top:16px"></div>
     <div class="card" id="store-login" style="margin-top:22px">
@@ -194,7 +203,7 @@ function openDetail(id){
   var art=artFor(p,150);
   document.getElementById('item-body').innerHTML=art
     +'<h2 style="font-size:20px">'+esc(p.name)+'</h2>'
-    +'<p style="font-size:13px;color:var(--muted)">'+esc(p.kind)+' \u00B7 '+(p.free?'free':esc(p.tier||'premium'))+'</p>'
+    +'<p style="font-size:13px;color:var(--muted)">'+esc(p.kind)+' \u00B7 '+(p.free?'free':(p.pro_free?'free with Pro':esc(p.tier||'premium')))+'</p>'
     +'<p style="font-size:14px;margin:8px 0 14px">'+esc(p.blurb)+'</p>'
     +'<div style="display:flex;gap:8px"><div id="dt-logo"></div>'+btn+'<button class="btn ghost" id="dt-close" style="padding:10px 22px">Close</button></div>';
   if(p.kind==='logos'&&p.preview){document.getElementById('dt-logo').innerHTML='';}
@@ -205,8 +214,20 @@ function openDetail(id){
   var cp=document.getElementById('dt-copy');if(cp)cp.addEventListener('click',function(){copyOwned(id);});
 }
 function closeDetail(){document.getElementById('item-modal').style.display='none';}
+function paintPass(){
+  var b=document.getElementById('pass-banner');if(!b)return;
+  var btn=document.getElementById('pass-buy');if(!btn)return;
+  var label='Get the pass';
+  if(GEO&&GEO.prices&&GEO.prices.pass){label+=' — '+GEO.prices.pass.amount+' '+GEO.prices.pass.currency;}
+  else{var ps=null;for(var i=0;i<ALL_ITEMS.length;i++)if(ALL_ITEMS[i].id==='catalogue-pass')ps=ALL_ITEMS[i];
+    if(ps)label+=' — '+dispPrice(ps);}
+  btn.textContent=label;
+  b.style.display='block';
+  if(!btn.dataset.wired){btn.dataset.wired='1';btn.addEventListener('click',function(){buy('catalogue-pass');});}
+}
 function paint(items){
   ALL_ITEMS=items||[];
+  paintPass();
   var cnt=document.getElementById('store-count');
   if(cnt)cnt.textContent=ALL_ITEMS.length+' items';
   paintCats();
@@ -223,7 +244,7 @@ function paint(items){
     return '<div class="lic-card store-card" data-open="'+esc(p.id)+'" style="margin-top:0;cursor:pointer">'+art
       +'<h2 style="font-size:17px;margin-bottom:2px">'+esc(p.name)+'</h2>'
       +'<p style="font-size:13px">'+esc(p.blurb)+'</p>'
-      +'<p style="font-size:12px;color:var(--muted)">'+esc(p.kind)+' · '+(p.free?'free':(esc(p.tier||'premium')+' · '+esc(price)))+'</p>'
+      +'<p style="font-size:12px;color:var(--muted)">'+esc(p.kind)+' · '+(p.free?'free':(p.pro_free?'free with Pro · '+esc(price):(esc(p.tier||'premium')+' · '+esc(price))))+'</p>'
       +'<div style="margin-top:10px">'+btn+'</div></div>';
   }).join('');
   grid.querySelectorAll('.store-card').forEach(function(c){

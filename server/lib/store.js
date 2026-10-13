@@ -520,7 +520,29 @@ class Store {
   owns(email, productId) {
     this.ensureAccountMaps()
     const e = String(email || '').toLowerCase()
-    return !!((this.data.entitlements || {})[e] || {})[String(productId)]
+    if (((this.data.entitlements || {})[e] || {})[String(productId)]) return true
+    // Live catalogue pass unlocks every item (not the pass itself).
+    if (String(productId) !== 'catalogue-pass' && this.passLive(email)) return true
+    return false
+  }
+  grantPass(email, orderId, days) {
+    this.ensureAccountMaps()
+    const e = String(email || '').toLowerCase()
+    if (!this.data.entitlements) this.data.entitlements = {}
+    if (!this.data.entitlements[e]) this.data.entitlements[e] = {}
+    const d = Math.min(Math.max(Math.floor(Number(days) || 30), 1), 3650)
+    this.data.entitlements[e]['catalogue-pass'] = {
+      at: new Date().toISOString(), order_id: orderId || null,
+      exp: new Date(Date.now() + d * 86400000).toISOString()
+    }
+    this.save()
+    return true
+  }
+  passLive(email) {
+    this.ensureAccountMaps()
+    const e = String(email || '').toLowerCase()
+    const rec = ((this.data.entitlements || {})[e] || {})['catalogue-pass']
+    return !!(rec && rec.exp && new Date(rec.exp).getTime() > Date.now())
   }
 
   grant(email, productId, orderId) {
@@ -550,8 +572,14 @@ class Store {
   itemsFor(email) {
     this.ensureAccountMaps()
     const e = String(email || '').toLowerCase()
-    const owned = (this.data.entitlements || {})[e] || {}
     const prods = require('./products')
+    if (this.passLive(email)) {
+      // Pass holders see the whole catalogue (minus the pass itself).
+      return Object.entries(prods.PRODUCTS || {})
+        .filter(([id]) => id !== 'catalogue-pass')
+        .map(([id, prod]) => ({ id, name: prod.name, kind: prod.kind, data: prod.data, at: null, via_pass: true }))
+    }
+    const owned = (this.data.entitlements || {})[e] || {}
     return Object.keys(owned).map((id) => {
       const p = prods.get(id)
       if (!p) return null

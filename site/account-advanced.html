@@ -668,6 +668,7 @@ function mountPaypal(){
     window.paypal.Buttons({
       style:{layout:'vertical',color:'gold',shape:'rect',label:'paypal'},
       createOrder:function(){
+        if(!tok()){buyMsg.className='msg err';buyMsg.textContent='Log in first, then pay with PayPal.';window.__ppNeedLogin=true;throw new Error('login');}
         buyMsg.className='msg';buyMsg.textContent='Contacting store…';
         return apiFetch(KAS_API+'/api/order',{method:'POST',headers:authz(),body:JSON.stringify({account_token:tok(),plan:planPicked,provider:'paypal'})})
         .then(function(r){return r.json();}).then(function(o){
@@ -686,7 +687,7 @@ function mountPaypal(){
         });
       },
       onCancel:function(){buyMsg.textContent='';},
-      onError:function(){buyMsg.className='msg err';buyMsg.textContent='PayPal error. No charge was made.';}
+      onError:function(){if(window.__ppNeedLogin){window.__ppNeedLogin=false;return;}buyMsg.className='msg err';buyMsg.textContent='PayPal error. No charge was made.';}
     }).render('#pp-buttons');
   });
 }
