@@ -154,8 +154,10 @@ function openDetail(id){
   var btn=has?'<button class="btn ghost" id="dt-copy" style="padding:10px 22px">Copy data</button>'
     :(locked?'<button class="btn" id="dt-buy" style="padding:10px 22px">'+esc(price)+'</button>'
     :'<button class="btn" id="dt-get" style="padding:10px 22px">Get</button>');
-  document.getElementById('item-body').innerHTML=
-    '<div style="height:120px;border-radius:12px;margin-bottom:14px;background:linear-gradient(135deg,'+esc(p.preview.bg)+' 55%,'+esc(p.preview.ac)+' 55%)"></div>'
+  var art=(p.kind==='logos'&&p.data&&p.data.logos&&p.data.logos.length)
+    ?'<div style="min-height:120px;border-radius:12px;margin-bottom:14px;background:#0d0d0d;display:flex;align-items:center;justify-content:center;gap:10px;padding:16px;flex-wrap:wrap">'+p.data.logos.map(function(u){return '<img src="'+esc(u)+'" style="width:56px;height:56px;border-radius:14px" loading="lazy" alt="">';}).join('')+'</div>'
+    :'<div style="height:120px;border-radius:12px;margin-bottom:14px;background:linear-gradient(135deg,'+esc(p.preview.bg)+' 55%,'+esc(p.preview.ac)+' 55%)"></div>';
+  document.getElementById('item-body').innerHTML=art
     +'<h2 style="font-size:20px">'+esc(p.name)+'</h2>'
     +'<p style="font-size:13px;color:var(--muted)">'+esc(p.kind)+' \u00B7 '+(p.free?'free':esc(p.tier||'premium'))+'</p>'
     +'<p style="font-size:14px;margin:8px 0 14px">'+esc(p.blurb)+'</p>'
@@ -182,7 +184,10 @@ function paint(items){
     var btn=has?'<button class="btn ghost" data-got="'+esc(p.id)+'" style="padding:8px 16px;font-size:13px">Installed ✓</button>'
       :(locked?'<button class="btn ghost" data-buy="'+esc(p.id)+'" style="padding:8px 16px;font-size:13px"'+(IS_KASTRAVA?'':' disabled')+'>'+esc(price)+'</button>'
       :'<button class="btn" data-get="'+esc(p.id)+'" style="padding:8px 16px;font-size:13px"'+(IS_KASTRAVA?'':' disabled')+'>Get</button>');
-    return '<div class="lic-card store-card" data-open="'+esc(p.id)+'" style="margin-top:0;cursor:pointer"><div style="height:64px;border-radius:12px;margin-bottom:12px;background:linear-gradient(135deg,'+esc(p.preview.bg)+' 55%,'+esc(p.preview.ac)+' 55%)"></div>'
+    var art=(p.kind==='logos'&&p.data&&p.data.logos&&p.data.logos.length)
+      ?'<div style="height:64px;border-radius:12px;margin-bottom:12px;background:#0d0d0d;display:flex;align-items:center;justify-content:center;gap:8px;overflow:hidden">'+p.data.logos.slice(0,4).map(function(u){return '<img src="'+esc(u)+'" style="width:40px;height:40px;border-radius:10px" loading="lazy" alt="">';}).join('')+'</div>'
+      :'<div style="height:64px;border-radius:12px;margin-bottom:12px;background:linear-gradient(135deg,'+esc(p.preview.bg)+' 55%,'+esc(p.preview.ac)+' 55%)"></div>';
+    return '<div class="lic-card store-card" data-open="'+esc(p.id)+'" style="margin-top:0;cursor:pointer">'+art
       +'<h2 style="font-size:17px;margin-bottom:2px">'+esc(p.name)+'</h2>'
       +'<p style="font-size:13px">'+esc(p.blurb)+'</p>'
       +'<p style="font-size:12px;color:var(--muted)">'+esc(p.kind)+' · '+(p.free?'free':(esc(p.tier||'premium')+' · '+esc(price)))+'</p>'
