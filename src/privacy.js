@@ -378,7 +378,7 @@ const NAVIGATOR_SPOOF_SCRIPT = `
     window.chrome.csi=window.chrome.csi||function(){return{};};
     try{Object.defineProperty(navigator,'userAgentData',{get:function(){return{brands:[{brand:"Chromium",version:"${CHROME_MAJOR}"},{brand:"Not_A Brand",version:"24"},{brand:"Google Chrome",version:"${CHROME_MAJOR}"}],mobile:false,platform:"Linux",getHighEntropyValues:function(){return Promise.resolve({});}};}});}catch(e){}
     Object.defineProperty(navigator,'maxTouchPoints',{get:function(){return 0;}});
-    Object.defineProperty(navigator,'userAgent',{get:function(){return '${CHROME_UA}';},configurable:true});
+    Object.defineProperty(navigator,'userAgent',{get:function(){return '__KASTRAVA_UA__';},configurable:true});
     // Network Information API leaks connection type, bandwidth and RTT.
     // Firefox/Safari don't implement it at all, so hiding it breaks nothing
     // well-built: the data is gone, not faked (fake values are detectable).
@@ -501,9 +501,14 @@ function installCanvasProtection(webContents) {
 
 function installNavigatorSpoof(webContents) {
   if (!webContents || webContents.isDestroyed()) return
+  // Honest token even under spoof: the Store install gate (and only it)
+  // keys off navigator.userAgent. Everything else stays generic Chrome.
+  let ua = CHROME_UA
+  try { ua += ' Kastrava/' + require('electron').app.getVersion() } catch {}
+  const script = NAVIGATOR_SPOOF_SCRIPT.split('__KASTRAVA_UA__').join(ua)
   webContents.on('dom-ready', () => {
     if (shieldsDownFor(webContents.getURL())) return
-    webContents.executeJavaScript(NAVIGATOR_SPOOF_SCRIPT).catch(() => {})
+    webContents.executeJavaScript(script).catch(() => {})
   })
 }
 

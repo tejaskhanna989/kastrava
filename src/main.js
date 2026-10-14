@@ -891,6 +891,30 @@ app.whenReady().then(async () => {
     // like connection/battery are neutered per document here).
     try { privacy.setWebrtcAllowed(settingsBackend && settingsBackend.get('webrtcMode') === 'allow') } catch {}
     try { privacy.installPrivacyProtections(wc) } catch {}
+    // Login bridge: site logins live in volatile web storage (wiped on
+    // quit, like everything else), so our own pages would forget you every
+    // launch while Chrome/Edge stay signed in. Fix: when a Kastrava page
+    // loads and the app itself holds a login, lend it to the page — only
+    // our domains, only when the page has no token of its own. Manual
+    // logout (app or page) still sticks: wipe clears storage, and absent
+    // app token means nothing is injected.
+    try {
+      wc.on('dom-ready', () => {
+        try {
+          const u = new URL(wc.getURL())
+          if (u.protocol !== 'https:') return
+          const h = (u.hostname || '').toLowerCase()
+          if (h !== 'kastrava.pp.ua' && h !== 'store.kastrava.pp.ua' && h !== 'account.kastrava.pp.ua') return
+          const t = settingsBackend && settingsBackend.get('syncToken')
+          if (!t) return
+          const js = "(function(){try{"
+            + "if(!localStorage.getItem('kas_sync_token'))localStorage.setItem('kas_sync_token'," + JSON.stringify(t) + ");"
+            + "if(!localStorage.getItem('kas_store_token'))localStorage.setItem('kas_store_token'," + JSON.stringify(t) + ");"
+            + "}catch(e){}})()"
+          wc.executeJavaScript(js).catch(() => {})
+        } catch {}
+      })
+    } catch {}
     // Cover any session a guest/popup ends up with, so downloads from
     // popups (payment flows, drive links, blob: URLs) can't miss the
     // will-download handler and silently do nothing.

@@ -11,9 +11,9 @@ android {
         applicationId = "pp.ua.kastrava"
         minSdk = 26
         targetSdk = 34
-        // Mirrors the desktop release: 101.5.3.
-        versionCode = 1015003
-        versionName = "101.5.3"
+        // Mirrors the desktop release: 101.5.4.
+        versionCode = 1015004
+        versionName = "101.5.4"
     }
 
     buildTypes {
