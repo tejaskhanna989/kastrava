@@ -86,9 +86,18 @@ function all(sql, params = []) {
   } catch { return [] }
 }
 
+// Batched persistence: sql.js runs in memory; the full-file rewrite used
+// to happen synchronously on EVERY history insert / bookmark / top-site
+// save (several rewrites per page load). Now writes flush at most once per
+// 1.5s, plus a final flush on quit.
+let saveTimer = null
+function scheduleSave() {
+  if (saveTimer) return
+  saveTimer = setTimeout(() => { saveTimer = null; saveDb() }, 1500)
+}
 function run(sql, params = []) {
   if (!db) return
-  try { db.run(sql, params); saveDb() } catch {}
+  try { db.run(sql, params); scheduleSave() } catch {}
 }
 
 function saveDb() {
@@ -927,6 +936,7 @@ function pruneHistory() {
 app.on('before-quit', () => {
   if (quitSaved) return
   quitSaved = true
+  try { if (saveTimer) { clearTimeout(saveTimer); saveTimer = null } saveDb() } catch {}
   try {
     if (settingsBackend && settingsBackend.get('clearHistoryOnExit') === 'on' && db) {
       run('DELETE FROM history')
