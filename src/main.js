@@ -833,6 +833,17 @@ app.whenReady().then(async () => {
   try { pruneHistory() } catch {}
   try { setInterval(pruneHistory, 24 * 60 * 60 * 1000) } catch {}
   wipeLegacyWebData()
+  // Register as a web browser with the OS (packaged builds only): http/https
+  // protocol + .html handling, so links and "default browser" pick us up.
+  // Installers (NSIS/fileAssociations, deb MimeType) do the heavy lifting;
+  // this covers portable runs. Never hijacks during development.
+  try {
+    if (app.isPackaged) {
+      for (const proto of ['http', 'https']) {
+        try { if (!app.isDefaultProtocolClient(proto)) app.setAsDefaultProtocolClient(proto) } catch {}
+      }
+    }
+  } catch {}
   initAutoUpdate()
   // Strip the Electron token from the User-Agent on every session the app
   // uses. Without this, HTTP headers and navigator.userAgent fingerprint

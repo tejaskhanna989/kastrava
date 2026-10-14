@@ -824,11 +824,13 @@ function copyText(t){
 }
 function openPremiumStore(){
   if(window.clickCheckout){window.clickCheckout();return;}
+  try{closeSettings();}catch(e){}
   var url=KAS_STORE.replace(/\/$/,"")+"/#premium";
   if(activeTab&&activeTab.wv){addTab(url);}else if(api&&api.openExternal){api.openExternal(url);}
 }
 function openOobBuy(machine){
   if(window.clickCheckout){window.clickCheckout();return;}
+  try{closeSettings();}catch(e){}
   var base=KAS_STORE.replace(/\/$/,"");
   var url=base+"/#premium?machine="+encodeURIComponent(machine||"");
   if(activeTab&&activeTab.wv){addTab(url);}else if(api&&api.openExternal){api.openExternal(url);}
@@ -4612,7 +4614,7 @@ function bindSettingsEvents(id){
       }).catch(function(){});}catch(e){}
       try{
         var so=$("s-storeopen");
-        if(so)so.addEventListener("click",function(){addTab("https://store.kastrava.pp.ua/");});
+        if(so)so.addEventListener("click",function(){try{closeSettings();}catch(e){}addTab("https://store.kastrava.pp.ua/");});
         refreshStoreOwned();
       }catch(e){}
       var ga=$("s-licgoacc");if(ga)ga.addEventListener("click",function(){var it=document.querySelector('.settings-nav .sn-item[data-s="sync"]');if(it)it.click();else renderSettingsSection("sync");});
