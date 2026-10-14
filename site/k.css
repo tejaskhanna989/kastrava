@@ -52,6 +52,12 @@ nav .dl,nav a.btn{background:var(--grad) !important;color:#fff !important;font-w
 
 /* ---- hero ---- */
 header{padding:88px 0 40px !important;text-align:left}
+.hero-center{text-align:center !important;padding:110px 0 60px !important}
+.hero-center .wrap{display:flex;flex-direction:column;align-items:center}
+.hero-center .lede{margin-left:auto;margin-right:auto;text-align:center}
+.hero-center .cta-row{justify-content:center}
+.hero-center .spec{margin:26px auto 0;text-align:left;width:100%}
+.hero-center .hero-meta{text-align:center}
 .kicker{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11.5px;color:var(--cy);border:1px solid var(--line2);background:rgba(124,92,255,.08);padding:7px 15px;border-radius:999px;letter-spacing:.5px;margin-bottom:22px}
 header h1{font-size:clamp(44px,7vw,84px) !important;font-weight:700 !important;line-height:1.02 !important;margin-bottom:18px !important}
 header h1 em,.grad-text{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;font-style:normal}
