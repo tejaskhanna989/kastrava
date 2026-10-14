@@ -1,120 +1,48 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Authors — Kastrava</title>
-<meta name="description" content="The people behind Kastrava Browser.complete license text.">
-<style>
-:root{
-  --bg:#faf7f1; --card:#ffffff; --ink:#14110b; --text:#2b2620; --muted:#5c564a; --muted2:#8a8474;
-  --line:#f0ede6; --deep:#16130e; --cream:#faf7f1; --navbg:rgba(250,247,241,.9);
-  --pill:#16130e; --pill-fg:#ffffff; --blue:#0288d1; color-scheme:light;
-}
-html[data-theme="dark"]{
-  --bg:#12100c; --card:#1b1812; --ink:#f3eee4; --text:#cfc8ba; --muted:#9d9484; --muted2:#7c7466;
-  --line:#262117; --deep:#3b3428; --cream:#f3eee4; --navbg:rgba(18,16,12,.9);
-  --pill:#f3eee4; --pill-fg:#14110b; --blue:#4fc3f7; color-scheme:dark;
-}
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.65;overflow-x:hidden;-webkit-font-smoothing:antialiased;transition:background .25s,color .25s}
-h1,h2,h3,.name{font-family:'Space Grotesk',sans-serif}
-.mono{font-family:'JetBrains Mono',monospace}
-.container{max-width:960px;margin:0 auto;padding:0 28px;position:relative;z-index:1}
-nav{position:sticky;top:0;z-index:50;background:var(--navbg);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
-nav .container{display:flex;align-items:center;gap:12px;padding-top:13px;padding-bottom:13px}
-nav img{width:36px;height:36px;border-radius:9px}
-nav .beta{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;color:var(--pill-fg);background:var(--pill);padding:3px 9px;border-radius:6px;letter-spacing:1px}
-nav .name{font-size:15px;font-weight:700;letter-spacing:4px;color:var(--ink);text-decoration:none}
-nav .sp{flex:1}
-nav a.btn{font-size:13px;font-weight:600;color:var(--pill-fg);background:var(--pill);padding:10px 24px;border-radius:10px;text-decoration:none;font-family:'Space Grotesk',sans-serif}
-nav a.btn:hover{background:#0288d1}
-.theme-btn{display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;transition:background .15s}
-.theme-btn:hover{background:var(--card)}
-html[data-theme="light"] .theme-btn .ic-sun{display:none}
-html[data-theme="dark"] .theme-btn .ic-moon{display:none}
-main{padding:56px 0 30px}
-.back{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--blue);text-decoration:none}
-.back:hover{text-decoration:underline}
-.kick{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--cream);background:var(--pill);padding:6px 14px;border-radius:8px;letter-spacing:1px;margin:22px 0 16px}
-html[data-theme="dark"] .kick{color:var(--pill-fg);background:var(--pill)}
-h1{font-size:40px;font-weight:700;letter-spacing:-1px;line-height:1.05;color:var(--ink);margin-bottom:12px}
-.sub{font-size:15px;color:var(--muted);max-width:760px}
-.sub code{font-family:'JetBrains Mono',monospace;font-size:12.5px;background:var(--deep);color:var(--cream);padding:2px 7px;border-radius:6px}
-.sub a{color:var(--blue);text-decoration:none}
-.lic-card a{color:var(--blue);text-decoration:none}
-.lic-card a:hover{text-decoration:underline}
-.sub a:hover{text-decoration:underline}
-.lic-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:34px 30px;margin-top:28px}
-.sec-h{font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:2px;color:var(--blue);margin:34px 0 0}
-.authors-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-top:14px}
-.author-card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:26px;display:flex;gap:18px;transition:all .2s}
-.author-card:hover{border-color:var(--blue)}
-.avatar{flex-shrink:0;width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;color:#fff}
-.avatar.tk{background:linear-gradient(135deg,#0288d1,#4fc3f7)}
-.avatar.aa{background:linear-gradient(135deg,#6a1b9a,#ab47bc)}
-.avatar.lm{background:linear-gradient(135deg,#f57c00,#ffb300)}
-.author-card h2{font-size:19px;margin-bottom:6px}
-.role{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--blue);border:1px solid var(--blue);border-radius:20px;padding:3px 12px;margin-bottom:10px}
-.author-card p{font-size:14px}
-.author-card .links{margin-top:12px;font-size:13.5px}
-.author-card.big{padding:34px}
-.author-card.big .avatar{width:84px;height:84px;font-size:30px}
-.author-card.big h2{font-size:24px}
-.mini-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:10px}
-.mini-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;gap:12px;align-items:center}
-.mini-card .avatar{width:40px;height:40px;font-size:15px}
-.mini-card h2{font-size:12px;margin-bottom:2px}
-.mini-card p{font-size:11.5px;color:var(--muted)}
-.count-pill{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1px;color:var(--muted2);border:1px solid var(--line);border-radius:20px;padding:2px 10px;margin-left:8px;vertical-align:2px}
-.lic{font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.75;color:var(--text);white-space:pre-wrap;word-break:break-word}
-footer{border-top:1px solid var(--line);margin-top:64px;padding:36px 0 48px;background:var(--card)}
-footer p{font-size:12.5px;color:var(--muted2)}
-footer a{color:var(--blue);text-decoration:none}
-@media(max-width:600px){h1{font-size:30px}.lic-card{padding:22px 18px}}
-</style>
-<link rel="stylesheet" href="/k.css?v=4">
+<title>The people behind Kastrava — Kastrava</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<meta name="description" content="Kastrava is built in the open under GPLv3. Real people below.">
 <script>
-(function(){
-  var root=document.documentElement;
-  var saved=null;try{saved=localStorage.getItem('kas-theme');}catch(e){}
-  var dark=saved?saved==='dark':!!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);
-  root.setAttribute('data-theme',dark?'dark':'light');
-  document.addEventListener('DOMContentLoaded',function(){
-    var btn=document.getElementById('theme-btn');
-    if(!btn)return;
-    btn.addEventListener('click',function(){
-      var next=root.getAttribute('data-theme')==='dark'?'light':'dark';
-      root.setAttribute('data-theme',next);
-      try{localStorage.setItem('kas-theme',next);}catch(e){}
-    });
-  });
-})();
+(function(){try{
+  var s=null;try{s=localStorage.getItem('kas-theme');}catch(e){}
+  document.documentElement.setAttribute('data-theme',
+    s?(s==='dark'?'dark':'light'):((window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'));
+}catch(e){}})();
 </script>
+<link rel="stylesheet" href="/k.css?v=4">
+<style>
+.backrow{margin-top:34px}
+.backrow a{font-family:var(--mono);font-size:12px;color:var(--blue);text-decoration:none}
+.doc-head h1{font-size:clamp(30px,4.5vw,44px);margin:14px 0 8px}
+.doc-head .lede{color:var(--muted);font-size:15px;max-width:680px;margin-bottom:8px}
+</style>
 </head>
 <body>
-<nav>
-  <div class="container">
-    <a href="/"><img src="logo.png" alt="Kastrava"></a>
-    <a class="name" href="/">KASTRAVA</a>
-    <span class="beta">RC</span>
-    <button id="theme-btn" class="theme-btn" title="Toggle dark mode" aria-label="Toggle dark mode">
-      <svg class="ic-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-      <svg class="ic-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+<nav><div class="wrap">
+  <img src="logo.png" alt="Kastrava">
+  <a class="name" href="/">KASTRAVA</a>
+  <div class="links">
+    <a href="/#features">Features</a>
+    <a href="/#premium">Premium</a>
+    <a href="/#download">Download</a>
+    <a href="/account.html">Account</a>
+    <button id="theme-btn" class="theme-btn" title="Toggle theme" aria-label="Toggle theme">
+      <svg class="ic-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="ic-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
     </button>
-    <span class="sp"></span>
-    <a href="/account.html" style="font-size:13px;color:var(--muted);text-decoration:none">Account</a>
-    <a class="btn" href="/#download">Download</a>
+    <a class="dl" href="/#download">Download</a>
   </div>
-</nav>
-
-<main>
-  <div class="container">
-    <a class="back" href="/">← Back to kastrava.pp.ua</a>
-    <div class="kick">AUTHORS</div>
-    <h1>The people behind Kastrava</h1>
-    <p class="sub">Kastrava is built in the open under <b>GPLv3</b>. Real people below.</p>
-    <div class="sec-h">CORE MAINTAINERS</div>
+</div></nav>
+<main><div class="wrap" style="max-width:780px">
+  <div class="backrow"><a href="/">← kastrava.pp.ua</a></div>
+  <div class="doc-head"><span class="tag">AUTHORS</span>
+  <h1>The people behind Kastrava</h1>
+  <p class="lede">Kastrava is built in the open under <b>GPLv3</b>. Real people below.</p></div>
+<div class="sec-h">CORE MAINTAINERS</div>
     <div class="authors-grid">
       <div class="author-card big">
         <div class="avatar tk">TK</div>
@@ -172,55 +100,20 @@ footer a{color:var(--blue);text-decoration:none}
       <p style="margin-top:10px"><a href="https://discord.gg/UsgF73RJbx" target="_blank" rel="noopener">discord.gg/UsgF73RJbx →</a></p>
     </div>
     </div>
-  </div>
-</main>
-
-<footer>
-  <div class="container">
-    <p style="font-size:10px;color:var(--muted2);opacity:.7">Kastrava 101 RC &ldquo;Starship Wonders&rdquo; · Built By The Community for the Community</p>
-    <p style="margin-top:6px;font-size:10px;opacity:.7"><a href="https://github.com/tejaskhanna989/kastrava" target="_blank" rel="noopener">100% Open Source (GPLv3)</a> · <a href="/license.html">Read the license</a> · <a href="/terms.html">Terms</a> · <a href="/privacy.html">Privacy</a> · <a href="/refunds.html">Refunds</a> · <a href="/contact.html">Contact</a></p>
-  </div>
-</footer>
+</div></main>
+<footer><div class="wrap"><div class="foot-grid">
+  <div><p class="fh">KASTRAVA</p><p style="margin-top:6px">101 RC · <a href="/">home</a> · <a href="/authors.html">authors</a></p></div>
+  <div><p class="fh">OPEN SOURCE</p><p style="margin-top:6px"><a href="https://github.com/tejaskhanna989/kastrava" target="_blank" rel="noopener">GitHub — GPLv3</a></p></div>
+  <div><p class="fh">LEGAL</p><p style="margin-top:6px"><a href="/terms.html">Terms</a> · <a href="/privacy.html">Privacy</a> · <a href="/refunds.html">Refunds</a> · <a href="/contact.html">Contact</a></p></div>
+  <div><p class="fh">SUPPORT</p><p style="margin-top:6px"><a href="mailto:khannatejas989@gmail.com">khannatejas989@gmail.com</a></p></div>
+</div></div></footer>
 <script>
-(function(){
-  var grads=['aa','lm','tk'];
-  function gradFor(name){
-    var h=0;for(var i=0;i<name.length;i++)h=(h*31+name.charCodeAt(i))>>>0;
-    return grads[h%grads.length];
-  }
-  function esc(t){return String(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-  function card(name,handle,desc){
-    var gh=handle?'<a href="https://github.com/'+encodeURIComponent(handle)+'" target="_blank" rel="noopener">'+esc(handle)+' →</a>':'';
-    return '<div class="mini-card"><div class="avatar '+gradFor(name)+'">'+esc(name.trim().charAt(0).toUpperCase())+'</div><div><h2>'+esc(name)+'</h2><p>'+esc(desc)+(gh?' · '+gh:'')+'</p></div></div>';
-  }
-  try{
-    // contributor count, live from GitHub
-    fetch('https://api.github.com/repos/tejaskhanna989/kastrava/contributors?per_page=100')
-    .then(function(r){return r.json();})
-    .then(function(d){
-      var el=document.getElementById('gh-count');
-      if(el&&d&&d.length!==undefined)el.textContent=d.length+' on GitHub';
-    })
-    .catch(function(){});
-    // names + roles, live from the AUTHOR file — Contributors and Bug
-    // Testers merged into one Contributors grid
-    fetch('https://raw.githubusercontent.com/tejaskhanna989/kastrava/main/AUTHOR')
-    .then(function(r){if(!r.ok)throw 0;return r.text();})
-    .then(function(t){
-      var want=false,html='';
-      t.split('\n').forEach(function(line){
-        var h=line.match(/^##\s*(.+)/);
-        if(h){want=/contributor|bug tester/i.test(h[1]);return;}
-        if(!want)return;
-        var m=line.match(/^\*\s*(.+?)\s*(?:<([^>]+)>)?\s*(?:-\s*(.*))?$/);
-        if(m&&m[1])html+=card(m[1].trim(),(m[2]||'').trim(),(m[3]||'').trim());
-      });
-      var grid=document.getElementById('contrib-grid');
-      if(grid&&html)grid.innerHTML=html;
-    })
-    .catch(function(){});
-  }catch(e){}
-})();
+document.getElementById('theme-btn').addEventListener('click',function(){
+  var r=document.documentElement;
+  var n=r.getAttribute('data-theme')==='dark'?'light':'dark';
+  r.setAttribute('data-theme',n);
+  try{localStorage.setItem('kas-theme',n);}catch(e){}
+});
 </script>
 </body>
 </html>

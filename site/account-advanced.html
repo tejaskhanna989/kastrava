@@ -1,421 +1,355 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Account dashboard — Kastrava</title>
+<title>Dashboard — Kastrava</title>
 <link rel="icon" type="image/png" href="favicon.png">
-<meta name="description" content="Manage your Kastrava account: Premium keys, devices, sync.">
+<meta name="description" content="Manage your Kastrava account: Premium keys, devices, sync, security.">
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+(function(){try{
+  var s=null;try{s=localStorage.getItem('kas-theme');}catch(e){}
+  document.documentElement.setAttribute('data-theme',
+    s?(s==='dark'?'dark':'light'):((window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'));
+}catch(e){}})();
+</script>
+<link rel="stylesheet" href="/k.css?v=4">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
-:root{--bg:#faf7f1;--card:#ffffff;--ink:#14110b;--text:#2b2620;--muted:#5c564a;--muted2:#8a8474;--line:#f0ede6;--navbg:rgba(250,247,241,.9);--panel:#16130e;--pill:#16130e;--pill-fg:#ffffff;--blue:#0288d1;--green:#0b5c1b;--red:#c62828;color-scheme:light}
-html[data-theme="dark"]{--bg:#12100c;--card:#1b1812;--ink:#f3eee4;--text:#cfc8ba;--muted:#9d9484;--muted2:#7c7466;--line:#262117;--navbg:rgba(18,16,12,.9);--panel:#211c14;--pill:#f3eee4;--pill-fg:#14110b;--blue:#4fc3f7;--green:#61d98a;--red:#ff8a80;color-scheme:dark}
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.65;-webkit-font-smoothing:antialiased}
-h1,h2{font-family:'Space Grotesk',sans-serif}
-.mono{font-family:'JetBrains Mono',monospace}
-.container{max-width:1020px;margin:0 auto;padding:0 28px}
-nav{position:sticky;top:0;z-index:50;background:var(--navbg);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
-nav .container{display:flex;align-items:center;gap:12px;padding-top:13px;padding-bottom:13px}
-nav img{width:36px;height:36px;border-radius:9px}
-nav .name{font-size:15px;font-weight:700;letter-spacing:4px;color:var(--ink);font-family:'Space Grotesk',sans-serif}
-main{padding:56px 0 80px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:30px 28px;margin-bottom:16px}
-.card h2{font-size:19px;color:var(--ink);margin-bottom:4px}
-.card .sub{font-size:13.5px;color:var(--muted);margin-bottom:14px}
-label{display:block;font-size:13px;font-weight:600;color:var(--ink);margin:12px 0 6px}
-input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:14px;font-family:inherit}
-.btn{display:inline-block;padding:13px 24px;border-radius:12px;border:none;background:#0288d1;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif}
-.btn:disabled{opacity:.5;cursor:not-allowed}
-.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}
-.btn.danger{background:transparent;border:1px solid var(--red);color:var(--red);padding:8px 16px;font-size:13px}
-.msg{font-size:13.5px;color:var(--muted);margin-top:12px;min-height:20px}
-.msg.err{color:var(--red)}
-.msg.ok{color:#2e7d32}
-table{width:100%;border-collapse:collapse;font-size:13.5px}
-th{text-align:left;font-size:11px;letter-spacing:1px;color:var(--muted2);padding:8px 10px 8px 0;border-bottom:1px solid var(--line)}
-td{padding:10px 10px 10px 0;border-bottom:1px solid var(--line);vertical-align:top}
-.dev{display:flex;align-items:center;gap:8px;margin:3px 0;font-size:12.5px}
-.dev button{padding:2px 10px;font-size:11px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer}
-.fine{font-size:12.5px;color:var(--muted2);margin-top:12px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.grid .card{margin-bottom:0}
-.span2{grid-column:1/-1}
-@media(max-width:760px){.grid{grid-template-columns:1fr}}
-.pagehead{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin:6px 0 18px}
-.pagehead h1{font-size:30px;letter-spacing:-.5px;color:var(--ink)}
-.stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
-.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 16px;min-width:130px}
-.stat .k{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1.5px;color:var(--muted2)}
+.dash{max-width:1020px;margin:40px auto 80px}
+.pagehead h1{font-size:30px;margin-bottom:4px}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 16px;min-width:130px}
+.stat .k{font-family:var(--mono);font-size:10px;letter-spacing:1.5px;color:var(--muted2)}
 .stat .v{font-size:17px;font-weight:700;color:var(--ink)}
-.pill{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.6px;padding:3px 12px;border-radius:20px;vertical-align:2px}
-.pill.on{background:rgba(46,125,50,.14);color:var(--green)}
-.pill.off{background:rgba(0,0,0,.06);color:var(--muted)}
-html[data-theme="dark"] .pill.off{background:rgba(255,255,255,.08)}
-.pill.warn{background:rgba(245,124,0,.15);color:#e65100}
-.pill.bad{background:rgba(198,40,40,.12);color:var(--red)}
-.keycard{border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-top:10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}}
+.dash label.lbl{display:block;font-size:13px;font-weight:600;color:var(--ink);margin:12px 0 6px}
+.dash input[type=email],.dash input[type=password],.dash input[type=text],.dash input[type=number],.dash input:not([type]){width:100%;padding:11px 13px;border-radius:10px;border:1px solid var(--line2);background:var(--card2);color:var(--ink);font-size:13.5px;font-family:inherit}
+.rowline{display:flex;align-items:center;gap:8px;margin:3px 0;font-size:12.5px;flex-wrap:wrap}
+.rowline button{padding:3px 11px;font-size:11px;border-radius:8px;border:1px solid var(--line2);background:transparent;color:var(--muted);cursor:pointer;font-family:inherit}
+.rowline button:hover{color:var(--ink);border-color:var(--blue)}
+.keycard{border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-top:10px}
 .keycard .krow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .keycard .krow .mono{font-size:14px;font-weight:600;color:var(--ink)}
-.keycard .meta{font-size:12.5px;color:var(--muted);margin-top:4px}
+.plan-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 4px}
+.pill{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.6px;padding:3px 12px;border-radius:20px;vertical-align:2px}
+.pill.on{background:rgba(47,158,68,.14);color:#2f9e44}
+.pill.off{background:rgba(0,0,0,.06);color:var(--muted)}
+html[data-theme="dark"] .pill.off{background:rgba(255,255,255,.08)}
+.pill.warn{background:rgba(232,137,12,.15);color:#e8890c}
+.pill.bad{background:rgba(229,72,77,.12);color:#e5484d}
 #nav-email{display:none;font-size:13px;color:var(--muted)}
 #nav-plan{display:none}
-#nav-out{display:none;font-size:12.5px;font-weight:600;color:var(--muted);background:none;border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer}
-#nav-out:hover{color:var(--ink)}
-footer{border-top:1px solid var(--line);padding:28px 0 44px}
-footer p{font-size:12.5px;color:var(--muted2)}
-footer a{color:var(--blue);text-decoration:none}
+#nav-out{display:none;font-size:12.5px;font-weight:600;color:var(--muted);background:none;border:1px solid var(--line2);border-radius:8px;padding:6px 12px;cursor:pointer;font-family:inherit}
+.msg.ok{color:#2f9e44}
 </style>
-<link rel="stylesheet" href="/k.css?v=4">
-<script>
-(function(){var r=document.documentElement,s=null;try{s=localStorage.getItem('kas-theme');}catch(e){}
-r.setAttribute('data-theme',s?s:(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'));})();
-</script>
 </head>
 <body>
-<nav><div class="container">
-<img src="logo.png" alt="Kastrava"><span class="name">KASTRAVA</span>
-<span style="flex:1"></span><span id="nav-plan" class="pill off">FREE</span><span id="nav-email"></span><button id="nav-out">Log out</button><a href="https://kastrava.pp.ua/" style="font-size:13px;color:var(--muted);text-decoration:none">← home</a>
+<nav><div class="wrap">
+  <img src="logo.png" alt="Kastrava">
+  <a class="name" href="/">KASTRAVA</a>
+  <div class="links">
+    <span id="nav-plan" class="pill off">FREE</span><span id="nav-email"></span>
+    <button id="nav-out">Log out</button>
+    <button id="theme-btn" class="theme-btn" title="Toggle theme" aria-label="Toggle theme">
+      <svg class="ic-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="ic-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+    <a class="dl" href="/">← home</a>
+  </div>
 </div></nav>
-<main><div class="container" id="app">
-<div class="card" id="login-card">
-<h2>Account dashboard</h2>
-<p class="sub">Keys, devices and sync. Log in to manage them.</p>
-<label for="ac-email">Email</label>
-<input id="ac-email" type="email" autocomplete="email" placeholder="you@example.com">
-<label for="ac-pass">Password</label>
-<input id="ac-pass" type="password" autocomplete="current-password" placeholder="••••••••">
-<input id="ac-totp" inputmode="numeric" maxlength="6" placeholder="2FA code (if enabled)" autocomplete="one-time-code" style="display:none;margin-top:10px">
-<input id="ac-emailcode" inputmode="numeric" maxlength="6" placeholder="Email code" autocomplete="one-time-code" style="display:none;margin-top:10px">
-<div class="msg" id="ac-verify" style="display:none">Check your inbox, then <a href="#" id="ac-resend" style="color:var(--blue)">resend code</a></div>
-<button class="btn" id="ac-go" style="margin-top:16px">Log in</button>
-<div class="msg" id="ac-msg"></div>
-<p class="fine">No account yet? <a href="/account.html" style="color:var(--blue)">Sign up</a> first — it takes ten seconds. <a href="#" id="ac-forgot" style="color:var(--blue)">Forgot password?</a></p>
-<div id="reset-box" style="display:none;margin-top:12px;padding:14px;border:1px dashed var(--line);border-radius:14px">
-<div style="font-weight:700;font-size:14px">Reset password</div>
-<p class="fine" style="margin:4px 0 8px">A code goes to your inbox. Your synced data restarts fresh — the new password cannot read the old copy.</p>
-<input id="rs-code" inputmode="numeric" maxlength="6" placeholder="Email code" style="margin-bottom:8px" spellcheck="false" autocomplete="off">
-<input id="rs-pass" type="password" placeholder="New password (8+ characters)" autocomplete="new-password">
-<div class="msg" id="rs-msg"></div>
-<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
-<button class="btn ghost" id="rs-send">Send code</button>
-<button class="btn" id="rs-go">Set new password</button>
+<main><div class="wrap"><div class="dash" id="app">
+
+<div class="lic-card" id="login-card" style="margin-top:0;max-width:560px">
+  <span class="tag">DASHBOARD</span>
+  <h2 style="font-size:24px">Account dashboard</h2>
+  <p style="font-size:14px;color:var(--muted)">Keys, devices and sync. Log in to manage them.</p>
+  <label class="lbl" for="ac-email">Email</label>
+  <input id="ac-email" type="email" autocomplete="email" placeholder="you@example.com">
+  <label class="lbl" for="ac-pass">Password</label>
+  <input id="ac-pass" type="password" autocomplete="current-password" placeholder="••••••••">
+  <input id="ac-totp" inputmode="numeric" maxlength="6" placeholder="2FA code (if enabled)" autocomplete="one-time-code" style="display:none;margin-top:10px">
+  <input id="ac-emailcode" inputmode="numeric" maxlength="6" placeholder="Email code" autocomplete="one-time-code" style="display:none;margin-top:10px">
+  <div class="msg" id="ac-verify" style="display:none">Check your inbox, then <a href="#" id="ac-resend">resend code</a></div>
+  <button class="btn btn-primary" id="ac-go" style="margin-top:16px">Log in</button>
+  <div class="msg" id="ac-msg"></div>
+  <p class="fine">No account yet? <a href="/account.html">Sign up</a> first — it takes ten seconds. <a href="#" id="ac-forgot">Forgot password?</a></p>
+  <div id="reset-box" style="display:none;margin-top:12px;padding:14px;border:1px dashed var(--line2);border-radius:12px">
+    <div style="font-weight:700;font-size:14px;color:var(--ink)">Reset password</div>
+    <p class="fine" style="margin:4px 0 8px">A code goes to your inbox. Synced data restarts fresh — the new password cannot read the old copy.</p>
+    <input id="rs-code" inputmode="numeric" maxlength="6" placeholder="Email code" style="margin-bottom:8px" spellcheck="false" autocomplete="off">
+    <input id="rs-pass" type="password" placeholder="New password (8+ characters)" autocomplete="new-password">
+    <div class="msg" id="rs-msg"></div>
+    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+      <button class="btn btn-ghost" id="rs-send">Send code</button>
+      <button class="btn btn-primary" id="rs-go">Set new password</button>
+    </div>
+  </div>
 </div>
-</div>
-</div>
+
 <div id="dash" style="display:none">
-<div class="pagehead"><h1>Account</h1></div>
-<div class="stats" id="stats-out">
-<div class="stat"><div class="k">PLAN</div><div class="v" id="st-plan">–</div></div>
-<div class="stat"><div class="k">KEYS</div><div class="v" id="st-keys">–</div></div>
-<div class="stat"><div class="k">DEVICES</div><div class="v" id="st-devs">–</div></div>
-<div class="stat"><div class="k">SYNC REV</div><div class="v" id="st-sync">–</div></div>
+  <div class="pagehead"><h1>Account</h1></div>
+  <div class="stats">
+    <div class="stat"><div class="k">PLAN</div><div class="v" id="st-plan">–</div></div>
+    <div class="stat"><div class="k">KEYS</div><div class="v" id="st-keys">–</div></div>
+    <div class="stat"><div class="k">DEVICES</div><div class="v" id="st-devs">–</div></div>
+    <div class="stat"><div class="k">SYNC REV</div><div class="v" id="st-sync">–</div></div>
+  </div>
+
+  <div class="lic-card" style="margin-top:0"><h2>Premium keys</h2>
+    <p class="sub">One key works on up to 10 devices. Logged-in browsers pick up new keys and renewals on their own.</p>
+    <div id="keys-out">Loading…</div>
+    <div style="margin-top:14px;padding:14px;border:1px dashed var(--line2);border-radius:12px">
+      <div style="font-weight:700;font-size:14px;color:var(--ink)">Add a key manually</div>
+      <p class="fine" style="margin:4px 0 8px">Got a key from support? Paste it here to attach it to this account.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input id="claim-key" placeholder="XXXX-XXXX-XXXX" style="flex:1;min-width:200px" spellcheck="false" autocomplete="off">
+        <button class="btn btn-primary" id="claim-go" style="white-space:nowrap">Add key</button>
+      </div>
+      <div class="msg" id="claim-msg"></div>
+    </div>
+    <div class="plan-grid">
+      <button class="plan-card" data-plan="monthly" style="padding:16px;border-radius:12px;border:2px solid var(--line2);background:transparent;color:var(--ink);cursor:pointer;text-align:center;font-family:inherit">
+        <div style="font-weight:700;font-size:15px" id="pm-m-main">Monthly — $49</div>
+        <div style="font-size:12.5px;color:var(--muted)" id="pm-m-sub">₹499 · 30 days</div>
+        <div style="margin-top:8px;font-weight:600;font-size:13.5px;color:var(--blue)">Choose Monthly →</div>
+      </button>
+      <button class="plan-card" data-plan="daily" style="padding:16px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;text-align:center;font-family:inherit">
+        <div style="font-weight:700;font-size:15px" id="pm-d-main">Daily — $4.99</div>
+        <div style="font-size:12.5px;color:var(--muted)" id="pm-d-sub">₹49 · 24 hours</div>
+        <div style="margin-top:8px;font-weight:600;font-size:13.5px;color:var(--blue)">Choose Daily →</div>
+      </button>
+    </div>
+    <p class="fine" style="margin:0">Manual renewal — nothing auto-charges. Renewing extends your newest key.</p>
+    <div class="msg" id="buy-msg"></div>
+    <div id="pp-buttons" style="margin-top:12px;display:none"></div>
+    <p class="fine" id="buy-inrnote"></p>
+  </div>
+
+  <div id="buy-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.55);align-items:center;justify-content:center;padding:16px">
+    <div style="background:var(--card);color:var(--ink);border:1px solid var(--line2);border-radius:18px;max-width:440px;width:100%;padding:26px;max-height:90vh;overflow:auto">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+        <div style="flex:1"><div style="font-weight:700;font-size:18px;font-family:'Space Grotesk'" id="bm-title">Monthly — 30 days</div>
+        <div style="font-size:13px;color:var(--muted)" id="bm-price"></div></div>
+        <button id="bm-x" style="border:none;background:transparent;color:var(--ink);font-size:22px;cursor:pointer" aria-label="Close">×</button>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Payment — you're already logged in</div>
+      <p style="font-size:13px;color:var(--muted)" id="bm-note"></p>
+      <button class="prem-buy" id="bm-buy" style="width:100%;margin-top:8px">Pay</button>
+      <div id="bm-pp" style="display:none;margin-top:8px"></div>
+      <div id="bm-pay-msg" style="font-size:12.5px;color:var(--muted);margin-top:8px"></div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="lic-card" style="margin-top:0"><h2>Sync</h2><div id="sync-out">Loading…</div></div>
+    <div class="lic-card" style="margin-top:0"><h2>New devices</h2>
+      <p class="sub">When on, unknown hardware waits here for your OK before using your keys.</p>
+      <label style="display:flex;gap:8px;align-items:center;font-size:14px;margin-bottom:10px;color:var(--ink)"><input type="checkbox" id="ap-require" style="width:auto"> Approve new devices</label>
+      <div id="ap-out">Loading…</div></div>
+    <div class="lic-card" style="margin-top:0"><h2>Sessions</h2><p class="sub">Everywhere this account is logged in.</p>
+      <div id="sess-out">Loading…</div>
+      <div style="margin-top:10px"><button class="btn btn-ghost" id="sess-out-others">Log out other sessions</button></div></div>
+    <div class="lic-card" style="margin-top:0"><h2>Security log</h2><div id="audit-out">Loading…</div></div>
+    <div class="lic-card" style="margin-top:0"><h2>Two-factor auth</h2>
+      <p class="sub">Update all your Kastrava apps first — older apps can't log in with 2FA.</p>
+      <p class="sub" id="totp-state">Loading…</p>
+      <div id="totp-setup" style="display:none">
+        <p class="fine">1. Add this key in your authenticator app:</p>
+        <p class="mono" id="totp-secret" style="font-size:16px;letter-spacing:1px"></p>
+        <p class="fine">2. Enter the 6-digit code:</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input id="totp-code" inputmode="numeric" maxlength="6" placeholder="123456" style="width:130px" spellcheck="false" autocomplete="off">
+          <button class="btn btn-primary" id="totp-confirm">Enable</button>
+        </div>
+      </div>
+      <div id="totp-recovery" style="display:none;margin-top:10px">
+        <p class="fine">Recovery codes — save these somewhere safe, each works once:</p>
+        <p class="mono" id="totp-codes" style="font-size:14px;line-height:1.8"></p>
+      </div>
+      <div id="totp-off" style="display:none;margin-top:10px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input id="totp-pass" type="password" placeholder="Password to disable" style="flex:1;min-width:160px" autocomplete="current-password">
+          <button class="btn btn-ghost" id="totp-disable">Disable 2FA</button>
+        </div>
+      </div>
+      <div class="msg" id="totp-msg"></div>
+      <div style="margin-top:8px"><button class="btn btn-primary" id="totp-start">Set up 2FA</button></div></div>
+    <div class="lic-card" style="margin-top:0"><h2>Store items</h2>
+      <p class="sub">Themes and accents you own. Apply them from the <a href="https://store.kastrava.pp.ua/">Store</a> — one click inside Kastrava.</p>
+      <div id="items-out">Loading…</div></div>
+    <div class="lic-card" style="margin-top:0"><h2>Your data</h2>
+      <p class="sub">Download everything on your account, or delete it entirely (owned keys are cancelled, shared access ends).</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-ghost" id="data-export">Download my data</button>
+        <button class="btn btn-ghost" id="data-delete">Delete account…</button>
+      </div>
+      <div class="msg" id="data-msg"></div></div>
+  </div>
 </div>
-<div class="card"><h2>Premium keys</h2><p class="sub">One key works on up to 10 devices. Logged-in browsers pick up new keys and renewals on their own.</p>
-<div id="keys-out">Loading…</div>
-<div style="margin-top:14px;padding:14px;border:1px dashed var(--line);border-radius:14px">
-<div style="font-weight:700;font-size:14px">Add a key manually</div>
-<p class="fine" style="margin:4px 0 8px">Got a key from support? Paste it here to attach it to this account.</p>
-<div style="display:flex;gap:8px;flex-wrap:wrap">
-<input id="claim-key" placeholder="XXXX-XXXX-XXXX" style="flex:1;min-width:200px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ink);font-family:inherit" spellcheck="false" autocomplete="off">
-<button class="btn" id="claim-go" style="white-space:nowrap">Add key</button>
-</div>
-<div class="msg" id="claim-msg"></div>
-</div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 4px">
-<div class="plan-pick" data-plan="monthly" style="padding:14px;border-radius:14px;border:2px solid var(--ink);cursor:pointer"><div style="font-weight:700;font-size:15px">Monthly — $49</div><div style="font-size:12.5px;color:var(--muted)">₹499 · 30 days</div></div>
-<div class="plan-pick" data-plan="daily" style="padding:14px;border-radius:14px;border:1px solid var(--line);cursor:pointer"><div style="font-weight:700;font-size:15px">Daily — $4.99</div><div style="font-size:12.5px;color:var(--muted)">₹49 · 24 hours</div></div>
-</div>
-<p class="fine" style="margin:0 0 4px">Manual renewal — you pay each time, nothing auto-charges.</p>
-<div style="margin-top:14px"><button class="btn" id="buy-go">Buy — ₹499 / 30 days</button></div>
-<div class="msg" id="buy-msg"></div>
-<div id="pp-buttons" style="margin-top:12px;display:none"></div>
-<p class="fine" id="buy-inrnote">Charged in INR (₹499). Renewing extends your newest key — every logged-in browser follows. By paying you agree to the <a href="/terms.html" style="color:var(--blue)">Terms</a> and <a href="/refunds.html" style="color:var(--blue)">Refund Policy</a>.</p>
-</div>
-</div>
-<div class="grid" style="margin-top:16px">
-<div class="card"><h2>Sync</h2><div id="sync-out">Loading…</div></div>
-<div class="card"><h2>New devices</h2>
-<p class="sub">When on, unknown hardware waits here for your OK before it can use your keys.</p>
-<label style="display:flex;gap:8px;align-items:center;font-size:14px;margin-bottom:10px"><input type="checkbox" id="ap-require"> Approve new devices</label>
-<div id="ap-out">Loading…</div>
-</div>
-<div class="card"><h2>Sessions</h2><p class="sub">Everywhere this account is logged in.</p>
-<div id="sess-out">Loading…</div>
-<div style="margin-top:10px"><button class="btn ghost" id="sess-out-others">Log out other sessions</button></div>
-</div>
-<div class="card"><h2>Security log</h2><div id="audit-out">Loading…</div></div>
-<div class="card"><h2>Two-factor auth</h2>
-<p class="sub">Update all your Kastrava apps to the latest version before turning this on — older apps cannot log in with 2FA.</p>
-<p class="sub" id="totp-state">Loading…</p>
-<div id="totp-setup" style="display:none">
-<p class="fine">1. Open your authenticator app (Google/Microsoft Authy, 1Password…) and add this key:</p>
-<p class="mono" id="totp-secret" style="font-size:16px;letter-spacing:1px"></p>
-<p class="fine">2. Enter the 6-digit code it shows:</p>
-<div style="display:flex;gap:8px;flex-wrap:wrap">
-<input id="totp-code" inputmode="numeric" maxlength="6" placeholder="123456" style="width:130px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ink);font-family:inherit" spellcheck="false" autocomplete="off">
-<button class="btn" id="totp-confirm">Enable</button>
-</div>
-</div>
-<div id="totp-recovery" style="display:none;margin-top:10px">
-<p class="fine">Recovery codes — save these somewhere safe. Each works once if you lose the app:</p>
-<p class="mono" id="totp-codes" style="font-size:14px;line-height:1.8"></p>
-</div>
-<div id="totp-off" style="display:none;margin-top:10px">
-<div style="display:flex;gap:8px;flex-wrap:wrap">
-<input id="totp-pass" type="password" placeholder="Password to disable" style="flex:1;min-width:160px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ink);font-family:inherit" autocomplete="current-password">
-<button class="btn ghost" id="totp-disable">Disable 2FA</button>
-</div>
-</div>
-<div class="msg" id="totp-msg"></div>
-<div style="margin-top:8px"><button class="btn" id="totp-start">Set up 2FA</button></div>
-</div>
-<div class="card"><h2>Store items</h2><p class="sub">Themes and accents you own. Apply them from the <a href="https://store.kastrava.pp.ua/" style="color:var(--blue)">Store</a> — one click inside Kastrava.</p>
-<div id="items-out">Loading…</div>
-</div>
-<div class="card"><h2>Your data</h2>
-<p class="sub">Download everything on your account, or delete the account entirely (owned keys are cancelled, shared access ends).</p>
-<div style="display:flex;gap:8px;flex-wrap:wrap">
-<button class="btn ghost" id="data-export">Download my data</button>
-<button class="btn ghost" id="data-delete">Delete account…</button>
-</div>
-<div class="msg" id="data-msg"></div>
-</div>
-</div>
-</div>
-</div></main>
-<footer><div class="container"><p>Kastrava 101 RC · <a href="https://kastrava.pp.ua/">home</a> · <a href="/terms.html">Terms</a> · <a href="/privacy.html">Privacy</a> · <a href="/refunds.html">Refunds</a> · <a href="/contact.html">Contact</a></p></div></footer>
+</div></div></main>
+<footer><div class="wrap"><div class="foot-grid">
+  <div><p class="fh">KASTRAVA</p><p style="margin-top:6px">101 RC · <a href="/">home</a> · <a href="/authors.html">authors</a></p></div>
+  <div><p class="fh">OPEN SOURCE</p><p style="margin-top:6px"><a href="https://github.com/tejaskhanna989/kastrava" target="_blank" rel="noopener">GitHub — GPLv3</a></p></div>
+  <div><p class="fh">LEGAL</p><p style="margin-top:6px"><a href="/terms.html">Terms</a> · <a href="/privacy.html">Privacy</a> · <a href="/refunds.html">Refunds</a> · <a href="/contact.html">Contact</a></p></div>
+  <div><p class="fh">SUPPORT</p><p style="margin-top:6px"><a href="mailto:khannatejas989@gmail.com">khannatejas989@gmail.com</a></p></div>
+</div></div></footer>
 <script>
+'use strict';
+/* Account dashboard: auth, keys, geo-priced purchase, sync, 2FA, data. */
 (function(){
 var KAS_API=((window.KAS_API)||(location.search.match(/[?&]api=([^&]+)/)||[])[1]||'https://nexufog.pp.ua').replace(/\/$/,'');
-  function apiFetch(url,opts){
-    opts=opts||{};
-    var ctrl=null,timer=null;
-    try{
-      if(window.AbortController){ctrl=new AbortController();opts.signal=ctrl.signal;
-        timer=setTimeout(function(){try{ctrl.abort();}catch(e){}},25000);}
-    }catch(e){}
-    return fetch(url,opts).then(function(r){
-      if(timer)clearTimeout(timer);
-      var ct='';try{ct=r.headers.get('content-type')||'';}catch(e){}
-      if(ct.indexOf('application/json')<0){
-        throw new Error('blocked');
-      }
-      return r;
-    },function(e){if(timer)clearTimeout(timer);throw e;});
-  }
-  function apiErr(e,fallback){
-    var m=String((e&&e.message)||e||'');
-    if(m.indexOf('blocked')>=0)return 'Blocked by a browser security check — finish any “verify you are human” box on this page, then retry. (VPNs trigger this.)';
-    if(m.indexOf('abort')>=0||m.indexOf('imeout')>=0||m.indexOf('etch')>=0||m.indexOf('etwork')>=0)return 'Request timed out — check connection and retry.';
-    return fallback||'Something went wrong. Please try again.';
-  }
+function $(id){return document.getElementById(id);}
 function tok(){try{return localStorage.getItem('kas_sync_token')||'';}catch(e){return '';}}
 function authz(){return {'Content-Type':'application/json','Authorization':'Bearer '+tok()};}
 function esc(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-var loginCard=document.getElementById('login-card'),dash=document.getElementById('dash');
-function setNav(email,plan){var ne=document.getElementById('nav-email'),np=document.getElementById('nav-plan'),no=document.getElementById('nav-out');
+function tz(){try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'';}catch(e){return '';}}
+function money(a,c){return (c==='INR'?'₹':c+' ')+a;}
+function post(path,body,auth){
+  var h=auth?authz():{'Content-Type':'application/json'};
+  return fetch(KAS_API+path,{method:'POST',headers:h,body:JSON.stringify(body||{})}).then(function(r){
+    var ct='';try{ct=r.headers.get('content-type')||'';}catch(e){}
+    if(ct.indexOf('application/json')<0)throw new Error('blocked');
+    return r.json();
+  });
+}
+function netErr(e){
+  var m=String((e&&e.message)||e||'');
+  if(m.indexOf('blocked')>=0)return 'Blocked by a browser check — retry.';
+  if(/abort|imeout|etch|etwork/i.test(m))return 'Request timed out — check connection and retry.';
+  return 'Could not reach the server.';
+}
+$('theme-btn').addEventListener('click',function(){
+  var r=document.documentElement,n=r.getAttribute('data-theme')==='dark'?'light':'dark';
+  r.setAttribute('data-theme',n);try{localStorage.setItem('kas-theme',n);}catch(e){}
+});
+function setNav(email,plan){
+  var ne=$('nav-email'),np=$('nav-plan'),no=$('nav-out');
   if(!email){ne.style.display='none';np.style.display='none';no.style.display='none';return;}
   ne.textContent=email;ne.style.display='inline';
   np.textContent=plan||'FREE';np.className='pill '+((plan&&plan!=='FREE')?'on':'off');np.style.display='inline-block';
-  no.style.display='inline-block';}
-function doLogout(){fetch(KAS_API+'/api/account/logout',{method:'POST',headers:authz(),body:'{}'}).catch(function(){});try{localStorage.removeItem('kas_sync_token');}catch(e){}location.reload();}
+  no.style.display='inline-block';
+}
+$('nav-out').addEventListener('click',function(){
+  post('/api/account/logout',{}).catch(function(){});
+  try{localStorage.removeItem('kas_sync_token');}catch(e){}
+  location.reload();
+});
 var dashEmail='';
-function showDash(email){dashEmail=email||'';loginCard.style.display='none';dash.style.display='block';setNav(email,'…');loadKeys();loadSync(email);loadApprovals();loadSessions();loadAudit();loadTotp();loadItems();}
-function loadApprovals(){
-  var out=document.getElementById('ap-out');if(!out)return;
-  out.textContent='Loading…';
-  fetch(KAS_API+'/api/account/approvals',{method:'POST',headers:authz(),body:'{}'})
-  .then(function(r){return r.json();}).then(function(j){
-    if(!j||!j.ok){out.textContent='Could not load.';return;}
-    document.getElementById('ap-require').checked=!!j.require_approval;
-    if(!j.approvals||!j.approvals.length){out.textContent='No devices waiting.';return;}
-    out.innerHTML=j.approvals.map(function(a){
-      return '<div class="dev"><span>'+esc(a.device_name||a.machine_id)+'<br><span class="fine">'+esc(a.machine_id)+' · '+esc((a.created_at||'').slice(0,16).replace('T',' '))+'</span></span><span><button data-ap="'+esc(a.id)+'" data-ok="1" style="padding:4px 12px;font-size:11.5px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer">Approve</button> <button data-ap="'+esc(a.id)+'" data-ok="" style="padding:4px 12px;font-size:11.5px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer">Deny</button></span></div>';
-    }).join('');
-    out.querySelectorAll('button[data-ap]').forEach(function(b){
-      b.addEventListener('click',function(){
-        fetch(KAS_API+'/api/account/approval/resolve',{method:'POST',headers:authz(),body:JSON.stringify({id:b.dataset.ap,approve:!!b.dataset.ok})})
-        .then(function(r){return r.json();}).then(function(){loadApprovals();loadKeys();}).catch(function(){});
-      });
-    });
-  }).catch(function(){out.textContent='Could not load.';});
+function showDash(email){
+  dashEmail=email||'';
+  $('login-card').style.display='none';$('dash').style.display='block';
+  setNav(email,'…');
+  loadKeys();loadSync();loadApprovals();loadSessions();loadAudit();loadTotp();loadItems();
 }
-function loadSessions(){
-  var out=document.getElementById('sess-out');if(!out)return;
-  out.textContent='Loading…';
-  fetch(KAS_API+'/api/account/sessions',{method:'POST',headers:authz(),body:'{}'})
-  .then(function(r){return r.json();}).then(function(j){
-    if(!j||!j.ok){out.textContent='Could not load.';return;}
-    if(!j.sessions||!j.sessions.length){out.textContent='No sessions.';return;}
-    out.innerHTML=j.sessions.map(function(x){
-      return '<div class="dev"><span>'+esc(x.label||'Browser')+(x.current?' (this one)':'')+'<br><span class="fine">'+esc((x.last_seen||x.created_at||'').slice(0,16).replace('T',' '))+(x.ip?' · '+esc(x.ip):'')+'</span></span>'+(x.current?'':'<button data-sess="'+esc(x.id)+'" style="padding:4px 12px;font-size:11.5px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer">Revoke</button>')+'</div>';
-    }).join('');
-    out.querySelectorAll('button[data-sess]').forEach(function(b){
-      b.addEventListener('click',function(){
-        if(!confirm('End this session? That device logs out.'))return;
-        fetch(KAS_API+'/api/account/session/revoke',{method:'POST',headers:authz(),body:JSON.stringify({id:b.dataset.sess})})
-        .then(function(r){return r.json();}).then(function(){loadSessions();}).catch(function(){});
-      });
-    });
-  }).catch(function(){out.textContent='Could not load.';});
-}
-function loadTotp(){
-  var st=document.getElementById('totp-state');if(!st)return;
-  fetch(KAS_API+'/api/account/me',{method:'POST',headers:authz(),body:'{}'})
-  .then(function(r){return r.json();}).then(function(j){
-    var on=!!(j&&j.totp);
-    st.textContent=on?'On — logins need your authenticator code.':'Off.';
-    document.getElementById('totp-off').style.display=on?'block':'none';
-    document.getElementById('totp-start').style.display=on?'none':'block';
-  }).catch(function(){st.textContent='Could not load.';});
-}
-function loadItems(){
-  var out=document.getElementById('items-out');if(!out)return;
-  out.textContent='Loading…';
-  fetch(KAS_API+'/api/account/items',{method:'POST',headers:authz(),body:'{}'})
-  .then(function(r){return r.json();}).then(function(j){
-    if(!j||!j.ok){out.textContent='Could not load.';return;}
-    if(!j.items||!j.items.length){out.textContent='Nothing yet — visit the Store.';return;}
-    out.innerHTML=j.items.map(function(x){
-      var sw=x.data&&x.data.bg?'<span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:'+esc(x.data.bg)+';border:1px solid var(--line);vertical-align:-2px;margin-right:6px"></span>':'';
-      return '<div class="dev"><span>'+sw+esc(x.name)+'<br><span class="fine">'+esc(x.kind)+'</span></span><button data-item="'+esc(x.id)+'" style="padding:4px 12px;font-size:11.5px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer">Copy data</button></div>';
-    }).join('');
-    out.querySelectorAll('button[data-item]').forEach(function(b){
-      b.addEventListener('click',function(){
-        fetch(KAS_API+'/api/account/items',{method:'POST',headers:authz(),body:'{}'})
-        .then(function(r){return r.json();}).then(function(j){
-          var f=(j.items||[]).filter(function(x){return x.id===b.dataset.item;})[0];
-          if(!f)return;
-          var txt=JSON.stringify(f.data);
-          if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).catch(function(){});}
-          else{var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(e){}ta.remove();}
-        }).catch(function(){});
-      });
-    });
-  }).catch(function(){out.textContent='Could not load.';});
-}
-function loadAudit(){
-  var out=document.getElementById('audit-out');if(!out)return;
-  out.textContent='Loading…';
-  fetch(KAS_API+'/api/account/audit',{method:'POST',headers:authz(),body:'{}'})
-  .then(function(r){return r.json();}).then(function(j){
-    if(!j||!j.ok){out.textContent='Could not load.';return;}
-    if(!j.events||!j.events.length){out.textContent='No events yet.';return;}
-    out.innerHTML=j.events.slice(0,30).map(function(e){
-      return '<div class="dev"><span>'+esc(e.type)+'<br><span class="fine">'+esc((e.t||'').slice(0,16).replace('T',' '))+(e.detail?' · '+esc(e.detail):'')+'</span></span></div>';
-    }).join('');
-  }).catch(function(){out.textContent='Could not load.';});
-}
-function loadSync(email){
-  var out=document.getElementById('sync-out');
-  fetch(KAS_API+'/api/sync/pull',{method:'POST',headers:authz(),body:'{}'})
-  .then(function(r){return r.json();}).then(function(j){
-    try{document.getElementById('st-sync').textContent=(j&&typeof j.rev==='number')?j.rev:'–';}catch(e){}
-    out.innerHTML=j&&typeof j.rev==='number'
-      ?'Encrypted copy revision <b>'+j.rev+'</b>'+(j.updated_at?' · updated '+esc(j.updated_at.slice(0,16).replace('T',' ')):'')+'<br><span class="fine">Server stores it, cannot read it.</span>'
-      :'No synced data yet — log in inside the apps first.';
-  }).catch(function(){out.textContent='Could not load.';});
-}
-function receiptText(t){
-  return String(t==null?'':t).replace(/[\u20B9]/g,'Rs.').replace(/[\u2014\u2013]/g,'-').replace(/[\u2018\u2019]/g,"'").replace(/[\u201C\u201D]/g,'"').replace(/[^\x20-\x7E\n]/g,'?');
-}
-function loadJsPdf(cb){
-  if(window.jspdf&&window.jspdf.jsPDF)return cb();
-  if(window.__jspdfLoading){var t=setInterval(function(){if(window.jspdf&&window.jspdf.jsPDF){clearInterval(t);cb();}},150);return;}
-  window.__jspdfLoading=true;
-  var sc=document.createElement('script');
-  sc.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-  sc.onload=function(){window.__jspdfLoading=false;cb();};
-  sc.onerror=function(){window.__jspdfLoading=false;alert('Could not load the receipt generator. Try again.');};
-  document.head.appendChild(sc);
-}
-function downloadKeyReceipt(key){
-  fetch(KAS_API+'/api/account/key/receipt',{method:'POST',headers:authz(),body:JSON.stringify({key:key})})
-  .then(function(r){return r.json();}).then(function(d){
-    if(!d||!d.ok){alert('No receipt for this key.');return;}
-    loadJsPdf(function(){ buildKeyReceipt(d); });
-  }).catch(function(){alert('Could not fetch receipt.');});
-}
-function buildKeyReceipt(d){
-  var r=d.receipt||{};
-  var doc=new window.jspdf.jsPDF({unit:'pt',format:'a4'});
-  var x=56,y=72;
-  doc.setFont('helvetica','bold');doc.setFontSize(20);
-  doc.text(receiptText('Kastrava Premium - Key Receipt'),x,y);y+=16;
-  doc.setFont('helvetica','normal');doc.setFontSize(11);
-  doc.text(receiptText('Kastrasoft - khannatejas989@gmail.com'),x,y);y+=30;
-  doc.setFont('courier','normal');doc.setFontSize(11);
-  var amt=(r.amount_paise!=null&&r.currency==='INR')?('INR '+(r.amount_paise/100).toFixed(2)):receiptText((r.currency||'')+' '+(r.amount_paise==null?'':r.amount_paise));
-  var rows=[
-    ['License key',d.key||'-'],
-    ['Status',(d.status||'-')+' · '+(d.devices_used||0)+'/'+(d.device_limit||10)+' devices'],
-    ['Expires',d.expires_at?new Date(d.expires_at).toLocaleDateString():'-'],
-    ['Order ID',r.order_id||'-'],
-    ['Payment ID',r.payment_id||'-'],
-    ['Amount charged',amt]
-  ];
-  rows.forEach(function(rr){
-    doc.setFont('helvetica','bold');doc.text(receiptText(rr[0]+':'),x,y);
-    doc.setFont('courier','normal');
-    var lines=doc.splitTextToSize(receiptText(rr[1]),430);
-    doc.text(lines,x+150,y);y+=lines.length*14+6;
-  });
-  y+=6;
-  doc.setFont('helvetica','bold');doc.setFontSize(12);
-  doc.text(receiptText('Devices using this key:'),x,y);y+=16;
-  doc.setFont('courier','normal');doc.setFontSize(10);
-  var devs=d.devices||[];
-  if(!devs.length){doc.text(receiptText('(none yet — log in inside the app)'),x,y);y+=14;}
-  devs.forEach(function(dd){
-    var line='- '+(dd.name||dd.id||'?')+'  '+(dd.id||'');
-    if(dd.last_seen)line+='  last seen '+String(dd.last_seen).slice(0,10);
-    doc.splitTextToSize(receiptText(line),480).forEach(function(l){doc.text(l,x,y);y+=12;});
-  });
-  var oid=receiptText(d.key||'receipt').replace(/[^A-Za-z0-9_-]/g,'');
-  doc.save('kastrava-receipt-'+oid+'.pdf');
-}
+
+/* ---------- login / reset ---------- */
+var ERRORS={exists:'That email already has an account — log in instead.',too_many:'Too many tries — wait a minute.',
+  bad_login:'Wrong email or password.',bad_email:'Enter a valid email.',weak_password:'Password needs 8+ characters.'};
+function loginFail(m){var e=$('ac-msg');e.className='msg err';e.textContent=m;}
+$('ac-resend').addEventListener('click',function(e){
+  e.preventDefault();
+  var ec=$('ac-emailcode');
+  post('/api/account/verify/resend',{email:(ec.dataset.email||$('ac-email').value||'').trim()}).catch(function(){});
+});
+$('ac-forgot').addEventListener('click',function(e){
+  e.preventDefault();
+  var b=$('reset-box');b.style.display=b.style.display==='none'?'block':'none';
+});
+$('rs-send').addEventListener('click',function(){
+  var m=$('rs-msg'),email=$('ac-email').value.trim();
+  if(!email){m.textContent='Type your email above first.';m.className='msg err';return;}
+  m.className='msg';m.textContent='Sending…';
+  post('/api/account/reset/request',{email:email}).then(function(){
+    m.textContent='If the address has an account, the code is on its way.';
+  }).catch(function(){m.textContent='Server unreachable.';m.className='msg err';});
+});
+$('rs-go').addEventListener('click',function(){
+  var m=$('rs-msg'),email=$('ac-email').value.trim();
+  var code=$('rs-code').value.trim(),pw=$('rs-pass').value||'';
+  if(!email||!code||pw.length<8){m.textContent='Email + code + 8-character password.';m.className='msg err';return;}
+  m.className='msg';m.textContent='Resetting…';
+  post('/api/account/reset/confirm',{email:email,code:code,password:pw}).then(function(j){
+    if(!j||!j.ok){m.textContent=(j&&(j.msg||ERRORS[j.error]))||'Reset failed.';m.className='msg err';return;}
+    m.textContent='Password set — log in with it (a fresh email code follows).';m.className='msg ok';
+  }).catch(function(){m.textContent='Server unreachable.';m.className='msg err';});
+});
+$('ac-go').addEventListener('click',function(){
+  var email=$('ac-email').value.trim(),pw=$('ac-pass').value||'';
+  var ec=$('ac-emailcode'),tc=$('ac-totp'),msg=$('ac-msg'),go=this;
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email)||pw.length<8)return loginFail('Valid email + 8-character password.');
+  var ecode=ec.style.display!=='none'?(ec.value||'').trim():'';
+  if(ecode){
+    go.disabled=true;
+    if(ec.dataset.mode==='verify'){
+      post('/api/account/verify',{email:ec.dataset.email||email,code:ecode}).then(function(j){
+        go.disabled=false;
+        if(j&&j.ok&&j.token){try{localStorage.setItem('kas_sync_token',j.token);}catch(e){}showDash(j.email);}
+        else loginFail((j&&(j.msg||ERRORS[j.error]))||'Wrong code.');
+      }).catch(function(){go.disabled=false;loginFail(netErr());});
+      return;
+    }
+    post('/api/account/login/otp',{email:email,code:ecode,
+      totp:tc.style.display!=='none'?((tc.value||'').trim()||undefined):undefined}).then(function(j){
+      go.disabled=false;
+      if(j&&j.ok&&j.token){try{localStorage.setItem('kas_sync_token',j.token);}catch(e){}showDash(j.email);}
+      else if(j&&j.error==='need_totp'){tc.style.display='';tc.focus();msg.className='msg';msg.textContent='Also enter your authenticator code.';}
+      else loginFail((j&&(j.msg||ERRORS[j.error]))||'Wrong code.');
+    }).catch(function(){go.disabled=false;loginFail(netErr());});
+    return;
+  }
+  go.disabled=true;msg.className='msg';msg.textContent='Logging in…';
+  post('/api/account/login',{email:email,password:pw}).then(function(j){
+    go.disabled=false;
+    if(j&&j.ok&&j.token){try{localStorage.setItem('kas_sync_token',j.token);}catch(e){}showDash(j.email);}
+    else if(j&&j.ok&&j.otp_required){
+      ec.style.display='';ec.focus();$('ac-verify').style.display='';
+      if(j.totp)tc.style.display='';
+      msg.className='msg';msg.textContent='Code sent to your email — enter it above.';}
+    else if(j&&j.error==='verify_required'){
+      ec.dataset.mode='verify';ec.dataset.email=email;
+      ec.style.display='';$('ac-verify').style.display='';ec.focus();ec.value='';
+      msg.className='msg';msg.textContent='Verify your email first — code sent.';}
+    else loginFail((j&&(j.msg||ERRORS[j.error]))||'Wrong email or password.');
+  }).catch(function(){go.disabled=false;loginFail(netErr());});
+});
+
+/* ---------- keys ---------- */
 function loadKeys(){
-  var out=document.getElementById('keys-out');
-  out.textContent='Loading…';
-  fetch(KAS_API+'/api/account/devices',{method:'POST',headers:authz(),body:'{}'})
-  .then(function(r){return r.json();}).then(function(j){
-    if(!j||!j.ok){out.textContent='Could not load keys.';return;}
-    if(!j.keys||!j.keys.length){out.innerHTML='No keys yet — buy one below.';return;}
+  var out=$('keys-out');out.textContent='Loading…';
+  post('/api/account/devices',{},true).then(function(j){
+    if(!j||!j.keys||!j.keys.length){out.innerHTML='No keys yet — choose a plan below.';return;}
     var devTotal=0,premium=false;
-    var h='';
-    j.keys.forEach(function(k){
+    out.innerHTML=j.keys.map(function(k){
       devTotal+=(k.devices_used||0);
       if(k.status==='activated'||k.status==='issued')premium=true;
       var pill=k.status==='activated'||k.status==='issued'?'on':(k.status==='revoked'||k.status==='cancelled'?'bad':'warn');
-      var badge=k.shared?' <span class="fine">shared by '+esc(k.owner||'owner')+'</span>':'';
-      h+='<div class="keycard"><div class="krow"><span class="mono">'+esc(k.key)+'</span><span class="pill '+pill+'">'+esc(k.status).toUpperCase()+'</span>'+badge+'<span style="flex:1"></span><button data-rc="'+esc(k.key)+'" style="padding:4px 12px;font-size:11.5px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;margin-bottom:6px">Receipt</button><br><b>'+k.devices_used+'/'+(k.device_limit||10)+'</b> devices';
-      (k.devices||[]).forEach(function(d){
-        h+='<div class="dev"><span>'+esc(d.name||d.id)+'</span>'+(k.shared?'':'<button data-k="'+esc(k.key)+'" data-m="'+esc(d.id)+'">Remove</button>')+'</div>';
-      });
-      if(!k.shared&&(k.shared_with||[]).length){
-        h+='<div class="fine">Shared with: '+k.shared_with.map(function(e){return esc(e)+' <a href="#" data-unshare="'+esc(e)+'" data-ukey="'+esc(k.key)+'" style="color:var(--blue)">remove</a>';}).join(', ')+'</div>';
-      }
-      if(!k.shared){
-        h+='<div style="display:flex;gap:6px;margin-top:6px"><input placeholder="family@email" data-share-in="'+esc(k.key)+'" style="flex:1;min-width:120px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);font-family:inherit;font-size:12px" spellcheck="false"><button data-share="'+esc(k.key)+'" style="padding:6px 12px;font-size:11.5px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer">Share</button></div>';
-      }
-      h+='</div>';
-    });
-    out.innerHTML=h||'<p class="fine">No keys yet — buy one below.</p>';
-    document.getElementById('st-keys').textContent=j.keys?j.keys.length:0;
-    document.getElementById('st-devs').textContent=devTotal;
+      var h='<div class="keycard"><div class="krow"><span class="mono">'+esc(k.key)+'</span>'
+        +'<span class="pill '+pill+'">'+esc(k.status).toUpperCase()+'</span>'
+        +(k.shared?' <span class="fine">shared by '+esc(k.owner||'owner')+'</span>':'')
+        +'<span style="flex:1"></span><button data-rc="'+esc(k.key)+'">Receipt</button></div>'
+        +'<div class="fine"><b>'+k.devices_used+'/'+(k.device_limit||10)+'</b> devices</div>'
+        +(k.devices||[]).map(function(d){
+          return '<div class="rowline"><span>'+esc(d.name||d.id)+'</span>'+(k.shared?'':'<button data-k="'+esc(k.key)+'" data-m="'+esc(d.id)+'">Remove</button>')+'</div>';
+        }).join('')
+        +((!k.shared&&(k.shared_with||[]).length)
+          ?'<div class="fine">Shared with: '+k.shared_with.map(function(e){return esc(e)+' <a href="#" data-unshare="'+esc(e)+'" data-ukey="'+esc(k.key)+'">remove</a>';}).join(', ')+'</div>':'')
+        +(!k.shared?'<div style="display:flex;gap:6px;margin-top:6px"><input placeholder="family@email" data-share-in="'+esc(k.key)+'" style="flex:1;min-width:120px" spellcheck="false"><button data-share="'+esc(k.key)+'">Share</button></div>':'')
+        +'</div>';
+      return h;
+    }).join('');
+    $('st-keys').textContent=j.keys.length;
+    $('st-devs').textContent=devTotal;
     var plan=premium?'PREMIUM':'FREE';
-    document.getElementById('st-plan').textContent=plan;
-    setNav(dashEmail,plan);
+    $('st-plan').textContent=plan;setNav(dashEmail,plan);
     out.querySelectorAll('button[data-rc]').forEach(function(b){
       b.addEventListener('click',function(){downloadKeyReceipt(b.dataset.rc);});
     });
     out.querySelectorAll('a[data-unshare]').forEach(function(a){
-      a.addEventListener('click',function(ev){
-        ev.preventDefault();
-        fetch(KAS_API+'/api/account/key/unshare',{method:'POST',headers:authz(),body:JSON.stringify({key:a.dataset.ukey,email:a.dataset.unshare})})
-        .then(function(r){return r.json();}).then(function(){loadKeys();}).catch(function(){});
+      a.addEventListener('click',function(e){
+        e.preventDefault();
+        post('/api/account/key/unshare',{key:a.dataset.ukey,email:a.dataset.unshare},true).then(function(){loadKeys();}).catch(function(){});
       });
     });
     out.querySelectorAll('button[data-share]').forEach(function(b){
@@ -423,9 +357,8 @@ function loadKeys(){
         var inp=out.querySelector('input[data-share-in="'+b.dataset.share+'"]');
         var em=inp?(inp.value||'').trim():'';
         if(!em)return;
-        fetch(KAS_API+'/api/account/key/share',{method:'POST',headers:authz(),body:JSON.stringify({key:b.dataset.share,email:em})})
-        .then(function(r){return r.json();}).then(function(j){
-          if(!j||!j.ok){alert((j&&(j.msg||j.error))||'Could not share.');return;}
+        post('/api/account/key/share',{key:b.dataset.share,email:em},true).then(function(j2){
+          if(!j2||!j2.ok){alert((j2&&(j2.msg||j2.error))||'Could not share.');return;}
           loadKeys();
         }).catch(function(){});
       });
@@ -433,57 +366,334 @@ function loadKeys(){
     out.querySelectorAll('button[data-k]').forEach(function(b){
       b.addEventListener('click',function(){
         if(!confirm('Remove this device? It loses Premium until it logs in again.'))return;
-        fetch(KAS_API+'/api/account/device/remove',{method:'POST',headers:authz(),body:JSON.stringify({key:b.dataset.k,machine_id:b.dataset.m})})
-        .then(function(r){return r.json();}).then(function(){loadKeys();}).catch(function(){});
+        post('/api/account/device/remove',{key:b.dataset.k,machine_id:b.dataset.m},true).then(function(){loadKeys();}).catch(function(){});
       });
     });
   }).catch(function(){out.textContent='Could not load keys.';});
 }
-document.getElementById('ap-require').addEventListener('change',function(){
-  var on=this.checked;
-  fetch(KAS_API+'/api/account/approval-require',{method:'POST',headers:authz(),body:JSON.stringify({on:on})})
-  .then(function(r){return r.json();}).then(function(){}).catch(function(){});
+$('claim-go').addEventListener('click',function(){
+  var inp=$('claim-key'),m=$('claim-msg'),key=(inp.value||'').trim().toUpperCase();
+  if(!key){m.textContent='Paste the key first.';m.className='msg err';return;}
+  m.className='msg';m.textContent='Adding…';
+  post('/api/account/key/claim',{key:key},true).then(function(j){
+    if(!j||!j.ok){m.textContent=(j&&(j.msg||ERRORS[j.error]))||'Could not add this key.';m.className='msg err';return;}
+    m.textContent='Key added — it is on your account now.';m.className='msg ok';inp.value='';loadKeys();
+  }).catch(function(){m.textContent=netErr();m.className='msg err';});
 });
-document.getElementById('totp-start').addEventListener('click',function(){
-  var m=document.getElementById('totp-msg');m.className='msg';m.textContent='Starting…';
-  fetch(KAS_API+'/api/account/totp/setup',{method:'POST',headers:authz(),body:'{}'})
-  .then(function(r){return r.json();}).then(function(j){
+function receiptText(t){
+  return String(t==null?'':t).replace(/₹/g,'Rs.').replace(/[—–]/g,'-')
+    .replace(/['']/g,"'").replace(/[""]/g,'"').replace(/[^\x20-\x7E\n]/g,'?');
+}
+function loadJsPdf(cb){
+  if(window.jspdf&&window.jspdf.jsPDF)return cb();
+  if(window.__jspdfLoading){var t=setInterval(function(){if(window.jspdf&&window.jspdf.jsPDF){clearInterval(t);cb();}},150);return;}
+  window.__jspdfLoading=true;
+  var s=document.createElement('script');
+  s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+  s.onload=function(){window.__jspdfLoading=false;cb();};
+  s.onerror=function(){window.__jspdfLoading=false;alert('Receipt generator unavailable.');};
+  document.head.appendChild(s);
+}
+function downloadKeyReceipt(key){
+  post('/api/account/key/receipt',{key:key},true).then(function(d){
+    if(!d||!d.ok){alert('No receipt for this key.');return;}
+    loadJsPdf(function(){
+      var r=d.receipt||{},doc=new window.jspdf.jsPDF({unit:'pt',format:'a4'}),x=56,y=72;
+      doc.setFont('helvetica','bold');doc.setFontSize(20);
+      doc.text(receiptText('Kastrava Premium - Key Receipt'),x,y);y+=16;
+      doc.setFont('helvetica','normal');doc.setFontSize(11);
+      doc.text(receiptText('Kastrasoft - khannatejas989@gmail.com'),x,y);y+=30;
+      doc.setFont('courier','normal');doc.setFontSize(11);
+      var amt=(r.amount_paise!=null&&r.currency==='INR')?('INR '+(r.amount_paise/100).toFixed(2)):receiptText((r.currency||'')+' '+(r.amount_paise==null?'':r.amount_paise));
+      [['License key',d.key||'-'],['Status',(d.status||'-')+' · '+(d.devices_used||0)+'/'+(d.device_limit||10)+' devices'],
+       ['Expires',d.expires_at?new Date(d.expires_at).toLocaleDateString():'-'],
+       ['Order ID',r.order_id||'-'],['Payment ID',r.payment_id||'-'],['Amount charged',amt]
+      ].forEach(function(rr){
+        doc.setFont('helvetica','bold');doc.text(receiptText(rr[0]+':'),x,y);
+        doc.setFont('courier','normal');
+        var lines=doc.splitTextToSize(receiptText(rr[1]),430);
+        doc.text(lines,x+150,y);y+=lines.length*14+6;
+      });
+      y+=6;doc.setFont('helvetica','bold');doc.setFontSize(12);
+      doc.text(receiptText('Devices using this key:'),x,y);y+=16;
+      doc.setFont('courier','normal');doc.setFontSize(10);
+      var devs=d.devices||[];
+      if(!devs.length){doc.text(receiptText('(none yet — log in inside the app)'),x,y);y+=14;}
+      devs.forEach(function(dd){
+        var line='- '+(dd.name||dd.id||'?')+'  '+(dd.id||'');
+        if(dd.last_seen)line+='  last seen '+String(dd.last_seen).slice(0,10);
+        doc.splitTextToSize(receiptText(line),480).forEach(function(l){doc.text(l,x,y);y+=12;});
+      });
+      doc.save('kastrava-receipt-'+receiptText(d.key||'receipt').replace(/[^A-Za-z0-9_-]/g,'')+'.pdf');
+    });
+  }).catch(function(){alert('Could not fetch receipt.');});
+}
+
+/* ---------- purchase (cards + modal) ---------- */
+var PLANS={monthly:{inr:499,usd:49,days:30,label:'Monthly'},daily:{inr:49,usd:4.99,days:1,label:'Daily'}};
+var GEO=null,modalPlan='monthly',ppWarned=false;
+function planPrice(plan){
+  if(GEO&&GEO.prices&&GEO.prices[plan]){var p=GEO.prices[plan];return money(p.amount,p.currency);}
+  var m=PLANS[plan];
+  return (GEO&&GEO.currency&&GEO.currency!=='INR')?('$'+m.usd):('₹'+m.inr);
+}
+post('/api/geo',{tz:tz()}).then(function(g){
+  if(!g||!g.ok)return;
+  GEO=g;paintPlans();
+}).catch(function(){});
+function paintPlans(){
+  var inr=!GEO||GEO.currency==='INR';
+  if(GEO&&GEO.prices&&GEO.prices.monthly){
+    $('pm-m-main').textContent='Monthly — '+money(GEO.prices.monthly.amount,GEO.currency);
+    $('pm-d-main').textContent='Daily — '+money(GEO.prices.daily.amount,GEO.currency);
+    $('pm-m-sub').textContent=inr?'$49 · 30 days':'₹499 · 30 days';
+    $('pm-d-sub').textContent=inr?'$4.99 · 24 hours':'₹49 · 24 hours';
+    return;
+  }
+  if(inr){
+    $('pm-m-main').textContent='Monthly — ₹499';$('pm-m-sub').textContent='$49 · 30 days';
+    $('pm-d-main').textContent='Daily — ₹49';$('pm-d-sub').textContent='$4.99 · 24 hours';
+  }
+  var note=$('buy-inrnote');
+  if(GEO&&GEO.provider==='paypal'&&GEO.prices)
+    note.innerHTML='Prices adapt to your location — renewing extends your newest key on every logged-in browser. By paying you agree to the <a href="/terms.html">Terms</a> and <a href="/refunds.html">Refund Policy</a>.';
+  else
+    note.innerHTML='Charged in INR (₹499 / ₹49) via Razorpay. Renewing extends your newest key — every logged-in browser follows. By paying you agree to the <a href="/terms.html">Terms</a> and <a href="/refunds.html">Refund Policy</a>.';
+}
+document.querySelectorAll('.plan-card').forEach(function(c){
+  c.addEventListener('click',function(){openPay(c.dataset.plan);});
+});
+function openPay(plan){
+  modalPlan=(plan==='daily')?'daily':'monthly';
+  $('bm-title').textContent=(modalPlan==='daily'?'Daily — 24 hours':'Monthly — 30 days');
+  $('bm-price').textContent=planPrice(modalPlan)+' · renews manually, extends your newest key';
+  $('buy-modal').style.display='flex';
+  showPayStep();
+}
+$('bm-x').addEventListener('click',function(){$('buy-modal').style.display='none';});
+$('buy-modal').addEventListener('click',function(e){if(e.target.id==='buy-modal')$('buy-modal').style.display='none';});
+function showPayStep(){
+  var m=PLANS[modalPlan],note=$('bm-note'),bb=$('bm-buy'),pp=$('bm-pp');
+  pp.innerHTML='';pp.style.display='none';
+  if(GEO&&GEO.provider==='paypal'&&GEO.prices&&GEO.prices[modalPlan]){
+    var pr=GEO.prices[modalPlan];
+    note.innerHTML='Charged '+money(pr.amount,pr.currency)+' via PayPal. By paying you agree to the <a href="/terms.html">Terms</a> and <a href="/refunds.html">Refund Policy</a>.';
+    bb.style.display='none';
+    renderPaypal();
+  }else{
+    note.innerHTML='Charged ₹'+m.inr+' via Razorpay (UPI, cards, netbanking). By paying you agree to the <a href="/terms.html">Terms</a> and <a href="/refunds.html">Refund Policy</a>.';
+    bb.style.display='';
+    bb.textContent='Pay '+(GEO&&GEO.currency&&GEO.currency!=='INR'?('$'+m.usd+' / ₹'+m.inr):('₹'+m.inr))+' — '+(modalPlan==='daily'?'24 hours':'30 days');
+  }
+}
+function payDone(key,renewed){
+  $('buy-modal').style.display='none';
+  var m=$('buy-msg');
+  m.className='msg ok';
+  m.textContent='Paid. Key '+key+' is on your account'+(renewed?' (renewal extended)':'')+' — logged-in browsers pick it up automatically.';
+  loadKeys();
+}
+$('bm-buy').addEventListener('click',function(){
+  var bb=this;bb.disabled=true;
+  $('bm-pay-msg').textContent='Contacting store…';
+  post('/api/order',{account_token:tok(),plan:modalPlan},true).then(function(o){
+    if(!o||!o.order_id)throw new Error((o&&o.msg)||'no order');
+    if(!window.Razorpay){$('bm-pay-msg').textContent='Checkout failed to load. Refresh and try again.';bb.disabled=false;return;}
+    new window.Razorpay({key:o.key_id,amount:o.amount,currency:o.currency,order_id:o.order_id,
+      name:'Kastrava Premium',description:'Kastrava Premium - '+PLANS[modalPlan].label+' - no auto-renew',
+      theme:{color:document.documentElement.getAttribute('data-theme')==='dark'?'#f2f4f8':'#131722'},
+      handler:function(res){
+        post('/api/verify',{order_id:res.razorpay_order_id,payment_id:res.razorpay_payment_id,
+          signature:res.razorpay_signature,machine_id:'',account_token:tok()}).then(function(v){
+          bb.disabled=false;
+          if(v&&v.ok&&v.key){payDone(v.key,v.renewed);downloadKeyReceipt(v.key);}
+          else{$('bm-pay-msg').className='msg err';$('bm-pay-msg').textContent='Payment could not be verified.';}
+        }).catch(function(){$('bm-pay-msg').textContent='Verification failed — email your payment ID to support.';});
+      },
+      modal:{ondismiss:function(){bb.disabled=false;$('bm-pay-msg').textContent='';}}
+    }).open();
+  }).catch(function(e){bb.disabled=false;$('bm-pay-msg').textContent=netErr(e);});
+});
+function loadPaypal(clientId,currency,cb){
+  if(window.paypal)return cb();
+  var s=document.createElement('script');
+  s.src='https://www.paypal.com/sdk/js?client-id='+encodeURIComponent(clientId)+'&currency='+encodeURIComponent(currency)+'&intent=capture';
+  s.onload=cb;s.onerror=function(){$('bm-pay-msg').textContent='PayPal failed to load. Refresh and try again.';};
+  document.head.appendChild(s);
+}
+function renderPaypal(){
+  var box=$('bm-pp');box.style.display='block';box.innerHTML='';
+  if(GEO.paypal_dev){
+    var t=document.createElement('button');
+    t.className='btn btn-primary';t.style.cssText='padding:10px 22px;width:100%';t.textContent='Pay (test mode) — no real charge';
+    t.addEventListener('click',function(){
+      $('bm-pay-msg').className='msg';$('bm-pay-msg').textContent='Contacting store…';
+      post('/api/order',{account_token:tok(),plan:modalPlan,provider:'paypal'},true).then(function(o){
+        if(!o||!o.order_id){$('bm-pay-msg').textContent='Order failed.';return;}
+        return post('/api/verify',{order_id:o.order_id,pp_order_id:o.order_id,machine_id:'',account_token:tok()}).then(function(v){
+          if(v&&v.ok&&v.key)payDone(v.key,v.renewed);
+          else{$('bm-pay-msg').className='msg err';$('bm-pay-msg').textContent='Payment could not be verified.';}
+        });
+      }).catch(function(e){$('bm-pay-msg').textContent=netErr(e);});
+    });
+    box.appendChild(t);return;
+  }
+  loadPaypal(GEO.paypal_client_id,GEO.currency,function(){
+    window.paypal.Buttons({
+      style:{layout:'vertical',color:'gold',shape:'rect',label:'paypal'},
+      createOrder:function(){
+        $('bm-pay-msg').className='msg';$('bm-pay-msg').textContent='Contacting store…';
+        return post('/api/order',{account_token:tok(),plan:modalPlan,provider:'paypal'},true).then(function(o){
+          if(!o||!o.order_id){$('bm-pay-msg').textContent='Order failed.';throw new Error('order');}
+          box.dataset.ours=o.order_id;return o.order_id;
+        });
+      },
+      onApprove:function(data){
+        $('bm-pay-msg').textContent='Capturing payment…';
+        return post('/api/verify',{order_id:box.dataset.ours,pp_order_id:data.orderID,machine_id:'',account_token:tok()}).then(function(v){
+          if(v&&v.ok&&v.key)payDone(v.key,v.renewed);
+          else{$('bm-pay-msg').className='msg err';$('bm-pay-msg').textContent='Payment could not be verified.';}
+        });
+      },
+      onCancel:function(){$('bm-pay-msg').textContent='';},
+      onError:function(){
+        if(ppWarned){ppWarned=false;return;}
+        $('bm-pay-msg').className='msg err';$('bm-pay-msg').textContent='PayPal error. No charge was made.';
+      }
+    }).render('#bm-pp');
+  });
+}
+paintPlans();
+
+/* ---------- sync / approvals / sessions / audit ---------- */
+function loadSync(){
+  var out=$('sync-out');
+  post('/api/sync/pull',{},true).then(function(j){
+    try{$('st-sync').textContent=(j&&typeof j.rev==='number')?j.rev:'–';}catch(e){}
+    out.innerHTML=(j&&typeof j.rev==='number')
+      ?'Encrypted copy revision <b>'+j.rev+'</b>'+(j.updated_at?' · updated '+esc(j.updated_at.slice(0,16).replace('T',' ')):'')+'<br><span class="fine">Server stores it, cannot read it.</span>'
+      :'No synced data yet — log in inside the apps first.';
+  }).catch(function(){out.textContent='Could not load.';});
+}
+function loadApprovals(){
+  var out=$('ap-out');if(!out)return;
+  out.textContent='Loading…';
+  post('/api/account/approvals',{},true).then(function(j){
+    if(!j||!j.ok){out.textContent='Could not load.';return;}
+    $('ap-require').checked=!!j.require_approval;
+    if(!j.approvals||!j.approvals.length){out.textContent='No devices waiting.';return;}
+    out.innerHTML=j.approvals.map(function(a){
+      return '<div class="rowline"><span>'+esc(a.device_name||a.machine_id)+'<br><span class="fine">'+esc(a.machine_id)+' · '+esc((a.created_at||'').slice(0,16).replace('T',' '))+'</span></span><span><button data-ap="'+esc(a.id)+'" data-ok="1">Approve</button> <button data-ap="'+esc(a.id)+'">Deny</button></span></div>';
+    }).join('');
+    out.querySelectorAll('button[data-ap]').forEach(function(b){
+      b.addEventListener('click',function(){
+        post('/api/account/approval/resolve',{id:b.dataset.ap,approve:b.hasAttribute('data-ok')},true)
+        .then(function(){loadApprovals();loadKeys();}).catch(function(){});
+      });
+    });
+  }).catch(function(){out.textContent='Could not load.';});
+}
+$('ap-require').addEventListener('change',function(){
+  post('/api/account/approval-require',{on:this.checked},true).catch(function(){});
+});
+function loadSessions(){
+  var out=$('sess-out');if(!out)return;
+  out.textContent='Loading…';
+  post('/api/account/sessions',{},true).then(function(j){
+    if(!j||!j.ok||!j.sessions||!j.sessions.length){out.textContent=j&&j.ok?'No sessions.':'Could not load.';return;}
+    out.innerHTML=j.sessions.map(function(x){
+      return '<div class="rowline"><span>'+esc(x.label||'Browser')+(x.current?' (this one)':'')+'<br><span class="fine">'+esc((x.last_seen||x.created_at||'').slice(0,16).replace('T',' '))+(x.ip?' · '+esc(x.ip):'')+'</span></span>'
+        +(x.current?'':'<button data-sess="'+esc(x.id)+'">Revoke</button>')+'</div>';
+    }).join('');
+    out.querySelectorAll('button[data-sess]').forEach(function(b){
+      b.addEventListener('click',function(){
+        if(!confirm('End this session? That device logs out.'))return;
+        post('/api/account/session/revoke',{id:b.dataset.sess},true).then(function(){loadSessions();}).catch(function(){});
+      });
+    });
+  }).catch(function(){out.textContent='Could not load.';});
+}
+$('sess-out-others').addEventListener('click',function(){
+  if(!confirm('Log out every other session?'))return;
+  post('/api/account/sessions/revoke-others',{},true).then(function(){loadSessions();}).catch(function(){});
+});
+function loadAudit(){
+  var out=$('audit-out');if(!out)return;
+  out.textContent='Loading…';
+  post('/api/account/audit',{},true).then(function(j){
+    if(!j||!j.ok||!j.events||!j.events.length){out.textContent=(j&&j.ok)?'No events yet.':'Could not load.';return;}
+    out.innerHTML=j.events.slice(0,30).map(function(e){
+      return '<div class="rowline"><span>'+esc(e.type)+'<br><span class="fine">'+esc((e.t||'').slice(0,16).replace('T',' '))+(e.detail?' · '+esc(e.detail):'')+'</span></span></div>';
+    }).join('');
+  }).catch(function(){out.textContent='Could not load.';});
+}
+function loadItems(){
+  var out=$('items-out');if(!out)return;
+  out.textContent='Loading…';
+  post('/api/account/items',{},true).then(function(j){
+    if(!j||!j.ok||!j.items||!j.items.length){out.textContent=(j&&j.ok)?'Nothing yet — visit the Store.':'Could not load.';return;}
+    out.innerHTML=j.items.map(function(x){
+      var sw=x.data&&x.data.bg?'<span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:'+esc(x.data.bg)+';border:1px solid var(--line2);vertical-align:-2px;margin-right:6px"></span>':'';
+      return '<div class="rowline"><span>'+sw+esc(x.name)+'<br><span class="fine">'+esc(x.kind)+'</span></span><button data-item="'+esc(x.id)+'">Copy data</button></div>';
+    }).join('');
+    out.querySelectorAll('button[data-item]').forEach(function(b){
+      b.addEventListener('click',function(){
+        post('/api/account/items',{},true).then(function(j2){
+          var f=((j2&&j2.items)||[]).filter(function(x){return x.id===b.dataset.item;})[0];
+          if(!f)return;
+          var txt=JSON.stringify(f.data);
+          if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).catch(function(){});
+          else{var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(e){}ta.remove();}
+        }).catch(function(){});
+      });
+    });
+  }).catch(function(){out.textContent='Could not load.';});
+}
+
+/* ---------- 2FA ---------- */
+function loadTotp(){
+  var st=$('totp-state');if(!st)return;
+  post('/api/account/me',{},true).then(function(j){
+    var on=!!(j&&j.totp);
+    st.textContent=on?'On — logins need your authenticator code.':'Off.';
+    $('totp-off').style.display=on?'block':'none';
+    $('totp-start').style.display=on?'none':'block';
+  }).catch(function(){st.textContent='Could not load.';});
+}
+$('totp-start').addEventListener('click',function(){
+  var m=$('totp-msg');m.className='msg';m.textContent='Starting…';
+  post('/api/account/totp/setup',{},true).then(function(j){
     if(!j||!j.ok){m.textContent='Could not start setup.';m.className='msg err';return;}
-    document.getElementById('totp-secret').textContent=j.secret;
-    document.getElementById('totp-setup').style.display='block';
-    m.textContent='';
+    $('totp-secret').textContent=j.secret;
+    $('totp-setup').style.display='block';m.textContent='';
   }).catch(function(){m.textContent='Server unreachable.';m.className='msg err';});
 });
-document.getElementById('totp-confirm').addEventListener('click',function(){
-  var m=document.getElementById('totp-msg');
-  var code=(document.getElementById('totp-code').value||'').trim();
+$('totp-confirm').addEventListener('click',function(){
+  var m=$('totp-msg'),code=$('totp-code').value.trim();
   m.className='msg';m.textContent='Checking…';
-  fetch(KAS_API+'/api/account/totp/confirm',{method:'POST',headers:authz(),body:JSON.stringify({code:code})})
-  .then(function(r){return r.json();}).then(function(j){
-    if(!j||!j.ok){m.textContent=(j&&(j.msg||j.error))||'Wrong code.';m.className='msg err';return;}
-    document.getElementById('totp-codes').textContent=(j.recovery||[]).join('  ');
-    document.getElementById('totp-recovery').style.display='block';
-    document.getElementById('totp-setup').style.display='none';
+  post('/api/account/totp/confirm',{code:code},true).then(function(j){
+    if(!j||!j.ok){m.textContent=(j&&(j.msg||ERRORS[j.error]))||'Wrong code.';m.className='msg err';return;}
+    $('totp-codes').textContent=(j.recovery||[]).join('  ');
+    $('totp-recovery').style.display='block';
+    $('totp-setup').style.display='none';
     m.textContent='2FA is on.';m.className='msg ok';loadTotp();
   }).catch(function(){m.textContent='Server unreachable.';m.className='msg err';});
 });
-document.getElementById('totp-disable').addEventListener('click',function(){
-  var m=document.getElementById('totp-msg');
-  var pw=document.getElementById('totp-pass').value||'';
+$('totp-disable').addEventListener('click',function(){
+  var m=$('totp-msg'),pw=$('totp-pass').value||'';
   if(!pw){m.textContent='Enter your password.';m.className='msg err';return;}
   if(!confirm('Turn off two-factor auth?'))return;
-  fetch(KAS_API+'/api/account/totp/disable',{method:'POST',headers:authz(),body:JSON.stringify({password:pw})})
-  .then(function(r){return r.json();}).then(function(j){
+  post('/api/account/totp/disable',{password:pw},true).then(function(j){
     if(!j||!j.ok){m.textContent='Wrong password.';m.className='msg err';return;}
-    document.getElementById('totp-pass').value='';
-    document.getElementById('totp-recovery').style.display='none';
+    $('totp-pass').value='';$('totp-recovery').style.display='none';
     m.textContent='2FA is off.';m.className='msg';loadTotp();
   }).catch(function(){m.textContent='Server unreachable.';m.className='msg err';});
 });
-document.getElementById('data-export').addEventListener('click',function(){
-  var m=document.getElementById('data-msg');m.className='msg';m.textContent='Preparing…';
-  fetch(KAS_API+'/api/account/export',{method:'POST',headers:authz(),body:'{}'})
-  .then(function(r){return r.json();}).then(function(j){
+
+/* ---------- data ---------- */
+$('data-export').addEventListener('click',function(){
+  var m=$('data-msg');m.className='msg';m.textContent='Preparing…';
+  post('/api/account/export',{},true).then(function(j){
     if(!j||!j.ok){m.textContent='Could not export.';m.className='msg err';return;}
     var blob=new Blob([JSON.stringify(j.export,null,2)],{type:'application/json'});
     var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='kastrava-account.json';a.click();
@@ -491,240 +701,23 @@ document.getElementById('data-export').addEventListener('click',function(){
     m.textContent='Downloaded.';m.className='msg';
   }).catch(function(){m.textContent='Server unreachable.';m.className='msg err';});
 });
-document.getElementById('data-delete').addEventListener('click',function(){
-  var m=document.getElementById('data-msg');
+$('data-delete').addEventListener('click',function(){
+  var m=$('data-msg');
   var pw=prompt('Enter your password to delete the account:');
   if(pw==null)return;
   if(prompt('This cancels your keys and wipes sync. Type DELETE to confirm:')!=='DELETE'){m.textContent='Not deleted.';m.className='msg';return;}
-  fetch(KAS_API+'/api/account/delete',{method:'POST',headers:authz(),body:JSON.stringify({password:pw,confirm:'DELETE'})})
-  .then(function(r){return r.json();}).then(function(j){
-    if(!j||!j.ok){m.textContent=(j&&(j.msg||j.error))||'Could not delete.';m.className='msg err';return;}
+  post('/api/account/delete',{password:pw,confirm:'DELETE'},true).then(function(j){
+    if(!j||!j.ok){m.textContent=(j&&(j.msg||ERRORS[j.error]))||'Could not delete.';m.className='msg err';return;}
     try{localStorage.removeItem('kas_sync_token');}catch(e){}
     location.reload();
   }).catch(function(){m.textContent='Server unreachable.';m.className='msg err';});
 });
-document.getElementById('sess-out-others').addEventListener('click',function(){
-  if(!confirm('Log out every other session?'))return;
-  fetch(KAS_API+'/api/account/sessions/revoke-others',{method:'POST',headers:authz(),body:'{}'})
-  .then(function(r){return r.json();}).then(function(){loadSessions();}).catch(function(){});
-});
-document.getElementById('claim-go').addEventListener('click',function(){
-  var inp=document.getElementById('claim-key'),m=document.getElementById('claim-msg');
-  var key=(inp.value||'').trim().toUpperCase();
-  if(!key){m.textContent='Paste the key first.';m.className='msg err';return;}
-  m.className='msg';m.textContent='Adding…';
-  fetch(KAS_API+'/api/account/key/claim',{method:'POST',headers:authz(),body:JSON.stringify({key:key})})
-  .then(function(r){return r.json();}).then(function(j){
-    if(!j||!j.ok){m.textContent=(j&&(j.msg||j.error))||'Could not add this key.';m.className='msg err';return;}
-    m.textContent='Key added — it is on your account now.';m.className='msg ok';inp.value='';loadKeys();
-  }).catch(function(){m.textContent='Server unreachable.';m.className='msg err';});
-});
-function startVerify(email){
-  var ecEl=document.getElementById('ac-emailcode'),vw=document.getElementById('ac-verify');
-  ecEl.style.display='';vw.style.display='';
-  ecEl.focus();ecEl.value='';
-  ecEl.dataset.mode='verify';ecEl.dataset.email=email;
-}
-document.getElementById('ac-resend').addEventListener('click',function(ev){
-  ev.preventDefault();
-  var ecEl=document.getElementById('ac-emailcode');
-  var email=(ecEl.dataset.email||document.getElementById('ac-email').value||'').trim();
-  fetch(KAS_API+'/api/account/verify/resend',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email})}).catch(function(){});
-});
-document.getElementById('ac-forgot').addEventListener('click',function(ev){
-  ev.preventDefault();
-  var box=document.getElementById('reset-box');
-  box.style.display=box.style.display==='none'?'block':'none';
-});
-document.getElementById('rs-send').addEventListener('click',function(){
-  var m=document.getElementById('rs-msg');
-  var email=(document.getElementById('ac-email').value||'').trim();
-  if(!email){m.textContent='Type your email above first.';m.className='msg err';return;}
-  m.className='msg';m.textContent='Sending…';
-  fetch(KAS_API+'/api/account/reset/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email})})
-  .then(function(r){return r.json();}).then(function(){
-    m.textContent='If the address has an account, the code is on its way.';m.className='msg';
-  }).catch(function(){m.textContent='Server unreachable.';m.className='msg err';});
-});
-document.getElementById('rs-go').addEventListener('click',function(){
-  var m=document.getElementById('rs-msg');
-  var email=(document.getElementById('ac-email').value||'').trim();
-  var code=(document.getElementById('rs-code').value||'').trim();
-  var pw=document.getElementById('rs-pass').value||'';
-  if(!email||!code||pw.length<8){m.textContent='Email + code + 8-character password.';m.className='msg err';return;}
-  m.className='msg';m.textContent='Resetting…';
-  fetch(KAS_API+'/api/account/reset/confirm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,code:code,password:pw})})
-  .then(function(r){return r.json();}).then(function(j){
-    if(!j||!j.ok){m.textContent=(j&&(j.msg||j.error))||'Reset failed.';m.className='msg err';return;}
-    m.textContent='Password set — log in with it (a fresh email code follows).';m.className='msg ok';
-  }).catch(function(){m.textContent='Server unreachable.';m.className='msg err';});
-});
-var goEl=document.getElementById('ac-go'),msgEl=document.getElementById('ac-msg');
-goEl.addEventListener('click',function(){
-  var email=(document.getElementById('ac-email').value||'').trim(),pw=document.getElementById('ac-pass').value||'';
-  if(!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email)||pw.length<8){msgEl.textContent='Valid email + 8-character password.';msgEl.className='msg err';return;}
-  goEl.disabled=true;msgEl.className='msg';msgEl.textContent='Logging in…';
-  var ecEl=document.getElementById('ac-emailcode'),vw=document.getElementById('ac-verify');
-  var ecode=ecEl.style.display!=='none'?(ecEl.value||'').trim():'';
-  if(ecode){
-    if(ecEl.dataset.mode==='verify'){
-      var vemail=ecEl.dataset.email||email;
-      apiFetch(KAS_API+'/api/account/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:vemail,code:ecode})})
-      .then(function(r){return r.json();}).then(function(j){
-        goEl.disabled=false;
-        if(j&&j.ok&&j.token){try{localStorage.setItem('kas_sync_token',j.token);}catch(e){}showDash(j.email);}
-        else{msgEl.className='msg err';msgEl.textContent=(j&&(j.msg||j.error))||'Wrong code.';}
-      }).catch(function(e){goEl.disabled=false;msgEl.className='msg err';msgEl.textContent=apiErr(e,'Could not reach the server.');});
-      return;
-    }
-    var tcEl=document.getElementById('ac-totp');
-    var tcode=tcEl.style.display!=='none'?(tcEl.value||'').trim():'';
-    apiFetch(KAS_API+'/api/account/login/otp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,code:ecode,totp:tcode||undefined})})
-    .then(function(r){return r.json();}).then(function(j){
-      goEl.disabled=false;
-      if(j&&j.ok){try{localStorage.setItem('kas_sync_token',j.token);}catch(e){}showDash(j.email);}
-      else if(j&&j.error==='need_totp'){tcEl.style.display='';tcEl.focus();msgEl.className='msg';msgEl.textContent='Also enter your authenticator code.';}
-      else{msgEl.className='msg err';msgEl.textContent=(j&&(j.msg||j.error))||'Wrong code.';}
-    }).catch(function(e){goEl.disabled=false;msgEl.className='msg err';msgEl.textContent=apiErr(e,'Could not reach the server.');});
-    return;
-  }
-  apiFetch(KAS_API+'/api/account/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,password:pw})})
-  .then(function(r){return r.json();}).then(function(j){
-    goEl.disabled=false;
-    if(j&&j.ok&&j.token){try{localStorage.setItem('kas_sync_token',j.token);}catch(e){}showDash(j.email);}
-    else if(j&&j.ok&&j.otp_required){ecEl.style.display='';ecEl.focus();vw.style.display='';
-      if(j.totp){var tc2=document.getElementById('ac-totp');tc2.style.display='';}
-      msgEl.className='msg';msgEl.textContent='Code sent to your email — enter it above.';}
-    else if(j&&j.error==='verify_required'){startVerify(email);msgEl.className='msg';msgEl.textContent='Verify your email first — code sent.';}
-    else{msgEl.className='msg err';msgEl.textContent='Wrong email or password.';}
-  }).catch(function(e){goEl.disabled=false;msgEl.className='msg err';msgEl.textContent=apiErr(e,'Could not reach the server.');});
-});
-document.getElementById('nav-out').addEventListener('click',doLogout);
-var buyEl=document.getElementById('buy-go'),buyMsg=document.getElementById('buy-msg');
-var planPicked='monthly';
-var PLAN_META={monthly:{inr:499,usd:49,days:30,label:'Monthly'},daily:{inr:49,usd:4.99,days:1,label:'Daily'}};
-function paintPlan(){
-  document.querySelectorAll('.plan-pick').forEach(function(b){
-    var on=b.dataset.plan===planPicked;
-    b.style.borderWidth=on?'2px':'1px';
-    b.style.borderColor=on?'var(--ink)':'var(--line)';
-  });
-  var per=PLAN_META[planPicked].days===1?'24 hours':'30 days';
-  if(GEO&&GEO.provider==='paypal'&&GEO.prices&&GEO.prices[planPicked]){
-    var pr=GEO.prices[planPicked];
-    buyEl.textContent='Buy — '+money(pr.amount,pr.currency)+' / '+per;
-    var note2=document.getElementById('buy-inrnote');
-    if(note2)note2.innerHTML='Charged in '+pr.currency+' ('+money(pr.amount,pr.currency)+') via PayPal. Renewing extends your newest key — every logged-in browser follows. By paying you agree to the <a href="/terms.html" style="color:var(--blue)">Terms</a> and <a href="/refunds.html" style="color:var(--blue)">Refund Policy</a>.';
-    return;
-  }
-  buyEl.textContent='Buy — \u20B9'+PLAN_META[planPicked].inr+' / '+per;
-  var note=document.getElementById('buy-inrnote');
-  if(note)note.innerHTML='Charged in INR (\u20B9'+PLAN_META[planPicked].inr+'). Renewing extends your newest key — every logged-in browser follows. By paying you agree to the <a href="/terms.html" style="color:var(--blue)">Terms</a> and <a href="/refunds.html" style="color:var(--blue)">Refund Policy</a>.';
-}
-document.querySelectorAll('.plan-pick').forEach(function(b){
-  b.addEventListener('click',function(){planPicked=b.dataset.plan;paintPlan();});
-});
-paintPlan();
-var GEO=null;
-function money(a,c){return (c==='INR'?'₹':c+' ')+a;}
-apiFetch(KAS_API+'/api/geo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tz:(function(){try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'';}catch(e){return '';}})()})})
-.then(function(r){return r.json();}).then(function(g){
-  if(!g||!g.ok)return;
-  GEO=g;
-  paintPlan();
-  if(g.provider==='paypal')mountPaypal();
-}).catch(function(){});
-function loadPpSdk(clientId,currency,cb){
-  if(window.paypal){cb();return;}
-  var sc=document.createElement('script');
-  sc.src='https://www.paypal.com/sdk/js?client-id='+encodeURIComponent(clientId)+'&currency='+encodeURIComponent(currency)+'&intent=capture';
-  sc.onload=cb;sc.onerror=function(){buyMsg.textContent='PayPal failed to load. Refresh and try again.';};
-  document.head.appendChild(sc);
-}
-function mountPaypal(){
-  var box=document.getElementById('pp-buttons');
-  buyEl.style.display='none';
-  box.style.display='block';
-  box.innerHTML='';
-  if(GEO.paypal_dev){
-    var t=document.createElement('button');
-    t.className='btn';t.style.cssText='padding:10px 22px';t.textContent='Pay (test mode) — no real charge';
-    t.addEventListener('click',function(){
-      buyMsg.className='msg';buyMsg.textContent='Contacting store…';
-      apiFetch(KAS_API+'/api/order',{method:'POST',headers:authz(),body:JSON.stringify({account_token:tok(),plan:planPicked,provider:'paypal'})})
-      .then(function(r){return r.json();}).then(function(o){
-        if(!o||!o.order_id){buyMsg.textContent='Order failed.';return;}
-        return apiFetch(KAS_API+'/api/verify',{method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({order_id:o.order_id,pp_order_id:o.order_id,machine_id:'',account_token:tok()})})
-        .then(function(r){return r.json();}).then(function(v){
-          if(v&&v.ok&&v.key){buyMsg.textContent='Paid. Key '+v.key+' is on your account — logged-in browsers pick it up automatically.';loadKeys();}
-          else{buyMsg.className='msg err';buyMsg.textContent='Payment could not be verified.';}
-        });
-      }).catch(function(e){buyMsg.textContent=apiErr(e,'Order failed.');});
-    });
-    box.appendChild(t);
-    return;
-  }
-  loadPpSdk(GEO.paypal_client_id,GEO.currency,function(){
-    window.paypal.Buttons({
-      style:{layout:'vertical',color:'gold',shape:'rect',label:'paypal'},
-      createOrder:function(){
-        if(!tok()){buyMsg.className='msg err';buyMsg.textContent='Log in first, then pay with PayPal.';window.__ppNeedLogin=true;throw new Error('login');}
-        buyMsg.className='msg';buyMsg.textContent='Contacting store…';
-        return apiFetch(KAS_API+'/api/order',{method:'POST',headers:authz(),body:JSON.stringify({account_token:tok(),plan:planPicked,provider:'paypal'})})
-        .then(function(r){return r.json();}).then(function(o){
-          if(!o||!o.order_id){buyMsg.textContent='Order failed.';throw new Error('order');}
-          box.dataset.ours=o.order_id;
-          return o.order_id;
-        });
-      },
-      onApprove:function(data){
-        buyMsg.textContent='Capturing payment…';
-        return apiFetch(KAS_API+'/api/verify',{method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({order_id:box.dataset.ours,pp_order_id:data.orderID,machine_id:'',account_token:tok()})})
-        .then(function(r){return r.json();}).then(function(v){
-          if(v&&v.ok&&v.key){buyMsg.textContent='Paid. Key '+v.key+' is on your account'+(v.renewed?' (renewal extended)':'')+' — logged-in browsers pick it up automatically.';loadKeys();}
-          else{buyMsg.className='msg err';buyMsg.textContent='Payment could not be verified.';}
-        });
-      },
-      onCancel:function(){buyMsg.textContent='';},
-      onError:function(){if(window.__ppNeedLogin){window.__ppNeedLogin=false;return;}buyMsg.className='msg err';buyMsg.textContent='PayPal error. No charge was made.';}
-    }).render('#pp-buttons');
-  });
-}
-buyEl.addEventListener('click',function(){
-  if(GEO&&GEO.provider==='paypal'){buyMsg.textContent='Use the PayPal button below.';return;}
-  if(!window.Razorpay){buyMsg.textContent='Checkout failed to load. Refresh and try again.';return;}
-  buyMsg.className='msg';buyMsg.textContent='Contacting store…';buyEl.disabled=true;
-  manualPay();
-  function manualPay(){
-  apiFetch(KAS_API+'/api/order',{method:'POST',headers:authz(),body:JSON.stringify({account_token:tok(),plan:planPicked})})
-  .then(function(r){return r.json();}).then(function(o){
-    if(!o||!o.order_id){buyMsg.textContent='Order failed.';buyEl.disabled=false;return;}
-    var rzp=new Razorpay({key:o.key_id,amount:o.amount,currency:o.currency,order_id:o.order_id,
-      name:'Kastrava Premium',description:'Kastrava Premium - '+PLAN_META[planPicked].label+' - no auto-renew',
-      theme:{color:document.documentElement.getAttribute('data-theme')==='dark'?'#f3eee4':'#16130e'},
-      handler:function(res){
-        apiFetch(KAS_API+'/api/verify',{method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({order_id:res.razorpay_order_id,payment_id:res.razorpay_payment_id,signature:res.razorpay_signature,machine_id:'',account_token:tok()})})
-        .then(function(r){return r.json();}).then(function(v){
-          buyEl.disabled=false;
-          if(v&&v.ok&&v.key){buyMsg.textContent='Paid. Downloading receipt…';downloadKeyReceipt(v.key);buyMsg.textContent='Paid. Key '+v.key+' is on your account'+(v.renewed?' (renewal extended)':'')+' — logged-in browsers pick it up automatically.';loadKeys();}
-          else{buyMsg.className='msg err';buyMsg.textContent='Payment could not be verified.';}
-        }).catch(function(e){buyEl.disabled=false;buyMsg.textContent=apiErr(e,'Verification failed — email your payment ID to support.');});
-      },
-      modal:{ondismiss:function(){buyEl.disabled=false;buyMsg.textContent='';}}});
-    rzp.on('payment.failed',function(){buyEl.disabled=false;buyMsg.textContent='Payment failed. No charge was made.';});
-    rzp.open();
-  }).catch(function(e){buyEl.disabled=false;buyMsg.textContent=apiErr(e,'Order failed.');});
-  }
-});
-// Auto-show dashboard when already logged in.
+
+/* ---------- boot ---------- */
 (function(){
   var t=tok();if(!t)return;
-  fetch(KAS_API+'/api/account/me',{method:'POST',headers:authz(),body:'{}'})
-  .then(function(r){return r.json();}).then(function(j){
-    if(j&&j.ok){showDash(j.email);}
+  post('/api/account/me',{},true).then(function(j){
+    if(j&&j.ok)showDash(j.email);
   }).catch(function(){});
 })();
 })();

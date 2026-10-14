@@ -1,88 +1,61 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pro Admin — Kastrava</title>
-<meta name="description" content="Kastrava Pro administration: verify receipts, issue and revoke license keys.complete license text.">
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap');
-:root{
-  --bg:#ffffff; --card:#ffffff; --ink:#0a0a0a; --text:#333333; --muted:#6e6e6e; --muted2:#9a9a9a;
-  --line:#e9e9e9; --side:#101010; --side-tx:#bdbdbd; --accent:#0288d1; --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
-  --green:#0b5c1b; --red:#c62828; color-scheme:light;
-}
-html[data-theme="dark"]{
-  --bg:#0e0e0e; --card:#161616; --ink:#f4f4f4; --text:#c9c9c9; --muted:#9c9c9c; --muted2:#6f6f6f;
-  --line:#262626; --side:#000000; --side-tx:#8a8a8a; --accent:#4fc3f7; --green:#61d98a; --red:#ff8a80;
-  color-scheme:dark;
-}
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.65;-webkit-font-smoothing:antialiased}
-.mono{font-family:var(--mono)}
-.shell{display:flex;min-height:100vh}
-.side{width:230px;flex-shrink:0;background:var(--side);color:var(--side-tx);padding:26px 16px;display:flex;flex-direction:column;gap:4px;position:sticky;top:0;height:100vh}
-.brand{display:flex;align-items:center;gap:10px;padding:0 10px 22px}
-.brand img{width:30px;height:30px;border-radius:8px}
-.brand .name{font-size:13px;font-weight:700;letter-spacing:3px;color:#fff}
-.brand .rc{font-family:var(--mono);font-size:10px;color:#8a8a8a;border:1px solid #333;border-radius:12px;padding:1px 8px}
-.snav{display:flex;flex-direction:column;gap:2px}
-.snav button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:none;color:var(--side-tx);font-size:14px;font-weight:500;padding:11px 12px;border-radius:10px;cursor:pointer;font-family:inherit}
-.snav button:hover{background:#1c1c1c;color:#fff}
-.snav button.on{background:#1e1e1e;color:#fff}
-.snav .dot{width:7px;height:7px;border-radius:50%;background:#3a3a3a;flex-shrink:0}
-.snav button.on .dot{background:var(--accent)}
-.side .foot{margin-top:auto;padding:10px;font-size:11.5px;color:#5c5c5c}
-.side .foot a{color:#8a8a8a;text-decoration:none}
-.main{flex:1;min-width:0;padding:30px 36px 70px;max-width:1060px}
-.topbar{display:flex;align-items:center;gap:12px;margin-bottom:26px}
-.topbar h1{font-family:'Instrument Serif',Georgia,serif;font-weight:400;font-size:34px;color:var(--ink)}
-.topbar .sp{flex:1}
-.topbar a{font-size:13px;color:var(--muted);text-decoration:none}
-.topbar a:hover{color:var(--ink)}
-.theme-btn{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer}
-html[data-theme="light"] .theme-btn .ic-sun{display:none}
-html[data-theme="dark"] .theme-btn .ic-moon{display:none}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:22px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px}
-.card .n{font-size:30px;font-weight:700;color:var(--ink);letter-spacing:-.02em}
-.card .l{font-size:12px;color:var(--muted2);margin-top:2px}
-.card .l b{color:var(--accent);font-weight:600}
-.pane{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:28px;margin-bottom:16px}
-.pane h2{font-family:'Instrument Serif',Georgia,serif;font-weight:400;font-size:26px;color:var(--ink);margin-bottom:4px}
-.pane .sub{font-size:13.5px;color:var(--muted);margin-bottom:16px}
-.pane .sub a,.pane a{color:var(--accent);text-decoration:none}
-label{display:block;font-size:12.5px;font-weight:600;color:var(--ink);margin:12px 0 6px}
-input[type=text],input[type=password],input[type=email],textarea{width:100%;padding:11px 14px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13.5px;font-family:inherit}
-textarea{font-family:var(--mono);font-size:11.5px;min-height:90px}
-.btn{display:inline-block;padding:11px 24px;border-radius:22px;font-size:14px;font-weight:600;border:none;cursor:pointer;background:var(--ink);color:var(--bg);font-family:inherit}
-html[data-theme="dark"] .btn{background:#f4f4f4;color:#101010}
-.btn:disabled{opacity:.5;cursor:not-allowed}
-.btn-primary{background:#0288d1 !important;color:#fff !important}
-.btn-primary:hover{background:#0277bd !important}
-.btn-ghost{background:transparent !important;border:1px solid var(--line);color:var(--ink) !important}
-.msg{font-size:13px;color:var(--muted);margin-top:12px}
-.adm-table{border-collapse:collapse;width:100%;font-size:13px}
-.adm-table th,.adm-table td{padding:11px 14px 11px 0;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
-.adm-table th{font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--muted2);font-weight:500}
-.adm-table td.mono{font-family:var(--mono);font-size:11.5px;max-width:220px;overflow:hidden;text-overflow:ellipsis}
-.adm-actions button{margin:0 8px 6px 0;cursor:pointer;font-size:12px;padding:6px 14px;border-radius:16px;border:1px solid var(--line);background:transparent;color:var(--ink);font-family:inherit}
-.adm-actions button:hover{border-color:var(--ink)}
-.cmd{font-family:var(--mono);font-size:12px;background:var(--ink);color:var(--bg);border-radius:10px;padding:11px 14px;border:none;width:100%}
-html[data-theme="dark"] .cmd{background:#1c1c1c;color:#f4f4f4}
-input[type=file].adm-file{font-size:13px;color:var(--muted);border:none;padding:0}
-.st-ok{color:var(--green);font-weight:700}
-.st-bad{color:var(--red);font-weight:700}
-.st-warn{color:#e65100;font-weight:700}
-.lock{max-width:460px;margin:60px auto}
-::selection{background:var(--ink);color:var(--bg)}
-@media(max-width:760px){.side{width:64px;padding:20px 10px}.brand .name,.brand .rc,.snav button span,.side .foot{display:none}.snav button{justify-content:center}.main{padding:22px 16px 60px}}
-</style>
+<title>Admin — Kastrava</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<meta name="description" content="Kastrava administration: revenue, licenses, accounts, grants and email.">
+<script>
+(function(){try{
+  var s=null;try{s=localStorage.getItem('kas-theme');}catch(e){}
+  document.documentElement.setAttribute('data-theme',
+    s?(s==='dark'?'dark':'light'):((window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'));
+}catch(e){}})();
+</script>
 <link rel="stylesheet" href="/k.css?v=4">
+<style>
+.shell{display:flex;min-height:100vh}
+.side{width:232px;flex-shrink:0;background:var(--card);border-right:1px solid var(--line);padding:24px 14px;display:flex;flex-direction:column;gap:4px;position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:10px;padding:0 10px 20px}
+.brand img{width:30px;height:30px;border-radius:8px}
+.brand .name{font-size:13px;font-weight:700;letter-spacing:2.5px;color:var(--ink);font-family:'Space Grotesk'}
+.brand .rc{font-family:var(--mono);font-size:10px;color:var(--muted);border:1px solid var(--line2);border-radius:10px;padding:1px 8px}
+.snav{display:flex;flex-direction:column;gap:2px}
+.snav button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:none;color:var(--muted);font-size:13.5px;font-weight:500;padding:10px 12px;border-radius:9px;cursor:pointer;font-family:inherit}
+.snav button:hover{background:var(--card2);color:var(--ink)}
+.snav button.on{background:var(--card2);color:var(--ink)}
+.snav .dot{width:7px;height:7px;border-radius:50%;background:var(--line2);flex-shrink:0}
+.snav button.on .dot{background:var(--blue)}
+.side .foot{margin-top:auto;padding:10px;font-size:11.5px;color:var(--muted2)}
+.side .foot a{color:var(--muted);text-decoration:none}
+.main{flex:1;min-width:0;padding:28px 32px 70px;max-width:1040px}
+.topbar{display:flex;align-items:center;gap:12px;margin-bottom:24px}
+.topbar h1{font-size:26px;margin:0}
+.topbar .sp{flex:1}
+.pane{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:26px;margin-bottom:14px}
+.pane h2{font-size:19px;margin-bottom:4px}
+.pane .sub{font-size:13px;color:var(--muted);margin-bottom:14px}
+.pane label{display:block;font-size:12.5px;font-weight:600;color:var(--ink);margin:12px 0 6px}
+.pane input[type=text],.pane input[type=password],.pane input[type=email],.pane input[type=number],.pane textarea{width:100%;padding:10px 13px;border-radius:9px;border:1px solid var(--line2);background:var(--card2);color:var(--ink);font-size:13.5px;font-family:inherit}
+.pane textarea{font-family:var(--mono);font-size:11.5px;min-height:90px}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px}
+.stat-grid .card{padding:18px}
+.stat-grid .n{font-size:27px;font-weight:700;color:var(--ink);font-family:'Space Grotesk';letter-spacing:-.02em}
+.stat-grid .l{font-size:11.5px;color:var(--muted2);margin-top:2px}
+.stat-grid .l b{color:var(--blue);font-weight:600}
+.adm-actions button{margin:0 8px 6px 0;cursor:pointer;font-size:12px;padding:6px 14px;border-radius:8px;border:1px solid var(--line2);background:transparent;color:var(--ink);font-family:inherit}
+.adm-actions button:hover{border-color:var(--blue)}
+.cmd{font-family:var(--mono);font-size:12px;border-radius:9px;padding:10px 13px;border:1px solid var(--line2);background:var(--card2);color:var(--ink);width:100%}
+.st-ok{color:#2f9e44;font-weight:700}.st-bad{color:#e5484d;font-weight:700}.st-warn{color:#e8890c;font-weight:700}
+.lock{max-width:460px;margin:60px auto}
+@media(max-width:760px){.side{width:60px;padding:18px 8px}.brand .name,.brand .rc,.snav button span,.side .foot{display:none}.snav button{justify-content:center}.main{padding:20px 14px 60px}}
+</style>
+</head>
 <body>
 <div class="shell">
 <aside class="side">
-  <div class="brand"><img src="logo.png" alt="Kastrava"><span class="name">KASTRAVA</span><span class="rc">RC</span></div>
+  <div class="brand"><img src="logo.png" alt="Kastrava"><span class="name">KASTRAVA</span><span class="rc">ADMIN</span></div>
   <nav class="snav" id="adm-tabs" style="display:none">
     <button class="atab on" data-t="overview"><span class="dot"></span><span>Overview</span></button>
     <button class="atab" data-t="verify"><span class="dot"></span><span>Verify receipt</span></button>
@@ -96,57 +69,54 @@ input[type=file].adm-file{font-size:13px;color:var(--muted);border:none;padding:
 </aside>
 <main class="main">
   <div class="topbar">
-    <h1 id="pane-title">Overview</h1>
-    <span class="sp" style="flex:1"></span>
-    <button id="theme-btn" class="theme-btn" title="Toggle dark mode" aria-label="Toggle dark mode">
-      <svg class="ic-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-      <svg class="ic-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    <h1 id="pane-title">Overview</h1><span class="sp"></span>
+    <button id="theme-btn" class="theme-btn" title="Toggle theme" aria-label="Toggle theme">
+      <svg class="ic-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="ic-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
     </button>
   </div>
-  <div id="adm-lock">
-    <div class="pane lock">
-      <h2>Admin token</h2>
-      <p class="sub">This dashboard needs the admin token. It lives only in this tab.</p>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <input id="adm-token" type="password" class="cmd" style="flex:1;min-width:200px" placeholder="Admin token" autocomplete="off">
-        <button id="adm-save" class="btn btn-primary">Unlock</button>
-      </div>
-      <p id="adm-status" class="mono" style="font-size:12px;color:var(--muted2);margin-top:10px">Locked.</p>
+  <div id="adm-lock"><div class="pane lock">
+    <h2>Admin token</h2>
+    <p class="sub">Unlocks this dashboard for the current tab only. Never stored.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <input id="adm-token" type="password" class="cmd" style="flex:1;min-width:200px" placeholder="Admin token" autocomplete="off">
+      <button id="adm-save" class="btn btn-primary">Unlock</button>
     </div>
-  </div>
+    <p id="adm-status" class="mono" style="font-size:12px;color:var(--muted2);margin-top:10px">Locked.</p>
+  </div></div>
   <div id="adm-tabs2" style="display:none">
     <div class="apane" id="pane-overview">
-      <div class="cards" id="ov-cards"></div>
-      <div class="pane">
-        <h2>Latest licenses</h2>
-        <p class="sub">Newest first. Full table under Licenses.</p>
-        <div id="ov-recent" style="overflow-x:auto"></div>
-      </div>
-      <div class="pane">
-        <h2>Devices & versions</h2>
+      <div class="stat-grid" id="ov-cards"></div>
+      <div class="pane"><h2>Latest licenses</h2><p class="sub">Newest first. Full table under Licenses.</p>
+        <div id="ov-recent" style="overflow-x:auto"></div></div>
+      <div class="pane"><h2>Devices &amp; versions</h2>
         <p class="sub" id="ov-devsub">Every activated device, its app version, and whether it is current.</p>
-        <div id="ov-devlist" style="overflow-x:auto"></div>
-      </div>
+        <div id="ov-devlist" style="overflow-x:auto"></div></div>
     </div>
     <div class="apane pane" id="pane-verify" style="display:none">
       <h2>Verify a signed receipt</h2>
-      <p class="sub">Paste the receipt JSON from a customer PDF (<span class="mono">{"receipt":{...},"receipt_sig":"..."}</span>). Bad signatures fail.</p>
+      <p class="sub">Paste receipt JSON from a customer PDF (<span class="mono">{"receipt":{...},"receipt_sig":"..."}</span>), or analyze the PDF directly.</p>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
-        <input type="file" id="vrf-pdf" class="adm-file" accept="application/pdf,.pdf">
+        <input type="file" id="vrf-pdf" accept="application/pdf,.pdf" style="font-size:13px;color:var(--muted)">
         <button id="vrf-pdfgo" class="btn btn-primary">Analyze PDF</button>
       </div>
-      <div class="mono" style="font-size:11px;color:var(--muted2);margin-bottom:10px">or paste receipt JSON:</div>
+      <div class="mono" style="font-size:11px;color:var(--muted2);margin-bottom:8px">or paste receipt JSON:</div>
       <textarea id="vrf-json" placeholder='{"receipt":{...},"receipt_sig":"..."}'></textarea>
       <button id="vrf-go" class="btn btn-primary" style="margin-top:10px">Verify JSON</button>
       <div id="vrf-out" style="margin-top:12px;font-size:13px"></div>
     </div>
     <div class="apane pane" id="pane-issue" style="display:none">
       <h2>Issue a key directly</h2>
-      <p class="sub">Mint a key, no purchase. Leave blank unless binding now.</p>
-      <input id="iss-machine" placeholder="Machine code (optional, e.g. KAS2-...)">
-      <input id="iss-email" type="email" placeholder="Account email (optional, binds now)" style="margin-top:8px">
-      <div style="display:flex;gap:8px;margin-top:8px"><input id="iss-days" type="number" min="1" max="36500" value="30" title="Days" style="width:110px"><input id="iss-note" style="flex:1" placeholder="Note (optional, e.g. tester name)">
-      <button id="iss-go" class="btn btn-primary" style="margin-top:10px">Mint key</button>
+      <p class="sub">Mint a key with no purchase. Bind now or leave blank.</p>
+      <label for="iss-machine">Machine code (optional)</label>
+      <input id="iss-machine" placeholder="e.g. KAS2-...">
+      <label for="iss-email">Account email (optional, binds now)</label>
+      <input id="iss-email" type="email" placeholder="account@email">
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <input id="iss-days" type="number" min="1" max="36500" value="30" title="Days" style="width:110px">
+        <input id="iss-note" style="flex:1" placeholder="Note (optional, e.g. tester name)">
+      </div>
+      <button id="iss-go" class="btn btn-primary" style="margin-top:12px">Mint key</button>
       <div id="iss-out" style="margin-top:12px;font-size:13px"></div>
     </div>
     <div class="apane pane" id="pane-accounts" style="display:none">
@@ -157,18 +127,23 @@ input[type=file].adm-file{font-size:13px;color:var(--muted);border:none;padding:
     <div class="apane pane" id="pane-grant" style="display:none">
       <h2>Grant free, direct to account</h2>
       <p class="sub">Store item id or license key — lands on the account instantly, no purchase.</p>
+      <label for="gr-email">Account email</label>
       <input id="gr-email" type="email" placeholder="account@email">
-      <input id="gr-id" placeholder="Store item id or license key" style="margin-top:8px">
-      <button id="gr-go" class="btn btn-primary" style="margin-top:10px">Grant</button>
+      <label for="gr-id">Store item id or license key</label>
+      <input id="gr-id" placeholder="e.g. theme-ember-dusk or KAS-...">
+      <button id="gr-go" class="btn btn-primary" style="margin-top:12px">Grant</button>
       <div id="gr-out" style="margin-top:12px;font-size:13px"></div>
     </div>
     <div class="apane pane" id="pane-email" style="display:none">
       <h2>Send email</h2>
       <p class="sub">One customer or the full user base. Broadcasts go out throttled.</p>
+      <label for="em-to">Recipient</label>
       <input id="em-to" placeholder="customer@email or 'all'">
-      <input id="em-subject" placeholder="Subject" style="margin-top:8px">
-      <textarea id="em-text" rows="6" placeholder="Plain-text message…" style="width:100%;margin-top:8px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ink);font-family:inherit"></textarea>
-      <button id="em-go" class="btn btn-primary" style="margin-top:10px">Send</button>
+      <label for="em-subject">Subject</label>
+      <input id="em-subject" placeholder="Subject">
+      <label for="em-text">Message (plain text)</label>
+      <textarea id="em-text" rows="6" placeholder="Plain-text message…"></textarea>
+      <button id="em-go" class="btn btn-primary" style="margin-top:12px">Send</button>
       <div id="em-out" style="margin-top:12px;font-size:13px"></div>
     </div>
     <div class="apane pane" id="pane-list" style="display:none">
@@ -178,376 +153,332 @@ input[type=file].adm-file{font-size:13px;color:var(--muted);border:none;padding:
   </div>
 </main>
 </div>
+<script>
+'use strict';
+/* Admin console: token lock, tabs, overview, receipt verify, issue,
+   licenses, accounts, grants, broadcast email. */
+(function(){
+var KAS_API=((window.KAS_API)||(location.search.match(/[?&]api=([^&]+)/)||[])[1]||'https://nexufog.pp.ua').replace(/\/$/,'');
+function $(id){return document.getElementById(id);}
+function token(){try{return sessionStorage.getItem('kas_admin_token')||'';}catch(e){return '';}}
+function headers(){return {'Content-Type':'application/json','X-Admin-Token':token()};}
+function esc(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function api(path,body){
+  return fetch(KAS_API+path,{method:'POST',headers:headers(),body:JSON.stringify(body||{})})
+    .then(function(r){return r.json().then(function(j){return {status:r.status,json:j};});});
+}
+$('theme-btn').addEventListener('click',function(){
+  var r=document.documentElement,n=r.getAttribute('data-theme')==='dark'?'light':'dark';
+  r.setAttribute('data-theme',n);try{localStorage.setItem('kas-theme',n);}catch(e){}
+});
 
-<script>
-(function(){
-  var root=document.documentElement;
-  var saved=null;try{saved=localStorage.getItem('kas-theme');}catch(e){}
-  var dark=saved?saved==='dark':!!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);
-  root.setAttribute('data-theme',dark?'dark':'light');
-  document.addEventListener('DOMContentLoaded',function(){
-    var btn=document.getElementById('theme-btn');
-    if(!btn)return;
-    btn.addEventListener('click',function(){
-      var next=root.getAttribute('data-theme')==='dark'?'light':'dark';
-      root.setAttribute('data-theme',next);
-      try{localStorage.setItem('kas-theme',next);}catch(e){}
+/* ---------- lock + tabs ---------- */
+var ovCache=null;
+function refreshLock(){
+  var has=!!token();
+  $('adm-status').textContent=has?'Unlocked for this tab session.':'Locked.';
+  $('adm-tabs').style.display=has?'':'none';
+  $('adm-lock').style.display=has?'none':'';
+  $('adm-tabs2').style.display=has?'':'none';
+}
+$('adm-save').addEventListener('click',function(){
+  var v=$('adm-token').value.trim();
+  if(!v){alert('Enter the admin token.');return;}
+  try{sessionStorage.setItem('kas_admin_token',v);}catch(e){}
+  $('adm-token').value='';
+  refreshLock();loadList();
+});
+document.querySelectorAll('.atab').forEach(function(b){
+  b.addEventListener('click',function(){
+    document.querySelectorAll('.atab').forEach(function(x){x.classList.remove('on');});
+    b.classList.add('on');
+    document.querySelectorAll('.apane').forEach(function(p){p.style.display='none';});
+    var p=$('pane-'+b.dataset.t);if(p)p.style.display='block';
+    $('pane-title').textContent=b.textContent.trim();
+    if(b.dataset.t==='list')loadList();
+    if(b.dataset.t==='overview'&&ovCache)renderOverview(ovCache);
+  });
+});
+
+/* ---------- overview ---------- */
+function stat(n,l,sub){return '<div class="card"><div class="n">'+n+'</div><div class="l">'+l+(sub||'')+'</div></div>';}
+function renderOverview(j){
+  ovCache=j;
+  var lics=(j&&j.licenses)||{},orders=(j&&j.orders)||{},accs=(j&&j.accounts)||{};
+  var keys=Object.keys(lics),paid=0,devs=0,act=0,revPaise=0,revEst=0;
+  keys.forEach(function(k){
+    var l=lics[k];
+    if(l.status==='activated')act++;
+    devs+=Object.keys(l.devices||{}).length;
+  });
+  Object.keys(orders).forEach(function(o){
+    if(orders[o].status!=='paid')return;
+    paid++;
+    if(orders[o].amount_paise>0)revPaise+=orders[o].amount_paise;else revEst++;
+  });
+  $('ov-cards').innerHTML=
+    stat(keys.length,'Licenses',' · <b>'+act+'</b> active')
+    +stat(devs,'Devices in use')
+    +stat(paid,'Paid orders',' · <b>≈₹'+Math.round((revPaise+revEst*24800)/100)+'</b>')
+    +stat(Object.keys(accs).length,'Accounts');
+  var latest=(j&&j.server_version)||null,devRows=[],verCount={};
+  keys.forEach(function(k){
+    Object.keys((lics[k].devices)||{}).forEach(function(m){
+      var d=lics[k].devices[m]||{},v=d.app_version||null;
+      verCount[v||'unknown']=(verCount[v||'unknown']||0)+1;
+      var state=!v?'<span class="st-bad">unknown</span>'
+        :(latest?(v===latest?'<span class="st-ok">current</span>':'<span class="st-warn">behind → '+esc(latest)+'</span>'):'<span>'+esc(v)+'</span>');
+      devRows.push('<tr><td class="mono">'+esc(k)+'</td><td>'+esc(d.name||m)+'</td><td class="mono">'+esc(m.slice(0,12))+'</td><td>'+(v?esc(v):'<span class="st-bad">unknown</span>')+'</td><td>'+state+'</td><td>'+esc(((d.last_seen||'')+'').slice(0,16).replace('T',' '))+'</td></tr>');
     });
   });
-})();
-</script>
-<script>
-(function(){
-  var KAS_API=((window.KAS_API)||(location.search.match(/[?&]api=([^&]+)/)||[])[1]||'https://nexufog.pp.ua').replace(/\/$/,'');
-  function token(){try{return sessionStorage.getItem('kas_admin_token')||'';}catch(e){return '';}}
-  function headers(){return {'Content-Type':'application/json','X-Admin-Token':token()};}
-  function esc(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-  var tokEl=document.getElementById('adm-token'),stEl=document.getElementById('adm-status'),
-      tabsEl=document.getElementById('adm-tabs');
-  function refreshLock(){
-    var has=!!token();
-    if(tokEl&&!tokEl.value&&has){/* keep field empty, token in memory */}
-    if(stEl)stEl.textContent=has?'Unlocked for this tab session.':'Locked.';
-    if(tabsEl)tabsEl.style.display=has?'':'none';
-    var lock=document.getElementById('adm-lock'),tabs2=document.getElementById('adm-tabs2');
-    if(lock)lock.style.display=has?'none':'';
-    if(tabs2)tabs2.style.display=has?'':'none';
-  }
-  var saveBtn=document.getElementById('adm-save');
-  if(saveBtn)saveBtn.addEventListener('click',function(){
-    var v=tokEl?tokEl.value.trim():'';
-    if(!v){alert('Enter the admin token.');return;}
-    try{sessionStorage.setItem('kas_admin_token',v);}catch(e){}
-    if(tokEl)tokEl.value='';
-    refreshLock();loadList();
+  Object.keys(verCount).sort(function(a,b){return verCount[b]-verCount[a];}).forEach(function(v){
+    $('ov-cards').innerHTML+=stat(verCount[v],'on '+v);
   });
-  var ovCache=null;
-  window.__renderOverview=function(j){
-    ovCache=j;
-    var cards=document.getElementById('ov-cards'),recent=document.getElementById('ov-recent');
-    if(!cards||!recent)return;
-    var lics=(j&&j.licenses)||{},orders=(j&&j.orders)||{},accs=(j&&j.accounts)||{};
-    var keys=Object.keys(lics),paid=0,devs=0,act=0;
-    keys.forEach(function(k){var l=lics[k];if(l.status==='activated')act++;devs+=Object.keys(l.devices||{}).length;});
-    var revPaise=0,revEst=0;
-    Object.keys(orders).forEach(function(o){
-      if(orders[o].status!=='paid')return;
-      paid++;
-      if(orders[o].amount_paise>0)revPaise+=orders[o].amount_paise;
-      else revEst++;
-    });
-    var revTotal=Math.round((revPaise+revEst*24800)/100);
-    function card(n,l,sub){return '<div class="card"><div class="n">'+n+'</div><div class="l">'+l+(sub||'')+'</div></div>';}
-    cards.innerHTML=card(keys.length,'Licenses',' · <b>'+act+'</b> active')
-      +card(devs,'Devices in use')
-      +card(paid,'Paid orders',' · <b>≈₹'+revTotal+'</b>')
-      +card(Object.keys(accs).length,'Accounts');
-    var latest=(j&&j.server_version)||null;
-    var devRows=[],verCount={};
-    keys.forEach(function(k){var l=lics[k];var devs=l.devices||{};
-      Object.keys(devs).forEach(function(m){var d=devs[m]||{};
-        var v=d.app_version||null;
-        verCount[v||'unknown']=(verCount[v||'unknown']||0)+1;
-        var state=!v?'<span class="st-bad">unknown</span>'
-          :(latest?(v===latest?'<span class="st-ok"><b>current</b></span>':'<span class="st-warn">behind → '+esc(latest)+'</span>'):'<span>'+esc(v)+'</span>');
-        devRows.push('<tr><td class="mono">'+esc(k)+'</td><td>'+esc(d.name||m)+'</td><td class="mono">'+esc(m.slice(0,12))+'</td><td>'+(v?esc(v):'<span class="st-bad">unknown</span>')+'</td><td>'+state+'</td><td>'+esc(((d.last_seen||'')+'').slice(0,16).replace('T',' '))+'</td></tr>');
-      });
-    });
-    var vers=Object.keys(verCount).sort(function(a,b){return verCount[b]-verCount[a];});
-    cards.innerHTML+=vers.map(function(v){return card(verCount[v],'on '+v);}).join('');
-    var devEl=document.getElementById('ov-devlist');
-    if(devEl)devEl.innerHTML=devRows.length
-      ?'<table class="adm-table"><tr><th>Key</th><th>Device</th><th>ID</th><th>App</th><th>Update</th><th>Last seen</th></tr>'+devRows+'</table>'
-      :'<p class="sub">No devices yet — versions appear after each device activates.</p>';
-    var sub=document.getElementById('ov-devsub');
-    if(sub&&latest)sub.textContent='Latest release: '+latest+'. Every activated device, its app version, and whether it is current.';
-    var rows=keys.slice(-8).reverse().map(function(k){var l=lics[k];
-      var col=l.status==='activated'?'st-ok':(l.status==='revoked'?'st-bad':'');
-      return '<tr><td class="mono">'+esc(k)+'</td><td class="'+col+'"><b>'+esc(l.status||'?')+'</b></td><td>'+esc((l.expires_at||'?').slice(0,10))+'</td></tr>';}).join('');
-    recent.innerHTML='<table class="adm-table"><tr><th>Key</th><th>Status</th><th>Expires</th></tr>'+rows+'</table>';
+  $('ov-devlist').innerHTML=devRows.length
+    ?'<table class="adm-table"><tr><th>Key</th><th>Device</th><th>ID</th><th>App</th><th>Update</th><th>Last seen</th></tr>'+devRows.join('')+'</table>'
+    :'<p class="sub">No devices yet — versions appear after each device activates.</p>';
+  if(latest)$('ov-devsub').textContent='Latest release: '+latest+'. Every activated device, its app version, and whether it is current.';
+  $('ov-recent').innerHTML='<table class="adm-table"><tr><th>Key</th><th>Status</th><th>Expires</th></tr>'+
+    keys.slice(-8).reverse().map(function(k){
+      var l=lics[k],col=l.status==='activated'?'st-ok':(l.status==='revoked'?'st-bad':'');
+      return '<tr><td class="mono">'+esc(k)+'</td><td class="'+col+'"><b>'+esc(l.status||'?')+'</b></td><td>'+esc((l.expires_at||'?').slice(0,10))+'</td></tr>';
+    }).join('')+'</table>';
+}
+window.__renderOverview=renderOverview;
+
+/* ---------- receipt verify ---------- */
+function loadPdfJs(cb){
+  if(window.pdfjsLib&&window.pdfjsLib.getDocument)return cb();
+  if(window.__pdfjsLoading){var t=setInterval(function(){if(window.pdfjsLib&&window.pdfjsLib.getDocument){clearInterval(t);cb();}},150);return;}
+  window.__pdfjsLoading=true;
+  var s=document.createElement('script');
+  s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+  s.onload=function(){
+    window.__pdfjsLoading=false;
+    try{window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';}catch(e){}
+    cb();
   };
-  document.querySelectorAll('.atab').forEach(function(b){
-    b.addEventListener('click',function(){
-      document.querySelectorAll('.atab').forEach(function(x){x.classList.remove('on');});
-      b.classList.add('on');
-      document.querySelectorAll('.apane').forEach(function(p){p.style.display='none';});
-      var p=document.getElementById('pane-'+b.dataset.t);
-      if(p)p.style.display='block';
-      var t=document.getElementById('pane-title');
-      if(t)t.textContent=b.textContent.trim();
-      if(b.dataset.t==='list')loadList();
-      if(b.dataset.t==='overview'&&ovCache)window.__renderOverview(ovCache);
-    });
+  s.onerror=function(){window.__pdfjsLoading=false;alert('Could not load the PDF reader. Try again.');};
+  document.head.appendChild(s);
+}
+function pdfLines(items){
+  var rows={};
+  items.forEach(function(it){
+    var y=Math.round(it.transform[5]);
+    (rows[y]=rows[y]||[]).push({x:it.transform[4],s:it.str});
   });
-  function api(path,body,cb){
-    fetch(KAS_API+path,{method:'POST',headers:headers(),body:body?JSON.stringify(body):'{}'})
-    .then(function(r){return r.json().then(function(j){return {status:r.status,json:j};});})
-    .then(function(r){cb(null,r);})
-    .catch(function(e){cb(e||new Error('net'));});
-  }
-  function loadPdfJs(cb){
-    if(window.pdfjsLib&&window.pdfjsLib.getDocument)return cb();
-    if(window.__pdfjsLoading){var t=setInterval(function(){if(window.pdfjsLib&&window.pdfjsLib.getDocument){clearInterval(t);cb();}},150);return;}
-    window.__pdfjsLoading=true;
-    var s=document.createElement('script');
-    s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-    s.onload=function(){
-      window.__pdfjsLoading=false;
-      try{window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';}catch(e){}
-      cb();
-    };
-    s.onerror=function(){window.__pdfjsLoading=false;alert('Could not load the PDF reader. Try again.');};
-    document.head.appendChild(s);
-  }
-  function pdfTextLines(items){
-    var rows={};
-    items.forEach(function(it){
-      var y=Math.round(it.transform[5]);
-      (rows[y]=rows[y]||[]).push({x:it.transform[4],s:it.str});
-    });
-    return Object.keys(rows).sort(function(a,b){return b-a;}).map(function(y){
-      return rows[y].sort(function(a,b){return a.x-b.x;}).map(function(o){return o.s;}).join(' ');
-    });
-  }
-  function parseReceiptText(lines){
-    var text=lines.join('\n');
-    function grab(re){var m=text.match(re);return m?m[1].trim():'';}
-    var sigLines=lines.filter(function(l){return /^[A-Za-z0-9+\/\-=]{20,}$/.test(l.trim());});
-    var amt=text.match(/Amount charged:\s*([A-Z]{3})\s*([\d.]+)/);
-    var key=(grab(/License key:\s*([A-Z0-9-]+)/)||'').replace(/\s+/g,'');
-    if(key.length<8){
-      var anywhere=text.match(/\bKAS-[A-Z0-9-]{4,}(?:-[A-Z0-9-]+)*\b/);
-      if(anywhere)key=anywhere[0];
-    }
-    return {
-      order_id:grab(/Order ID:\s*([^\s]+)/),
-      payment_id:grab(/Payment ID:\s*([^\s]+)/),
-      key:key,
-      machine_id:grab(/Machine code:\s*(\S+)/),
-      amount:amt?(amt[1]+' '+amt[2]):'',
-      sig:sigLines.join('').trim()
-    };
-  }
-  var pdfGo=document.getElementById('vrf-pdfgo');
-  if(pdfGo)pdfGo.addEventListener('click',function(){
-    var fi=document.getElementById('vrf-pdf');
-    var f=fi&&fi.files&&fi.files[0];
-    if(!f){alert('Choose a receipt PDF first.');return;}
-    vrfOut.textContent='Reading PDF...';
-    loadPdfJs(function(){
-      if(!(window.pdfjsLib&&window.pdfjsLib.getDocument)){vrfOut.textContent='PDF reader unavailable.';return;}
-      var rd=new FileReader();
-      rd.onload=function(){
-        var data=new Uint8Array(rd.result);
-        window.pdfjsLib.getDocument({data:data}).promise.then(function(doc){
-          var chain=Promise.resolve(),all=[];
-          for(var p=1;p<=doc.numPages;p++){
-            (function(pg){
-              chain=chain.then(function(){
-                return doc.getPage(pg).then(function(page){
-                  return page.getTextContent().then(function(tc){
-                    all=all.concat(pdfTextLines(tc.items));
-                  });
-                });
-              });
-            })(p);
+  return Object.keys(rows).sort(function(a,b){return b-a;}).map(function(y){
+    return rows[y].sort(function(a,b){return a.x-b.x;}).map(function(o){return o.s;}).join(' ');
+  });
+}
+function parseReceipt(lines){
+  var text=lines.join('\n');
+  function grab(re){var m=text.match(re);return m?m[1].trim():'';}
+  var sig=lines.filter(function(l){return /^[A-Za-z0-9+\/\-=]{20,}$/.test(l.trim());}).join('').trim();
+  var amt=text.match(/Amount charged:\s*([A-Z]{3})\s*([\d.]+)/);
+  var key=grab(/License key:\s*([A-Z0-9-]+)/).replace(/\s+/g,'');
+  if(key.length<8){var anywhere=text.match(/\bKAS-[A-Z0-9-]{4,}(?:-[A-Z0-9-]+)*\b/);if(anywhere)key=anywhere[0];}
+  return {order_id:grab(/Order ID:\s*([^\s]+)/),payment_id:grab(/Payment ID:\s*([^\s]+)/),
+    key:key,machine_id:grab(/Machine code:\s*(\S+)/),
+    amount:amt?(amt[1]+' '+amt[2]):'',sig:sig};
+}
+$('vrf-pdfgo').addEventListener('click',function(){
+  var out=$('vrf-out'),fi=$('vrf-pdf'),f=fi&&fi.files&&fi.files[0];
+  if(!f){alert('Choose a receipt PDF first.');return;}
+  out.textContent='Reading PDF…';
+  loadPdfJs(function(){
+    if(!(window.pdfjsLib&&window.pdfjsLib.getDocument)){out.textContent='PDF reader unavailable.';return;}
+    var rd=new FileReader();
+    rd.onload=function(){
+      window.pdfjsLib.getDocument({data:new Uint8Array(rd.result)}).promise.then(function(doc){
+        var chain=Promise.resolve(),all=[];
+        for(var p=1;p<=doc.numPages;p++)(function(pg){
+          chain=chain.then(function(){
+            return doc.getPage(pg).then(function(page){
+              return page.getTextContent().then(function(tc){all=all.concat(pdfLines(tc.items));});
+            });
+          });
+        })(p);
+        return chain.then(function(){return all;});
+      }).then(function(lines){
+        var got=parseReceipt(lines);
+        if(!got.order_id){out.textContent='No Order ID found — is this a Kastrava receipt?';return;}
+        out.textContent='Checking order '+got.order_id+'…';
+        fetch(KAS_API+'/api/admin/order',{method:'POST',headers:headers(),body:JSON.stringify({order_id:got.order_id})})
+        .then(function(r){return r.json().then(function(j){return {status:r.status,json:j};});})
+        .then(function(r){
+          if(r.status===401){out.textContent='Wrong token.';return;}
+          var j=r.json||{};
+          if(!j.ok){out.textContent='No server record for that order.';return;}
+          var lic=j.license||{},rc=j.receipt||{};
+          function row(lbl,pdf,db){
+            var ok=String(pdf||'').trim()===String(db||'').trim();
+            return '<tr><td>'+lbl+'</td><td class="mono">'+esc(pdf||'-')+'</td><td class="mono">'+esc(db||'-')+'</td>'
+              +'<td style="color:'+(ok?'#2f9e44':'#e5484d')+'"><b>'+(ok?'match':'MISMATCH')+'</b></td></tr>';
           }
-          return chain.then(function(){return all;});
-        }).then(function(lines){
-          var got=parseReceiptText(lines);
-          if(!got.order_id){vrfOut.textContent='No Order ID found - is this a Kastrava receipt?';return;}
-          vrfOut.textContent='Checking order '+got.order_id+'...';
-          fetch(KAS_API+'/api/admin/order',{method:'POST',headers:headers(),
-            body:JSON.stringify({order_id:got.order_id})})
-          .then(function(r){return r.json().then(function(j){return {status:r.status,json:j};});})
-          .then(function(r){
-            if(r.status===401){vrfOut.textContent='Wrong token.';return;}
-            var j=r.json||{};
-            if(!j.ok){vrfOut.textContent='No server record for that order.';return;}
-            var lic=j.license||{},rc=j.receipt||{};
-            function row(lbl,pdf,db){
-              var ok=String(pdf||'').trim()===String(db||'').trim();
-              return '<tr><td>'+lbl+'</td><td class="mono">'+esc(pdf||'-')+'</td><td class="mono">'+esc(db||'-')+'</td>'
-                +'<td style="color:'+(ok?'#2e7d32':'#c62828')+'"><b>'+(ok?'match':'MISMATCH')+'</b></td></tr>';
-            }
-            var dbAmt=(rc.amount_paise!=null)?((rc.currency||'')+' '+(rc.amount_paise/100).toFixed(2)):'-';
-            vrfOut.innerHTML='<b>Server record for <span class="mono">'+esc(got.order_id)+'</span></b>'
-              +' (license status: <b>'+esc(lic.status||'?')+'</b>)'
-              +'<table class="adm-table" style="margin-top:10px"><tr><th>Field</th><th>PDF says</th><th>Server says</th><th></th></tr>'
-              +row('Order',got.order_id,rc.order_id)
-              +row('Key',got.key,lic.key)
-              +row('Payment',got.payment_id,rc.payment_id)
-              +row('Amount',got.amount,dbAmt)
-              +row('Machine',got.machine_id,lic.machine_id||rc.machine_id)
-              +'</table>'
-              +'<p class="mono" style="font-size:11px;color:var(--muted2);margin-top:8px">Signature on file, '+(got.sig?'present ('+got.sig.length+' chars)':'missing')+' - cryptographic check runs on the JSON path.</p>';
-          });
-        }).catch(function(){vrfOut.textContent='Could not read that PDF.';});
-      };
-      rd.readAsArrayBuffer(f);
-    });
-  });
-  var vrfGo=document.getElementById('vrf-go'),vrfOut=document.getElementById('vrf-out');
-  if(vrfGo)vrfGo.addEventListener('click',function(){
-    var ta=document.getElementById('vrf-json');
-    var parsed=null;
-    try{parsed=JSON.parse(ta?ta.value:'');}catch(e){vrfOut.innerHTML='Invalid JSON.';return;}
-    vrfOut.textContent='Checking...';
-    api('/api/receipt/verify',parsed,function(err,r){
-      if(err){vrfOut.textContent='Network error.';return;}
-      var j=r.json;
-      if(!j||!j.valid){vrfOut.innerHTML='<b style="color:#c62828">INVALID</b> - signature does not match. Tampered or forged.';return;}
-      var rc=j.receipt||{};
-      vrfOut.innerHTML='<b style="color:#2e7d32">VALID</b> - genuinely issued by Kastrasoft.<br>'+
-        'Order: <span class="mono">'+esc(rc.order_id)+'</span><br>'+
-        'Key: <span class="mono">'+esc(rc.key)+'</span> (status: <b>'+esc(j.key_status||'?')+'</b>'+(j.key_expires_at?', expires '+esc(j.key_expires_at):'')+')<br>'+
-        'Amount: '+esc(rc.amount_paise!=null?(rc.currency||'')+' '+(rc.amount_paise/100).toFixed(2):'-');
-    });
-  });
-  var issGo=document.getElementById('iss-go'),issOut=document.getElementById('iss-out');
-  if(issGo)issGo.addEventListener('click',function(){
-    var m=document.getElementById('iss-machine'),n=document.getElementById('iss-note'),dd=document.getElementById('iss-days');
-    issOut.textContent='Minting...';
-    var em=document.getElementById('iss-email');
-    api('/api/admin/issue',{machine_id:m?m.value.trim():'',note:n?n.value.trim():'',days:dd?Math.floor(Number(dd.value)||30):30,account_email:em?em.value.trim():''},function(err,r){
-      if(err){issOut.textContent='Network error.';return;}
-      if(r.status===401){issOut.textContent='Wrong token.';return;}
-      var j=r.json;
-      if(!j||!j.ok){issOut.textContent='Failed: '+((j&&(j.error||j.msg))||r.status);return;}
-      issOut.innerHTML='Key minted: <span class="mono" style="font-size:16px;font-weight:700">'+esc(j.key)+'</span><br>Order: <span class="mono">'+esc(j.order_id)+'</span> - expires '+esc(j.expires_at||'?');
-      loadList();
-    });
-  });
-  function loadAccounts(){
-    var out=document.getElementById('acc-out');
-    if(!out||!token())return;
-    out.textContent='Loading…';
-    api('/api/admin/accounts',{},function(err,r){
-      if(err||!r.json||!r.json.ok){out.textContent='Failed.';return;}
-      var accs=r.json.accounts||[];
-      out.innerHTML='<table class="adm-table"><tr><th>Email</th><th>Since</th><th>Keys</th><th>Devices</th><th>Items</th><th></th></tr>'+
-        accs.map(function(a){
-          return '<tr><td class="mono">'+esc(a.email)+'</td><td>'+esc((a.created_at||'').slice(0,10))+'</td><td>'+a.keys.length+'</td><td>'+a.devices+'</td><td>'+a.items+'</td>'+
-          '<td><button data-acc="'+esc(a.email)+'" style="padding:2px 10px;font-size:11px">Open</button> '+
-          '<button data-del="'+esc(a.email)+'" style="padding:2px 10px;font-size:11px">Delete</button></td></tr>';
-        }).join('')+'</table>';
-      out.querySelectorAll('button[data-acc]').forEach(function(b){
-        b.addEventListener('click',function(){
-          api('/api/admin/account',{email:b.dataset.acc},function(err2,r2){
-            var d=document.getElementById('acc-detail');
-            if(err2||!r2.json||!r2.json.ok){d.textContent='Failed.';return;}
-            var a=r2.json.account;
-            d.innerHTML='<b>'+esc(a.email)+'</b> · verified:'+a.verified+' · 2FA:'+a.totp+' · approvals:'+(a.require_approval?'on':'off')+
-              '<br>Keys: '+(a.keys||[]).map(function(k){return esc(k.key)+'('+esc(k.status)+')';}).join(', ')+
-              '<br>Sessions: '+(a.sessions!=null?a.sessions:'?');
-          });
+          var dbAmt=(rc.amount_paise!=null)?((rc.currency||'')+' '+(rc.amount_paise/100).toFixed(2)):'-';
+          out.innerHTML='<b>Server record for <span class="mono">'+esc(got.order_id)+'</span></b>'
+            +' (license: <b>'+esc(lic.status||'?')+'</b>)'
+            +'<table class="adm-table" style="margin-top:10px"><tr><th>Field</th><th>PDF says</th><th>Server says</th><th></th></tr>'
+            +row('Order',got.order_id,rc.order_id)+row('Key',got.key,lic.key)
+            +row('Payment',got.payment_id,rc.payment_id)+row('Amount',got.amount,dbAmt)
+            +row('Machine',got.machine_id,lic.machine_id||rc.machine_id)+'</table>'
+            +'<p class="mono" style="font-size:11px;color:var(--muted2);margin-top:8px">Signature '+(got.sig?'present ('+got.sig.length+' chars)':'missing')+' — cryptographic check runs on the JSON path.</p>';
         });
-      });
-      out.querySelectorAll('button[data-del]').forEach(function(b){
-        b.addEventListener('click',function(){
-          if(!confirm('Delete '+b.dataset.del+' and cancel their keys?'))return;
-          api('/api/admin/account/delete',{email:b.dataset.del},function(){
-            loadAccounts();
-          });
-        });
+      }).catch(function(){out.textContent='Could not read that PDF.';});
+    };
+    rd.readAsArrayBuffer(f);
+  });
+});
+$('vrf-go').addEventListener('click',function(){
+  var out=$('vrf-out'),parsed=null;
+  try{parsed=JSON.parse(($('vrf-json').value||'').trim()||'null');}catch(e){out.textContent='Invalid JSON.';return;}
+  out.textContent='Checking…';
+  api('/api/receipt/verify',parsed).then(function(r){
+    var j=r.json;
+    if(!j||!j.valid){out.innerHTML='<b class="st-bad">INVALID</b> — signature does not match. Tampered or forged.';return;}
+    var rc=j.receipt||{};
+    out.innerHTML='<b class="st-ok">VALID</b> — genuinely issued by Kastrasoft.<br>'
+      +'Order: <span class="mono">'+esc(rc.order_id)+'</span><br>'
+      +'Key: <span class="mono">'+esc(rc.key)+'</span> (status: <b>'+esc(j.key_status||'?')+'</b>'
+      +(j.key_expires_at?', expires '+esc(j.key_expires_at):'')+')<br>'
+      +'Amount: '+esc(rc.amount_paise!=null?(rc.currency||'')+' '+(rc.amount_paise/100).toFixed(2):'-');
+  }).catch(function(){out.textContent='Network error.';});
+});
+
+/* ---------- issue ---------- */
+$('iss-go').addEventListener('click',function(){
+  var out=$('iss-out');out.textContent='Minting…';
+  api('/api/admin/issue',{
+    machine_id:$('iss-machine').value.trim(),note:$('iss-note').value.trim(),
+    days:Math.floor(Number($('iss-days').value)||30),account_email:$('iss-email').value.trim()
+  }).then(function(r){
+    if(r.status===401){out.textContent='Wrong token.';return;}
+    var j=r.json;
+    if(!j||!j.ok){out.textContent='Failed: '+((j&&(j.error||j.msg))||r.status);return;}
+    out.innerHTML='Key minted: <span class="mono" style="font-size:16px;font-weight:700">'+esc(j.key)+'</span><br>Order: <span class="mono">'+esc(j.order_id)+'</span> — expires '+esc(j.expires_at||'?');
+    loadList();
+  }).catch(function(){out.textContent='Network error.';});
+});
+
+/* ---------- accounts ---------- */
+function loadAccounts(){
+  var out=$('acc-out');
+  if(!out||!token())return;
+  out.textContent='Loading…';
+  api('/api/admin/accounts',{}).then(function(r){
+    if(!r.json||!r.json.ok){out.textContent='Failed.';return;}
+    out.innerHTML='<table class="adm-table"><tr><th>Email</th><th>Since</th><th>Keys</th><th>Devices</th><th>Items</th><th></th></tr>'+
+      (r.json.accounts||[]).map(function(a){
+        return '<tr><td class="mono">'+esc(a.email)+'</td><td>'+esc((a.created_at||'').slice(0,10))+'</td><td>'+a.keys.length+'</td><td>'+a.devices+'</td><td>'+a.items+'</td>'
+        +'<td><button data-acc="'+esc(a.email)+'" style="padding:2px 10px;font-size:11px">Open</button> '
+        +'<button data-del="'+esc(a.email)+'" style="padding:2px 10px;font-size:11px">Delete</button></td></tr>';
+      }).join('')+'</table>';
+    out.querySelectorAll('button[data-acc]').forEach(function(b){
+      b.addEventListener('click',function(){
+        api('/api/admin/account',{email:b.dataset.acc}).then(function(r2){
+          var d=$('acc-detail');
+          if(!r2.json||!r2.json.ok){d.textContent='Failed.';return;}
+          var a=r2.json.account;
+          d.innerHTML='<b>'+esc(a.email)+'</b> · verified:'+a.verified+' · 2FA:'+a.totp+' · approvals:'+(a.require_approval?'on':'off')
+            +'<br>Keys: '+(a.keys||[]).map(function(k){return esc(k.key)+'('+esc(k.status)+')';}).join(', ')
+            +'<br>Sessions: '+(a.sessions!=null?a.sessions:'?');
+        }).catch(function(){$('acc-detail').textContent='Failed.';});
       });
     });
-  }
-  var accGo=document.getElementById('acc-go');
-  if(accGo)accGo.addEventListener('click',loadAccounts);
-  var grGo=document.getElementById('gr-go');
-  if(grGo)grGo.addEventListener('click',function(){
-    var out=document.getElementById('gr-out');
-    var em=document.getElementById('gr-email'),id=document.getElementById('gr-id');
-    out.textContent='Granting…';
-    api('/api/admin/grant',{email:em?em.value.trim():'',id:id?id.value.trim():''},function(err,r){
-      if(err||!r.json||!r.json.ok){out.textContent='Failed: '+((r&&r.json&&(r.json.error||r.json.msg))||'error');return;}
-      out.innerHTML='Granted <b>'+esc(r.json.granted)+'</b>';
+    out.querySelectorAll('button[data-del]').forEach(function(b){
+      b.addEventListener('click',function(){
+        if(!confirm('Delete '+b.dataset.del+' and cancel their keys?'))return;
+        api('/api/admin/account/delete',{email:b.dataset.del}).then(function(){loadAccounts();}).catch(function(){});
+      });
     });
-  });
-  var emGo=document.getElementById('em-go');
-  if(emGo)emGo.addEventListener('click',function(){
-    var out=document.getElementById('em-out');
-    var to=document.getElementById('em-to'),su=document.getElementById('em-subject'),tx=document.getElementById('em-text');
-    var dest=to?to.value.trim():'';
-    if(dest.toLowerCase()==='all'&&!confirm('Email the FULL user base?'))return;
-    out.textContent='Sending…';
-    api('/api/admin/email',{to:dest,subject:su?su.value:'',text:tx?tx.value:''},function(err,r){
-      if(err||!r.json||!r.json.ok){out.textContent='Failed.';return;}
-      out.textContent='Sent '+r.json.sent+'/'+r.json.total+'.';
-    });
-  });
-  function loadList(){
-    var out=document.getElementById('lst-out');
-    if(!out||!token())return;
-    out.textContent='Loading...';
-    fetch(KAS_API+'/api/admin/list',{headers:headers()})
-    .then(function(r){return r.json().then(function(j){return {status:r.status,json:j};});})
-    .then(function(r){
-      if(r.status===401){out.textContent='Wrong token.';return;}
-      var j=r.json||{},lics=j.licenses||{};
-      try{if(window.__renderOverview)window.__renderOverview(j);}catch(e){}
-      var keys=Object.keys(lics);
-      if(!keys.length){out.textContent='No licenses yet.';return;}
-      var h='<table class="adm-table"><tr><th>Key</th><th>Status</th><th>Machine</th><th>Expires</th><th>Order</th><th></th></tr>';
-      keys.forEach(function(k){
-        var l=lics[k]||{};
-        var col=l.status==='activated'?'#2e7d32':(l.status==='revoked'?'#c62828':'inherit');
-        h+='<tr><td class="mono">'+esc(k)+'</td><td style="color:'+col+'"><b>'+esc(l.status||'?')+'</b></td><td class="mono">'+esc((l.machine_id||'').slice(0,18))+'</td><td>'+esc((l.expires_at||'?').slice(0,10))+'</td><td class="mono">'+esc(l.order_id||'')+'</td>';
-        h+='<td class="adm-actions">'
-          +'<button data-extend="'+esc(k)+'">Extend</button>'
+  }).catch(function(){out.textContent='Failed.';});
+}
+$('acc-go').addEventListener('click',loadAccounts);
+
+/* ---------- grant ---------- */
+$('gr-go').addEventListener('click',function(){
+  var out=$('gr-out');out.textContent='Granting…';
+  api('/api/admin/grant',{email:$('gr-email').value.trim(),id:$('gr-id').value.trim()}).then(function(r){
+    if(!r.json||!r.json.ok){out.textContent='Failed: '+((r.json&&(r.json.error||r.json.msg))||'error');return;}
+    out.innerHTML='Granted <b>'+esc(r.json.granted)+'</b>';
+  }).catch(function(){out.textContent='Failed.';});
+});
+
+/* ---------- broadcast email ---------- */
+$('em-go').addEventListener('click',function(){
+  var out=$('em-out'),dest=$('em-to').value.trim();
+  if(dest.toLowerCase()==='all'&&!confirm('Email the FULL user base?'))return;
+  out.textContent='Sending…';
+  api('/api/admin/email',{to:dest,subject:$('em-subject').value,text:$('em-text').value}).then(function(r){
+    if(!r.json||!r.json.ok){out.textContent='Failed.';return;}
+    out.textContent='Sent '+r.json.sent+'/'+r.json.total+'.';
+  }).catch(function(){out.textContent='Failed.';});
+});
+
+/* ---------- licenses ---------- */
+function loadList(){
+  var out=$('lst-out');
+  if(!out||!token())return;
+  out.textContent='Loading…';
+  fetch(KAS_API+'/api/admin/list',{headers:headers()})
+  .then(function(r){return r.json().then(function(j){return {status:r.status,json:j};});})
+  .then(function(r){
+    if(r.status===401){out.textContent='Wrong token.';return;}
+    var lics=(r.json||{}).licenses||{};
+    try{renderOverview(r.json);}catch(e){}
+    var keys=Object.keys(lics);
+    if(!keys.length){out.textContent='No licenses yet.';return;}
+    out.innerHTML='<table class="adm-table"><tr><th>Key</th><th>Status</th><th>Machine</th><th>Expires</th><th>Order</th><th></th></tr>'+
+      keys.map(function(k){
+        var l=lics[k]||{},col=l.status==='activated'?'#2f9e44':(l.status==='revoked'?'#e5484d':'inherit');
+        return '<tr><td class="mono">'+esc(k)+'</td><td style="color:'+col+'"><b>'+esc(l.status||'?')+'</b></td>'
+          +'<td class="mono">'+esc((l.machine_id||'').slice(0,18))+'</td><td>'+esc((l.expires_at||'?').slice(0,10))+'</td>'
+          +'<td class="mono">'+esc(l.order_id||'')+'</td>'
+          +'<td class="adm-actions"><button data-extend="'+esc(k)+'">Extend</button>'
           +'<button data-life="'+esc(k)+'" title="Extend 100 years">Lifetime</button>'
           +'<button data-rebind="'+esc(k)+'">Rebind</button>'
-          +(l.status!=='revoked'?'<button data-revoke="'+esc(k)+'">Revoke</button>':'')
-          +'</td></tr>';
-      });
-      out.innerHTML=h+'</table>';
-      out.querySelectorAll('[data-extend]').forEach(function(b){
-        b.addEventListener('click',function(){
-          var d=prompt('Extend '+b.dataset.extend+' by how many days?','34');
-          if(d===null)return;
-          api('/api/admin/extend',{key:b.dataset.extend,days:Number(d)},function(err2,r2){
-            if(err2||!r2.json||!r2.json.ok){alert('Extend failed: '+((r2&&r2.json&&(r2.json.error||r2.json.msg))||'net'));return;}
-            alert('New expiry: '+(r2.json.expires_at||'?')+' — the app picks it up on its next launch.');
-            loadList();
-          });
-        });
-      });
-      out.querySelectorAll('[data-life]').forEach(function(b){
-        b.addEventListener('click',function(){
-          if(!confirm('Lifetime-extend '+b.dataset.life+' by 100 years?'))return;
-          api('/api/admin/extend',{key:b.dataset.life,days:36500},function(err2,r2){
-            if(err2||!r2.json||!r2.json.ok){alert('Lifetime failed: '+((r2&&r2.json&&(r2.json.error||r2.json.msg))||'net'));return;}
-            alert('Lifetime set, expires '+(r2.json.expires_at||'?')+' — the app picks it up on its next launch.');
-            loadList();
-          });
-        });
-      });
-      out.querySelectorAll('[data-rebind]').forEach(function(b){
-        b.addEventListener('click',function(){
-          var m=prompt('New machine code for '+b.dataset.rebind+' (e.g. KAS2-...):');
-          if(!m||!m.trim())return;
-          api('/api/admin/rebind',{key:b.dataset.rebind,machine_id:m.trim()},function(err2,r2){
-            if(err2||!r2.json||!r2.json.ok){alert('Rebind failed: '+((r2&&r2.json&&(r2.json.error||r2.json.msg))||'net'));return;}
-            loadList();
-          });
-        });
-      });
-      out.querySelectorAll('[data-revoke]').forEach(function(b){
-        b.addEventListener('click',function(){
-          if(!confirm('Revoke '+b.dataset.revoke+'? The app drops Premium on next refresh.'))return;
-          api('/api/admin/revoke',{key:b.dataset.revoke},function(err2,r2){
-            if(err2||!r2.json||!r2.json.ok){alert('Revoke failed.');return;}
-            loadList();
-          });
-        });
-      });
-    })
-    .catch(function(){out.textContent='Network error.';});
-  }
-  var lstGo=document.getElementById('lst-go');
-  if(lstGo)lstGo.addEventListener('click',loadList);
-  refreshLock();
+          +(l.status!=='revoked'?'<button data-revoke="'+esc(k)+'">Revoke</button>':'')+'</td></tr>';
+      }).join('')+'</table>';
+    function mut(sel,fn){
+      out.querySelectorAll(sel).forEach(function(b){b.addEventListener('click',function(){fn(b);});});
+    }
+    mut('[data-extend]',function(b){
+      var d=prompt('Extend '+b.dataset.extend+' by how many days?','34');
+      if(d===null)return;
+      api('/api/admin/extend',{key:b.dataset.extend,days:Number(d)}).then(function(r2){
+        if(!r2.json||!r2.json.ok){alert('Extend failed.');return;}
+        alert('New expiry: '+(r2.json.expires_at||'?')+' — the app picks it up on next launch.');
+        loadList();
+      }).catch(function(){alert('Extend failed.');});
+    });
+    mut('[data-life]',function(b){
+      if(!confirm('Lifetime-extend '+b.dataset.life+' by 100 years?'))return;
+      api('/api/admin/extend',{key:b.dataset.life,days:36500}).then(function(r2){
+        if(!r2.json||!r2.json.ok){alert('Lifetime failed.');return;}
+        alert('Lifetime set, expires '+(r2.json.expires_at||'?'));
+        loadList();
+      }).catch(function(){alert('Lifetime failed.');});
+    });
+    mut('[data-rebind]',function(b){
+      var m=prompt('New machine code for '+b.dataset.rebind+' (e.g. KAS2-...):');
+      if(!m||!m.trim())return;
+      api('/api/admin/rebind',{key:b.dataset.rebind,machine_id:m.trim()}).then(function(r2){
+        if(!r2.json||!r2.json.ok){alert('Rebind failed.');return;}
+        loadList();
+      }).catch(function(){alert('Rebind failed.');});
+    });
+    mut('[data-revoke]',function(b){
+      if(!confirm('Revoke '+b.dataset.revoke+'? The app drops Premium on next refresh.'))return;
+      api('/api/admin/revoke',{key:b.dataset.revoke}).then(function(r2){
+        if(!r2.json||!r2.json.ok){alert('Revoke failed.');return;}
+        loadList();
+      }).catch(function(){alert('Revoke failed.');});
+    });
+  }).catch(function(){out.textContent='Network error.';});
+}
+$('lst-go').addEventListener('click',loadList);
+refreshLock();
 })();
 </script>
 </body>

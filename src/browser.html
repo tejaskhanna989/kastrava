@@ -732,14 +732,10 @@ var SEARCH_ENGINES={kastravasearch:"https://kastravasearch.pp.ua/search?q=%s",du
 // Premium-only extras. Free ships KastravaSearch + DuckDuckGo.
 var PREMIUM_ENGINES={brave:1,google:1,ecosia:1};
 function customEngineIsPremium(tpl){
-  try{
-    var u=new URL(tpl);
-    var h=(u.hostname||"").toLowerCase();
-    if(/(^|\.)google\.[a-z.]+$/.test(h))return true;
-    if(h==="search.brave.com"||h==="brave.com")return true;
-    if(h==="ecosia.org"||h==="www.ecosia.org")return true;
-    return false;
-  }catch(e){return false;}
+  // Any custom search engine URL is Pro-only. Free ships KastravaSearch +
+  // DuckDuckGo; Brave/Google/Ecosia presets are Pro via PREMIUM_ENGINES.
+  try{new URL(tpl);}catch(e){return false;}
+  return true;
 }
 function loadSettings(){
   if(!api||!api.getSettings)return Promise.resolve();
@@ -786,7 +782,7 @@ function applyEditionUI(){
   if(wb&&!prem)wb.classList.remove("visible");
   if(!prem){
     if(settings.theme!=="dark-0"&&settings.theme!=="light-0"&&settings.theme.indexOf("custom-")!==0){settings.theme="dark-0";saveSetting("theme","dark-0");}
-    if(PREMIUM_ENGINES[settings.searchEngine]){settings.searchEngine="kastravasearch";saveSetting("searchEngine","kastravasearch");}
+    if(PREMIUM_ENGINES[settings.searchEngine]||settings.searchEngine==="custom"){settings.searchEngine="kastravasearch";saveSetting("searchEngine","kastravasearch");}
     if(settings.tabLayout==="vertical"){settings.tabLayout="horizontal";saveSetting("tabLayout","horizontal");applyTabLayout("horizontal");}
     if(settings.uiStyle!=="kastrava"){settings.uiStyle="kastrava";saveSetting("uiStyle","kastrava");applyUiStyle("kastrava");}
     if(!applyThemeKey(settings.theme||"dark-0")&&settings.accent){document.documentElement.style.setProperty("--accent",settings.accent);}
@@ -4252,8 +4248,8 @@ function renderSettingsSection(id){
     }
   }
   else if(id==="search"){h="<h3>Search Engine</h3>";
-    h+="<div class=\"sg\"><div class=\"lbl\">Default Search Engine</div><select id=\"s-se\"><option value=\"kastravasearch\">KastravaSearch (Default, RC)</option><option value=\"duckduckgo\">DuckDuckGo</option><option value=\"brave\">Brave Search (Premium)</option><option value=\"google\">Google (Premium)</option><option value=\"ecosia\">Ecosia (Premium)</option><option value=\"custom\">Custom URL…</option></select><div class=\"desc\">KastravaSearch is Kastrava's own private search engine. DuckDuckGo is free too; Brave, Google and Ecosia are Premium.</div></div>";
-    h+="<div class=\"sg\"><div class=\"lbl\">Custom Engine URL</div><input id=\"s-customengine\" type=\"text\" placeholder=\"https://example.com/search?q=%s\"><div class=\"desc\">Use %s where the query goes. Used when Custom URL is selected.</div></div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">Default Search Engine</div><select id=\"s-se\"><option value=\"kastravasearch\">KastravaSearch (Default, RC)</option><option value=\"duckduckgo\">DuckDuckGo</option><option value=\"brave\">Brave Search (Premium)</option><option value=\"google\">Google (Premium)</option><option value=\"ecosia\">Ecosia (Premium)</option><option value=\"custom\">Custom URL… (Pro)</option></select><div class=\"desc\">KastravaSearch is Kastrava's own private search engine. DuckDuckGo is free too; Brave, Google and Ecosia are Premium.</div></div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">Custom Engine URL (Pro)</div><input id=\"s-customengine\" type=\"text\" placeholder=\"https://example.com/search?q=%s\"><div class=\"desc\">Use %s where the query goes. Used when Custom URL is selected.</div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Current Engine URL</div><div class=\"desc\" style=\"word-break:break-all\">"+esc(SEARCH_ENGINES[settings.searchEngine]||SEARCH_ENGINES.kastravasearch)+"</div></div>";
   }
   else if(id==="privacy"){h="<h3>Privacy &amp; Security</h3>";
@@ -4508,7 +4504,7 @@ function bindSettingsEvents(id){
     }else if(id==="search"){
       var se=$("s-se");if(se)se.value=settings.searchEngine||"kastravasearch";
       var ce=$("s-customengine");if(ce){ce.value=settings.customEngine||"";ce.addEventListener("change",function(e){var v=e.target.value.trim();if(v&&customEngineIsPremium(v)&&!isPremium()){e.target.value=settings.customEngine||"";requirePremium();toast("That search belongs to Premium — pick it directly with Premium.");return;}sv("customEngine",v);});}
-      var seCh=$("s-se");if(seCh)seCh.addEventListener("change",function(e){var v=e.target.value;if(PREMIUM_ENGINES[v]&&!isPremium()){e.target.value=settings.searchEngine||"kastravasearch";requirePremium();return;}sv("searchEngine",v);});
+      var seCh=$("s-se");if(seCh)seCh.addEventListener("change",function(e){var v=e.target.value;if((v==="custom"||PREMIUM_ENGINES[v])&&!isPremium()){e.target.value=settings.searchEngine||"kastravasearch";requirePremium();toast("Custom search is Pro-only.");return;}sv("searchEngine",v);});
     }else if(id==="privacy"){
       setSel("s-tracking",settings.tracking);
       setCheck("s-dnt","on",settings.dnt);
