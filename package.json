@@ -40,13 +40,7 @@
       "desktop": {
         "entry": {
           "StartupWMClass": "Kastrava"
-        },
-        "mimeTypes": [
-          "text/html",
-          "x-scheme-handler/http",
-          "x-scheme-handler/https",
-          "x-scheme-handler/about"
-        ]
+        }
       }
     },
     "win": {
@@ -58,33 +52,7 @@
       "verifyUpdateCodeSignature": false,
       "signtoolOptions": {
         "sign": "./scripts/win-sign.js"
-      },
-      "fileAssociations": [
-        {
-          "ext": [
-            "html",
-            "htm"
-          ],
-          "name": "HTML Document",
-          "role": "Browser"
-        },
-        {
-          "ext": "https",
-          "name": "HTTPS URL",
-          "role": "Browser",
-          "protocols": [
-            "https"
-          ]
-        },
-        {
-          "ext": "http",
-          "name": "HTTP URL",
-          "role": "Browser",
-          "protocols": [
-            "http"
-          ]
-        }
-      ]
+      }
     },
     "publish": {
       "provider": "github",
@@ -135,7 +103,35 @@
       "languages": [
         "en-US"
       ]
-    }
+    },
+    "fileAssociations": [
+      {
+        "ext": [
+          "html",
+          "htm"
+        ],
+        "name": "HTML Document",
+        "description": "Open web pages in Kastrava",
+        "mimeType": "text/html",
+        "role": "Browser"
+      },
+      {
+        "ext": [
+          "http"
+        ],
+        "name": "HTTP URL",
+        "mimeType": "x-scheme-handler/http",
+        "role": "Browser"
+      },
+      {
+        "ext": [
+          "https"
+        ],
+        "name": "HTTPS URL",
+        "mimeType": "x-scheme-handler/https",
+        "role": "Browser"
+      }
+    ]
   },
   "devDependencies": {
     "copy-webpack-plugin": "^14.0.0",
