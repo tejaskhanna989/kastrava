@@ -999,7 +999,9 @@ ipcMain.handle('lic-activate-account', async () => {
   try {
     const t = settingsBackend.get('syncToken')
     if (!t) return { ok: false, error: 'no_login', msg: 'Log in to your Kastrava account first.' }
-    return await license.activateAccount(t)
+    let nick = ''
+    try { nick = settingsBackend.get('deviceName') || '' } catch {}
+    return await license.activateAccount(t, nick)
   } catch { return { ok: false, error: 'server', msg: 'Activation failed.' } }
 })
 ipcMain.handle('lic-devices', async () => {

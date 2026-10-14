@@ -1449,9 +1449,9 @@ function loadTopSites(){
   };
 }
 /* First-run setup wizard */
-var setupStep=0,setupEngine="kastravasearch",setupThemeKey="dark-0",setupTracking="strict",setupStartup="last",setupNtpClock="on",setupNtpLogo="on",setupNavAt=0,setupRenderId=0;
+var setupStep=0,setupEngine="kastravasearch",setupThemeKey="dark-0",setupTracking="strict",setupStartup="last",setupNtpClock="on",setupNtpLogo="on",setupNavAt=0,setupRenderId=0,setupDeviceName="";
 var SETUP_ENGINES=[{id:"kastravasearch",n:"KastravaSearch",d:"Kastrava's own search"},{id:"duckduckgo",n:"DuckDuckGo",d:"Private search"},{id:"brave",n:"Brave Search",d:"Independent index \u00b7 Premium"},{id:"google",n:"Google",d:"Most results \u00b7 Premium"},{id:"ecosia",n:"Ecosia",d:"Plants trees \u00b7 Premium"}];
-function setupDots(){var d='<div class="setup-steps">';for(var i=0;i<10;i++)d+='<div class="setup-dot'+(setupStep>=i?' on':'')+'"></div>';return d+'</div>';}
+function setupDots(){var d='<div class="setup-steps">';for(var i=0;i<11;i++)d+='<div class="setup-dot'+(setupStep>=i?' on':'')+'"></div>';return d+'</div>';}
 function setupGo(n){var t=Date.now();if(t-setupNavAt<350)return;setupNavAt=t;setupStep=n;renderSetup();}
 function setupBindNav(next){
   var n=$("setup-next");if(n)n.addEventListener("click",function(){setupGo(next);});
@@ -1517,6 +1517,11 @@ function renderSetup(){
     c.innerHTML=dots+grid(ART_SUMMARY,'<div class="setup-name" style="font-size:24px;letter-spacing:2px">You are protected</div><div class="setup-sub">Review your setup.</div><div class="setup-priv"><div><span class="ok">✓</span>Search <b>'+engName+'</b></div><div><span class="ok">✓</span>Theme <b>'+esc(setupThemeKey)+'</b>, tracking <b>'+setupTracking+'</b></div><div><span class="ok">✓</span>Startup <b>'+(setupStartup==="last"?"restore":"new tab")+'</b></div><div><span class="ok">✓</span>Cookies <b>blocked</b>, referrer <b>off</b>, DNT <b>on</b></div></div>',CONTINUE);
     setupBindNav(8);
   }else if(setupStep===8){
+    var __nick=(typeof settings!=="undefined"&&settings.deviceName)||"";
+    c.innerHTML=dots+grid(ART_NTP,'<div class="setup-name" style="font-size:24px;letter-spacing:2px">Name This Device</div><div class="setup-sub">Give this PC a nickname so you can recognise it on your account dashboard — handy when you have several machines on one key.</div><input id="setup-nick" type="text" maxlength="60" placeholder="e.g. Office PC, Home Laptop" value="'+esc(__nick)+'" style="width:100%;margin:6px 0 4px;padding:12px 14px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:14px">',CONTINUE);
+    var __ni=$("setup-nick");if(__ni)__ni.addEventListener("input",function(){setupDeviceName=__ni.value;});
+    setupBindNav(9);
+  }else if(setupStep===9){
     var __premActive=isPremium();
     var __premBox=__premActive
       ?'<div class="setup-priv"><div><span class="ok">\u2713</span>Premium is active on this machine</div></div>'
@@ -1575,14 +1580,14 @@ function renderSetup(){
       var ssu=$("setup-ac-signup");if(ssu)ssu.addEventListener("click",function(){doAccount("signup");});
       var pmg=$("setup-prem-go");if(pmg)pmg.addEventListener("click",function(){toast("Setup done \u2014 opening the buying page.");try{finishSetup();}catch(e){}try{openPremiumStore();}catch(e){}});
     })();
-    setupBindNav(9);
+    setupBindNav(10);
   }else{
     c.innerHTML=dots+'<div class="setup-grid"><div class="setup-art">'+setupHero()+'</div><div class="setup-body"><div class="setup-name" style="font-size:26px">You are all set</div><div class="setup-sub">Enjoy private browsing with Kastrava.</div></div></div><div class="setup-foot"><button class="setup-btn" id="setup-done">Start Browsing</button></div>';
     $("setup-done").addEventListener("click",finishSetup);
   }
 }
-function finishSetup(){try{saveSetting("searchEngine",setupEngine);saveSetting("theme",setupThemeKey);applyThemeKey(setupThemeKey);saveSetting("tracking",setupTracking);saveSetting("startup",setupStartup);saveSetting("showNtpClock",setupNtpClock);applyNtpClock(setupNtpClock);saveSetting("showNtpLogo",setupNtpLogo);applyNtpLogo(setupNtpLogo);saveSetting("setupDone","1");}catch(e){}var w=$("setup-wizard");if(w)w.classList.remove("visible");}
-function setupRestart(){setupEngine=settings.searchEngine||"kastravasearch";setupThemeKey="light-0";try{applyThemeKey("light-0");}catch(e){}setupTracking=settings.tracking||"strict";setupStartup=settings.startup||"last";setupNtpClock=settings.showNtpClock||"on";setupNtpLogo=settings.showNtpLogo||"on";setupStep=0;renderSetup();var w=$("setup-wizard");if(w)w.classList.add("visible");}
+function finishSetup(){try{if(setupDeviceName&&setupDeviceName.trim())saveSetting("deviceName",setupDeviceName.trim().slice(0,60));saveSetting("searchEngine",setupEngine);saveSetting("theme",setupThemeKey);applyThemeKey(setupThemeKey);saveSetting("tracking",setupTracking);saveSetting("startup",setupStartup);saveSetting("showNtpClock",setupNtpClock);applyNtpClock(setupNtpClock);saveSetting("showNtpLogo",setupNtpLogo);applyNtpLogo(setupNtpLogo);saveSetting("setupDone","1");}catch(e){}var w=$("setup-wizard");if(w)w.classList.remove("visible");}
+function setupRestart(){setupDeviceName=settings.deviceName||"";setupEngine=settings.searchEngine||"kastravasearch";setupThemeKey="light-0";try{applyThemeKey("light-0");}catch(e){}setupTracking=settings.tracking||"strict";setupStartup=settings.startup||"last";setupNtpClock=settings.showNtpClock||"on";setupNtpLogo=settings.showNtpLogo||"on";setupStep=0;renderSetup();var w=$("setup-wizard");if(w)w.classList.add("visible");}
 function maybeShowSetup(){try{if(settings.setupDone!=="1"){setupRestart();}}catch(e){}}
 var confirmCb=null;
 function showConfirmModal(cb,opts){  opts=opts||{};
@@ -4134,6 +4139,7 @@ function renderSettingsSection(id){
   if(id==="premium"){h="<h3>Kastrava Premium</h3>";
     h+="<div class=\"desc\" style=\"margin-bottom:12px\">Unlock Tracking Radar, Cursor FX, Workspaces, Split View and every theme \u2014 <b>\u20B9499 for 30 days (~$49), up to 10 devices. Manual renewal by default.</b></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Your Machine Code</div><div style=\"display:flex;gap:8px;align-items:center\"><code id=\"pm-machine\" style=\"flex:1;word-break:break-all;font-size:12px\">"+(LIC.machine||"…")+"</code><button class=\"btn-sm\" id=\"pm-copy\">Copy</button></div><div class=\"desc\">This code identifies <b>this device</b> on your account. One key covers up to 10 devices.</div></div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">Device Nickname</div><div style=\"display:flex;gap:8px;align-items:center\"><input id=\"s-devnick\" type=\"text\" maxlength=\"60\" placeholder=\"e.g. Office PC\" value=\""+esc(settings.deviceName||"")+"\" style=\"flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px\"></div><div class=\"desc\">Shown on your account dashboard instead of a bare hostname. Applies on next activation or sync.</div></div>";
     if(LIC.activated){
       var stColor=LIC.grace?"#e65100":"#2e7d32";
       var stText=LIC.grace?"\u26A0 Plan ended \u2014 grace until "+(LIC.expiresAt?new Date(LIC.expiresAt).toLocaleDateString():"soon")+". Renew to keep Premium.":"\u2713 Premium active on this device.";
@@ -4594,6 +4600,8 @@ function bindSettingsEvents(id){
       var mce=$("s-lickey");
       var act=$("s-licactivate");if(act)act.addEventListener("click",function(){activatePremium(mce?mce.value.trim():"");});
       var buy=$("s-licbuy");if(buy)buy.addEventListener("click",function(){openOobBuy(LIC.machine);});
+      var dn=$("s-devnick");
+      if(dn)dn.addEventListener("change",function(){sv("deviceName",dn.value.trim().slice(0,60));saveSetting("deviceName",dn.value.trim().slice(0,60));toast("Nickname saved — shows on your dashboard after next activation.");});
       try{
         if(!$("s-licbuy").dataset.geo&&window.fetch){
           $("s-licbuy").dataset.geo="1";

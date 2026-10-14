@@ -48,7 +48,8 @@ async function createOrder(amount, currency, description) {
     headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       intent: 'CAPTURE',
-      purchase_units: [{ amount: { currency_code: currency, value: String(amount) }, description: String(description || 'Kastrava').slice(0, 120) }]
+      purchase_units: [{ amount: { currency_code: currency, value: String(amount) }, description: String(description || 'Kastrava').slice(0, 120) }],
+      application_context: { shipping_preference: 'NO_SHIPPING', user_action: 'PAY_NOW' }
     })
   })
   const j = await res.json().catch(() => ({}))

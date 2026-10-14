@@ -136,6 +136,9 @@ a{color:var(--blue)}
 .store-card h2{font-size:16px !important}
 #item-modal .lic-card{box-shadow:0 24px 70px rgba(0,0,0,.45)}
 
+/* ---- paypal buttons: keep them card-sized, never full-bleed ---- */
+#pp-buttons,#bm-pp,#pp-buy-box{max-width:380px}
+#pp-buttons iframe,#bm-pp iframe,#pp-buy-box iframe{border-radius:10px !important}
 /* ---- footer ---- */
 footer{border-top:1px solid var(--line);margin-top:64px;padding:40px 0 50px;background:transparent}
 .foot-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:28px}

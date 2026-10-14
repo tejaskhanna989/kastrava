@@ -272,7 +272,7 @@ setTimeout(function(){if(!ALL_ITEMS.length&&!window.__storeLoaded)load();},4000)
 function loadPaypal(clientId,currency,cb){
   if(window.paypal)return cb();
   var s=document.createElement('script');
-  s.src='https://www.paypal.com/sdk/js?client-id='+encodeURIComponent(clientId)+'&currency='+encodeURIComponent(currency)+'&intent=capture';
+  s.src='https://www.paypal.com/sdk/js?client-id='+encodeURIComponent(clientId)+'&currency='+encodeURIComponent(currency)+'&intent=capture&disable-funding=paylater,credit';
   s.onload=cb;s.onerror=function(){};
   document.head.appendChild(s);
 }

@@ -169,6 +169,18 @@
           <div id="bm-acct-msg" style="font-size:12.5px;color:var(--muted);margin-top:8px"></div>
         </div>
         <div id="bm-step2" style="display:none">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px" id="bm-plans">
+            <button data-mplan="monthly" style="padding:12px 8px;border-radius:12px;border:2px solid var(--line2);background:transparent;color:var(--ink);cursor:pointer;font-family:inherit;text-align:center">
+              <div style="font-size:11px;letter-spacing:1px;color:var(--muted)">MONTHLY</div>
+              <div style="font-weight:700;font-size:16px" data-mp="monthly"></div>
+              <div style="font-size:11px;color:var(--muted)">30 days</div>
+            </button>
+            <button data-mplan="daily" style="padding:12px 8px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;font-family:inherit;text-align:center">
+              <div style="font-size:11px;letter-spacing:1px;color:var(--muted)">DAILY</div>
+              <div style="font-weight:700;font-size:16px" data-mp="daily"></div>
+              <div style="font-size:11px;color:var(--muted)">24 hours</div>
+            </button>
+          </div>
           <p style="font-size:13px;color:var(--muted)" id="bm-note"></p>
           <button class="prem-buy" id="bm-buy" style="width:100%;margin-top:8px">Pay</button>
           <div id="bm-pp" style="display:none;margin-top:8px"></div>
@@ -366,7 +378,16 @@ function setMode(m){
   $('bm-acct-go').textContent=m==='login'?'Log in & continue':'Create account & continue';
   $('bm-acct-msg').textContent='';
 }
+function paintModalPlans(){
+  ['monthly','daily'].forEach(function(pl){
+    var amt=document.querySelector('[data-mp="'+pl+'"]');
+    if(amt)amt.textContent=planPrice(pl);
+    var btn=document.querySelector('[data-mplan="'+pl+'"]');
+    if(btn){btn.style.borderWidth=pl===modalPlan?'2px':'1px';btn.style.borderColor=pl===modalPlan?'var(--ink)':'var(--line)';}
+  });
+}
 function showStep2(){
+  paintModalPlans();
   $('bm-step1').style.display='none';$('bm-step2').style.display='';
   $('bm-steps').textContent='Step 2 of 2 — payment';
   var m=PLANS[modalPlan],note=$('bm-note'),bb=$('bm-buy'),pp=$('bm-pp');
@@ -387,6 +408,14 @@ document.querySelectorAll('.plan-card').forEach(function(c){
 });
 $('bm-x').addEventListener('click',closeModal);
 $('buy-modal').addEventListener('click',function(e){if(e.target.id==='buy-modal')closeModal();});
+document.querySelectorAll('[data-mplan]').forEach(function(b){
+  b.addEventListener('click',function(){
+    modalPlan=b.dataset.mplan;
+    $('bm-title').textContent=(modalPlan==='daily'?'Daily — 24 hours':'Monthly — 30 days');
+    $('bm-price').textContent=planPrice(modalPlan)+' · up to 10 devices · manual renewal';
+    showStep2();
+  });
+});
 $('bm-tab-login').addEventListener('click',function(){setMode('login');});
 $('bm-tab-signup').addEventListener('click',function(){setMode('signup');});
 $('bm-resend').addEventListener('click',function(e){
@@ -487,7 +516,7 @@ function openRazorpay(o){
 function loadPaypal(clientId,currency,cb){
   if(window.paypal)return cb();
   var s=document.createElement('script');
-  s.src='https://www.paypal.com/sdk/js?client-id='+encodeURIComponent(clientId)+'&currency='+encodeURIComponent(currency)+'&intent=capture';
+  s.src='https://www.paypal.com/sdk/js?client-id='+encodeURIComponent(clientId)+'&currency='+encodeURIComponent(currency)+'&intent=capture&disable-funding=paylater,credit';
   s.onload=cb;s.onerror=function(){alert('PayPal failed to load. Refresh and try again.');};
   document.head.appendChild(s);
 }

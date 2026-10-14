@@ -154,10 +154,12 @@ async function activate(key) {
 // auto-activates this device, up to 10 devices per key. Same key on every
 // device — no per-machine keys, no machine check. Legacy activate(key)
 // above is kept for old key-entry flows.
-async function activateAccount(accountToken) {
+async function activateAccount(accountToken, nickname) {
   const machine = machineIdRaw()
-  let deviceName = ''
-  try { deviceName = os.hostname() || '' } catch {}
+  let deviceName = String(nickname || '').trim().slice(0, 60)
+  if (!deviceName) {
+    try { deviceName = os.hostname() || '' } catch {}
+  }
   try {
     const res = await fetch(API.replace(/\/$/, '') + '/api/activate', {
       method: 'POST',
