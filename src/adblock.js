@@ -208,8 +208,21 @@ async function loadFilters() {
   console.log(`[AdBlock] loaded ${filterRegex.length} filter rules`)
 }
 
+// Payments and our own infrastructure are never blocked, no matter what
+// a future filter-list update adds. A broken checkout is worse than an ad.
+const NEVER_BLOCK = new Set([
+  'api.razorpay.com', 'checkout.razorpay.com',
+  'paypal.com', 'www.paypal.com', 'paypalobjects.com',
+  'kastrava.pp.ua', 'store.kastrava.pp.ua', 'nexufog.pp.ua',
+  'kastravasearch.pp.ua'
+])
 function shouldBlock(url) {
   if (!isLoaded || !filterRegex.length) return false
+  try {
+    const h = new URL(url).hostname.toLowerCase()
+    if (NEVER_BLOCK.has(h)) return false
+  } catch {}
+  if (!hostHit(hostOf(url))) { stats.allowed++; return false }
   // ~99% of requests die here: host has no candidate rule, no scan.
   if (!hostHit(hostOf(url))) { stats.allowed++; return false }
   for (const re of filterRegex) {
