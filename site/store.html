@@ -157,6 +157,7 @@ function filtered(){
 }
 function artFor(p,h){
   var pv=p.preview||{};
+  if(pv.img)return '<img src="'+esc(pv.img)+'" alt="" loading="lazy" style="width:100%;border-radius:12px;margin-bottom:12px;display:block;border:1px solid var(--line)">';
   var bg=pv.bg||'#222',ac=pv.ac||'#888';
   if(p.kind==='theme'){
     var tbg=pv.tbg||bg,tb=pv.tb||bg;
@@ -201,7 +202,7 @@ function openDetail(id){
   var btn=has?'<button class="btn ghost" id="dt-copy" style="padding:10px 22px">Copy data</button>'
     :(locked?'<button class="btn" id="dt-buy" style="padding:10px 22px">'+esc(price)+'</button>'
     :'<button class="btn" id="dt-get" style="padding:10px 22px">Get</button>');
-  var art=artFor(p,150);
+  var art=artFor(p,180);
   document.getElementById('item-body').innerHTML=art
     +'<h2 style="font-size:20px">'+esc(p.name)+'</h2>'
     +'<p style="font-size:13px;color:var(--muted)">'+esc(p.kind)+' \u00B7 '+(p.free?'free':(p.pro_free?'free with Pro':esc(p.tier||'premium')))+'</p>'
@@ -241,7 +242,7 @@ function paint(items){
     var btn=has?'<button class="btn ghost" data-got="'+esc(p.id)+'" style="padding:8px 16px;font-size:13px">Installed ✓</button>'
       :(locked?'<button class="btn ghost" data-buy="'+esc(p.id)+'" style="padding:8px 16px;font-size:13px"'+(IS_KASTRAVA?'':' disabled')+'>'+esc(price)+'</button>'
       :'<button class="btn" data-get="'+esc(p.id)+'" style="padding:8px 16px;font-size:13px"'+(IS_KASTRAVA?'':' disabled')+'>Get</button>');
-    var art=artFor(p,96);
+    var art=artFor(p,124);
     return '<div class="lic-card store-card" data-open="'+esc(p.id)+'" style="margin-top:0;cursor:pointer">'+art
       +'<h2 style="font-size:17px;margin-bottom:2px">'+esc(p.name)+'</h2>'
       +'<p style="font-size:13px">'+esc(p.blurb)+'</p>'
