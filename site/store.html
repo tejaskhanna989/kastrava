@@ -68,8 +68,13 @@
   </div>
   <div class="catrow" id="store-cats"></div>
   <div class="store-grid" id="store-grid"></div>
-  <div class="lic-card" id="store-login" style="margin-top:22px">
-    <h2 style="font-size:18px;margin-bottom:4px">Log in to get items</h2>
+  <div id="store-login" style="display:none;position:fixed;inset:0;z-index:150;background:rgba(0,0,0,.55);align-items:center;justify-content:center;padding:16px">
+  <div class="lic-card" style="margin:0;max-width:400px;width:100%">
+    <div style="display:flex;align-items:center;gap:10px">
+      <h2 style="font-size:19px;margin:0;flex:1">Log in to get items</h2>
+      <button id="login-x" style="border:none;background:transparent;color:var(--ink);font-size:20px;cursor:pointer" aria-label="Close">×</button>
+    </div>
+    <p style="font-size:13px;color:var(--muted);margin:6px 0 0">Browsing is free. Installing anything needs an account.</p>
     <div class="loginrow">
       <input id="st-email" type="email" placeholder="you@example.com" style="flex:2;min-width:180px">
       <input id="st-pass" type="password" placeholder="Password" style="flex:1;min-width:140px" autocomplete="current-password">
@@ -78,6 +83,7 @@
       <button class="btn btn-primary" id="st-go" style="padding:10px 22px">Log in</button>
     </div>
     <div class="msg" id="st-msg"></div>
+  </div>
   </div>
 </div>
 <div id="item-modal" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.5);align-items:center;justify-content:center">
@@ -231,6 +237,12 @@ function openDetail(id){
   var cp=$('dt-copy');if(cp)cp.addEventListener('click',function(){copyOwned(id);});
 }
 function closeDetail(){$('item-modal').style.display='none';}
+function needLogin(){
+  if(tok())return false;
+  var m=$('store-login');if(m)m.style.display='flex';
+  return true;
+}
+$('login-x').addEventListener('click',function(){$('store-login').style.display='none';});
 
 /* ---------- data ---------- */
 function load(){
@@ -239,7 +251,8 @@ function load(){
   fetch(KAS_API+'/api/store/catalog',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cur?{currency:cur}:{})})
   .then(function(r){return r.json();}).then(function(j){
     var items=(j&&j.items)||[];
-    if(!tok()){window.__isPremium=false;paint(items);return;}
+    if(!tok()){window.__isPremium=false;paint(items);
+      var m=$('store-login');if(m)m.style.display='flex';return;}
     fetch(KAS_API+'/api/account/items',{method:'POST',headers:authz(),body:'{}'})
     .then(function(r){return r.json();}).then(function(k){
       owned={};(k.items||[]).forEach(function(x){owned[x.id]=x.data;});
@@ -255,6 +268,7 @@ function load(){
   }).catch(function(){$('store-grid').textContent='Store unreachable.';});
 }
 function claim(id){
+  if(needLogin())return;
   fetch(KAS_API+'/api/store/claim',{method:'POST',headers:authz(),body:JSON.stringify({id:id})})
   .then(function(r){return r.json();}).then(function(j){
     if(j&&j.ok){owned[id]=j.data;load();}
@@ -301,6 +315,7 @@ function buyPaypal(id,o){
   });
 }
 function buy(id){
+  if(needLogin())return;
   var wantPp=!!(GEO&&GEO.provider==='paypal');
   fetch(KAS_API+'/api/store/buy',{method:'POST',headers:authz(),
     body:JSON.stringify(wantPp?{id:id,provider:'paypal'}:{id:id})})
