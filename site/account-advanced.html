@@ -744,12 +744,20 @@ $('data-delete').addEventListener('click',function(){
 });
 
 /* ---------- boot ---------- */
-(function(){
+function bootDash(){
   var t=tok();if(!t)return;
   post('/api/account/me',{},true).then(function(j){
     if(j&&j.ok)showDash(j.email);
   }).catch(function(){});
-})();
+}
+window.addEventListener('kas-login',bootDash);
+setInterval(function(){
+  try{
+    var lc=document.getElementById('login-card');
+    if(lc&&lc.style.display!=='none')bootDash();
+  }catch(e){}
+},2000);
+bootDash();
 })();
 </script>
 </body>

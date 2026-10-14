@@ -910,7 +910,8 @@ app.whenReady().then(async () => {
           const js = "(function(){try{"
             + "if(!localStorage.getItem('kas_sync_token'))localStorage.setItem('kas_sync_token'," + JSON.stringify(t) + ");"
             + "if(!localStorage.getItem('kas_store_token'))localStorage.setItem('kas_store_token'," + JSON.stringify(t) + ");"
-            + "}catch(e){}})()"
+            + "}catch(e){}"
+            + "try{window.dispatchEvent(new Event('kas-login'));}catch(e){})()"
           wc.executeJavaScript(js).catch(() => {})
         } catch {}
       })

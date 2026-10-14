@@ -155,6 +155,13 @@ $('ac-out').addEventListener('click',function(){
   try{localStorage.removeItem('kas_sync_token');}catch(e){}
   location.reload();
 });
+window.addEventListener('kas-login',function(){refresh();});
+setInterval(function(){
+  try{
+    var box=document.getElementById('auth-box');
+    if(box&&box.style.display!=='none'&&tok())refresh();
+  }catch(e){}
+},2000);
 refresh();
 })();
 </script>
