@@ -12,7 +12,28 @@ const REFRESH_INTERVAL = 24 * 60 * 60 * 1000
 
 let filterRules = []
 let filterRegex = []
+// Host fast-path: base domains pulled from ||-anchored rules. shouldBlock
+// first walks the URL's host parents against this set (microseconds); only
+// hosts with a candidate rule pay for the full regex scan. Same verdicts,
+// ~99% of first-party requests skip the scan entirely.
+let hostSet = new Set()
 let isLoaded = false
+function hostOf(url) {
+  try {
+    const h = new URL(url).hostname.toLowerCase()
+    return h || ''
+  } catch { return '' }
+}
+function hostHit(host) {
+  if (!host || !hostSet.size) return false
+  let h = host
+  while (true) {
+    if (hostSet.has(h)) return true
+    const i = h.indexOf('.')
+    if (i < 0) return false
+    h = h.slice(i + 1)
+  }
+}
 let stats = { blocked: 0, allowed: 0 }
 
 function ensureFilterDir() {
@@ -72,6 +93,11 @@ function parseFilterLine(line) {
     pattern = pattern.slice(2)
     // Must contain a dot to be a domain pattern
     if (!pattern.includes('.')) return null
+    // Feed the host fast-path set (strip path/options remnants).
+    try {
+      let hd = pattern.split(/[/^|]/)[0].toLowerCase().replace(/^\.+|\.+$/, '')
+      if (hd && hd.includes('.') && !hd.includes('*') && !hd.includes('?')) hostSet.add(hd)
+    } catch {}
 
     // Strip trailing | (end-of-URL anchor)
     let endAnchor = ''
@@ -98,6 +124,10 @@ function parseFilterLine(line) {
   if (pattern.startsWith('|')) {
     pattern = pattern.slice(1)
     if (pattern.startsWith('http')) {
+      try {
+        const hh = new URL(pattern).hostname.toLowerCase()
+        if (hh && hh.includes('.')) hostSet.add(hh)
+      } catch {}
       // Strip trailing |
       let endAnchor = ''
       if (pattern.endsWith('|')) { pattern = pattern.slice(0, -1); endAnchor = '$' }
@@ -110,7 +140,15 @@ function parseFilterLine(line) {
     try { return new RegExp(pattern, 'i') } catch { return null }
   }
 
-  // Contains a domain-like pattern — convert to substring match
+  // Contains a domain-like pattern — convert to substring match.
+  // Feed the host fast-path so verdicts stay identical.
+  try {
+    const dm = pattern.match(/([a-z0-9-]+\.)+[a-z]{2,}/i)
+    if (dm) {
+      let hd = dm[0].toLowerCase().replace(/^\.+|\.+$/, '')
+      if (hd && hd.includes('.')) hostSet.add(hd)
+    }
+  } catch {}
   if (!pattern.includes('.')) return null
 
   // Strip trailing |
@@ -172,6 +210,8 @@ async function loadFilters() {
 
 function shouldBlock(url) {
   if (!isLoaded || !filterRegex.length) return false
+  // ~99% of requests die here: host has no candidate rule, no scan.
+  if (!hostHit(hostOf(url))) { stats.allowed++; return false }
   for (const re of filterRegex) {
     if (re.test(url)) {
       stats.blocked++
