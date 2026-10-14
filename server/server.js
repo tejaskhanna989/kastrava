@@ -65,7 +65,7 @@ function planOf(name) {
 
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data')
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || ''
-const APP_VERSION = '101.5.2'
+const APP_VERSION = '101.5.3'
 const SITE_DIR = path.join(__dirname, '..', 'site')
 
 const keys = sign.ensureKeys()

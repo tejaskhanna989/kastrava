@@ -1441,13 +1441,28 @@ function favFb(img){
   }catch(e){}
   img.style.display="none";
 }
+function favOk(img){
+  // Services sometimes answer with a 1px/blank gif instead of erroring.
+  try{if((img.naturalWidth||0)<2)favFb(img);}catch(e){}
+}
+function favSweep(root){
+  // Hung icon requests never fire error/load: sweep stalled images away so
+  // tiles fall back to their letter instead of sitting blank.
+  setTimeout(function(){
+    try{
+      (root||document).querySelectorAll("img.sc-fav,img.bm-fav").forEach(function(im){
+        try{if(!im.complete||(im.naturalWidth||0)<2)favFb(im);}catch(e){}
+      });
+    }catch(e){}
+  },6000);
+}
 function loadTopSites(){
   var c2=$("top-sites");if(!c2)return;
   var sites=[{u:"https://kastrava.pp.ua",t:"Kastrava",i:"K"}];
   try{customSites=JSON.parse(localStorage.getItem("as_custom_sites")||"[]")||[];}catch(e){customSites=[];}
   var hiddenSites=[];
   try{hiddenSites=JSON.parse(localStorage.getItem("as_hidden_sites")||"[]")||[];}catch(e){hiddenSites=[];}
-  var fav=function(u,l){var f=favIcon(u),h=favHost(u);return "<div class=\"sc-icon\">"+esc(l)+(f?"<img class=\"sc-fav\" data-host=\""+esc(h)+"\" src=\""+f+"\" alt=\"\" onerror=\"favFb(this)\">":"")+"</div>";};
+  var fav=function(u,l){var f=favIcon(u),h=favHost(u);return "<div class=\"sc-icon\">"+esc(l)+(f?"<img class=\"sc-fav\" onload=\"favOk(this)\" data-host=\""+esc(h)+"\" src=\""+f+"\" alt=\"\" onerror=\"favFb(this)\">":"")+"</div>";};
   var tileMax=parseInt(settings.ntpTiles)||8;if(!(tileMax>0))tileMax=8;
   var tiles=customSites.slice(0,tileMax).map(function(s){return "<div class=\"shortcut ts-custom\" data-url=\""+esc(s.u)+"\"><button class=\"ts-x\" data-url=\""+esc(s.u)+"\" title=\"Remove\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\"><path d=\"M18 6L6 18M6 6l12 12\"/></svg></button>"+fav(s.u,(s.t||"?").charAt(0).toUpperCase())+"<div class=\"sc-label\">"+esc(s.t)+"</div></div>";}).join("");
   tiles+=sites.filter(function(s){return hiddenSites.indexOf(s.u)<0;}).map(function(s){return "<div class=\"shortcut ts-custom\" data-url=\""+esc(s.u)+"\"><button class=\"ts-x\" data-url=\""+esc(s.u)+"\" title=\"Remove\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\"><path d=\"M18 6L6 18M6 6l12 12\"/></svg></button>"+fav(s.u,s.i)+"<div class=\"sc-label\">"+esc(s.t)+"</div></div>";}).join("");
@@ -1456,6 +1471,7 @@ function loadTopSites(){
   }
   tiles+="<div class=\"shortcut ts-add\" id=\"ts-add\" title=\"Add shortcut\"><div class=\"sc-icon\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\"><path d=\"M12 22C17.5 22 22 17.5 22 12C22 6.5 17.5 2 12 2C6.5 2 2 6.5 2 12C2 17.5 6.5 22 12 22Z\"/><path d=\"M8 12H16\"/><path d=\"M12 16V8\"/></svg></div><div class=\"sc-label\">Add</div></div>";
   c2.innerHTML=tiles;
+  favSweep(c2);
   c2.onclick=function(e){
     var x=e.target.closest(".ts-x");
     if(x){removeCustomSite(x.dataset.url);return;}
@@ -4324,7 +4340,7 @@ function renderSettingsSection(id){
     h+="<div class=\"sg\"><button class=\"btn-sm btn-accent\" id=\"s-setupreplay\">Replay Welcome Setup</button><div class=\"desc\">Show the first-run setup wizard again.</div></div>";
   }
   else if(id==="about"){h="<h3>About</h3>";
-    h+="<div class=\"about-card\"><img src=\"logo.png\"><div><div class=\"name\">Kastrava <span style=\"font-size:10px;font-weight:700;background:rgba(245,158,11,.15);color:#f59e0b;padding:2px 8px;border-radius:10px;vertical-align:2px;letter-spacing:.5px\">RC</span></div><div class=\"ver\">Version 101.5.2 &mdash; Starship Wonders ("+editionLabel()+")</div><div class=\"ver\" style=\"margin-top:2px\">Chromium "+(window.__chromeVer||"")+" · volatile sessions · zero telemetry</div></div></div>";
+    h+="<div class=\"about-card\"><img src=\"logo.png\"><div><div class=\"name\">Kastrava <span style=\"font-size:10px;font-weight:700;background:rgba(245,158,11,.15);color:#f59e0b;padding:2px 8px;border-radius:10px;vertical-align:2px;letter-spacing:.5px\">RC</span></div><div class=\"ver\">Version 101.5.3 &mdash; Starship Wonders ("+editionLabel()+")</div><div class=\"ver\" style=\"margin-top:2px\">Chromium "+(window.__chromeVer||"")+" · volatile sessions · zero telemetry</div></div></div>";
     h+="<div class=\"sg\" style=\"border:1px solid var(--c-border);border-radius:12px;padding:6px 16px;margin-top:4px\">"
       +"<div class=\"about-link\" data-link=\"help\">Get help with Kastrava<span>\u203a</span></div>"
       +"<div class=\"about-link\" data-link=\"issue\">Report an issue<span>\u203a</span></div>"
