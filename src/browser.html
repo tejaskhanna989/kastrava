@@ -4203,7 +4203,7 @@ function renderSettingsSection(id){
     h+="<div class=\"sg\"><div class=\"lbl\">Light Themes</div><div id=\"s-presets-light\" style=\"display:flex;gap:6px;flex-wrap:wrap\">";
     (isPremium()?LIGHT_THEMES:[LIGHT_THEMES[0]]).forEach(function(p,i){h+="<div data-idx=\""+i+"\" data-type=\"light\" style=\"width:28px;height:28px;border-radius:6px;background:"+p.bg+";cursor:pointer;border:2px solid "+(settings.theme===("light-"+i)?p.ac:"transparent")+";position:relative;overflow:hidden;transition:border .15s,transform .15s\" title=\""+p.n+"\" class=\"theme-btn\"><div style=\"position:absolute;top:0;left:0;right:0;height:6px;background:"+p.tbg+"\"></div><div style=\"position:absolute;bottom:0;left:0;right:0;height:3px;background:"+p.tb+"\"></div></div>";});
     h+="</div></div>";
-    h+="<div class=\"sg\"><div class=\"lbl\">Store</div><div class=\"desc\">Themes, logos, wallpapers and more from the Kastrava Store.</div><div style=\"display:flex;gap:8px;flex-wrap:wrap;margin:8px 0\" id=\"store-owned\"><span class=\"desc\">Loading…</span></div><div><button class=\"btn-sm btn-accent\" id=\"s-storeopen\">Get themes</button></div></div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">Store</div><div class=\"desc\">Themes, logos, wallpapers and more from the Kastrava Store.</div><div style=\"display:flex;gap:8px;flex-wrap:wrap;margin:8px 0\" id=\"store-owned\"><span class=\"desc\">Loading…</span></div><div><button class=\"btn-sm btn-accent\" id=\"s-storeopen\" data-open-store=\"https://store.kastrava.pp.ua/\">Get themes</button></div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Show Bookmark Bar</div><select id=\"s-bmbar\"><option value=\"auto\">Auto</option><option value=\"always\">Always</option><option value=\"never\">Never</option></select></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Accent Color</div><div class=\"accent-row\" id=\"accent-swatches\">";
     var AC_COLORS=["#4fc3f7","#3b82f6","#0ea5e9","#14b8a6","#10b981","#84cc16","#facc15","#fb923c","#94a3b8","#8b5cf6"];
@@ -5063,6 +5063,17 @@ document.addEventListener('keydown',function(e){
   else if(paletteOpen&&e.key==='Escape'){closePalette();}
 });
 document.addEventListener('click',function(e){if(paletteOpen&&!e.target.closest('.command-palette'))closePalette();});
+document.addEventListener('click',function(e){
+  var b=e.target&&e.target.closest?e.target.closest('[data-open-store]'):null;
+  if(!b)return;
+  e.preventDefault();
+  var url=b.getAttribute('data-open-store')||'https://store.kastrava.pp.ua/';
+  try{if(typeof closeSettings==='function')closeSettings();}catch(x){}
+  try{
+    if(typeof addTab==='function'){addTab(url);return;}
+  }catch(x){}
+  try{if(api&&api.openExternal)api.openExternal(url);}catch(x){}
+});
 
 // ===== WORKSPACES BAR =====
 var workspaces=[{name:'Personal',active:true},{name:'Work'}];
