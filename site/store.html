@@ -267,12 +267,20 @@ function load(){
     }).catch(function(){paint(items);});
   }).catch(function(){$('store-grid').textContent='Store unreachable.';});
 }
+function claimFail(j){
+  var e=j&&j.error;
+  if(e==='unauthorized'){needLogin();return;}
+  if(e==='wrong_browser'){alert('Open this Store page inside the Kastrava browser to install — other browsers are blocked.');return;}
+  if(e==='need_payment'){alert('That item is paid. Premium members get it free, or buy it once with the price button.');return;}
+  alert((j&&(j.msg||j.error))||'Could not get that item. Try again.');
+}
 function claim(id){
   if(needLogin())return;
   fetch(KAS_API+'/api/store/claim',{method:'POST',headers:authz(),body:JSON.stringify({id:id})})
   .then(function(r){return r.json();}).then(function(j){
     if(j&&j.ok){owned[id]=j.data;load();}
-  }).catch(function(){});
+    else claimFail(j);
+  }).catch(function(){alert('Could not reach the store. Check connection and retry.');});
 }
 function copyOwned(id){
   var txt=JSON.stringify(owned[id]||{});
@@ -321,7 +329,7 @@ function buy(id){
     body:JSON.stringify(wantPp?{id:id,provider:'paypal'}:{id:id})})
   .then(function(r){return r.json();}).then(function(o){
     if(o&&o.ok&&o.data){owned[id]=o.data;load();return;}
-    if(!o||!o.order_id)return;
+    if(!o||!o.order_id){claimFail(o);return;}
     if(o.provider==='paypal'||wantPp){buyPaypal(id,o);return;}
     if(!window.Razorpay)return;
     new window.Razorpay({key:o.key_id,amount:o.amount,currency:o.currency,order_id:o.order_id,
