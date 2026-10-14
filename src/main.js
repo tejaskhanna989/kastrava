@@ -226,7 +226,10 @@ function createWindow() {
     // CAPTCHA providers: ping the UI once per site so it can offer
     // one-tap human mode instead of failing the check silently.
     try {
-      if (isCaptchaUrl(details.url)) {
+      // Fast path: full URL parse + hostname checks only when the URL even
+      // mentions a captcha provider (true for ~0% of subresources).
+      const u = details.url || ''
+      if ((u.indexOf('captcha') !== -1 || u.indexOf('recaptcha') !== -1 || u.indexOf('challenge') !== -1) && isCaptchaUrl(u)) {
         const top = topHostOf(details)
         if (top && !captchaNotified.has(top) && mainWindow && !mainWindow.isDestroyed()) {
           captchaNotified.add(top)
@@ -268,6 +271,21 @@ function createWindow() {
       }
     } catch {}
     let hasSetCookie = false
+    // Fast path: cookies allowed globally and no per-site exception in play
+    // means headers pass through untouched — no object rebuild.
+    if (!cookiesOff && !siteCookieAllow && cookieMode !== 'third' && rh) {
+      callback({})
+      // Same reporting as the slow path: only responses carrying cookies.
+      let sc = false
+      try { sc = !!(rh['set-cookie'] || rh['Set-Cookie']) } catch {}
+      if (sc && details.webContentsId) {
+        try {
+          const u2 = new URL(details.url)
+          radar.add(details.webContentsId, { kind: 'cookie', host: u2.hostname, t: Date.now() })
+        } catch {}
+      }
+      return
+    }
     if (rh) {
       const filtered = {}
       for (const k in rh) {
