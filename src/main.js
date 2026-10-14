@@ -502,6 +502,9 @@ function initElectronUpdater() {
   try {
     const { autoUpdater } = require('electron-updater')
     updater = autoUpdater
+    // Our Windows builds are unsigned: without this every payload fails
+    // the signature check and updates silently never arrive.
+    try { updater.verifyUpdateCodeSignature = false } catch {}
     updater.autoDownload = true
     updater.autoInstallOnAppQuit = true
     updater.on('error', (e) => {
