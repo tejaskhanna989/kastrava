@@ -3662,6 +3662,20 @@ function refreshStoreOwned(){
     if(!items.length){box.innerHTML='<span class="desc">Nothing yet — hit Get themes.</span>';return;}
     box.innerHTML="";
     items.slice(0,24).forEach(function(x){
+      if(x.kind==="accents"&&x.data&&x.data.accents&&x.data.accents.length){
+        var wrap=document.createElement("span");
+        wrap.title=x.name||x.id;
+        wrap.style.cssText="display:inline-flex;gap:3px;align-items:center;margin:2px;";
+        x.data.accents.slice(0,6).forEach(function(c){
+          var d=document.createElement("button");
+          d.className="theme-btn";d.title=(x.name||"accents")+" "+c;
+          d.style.cssText="width:22px;height:22px;border-radius:50%;background:"+c+";cursor:pointer;border:2px solid "+(settings.accent===c?c:"transparent")+";";
+          d.addEventListener("click",function(){applyAccentColor(c,x.name);});
+          wrap.appendChild(d);
+        });
+        box.appendChild(wrap);
+        return;
+      }
       var sw=x.data&&x.data.bg?x.data.bg:(x.data&&x.data.accents?x.data.accents[0]:"#888");
       var b=document.createElement("button");
       b.className="theme-btn";b.title=x.name||x.id;b.dataset.sid=x.id;
@@ -3675,6 +3689,14 @@ function refreshStoreOwned(){
       box.appendChild(b);
     });
   }).catch(function(){settled=true;box.innerHTML='<span class="desc">Log in to see your store items.</span>';});
+}
+function applyAccentColor(color,name){
+  if(!color)return false;
+  settings.accent=color;saveSetting("accent",color);
+  try{document.documentElement.style.setProperty("--accent",color);}catch(e){}
+  toast("Accent "+color+" applied"+(name?" from "+name:"")+".");
+  try{renderSettingsSection("appearance");bindSettingsEvents("appearance");}catch(e){}
+  return true;
 }
 function copyText(t){
   if(!t)return;
