@@ -134,6 +134,11 @@
       </div>
       <div id="gr-who" style="margin-top:8px;font-size:13px"></div>
       <div id="gr-pick" style="display:none;margin-top:12px">
+        <label for="gr-sel">Or select an item (all 701)</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+          <select id="gr-sel" style="flex:1;min-width:200px;padding:8px 10px;border-radius:8px;border:1px solid var(--line2);background:var(--card2);color:var(--ink);font-family:inherit"><option value="">— choose —</option></select>
+          <button id="gr-sel-go" style="padding:8px 18px;white-space:nowrap">Grant selected</button>
+        </div>
         <label for="gr-q">Pick a store item (search, then Grant)</label>
         <input id="gr-q" placeholder="Search 701 items — try \"ocean\" or \"cursor\"" style="margin-bottom:8px">
         <div id="gr-list" style="max-height:320px;overflow:auto;border:1px solid var(--line);border-radius:10px"></div>
@@ -437,6 +442,10 @@ $('gr-find').addEventListener('click',function(){
       fetch(KAS_API+'/api/store/catalog',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})
       .then(function(x){return x.json();}).then(function(j){
         GR_CATALOG=(j&&j.items)||[];
+        var sel=$('gr-sel');
+        sel.innerHTML='<option value="">— choose —</option>'+GR_CATALOG.map(function(p){
+          return '<option value="'+esc(p.id)+'">'+esc(p.name)+' ('+esc(p.kind)+')</option>';
+        }).join('');
         grPaintList((a.items||[]).map(function(x){return x.id||x;}));
       }).catch(function(){});
     }else{
@@ -471,6 +480,14 @@ $('gr-q').addEventListener('input',function(){
   api('/api/admin/account',{email:$('gr-email').value.trim().toLowerCase()}).then(function(r){
     grPaintList(r.json&&r.json.ok?((r.json.account.items||[]).map(function(x){return x.id||x;})) : []);
   }).catch(function(){});
+});
+$('gr-sel-go').addEventListener('click',function(){
+  var out=$('gr-out'),id=$('gr-sel').value;
+  var em=$('gr-email').value.trim().toLowerCase();
+  if(!em||em.indexOf('@')<0){out.textContent='Type their email first.';return;}
+  if(!id){out.textContent='Select an item first.';return;}
+  var gdays=Math.floor(Number($('gr-days').value)||30);
+  grDoGrant(id,gdays);
 });
 $('gr-go').addEventListener('click',function(){
   var out=$('gr-out');out.textContent='Granting…';
