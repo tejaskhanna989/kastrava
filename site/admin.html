@@ -126,14 +126,27 @@
     </div>
     <div class="apane pane" id="pane-grant" style="display:none">
       <h2>Grant free, direct to account</h2>
-      <p class="sub">Store item id or license key — lands on the account instantly, no purchase.</p>
-      <label for="gr-email">Account email</label>
-      <input id="gr-email" type="email" placeholder="account@email">
-      <label for="gr-id">Store item id or license key</label>
-      <input id="gr-id" placeholder="e.g. theme-ember-dusk or KAS-...">
-      <label for="gr-days">Pass length in days (only for the catalogue pass)</label>
-      <input id="gr-days" type="number" min="1" max="3650" value="30" style="max-width:160px">
-      <button id="gr-go" class="btn btn-primary" style="margin-top:12px">Grant</button>
+      <p class="sub">Type their email, pick anything — it lands on their account instantly, no purchase.</p>
+      <label for="gr-email">Their email</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input id="gr-email" type="email" placeholder="account@email" style="flex:1;min-width:200px">
+        <button id="gr-find" class="btn btn-ghost" style="white-space:nowrap">Find</button>
+      </div>
+      <div id="gr-who" style="margin-top:8px;font-size:13px"></div>
+      <div id="gr-pick" style="display:none;margin-top:12px">
+        <label for="gr-q">Pick a store item (search, then Grant)</label>
+        <input id="gr-q" placeholder="Search 701 items — try \"ocean\" or \"cursor\"" style="margin-bottom:8px">
+        <div id="gr-list" style="max-height:320px;overflow:auto;border:1px solid var(--line);border-radius:10px"></div>
+        <label for="gr-days" style="margin-top:12px">Pass length in days (only for the catalogue pass)</label>
+        <input id="gr-days" type="number" min="1" max="3650" value="30" style="max-width:160px">
+      </div>
+      <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--line)">
+        <label for="gr-id">Or paste a store item id / license key directly</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input id="gr-id" placeholder="e.g. theme-ember-dusk or KAS-..." style="flex:1;min-width:200px">
+          <button id="gr-go" class="btn btn-primary" style="white-space:nowrap">Grant</button>
+        </div>
+      </div>
       <div id="gr-out" style="margin-top:12px;font-size:13px"></div>
     </div>
     <div class="apane pane" id="pane-email" style="display:none">
@@ -399,8 +412,67 @@ function loadAccounts(){
 $('acc-go').addEventListener('click',loadAccounts);
 
 /* ---------- grant ---------- */
+var GR_CATALOG=[];
+function grDoGrant(id,days,done){
+  var out=$('gr-out');out.textContent='Granting '+id+'…';
+  api('/api/admin/grant',{email:$('gr-email').value.trim(),id:id,days:days}).then(function(r){
+    if(!r.json||!r.json.ok){out.textContent='Failed: '+((r.json&&(r.json.error||r.json.msg))||'error');return;}
+    out.innerHTML='Granted <b>'+esc(r.json.granted)+'</b> to <b>'+esc($('gr-email').value.trim())+'</b>'+(r.json.days?(' · '+r.json.days+' days'):'');
+    if(done)done();
+  }).catch(function(){out.textContent='Failed.';});
+}
+$('gr-find').addEventListener('click',function(){
+  var em=$('gr-email').value.trim().toLowerCase(),who=$('gr-who');
+  if(!em||em.indexOf('@')<0){who.textContent='Type a valid email first.';return;}
+  who.textContent='Looking up…';$('gr-pick').style.display='none';
+  api('/api/admin/account',{email:em}).then(function(r){
+    if(!r.json||!r.json.ok){who.textContent='No account with that email.';return;}
+    var a=r.json.account;
+    who.innerHTML='<b>'+esc(a.email)+'</b> · '+(a.keys||[]).length+' keys · '+(a.items||[]).length+' store items owned';
+    $('gr-pick').style.display='block';
+    if(!GR_CATALOG.length){
+      fetch(KAS_API+'/api/store/catalog',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})
+      .then(function(x){return x.json();}).then(function(j){
+        GR_CATALOG=(j&&j.items)||[];
+        grPaintList((a.items||[]).map(function(x){return x.id||x;}));
+      }).catch(function(){});
+    }else{
+      grPaintList((a.items||[]).map(function(x){return x.id||x;}));
+    }
+  }).catch(function(){who.textContent='Lookup failed.';});
+});
+function grPaintList(ownedIds){
+  var q=($('gr-q').value||'').trim().toLowerCase();
+  var box=$('gr-list');
+  var items=GR_CATALOG.filter(function(p){
+    if(q&&(p.name+' '+p.id+' '+p.kind).toLowerCase().indexOf(q)<0)return false;
+    return true;
+  }).slice(0,60);
+  box.innerHTML=items.map(function(p){
+    var has=ownedIds.indexOf(p.id)>=0;
+    return '<div style="display:flex;gap:8px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line)">'
+      +'<div style="flex:1;min-width:0"><b>'+esc(p.name)+'</b><br><span class="mono" style="font-size:11px;color:var(--muted2)">'+esc(p.id)+' · '+esc(p.kind)+'</span></div>'
+      +(has?'<span style="font-size:12px;color:var(--muted)">owned ✓</span>'
+        :'<button data-grant="'+esc(p.id)+'" style="padding:4px 14px;font-size:12px">Grant</button>')+'</div>';
+  }).join('')||'<div style="padding:12px;font-size:13px;color:var(--muted)">No matches.</div>';
+  box.querySelectorAll('button[data-grant]').forEach(function(b){
+    b.addEventListener('click',function(){
+      var gdays=Math.floor(Number($('gr-days').value)||30);
+      grDoGrant(b.dataset.grant,gdays,function(){
+        b.outerHTML='<span style="font-size:12px;color:var(--muted)">granted ✓</span>';
+      });
+    });
+  });
+}
+$('gr-q').addEventListener('input',function(){
+  api('/api/admin/account',{email:$('gr-email').value.trim().toLowerCase()}).then(function(r){
+    grPaintList(r.json&&r.json.ok?((r.json.account.items||[]).map(function(x){return x.id||x;})) : []);
+  }).catch(function(){});
+});
 $('gr-go').addEventListener('click',function(){
   var out=$('gr-out');out.textContent='Granting…';
+  var em=$('gr-email').value.trim().toLowerCase();
+  if(!em||em.indexOf('@')<0){out.textContent='Type their email first.';return;}
   var gdays=Math.floor(Number($('gr-days').value)||30);
   api('/api/admin/grant',{email:$('gr-email').value.trim(),id:$('gr-id').value.trim(),days:gdays}).then(function(r){
     if(!r.json||!r.json.ok){out.textContent='Failed: '+((r.json&&(r.json.error||r.json.msg))||'error');return;}
