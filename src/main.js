@@ -191,9 +191,14 @@ function createWindow() {
     return ''
   }
   ses.webRequest.onBeforeRequest((details, callback) => {
-    // Context isolation: webpages must never touch local files
+    // Context isolation: webpages must never touch local files — except an
+    // explicit main-frame navigation (user opening a local PDF, image,
+    // audio or video, exactly like Chrome). Subframes and subresources
+    // stay blocked so sites can't probe the disk.
     try {
-      if (new URL(details.url).protocol === 'file:') return callback({ cancel: true })
+      if (new URL(details.url).protocol === 'file:') {
+        if (details.resourceType !== 'mainFrame') return callback({ cancel: true })
+      }
     } catch {}
     // Content switches: F2 per-site shields first (a per-site "off" always
     // wins), otherwise the global JavaScript / Images switches decide.
