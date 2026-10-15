@@ -1162,11 +1162,33 @@ function guestPreloadUrl() {
     let ua = privacy.CHROME_UA
     try { ua += ' Kastrava/' + app.getVersion() } catch {}
     const script = privacy.NAVIGATOR_SPOOF_SCRIPT.split('__KASTRAVA_UA__').join(ua)
-    fs.writeFileSync(fp, script, 'utf8')
+    // Login bridge (preload leg): runs at document_start, before any page
+    // script. Asks main for the app token — main only answers on our own
+    // domains — and plants it before the page boots, so no wake-up race.
+    // (The wc.executeJavaScript leg hangs on some guests; this replaces it.)
+    const bridge = ';(function(){try{'
+      + "var h=(location.hostname||'').toLowerCase();"
+      + "if(h!=='kastrava.pp.ua'&&h!=='store.kastrava.pp.ua'&&h!=='account.kastrava.pp.ua')return;"
+      + 'var ipc=null;try{ipc=require(\'electron\').ipcRenderer;}catch(e){}'
+      + 'if(!ipc||!ipc.invoke)return;'
+      + "ipc.invoke('bridge-token',location.href).then(function(t){"
+      + 'if(!t||typeof t!==\'string\')return;'
+      + "try{if(!localStorage.getItem('kas_sync_token'))localStorage.setItem('kas_sync_token',t);"
+      + "if(!localStorage.getItem('kas_store_token'))localStorage.setItem('kas_store_token',t);}catch(e){}"
+      + "try{window.dispatchEvent(new CustomEvent('kas-login',{detail:{bridged:true}}));}catch(e){}"
+      + '}).catch(function(){});}catch(e){}})();'
+    fs.writeFileSync(fp, script + bridge, 'utf8')
     return 'file://' + fp.split(path.sep).join('/')
   } catch { return null }
 }
 ipcMain.handle('get-guest-preload', async () => guestPreloadUrl());
+ipcMain.handle('bridge-token', async (_, href) => {
+  try {
+    const h = new URL(String(href || '')).hostname.toLowerCase()
+    if (h !== 'kastrava.pp.ua' && h !== 'store.kastrava.pp.ua' && h !== 'account.kastrava.pp.ua') return null
+    return settingsBackend ? (settingsBackend.get('syncToken') || null) : null
+  } catch { return null }
+});
 ipcMain.handle('sync-login', async (_, { apiBase, email, password }) => {
   try { return await syncEngine.login(apiBase || 'https://nexufog.pp.ua', email, password, syncStore(), safeStorage) } catch { return { ok: false, msg: 'Login failed.' } }
 })
