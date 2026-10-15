@@ -898,8 +898,8 @@ app.whenReady().then(async () => {
     // our domains, only when the page has no token of its own. Manual
     // logout (app or page) still sticks: wipe clears storage, and absent
     // app token means nothing is injected.
-    try {
-      wc.on('dom-ready', () => {
+    const bridgeInject = (why) => {
+      try {
         try {
           const u = new URL(wc.getURL())
           if (u.protocol !== 'https:') return
@@ -913,9 +913,18 @@ app.whenReady().then(async () => {
             + "if(!localStorage.getItem('kas_store_token'))localStorage.setItem('kas_store_token'," + JSON.stringify(t) + ");"
             + "}catch(e){}"
             + "try{window.dispatchEvent(new CustomEvent('kas-login',{detail:{bridged:true}}));}catch(e){})()"
-          wc.executeJavaScript(js).catch(() => {})
+          wc.executeJavaScript(js).then(() => {
+            try { console.log('[bridge] injected (' + why + ') for ' + h) } catch {}
+          }).catch(() => {})
         } catch {}
-      })
+      } catch {}
+    }
+    // dom-ready can be missed on reused/navigated guests — same injection on
+    // dom-ready, did-finish-load and did-navigate as overlapping triggers.
+    try {
+      wc.on('dom-ready', () => { try { bridgeInject('ready') } catch {} })
+      wc.on('did-finish-load', () => { try { bridgeInject('load') } catch {} })
+      wc.on('did-navigate', () => { try { bridgeInject('nav') } catch {} })
     } catch {}
     // Cover any session a guest/popup ends up with, so downloads from
     // popups (payment flows, drive links, blob: URLs) can't miss the
