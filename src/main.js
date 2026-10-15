@@ -1146,7 +1146,13 @@ function guestPreloadUrl() {
   try {
     const dir = app.getPath('userData')
     const fp = path.join(dir, 'guest-preload.js')
-    fs.writeFileSync(fp, privacy.NAVIGATOR_SPOOF_SCRIPT, 'utf8')
+    // Same honest-UA substitution as installNavigatorSpoof: the raw template
+    // carries a __KASTRAVA_UA__ marker that must never reach a live page
+    // (it would break the Store gate and look corrupt in fingerprints).
+    let ua = privacy.CHROME_UA
+    try { ua += ' Kastrava/' + app.getVersion() } catch {}
+    const script = privacy.NAVIGATOR_SPOOF_SCRIPT.split('__KASTRAVA_UA__').join(ua)
+    fs.writeFileSync(fp, script, 'utf8')
     return 'file://' + fp.split(path.sep).join('/')
   } catch { return null }
 }

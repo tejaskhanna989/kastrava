@@ -3768,10 +3768,25 @@ function bindSyncPanel(){
     var s=$("sy-status");if(!s)return;
     var prem=isPremium();
     ["sy-syncrow","sy-devrow","sy-licrow"].forEach(function(id){var el=$(id);if(el)el.style.display=prem?"":"none";});
+    var creds=$("sy-creds"),lbtn=$("sy-login"),ft=$("sy-form-title"),fd=$("sy-form-desc"),lo=$("sy-logout"),nw=$("sy-now");
     if(st&&st.loggedIn){
       var when=st.lastSyncAt?(" · last sync "+String(st.lastSyncAt).slice(0,16).replace("T"," ")):"";
       s.textContent="Signed in as "+st.email+(prem?(" (rev "+st.rev+")"+when):"");
-    }else{s.textContent="Not logged in.";}
+      if(creds)creds.style.display="none";
+      if(lbtn)lbtn.style.display="none";
+      if(ft)ft.textContent="Account";
+      if(fd)fd.textContent="You are signed in. Sync runs automatically; use Sync now to force it.";
+      if(lo)lo.style.display="";
+      if(nw)nw.style.display="";
+    }else{
+      s.textContent="Not logged in.";
+      if(creds)creds.style.display="";
+      if(lbtn)lbtn.style.display="";
+      if(ft)ft.textContent="Log in";
+      if(fd)fd.textContent="Optional — bookmarks, settings and history stay on this device with or without an account.";
+      if(lo)lo.style.display="none";
+      if(nw)nw.style.display="none";
+    }
   }
   function showLic(key){
     var row=$("sy-licrow");if(!row)return;
@@ -4198,7 +4213,7 @@ function renderSettingsSection(id){
     }
     {
       h+="<div class=\"sg\"><div class=\"lbl\">Kastrava account</div><div class=\"desc\">Same login as kastrava.pp.ua/account.html. Bookmarks and settings sync encrypted.</div><div id=\"sy-status\" class=\"desc\" style=\"margin-top:6px\">Checking…</div></div>";
-      h+="<div class=\"sg\" id=\"sy-form\"><div class=\"lbl\">Log in</div><div class=\"desc\" style=\"margin-bottom:6px\">Optional — bookmarks, settings and history stay on this device with or without an account.</div><input id=\"sy-email\" type=\"email\" placeholder=\"you@example.com\" autocomplete=\"email\" style=\"width:100%;margin:6px 0;padding:9px 12px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px\"><input id=\"sy-code\" inputmode=\"numeric\" maxlength=\"6\" placeholder=\"Email code\" autocomplete=\"one-time-code\" style=\"width:100%;margin:0 0 6px;padding:9px 12px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px;display:none\"><input id=\"sy-totp\" inputmode=\"numeric\" maxlength=\"6\" placeholder=\"2FA code (if enabled)\" autocomplete=\"one-time-code\" style=\"width:100%;margin:0 0 6px;padding:9px 12px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px;display:none\"><input id=\"sy-pass\" type=\"password\" placeholder=\"Password\" autocomplete=\"current-password\" style=\"width:100%;margin:0 0 6px;padding:9px 12px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px\"><div style=\"display:flex;gap:8px;margin-top:4px\"><button class=\"btn-sm btn-accent\" id=\"sy-login\">Log in</button><button class=\"btn-sm\" id=\"sy-logout\">Log out</button><button class=\"btn-sm\" id=\"sy-now\">Sync now</button></div><div id=\"sy-msg\" class=\"desc\" style=\"margin-top:6px\"></div></div>";
+      h+="<div class=\"sg\" id=\"sy-form\"><div class=\"lbl\" id=\"sy-form-title\">Log in</div><div class=\"desc\" id=\"sy-form-desc\" style=\"margin-bottom:6px\">Optional — bookmarks, settings and history stay on this device with or without an account.</div><div id=\"sy-creds\"><input id=\"sy-email\" type=\"email\" placeholder=\"you@example.com\" autocomplete=\"email\" style=\"width:100%;margin:6px 0;padding:9px 12px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px\"><input id=\"sy-code\" inputmode=\"numeric\" maxlength=\"6\" placeholder=\"Email code\" autocomplete=\"one-time-code\" style=\"width:100%;margin:0 0 6px;padding:9px 12px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px;display:none\"><input id=\"sy-totp\" inputmode=\"numeric\" maxlength=\"6\" placeholder=\"2FA code (if enabled)\" autocomplete=\"one-time-code\" style=\"width:100%;margin:0 0 6px;padding:9px 12px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px;display:none\"><input id=\"sy-pass\" type=\"password\" placeholder=\"Password\" autocomplete=\"current-password\" style=\"width:100%;margin:0 0 6px;padding:9px 12px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px\"></div><div style=\"display:flex;gap:8px;margin-top:4px\"><button class=\"btn-sm btn-accent\" id=\"sy-login\">Log in</button><button class=\"btn-sm\" id=\"sy-logout\">Log out</button><button class=\"btn-sm\" id=\"sy-now\">Sync now</button></div><div id=\"sy-msg\" class=\"desc\" style=\"margin-top:6px\"></div></div>";
       h+="<div class=\"sg\" id=\"sy-devrow\"><div class=\"lbl\">Devices on this key</div><div class=\"desc\">Up to 10 per key. Remove one to free its slot.</div><div id=\"sy-devices\" class=\"desc\" style=\"margin-top:6px\">—</div></div>";
       h+="<div class=\"sg\"><div class=\"lbl\">Advanced settings</div><div class=\"desc\">Devices, keys and sync on the web dashboard.</div><div style=\"margin-top:8px\"><button class=\"btn-sm\" id=\"sy-advanced\">Open account dashboard</button></div></div>";
       h+="<div class=\"sg\" id=\"sy-licrow\" style=\"display:none\"><div class=\"lbl\">Premium key on file</div><div class=\"desc\">Synced from another device — reference only. Keys stay on your account.</div><div class=\"mono\" id=\"sy-lickey\" style=\"margin:6px 0;font-size:13px\"></div><button class=\"btn-sm\" id=\"sy-activate\">Activate on this device</button></div>";
@@ -4340,7 +4355,7 @@ function renderSettingsSection(id){
     h+="<div class=\"sg\"><button class=\"btn-sm btn-accent\" id=\"s-setupreplay\">Replay Welcome Setup</button><div class=\"desc\">Show the first-run setup wizard again.</div></div>";
   }
   else if(id==="about"){h="<h3>About</h3>";
-    h+="<div class=\"about-card\"><img src=\"logo.png\"><div><div class=\"name\">Kastrava <span style=\"font-size:10px;font-weight:700;background:rgba(245,158,11,.15);color:#f59e0b;padding:2px 8px;border-radius:10px;vertical-align:2px;letter-spacing:.5px\">RC</span></div><div class=\"ver\">Version 101.5.6 &mdash; Starship Wonders ("+editionLabel()+")</div><div class=\"ver\" style=\"margin-top:2px\">Chromium "+(window.__chromeVer||"")+" · volatile sessions · zero telemetry</div></div></div>";
+    h+="<div class=\"about-card\"><img src=\"logo.png\"><div><div class=\"name\">Kastrava <span style=\"font-size:10px;font-weight:700;background:rgba(245,158,11,.15);color:#f59e0b;padding:2px 8px;border-radius:10px;vertical-align:2px;letter-spacing:.5px\">RC</span></div><div class=\"ver\">Version 101.5.7 &mdash; Starship Wonders ("+editionLabel()+")</div><div class=\"ver\" style=\"margin-top:2px\">Chromium "+(window.__chromeVer||"")+" · volatile sessions · zero telemetry</div></div></div>";
     h+="<div class=\"sg\" style=\"border:1px solid var(--c-border);border-radius:12px;padding:6px 16px;margin-top:4px\">"
       +"<div class=\"about-link\" data-link=\"help\">Get help with Kastrava<span>\u203a</span></div>"
       +"<div class=\"about-link\" data-link=\"issue\">Report an issue<span>\u203a</span></div>"
