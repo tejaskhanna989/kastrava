@@ -110,7 +110,7 @@ function refresh(){
   var t=tok();if(!t)return;
   post('/api/account/me',{},t).then(function(j){
     if(j&&j.ok)showMe(j.email,j.created_at);
-    else{try{localStorage.removeItem('kas_sync_token');}catch(e){}}
+    else if(j&&j.error==='unauthorized'){try{localStorage.removeItem('kas_sync_token');}catch(e){}}
   }).catch(function(){});
 }
 $('ac-resend').addEventListener('click',function(e){

@@ -907,11 +907,12 @@ app.whenReady().then(async () => {
           if (h !== 'kastrava.pp.ua' && h !== 'store.kastrava.pp.ua' && h !== 'account.kastrava.pp.ua') return
           const t = settingsBackend && settingsBackend.get('syncToken')
           if (!t) return
+          try { console.log('[bridge] injecting login for ' + h) } catch {}
           const js = "(function(){try{"
             + "if(!localStorage.getItem('kas_sync_token'))localStorage.setItem('kas_sync_token'," + JSON.stringify(t) + ");"
             + "if(!localStorage.getItem('kas_store_token'))localStorage.setItem('kas_store_token'," + JSON.stringify(t) + ");"
             + "}catch(e){}"
-            + "try{window.dispatchEvent(new Event('kas-login'));}catch(e){})()"
+            + "try{window.dispatchEvent(new CustomEvent('kas-login',{detail:{bridged:true}}));}catch(e){})()"
           wc.executeJavaScript(js).catch(() => {})
         } catch {}
       })
