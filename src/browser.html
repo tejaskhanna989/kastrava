@@ -1247,7 +1247,20 @@ function addTab(url,opts){
   });
   wv.addEventListener("page-title-updated",function(e){tab.title=e.title;renderTabs();});
   wv.addEventListener("did-navigate",function(e){var nu=e.url;if(nu.indexOf("data:text/html")===0&&tab._failedUrl){nu=tab._failedUrl;}else if(nu.indexOf("data:")!==0){tab._failedUrl=null;}tab.url=nu;try{tab.canGoBack=wv.canGoBack();tab.canGoForward=wv.canGoForward();}catch(x){}updNav();renderTabs();showPage(id);if(api&&api.addHistory&&settings.historyEnabled!=="off"&&nu.indexOf("data:")!==0)api.addHistory({title:tab.title,url:nu}).catch(function(){});});
-  wv.addEventListener("did-navigate-in-page",function(e){tab.url=e.url;try{tab.canGoBack=wv.canGoBack();tab.canGoForward=wv.canGoForward();}catch(x){}updNav();renderTabs();});
+  wv.addEventListener("did-navigate-in-page",function(e){
+    // Payment iframes (Razorpay checkout, PayPal buttons) do in-page
+    // navigations of their own — never let a subframe rewrite the tab URL,
+    // or the omnibox ends up showing api.razorpay.com over unrelated pages.
+    try{
+      if(e.isMainFrame===false)return;
+      var nu=e.url||"";
+      try{
+        var cur=new URL(tab.url||"about:blank"),nxt=new URL(nu);
+        if((cur.protocol==="http:"||cur.protocol==="https:")&&(nxt.protocol!==cur.protocol||nxt.host!==cur.host))return;
+      }catch(x){}
+      tab.url=nu;
+    }catch(x){tab.url=e.url;}
+    try{tab.canGoBack=wv.canGoBack();tab.canGoForward=wv.canGoForward();}catch(x){}updNav();renderTabs();});
   wv.addEventListener("did-start-loading",function(){tab.loading=true;renderTabs();});
   wv.addEventListener("did-stop-loading",function(){tab.loading=false;renderTabs();updNav();applyPageFx(wv);});
   wv.addEventListener("page-favicon-updated",function(e){tab.favicon=(e.favicons&&e.favicons[0])||null;try{if(tab.favicon&&tab.url){var fh=new URL(tab.url).hostname;if(fh)favCache[fh]=tab.favicon;}}catch(x){}renderTabs();});
