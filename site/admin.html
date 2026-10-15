@@ -131,6 +131,8 @@
       <input id="gr-email" type="email" placeholder="account@email">
       <label for="gr-id">Store item id or license key</label>
       <input id="gr-id" placeholder="e.g. theme-ember-dusk or KAS-...">
+      <label for="gr-days">Pass length in days (only for the catalogue pass)</label>
+      <input id="gr-days" type="number" min="1" max="3650" value="30" style="max-width:160px">
       <button id="gr-go" class="btn btn-primary" style="margin-top:12px">Grant</button>
       <div id="gr-out" style="margin-top:12px;font-size:13px"></div>
     </div>
@@ -399,9 +401,10 @@ $('acc-go').addEventListener('click',loadAccounts);
 /* ---------- grant ---------- */
 $('gr-go').addEventListener('click',function(){
   var out=$('gr-out');out.textContent='Granting…';
-  api('/api/admin/grant',{email:$('gr-email').value.trim(),id:$('gr-id').value.trim()}).then(function(r){
+  var gdays=Math.floor(Number($('gr-days').value)||30);
+  api('/api/admin/grant',{email:$('gr-email').value.trim(),id:$('gr-id').value.trim(),days:gdays}).then(function(r){
     if(!r.json||!r.json.ok){out.textContent='Failed: '+((r.json&&(r.json.error||r.json.msg))||'error');return;}
-    out.innerHTML='Granted <b>'+esc(r.json.granted)+'</b>';
+    out.innerHTML='Granted <b>'+esc(r.json.granted)+'</b>'+(r.json.days?(' · '+r.json.days+' days'):'');
   }).catch(function(){out.textContent='Failed.';});
 });
 

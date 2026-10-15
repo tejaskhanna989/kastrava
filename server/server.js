@@ -1167,6 +1167,15 @@ async function handlePost(req, res, pathname) {
     // Store item grant (free, direct to account).
     const prod = products.get(id)
     if (prod) {
+      if (prod.kind === 'pass') {
+        // Catalogue pass needs a live entitlement with expiry, not a plain
+        // grant — otherwise owns()/passLive() ignores it. Default 30 days,
+        // admin may pass days (1..3650).
+        const days = Math.min(Math.max(Math.floor(Number(body.days) || 30), 1), 3650)
+        store.grantPass(email, 'admin', days)
+        store.audit(email, 'admin_grant', id + ' ' + days + 'd')
+        return json(res, 200, { ok: true, granted: id, days })
+      }
       store.grant(email, id, 'admin')
       store.audit(email, 'admin_grant', id)
       return json(res, 200, { ok: true, granted: id })
