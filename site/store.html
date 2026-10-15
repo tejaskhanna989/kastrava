@@ -384,6 +384,14 @@ $('st-code').addEventListener('keydown',function(e){
   }).catch(function(){});
 });
 $('store-q').addEventListener('input',function(){query=this.value;paint(ALL_ITEMS);});
+function wakeUp(){
+  try{
+    var m=document.getElementById('store-login');
+    if(m&&m.style.display!=='none'&&tok())load();
+  }catch(e){}
+}
+window.addEventListener('kas-login',wakeUp);
+setInterval(wakeUp,2000);
 })();
 </script>
 </body>
