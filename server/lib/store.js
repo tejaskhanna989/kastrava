@@ -13,15 +13,13 @@ class Store {
   load() {
     try {
       const raw = JSON.parse(fs.readFileSync(this.file, 'utf8'))
-      this.data.orders = raw.orders || {}
-      this.data.subscriptions = raw.subscriptions || {}
-      this.data.licenses = raw.licenses || {}
-      // Accounts, sessions and sync blobs must survive restarts exactly
-      // like orders and licenses — losing them logs everyone out and drops
-      // synced data on every deploy.
-      this.data.accounts = raw.accounts || {}
-      this.data.sessions = raw.sessions || {}
-      this.data.sync = raw.sync || {}
+      // Copy EVERYTHING the file holds (orders, licenses, accounts,
+      // sessions, sync, entitlements, audit, approvals, codes...). A previous
+      // version cherry-picked keys and silently dropped entitlements on
+      // every restart — purchased store items vanished on next write.
+      for (const k in raw) {
+        if (raw[k] !== undefined) this.data[k] = raw[k]
+      }
       if (!this.data.entitlements) this.data.entitlements = {}
       // Grandfathered logins predate verification: they stay working.
       for (const e in this.data.accounts) {

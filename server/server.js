@@ -71,6 +71,31 @@ const SITE_DIR = path.join(__dirname, '..', 'site')
 const keys = sign.ensureKeys()
 const store = new (require('./lib/store'))(path.join(DATA_DIR, 'db.json'))
 
+// Self-healing: re-grant paid store orders whose entitlements were lost to
+// the pre-fix restart wipe (load() used to drop the entitlements map).
+// Idempotent — owns() short-circuits already-granted items.
+try {
+  const allOrders = (store.all().orders || {})
+  let healed = 0
+  for (const oid in allOrders) {
+    const o = allOrders[oid]
+    if (!o || o.status !== 'paid') continue
+    if (o.provider !== 'store' && o.provider !== 'store-paypal') continue
+    if (!o.product || !o.account_email) continue
+    if (store.owns(o.account_email, o.product)) continue
+    const prod = products.get(o.product)
+    if (!prod) continue
+    if (prod.kind === 'pass') {
+      store.grantPass(o.account_email, oid, (prod.data && prod.data.days) || 30)
+    } else {
+      store.grant(o.account_email, o.product, oid)
+    }
+    store.audit(o.account_email, 'store_heal', o.product)
+    healed++
+  }
+  if (healed) console.log('[store] healed ' + healed + ' entitlements from paid orders')
+} catch (e) { console.error('[store] heal error:', e && e.message) }
+
 const MIME = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
