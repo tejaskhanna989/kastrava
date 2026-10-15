@@ -417,7 +417,10 @@ function grDoGrant(id,days,done){
   var out=$('gr-out');out.textContent='Granting '+id+'…';
   api('/api/admin/grant',{email:$('gr-email').value.trim(),id:id,days:days}).then(function(r){
     if(!r.json||!r.json.ok){out.textContent='Failed: '+((r.json&&(r.json.error||r.json.msg))||'error');return;}
-    out.innerHTML='Granted <b>'+esc(r.json.granted)+'</b> to <b>'+esc($('gr-email').value.trim())+'</b>'+(r.json.days?(' · '+r.json.days+' days'):'');
+    out.innerHTML='Granted <b>'+esc(r.json.granted)+'</b> to <b>'+esc($('gr-email').value.trim())+'</b>'+(r.json.days?(' · '+r.json.days+' days'):'')
+      +(/^KAS-/.test(r.json.granted)?' <button id="gr-pdf" style="padding:4px 14px;font-size:12px">Key PDF</button>':'');
+    var pb=$('gr-pdf');
+    if(pb)pb.addEventListener('click',function(){keyPdf(r.json.granted);});
     if(done)done();
   }).catch(function(){out.textContent='Failed.';});
 }
@@ -501,6 +504,7 @@ function loadList(){
   .then(function(r){
     if(r.status===401){out.textContent='Wrong token.';return;}
     var lics=(r.json||{}).licenses||{};
+    window.__licMap=lics;
     try{renderOverview(r.json);}catch(e){}
     var keys=Object.keys(lics);
     if(!keys.length){out.textContent='No licenses yet.';return;}
@@ -513,7 +517,8 @@ function loadList(){
           +'<td class="adm-actions"><button data-extend="'+esc(k)+'">Extend</button>'
           +'<button data-life="'+esc(k)+'" title="Extend 100 years">Lifetime</button>'
           +'<button data-rebind="'+esc(k)+'">Rebind</button>'
-          +(l.status!=='revoked'?'<button data-revoke="'+esc(k)+'">Revoke</button>':'')+'</td></tr>';
+          +(l.status!=='revoked'?'<button data-revoke="'+esc(k)+'">Revoke</button>':'')
+          +'<button data-pdf="'+esc(k)+'">PDF</button></td></tr>';
       }).join('')+'</table>';
     function mut(sel,fn){
       out.querySelectorAll(sel).forEach(function(b){b.addEventListener('click',function(){fn(b);});});
@@ -543,6 +548,7 @@ function loadList(){
         loadList();
       }).catch(function(){alert('Rebind failed.');});
     });
+    mut('[data-pdf]',function(b){keyPdf(b.dataset.pdf);});
     mut('[data-revoke]',function(b){
       if(!confirm('Revoke '+b.dataset.revoke+'? The app drops Premium on next refresh.'))return;
       api('/api/admin/revoke',{key:b.dataset.revoke}).then(function(r2){
@@ -553,6 +559,63 @@ function loadList(){
   }).catch(function(){out.textContent='Network error.';});
 }
 $('lst-go').addEventListener('click',loadList);
+function loadJsPdf(cb){
+  if(window.jspdf&&window.jspdf.jsPDF)return cb();
+  if(window.__jspdfLoading){var t=setInterval(function(){if(window.jspdf&&window.jspdf.jsPDF){clearInterval(t);cb();}},150);return;}
+  window.__jspdfLoading=true;
+  var sc=document.createElement('script');
+  sc.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+  sc.onload=function(){window.__jspdfLoading=false;cb();};
+  sc.onerror=function(){window.__jspdfLoading=false;alert('Receipt generator unavailable.');};
+  document.head.appendChild(sc);
+}
+function cleanPdf(t){
+  return String(t==null?'':t).replace(/₹/g,'Rs.').replace(/[—–]/g,'-')
+    .replace(/['']/g,"'").replace(/[""]/g,'"').replace(/[^\x20-\x7E\n]/g,'?');
+}
+function keyPdf(key){
+  var lic=(window.__licMap||{})[key]||{};
+  function build(order,j){
+    var doc=new window.jspdf.jsPDF({unit:'pt',format:'a4'});
+    var x=56,y=72;
+    doc.setFont('helvetica','bold');doc.setFontSize(20);
+    doc.text('Kastrava Premium - License Key',x,y);y+=16;
+    doc.setFont('helvetica','normal');doc.setFontSize(11);
+    doc.text(cleanPdf('Kastrasoft - khannatejas989@gmail.com'),x,y);y+=30;
+    doc.setFont('courier','normal');doc.setFontSize(11);
+    var devs=Object.keys(lic.devices||{});
+    var rows=[['License key',key],['Status',lic.status||'-'],
+      ['Expires',lic.expires_at?new Date(lic.expires_at).toLocaleDateString():'-'],
+      ['Machine',lic.machine_id||'-'],
+      ['Devices',devs.length?devs.join(', '):'(none bound yet)'],
+      ['Order ID',lic.order_id||(order&&order.order_id)||'-']];
+    if(j&&j.receipt){
+      var rc=j.receipt;
+      rows.push(['Payment ID',rc.payment_id||'-']);
+      rows.push(['Amount charged',(rc.currency||'')+' '+(rc.amount_paise!=null?(rc.amount_paise/100).toFixed(2):'-')]);
+    }
+    rows.forEach(function(rr){
+      doc.setFont('helvetica','bold');doc.text(cleanPdf(rr[0]+':'),x,y);
+      doc.setFont('courier','normal');
+      var lines=doc.splitTextToSize(cleanPdf(rr[1]),430);
+      doc.text(lines,x+150,y);y+=lines.length*14+6;
+    });
+    if(j&&j.receipt_sig){
+      y+=6;doc.setFont('helvetica','normal');doc.setFontSize(10);
+      doc.text('Signed receipt (Ed25519, verifiable):',x,y);y+=14;
+      doc.setFont('courier','normal');doc.setFontSize(9);
+      (cleanPdf(j.receipt_sig).match(/.{1,64}/g)||[]).forEach(function(c){doc.text(c,x,y);y+=11;});
+    }
+    doc.save('kastrava-key-'+key.replace(/[^A-Za-z0-9_-]/g,'')+'.pdf');
+  }
+  loadJsPdf(function(){
+    if(lic.order_id){
+      api('/api/admin/order',{order_id:lic.order_id}).then(function(r){
+        build(r.json&&r.json.order,r.json);
+      }).catch(function(){build(null,null);});
+    }else{build(null,null);}
+  });
+}
 refreshLock();
 })();
 </script>
