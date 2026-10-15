@@ -786,6 +786,7 @@ function applyEditionUI(){
     if(settings.tabLayout==="vertical"){settings.tabLayout="horizontal";saveSetting("tabLayout","horizontal");applyTabLayout("horizontal");}
     if(settings.uiStyle!=="kastrava"){settings.uiStyle="kastrava";saveSetting("uiStyle","kastrava");applyUiStyle("kastrava");}
     if(!applyThemeKey(settings.theme||"dark-0")&&settings.accent){document.documentElement.style.setProperty("--accent",settings.accent);}
+    reassertAccent();
     ["cursorFx","blobFx","glassFx","particleFx","clickSparkFx","pixelTrailFx","ribbonsFx"].forEach(function(k){if(settings[k]==="on"){settings[k]="off";saveSetting(k,"off");}});
     if(settings.cursorStyle==="custom"){settings.cursorStyle="system";saveSetting("cursorStyle","system");applyCursorStyle();}
     try{applyAllFx();}catch(e){}
@@ -904,6 +905,13 @@ function applyThemeKey(theme){
   r.setProperty("--tgl-on",v.tglOn);r.setProperty("--tgl-on-checked",v.tglOnC);r.setProperty("--tgl-off",v.tglOff);
   try{applyUiRadius(settings.uiRadius||"medium");}catch(e){}
   return res;
+}
+function reassertAccent(){
+  try{
+    if(settings.theme&&settings.theme.indexOf("custom-")===0&&settings.accent){
+      document.documentElement.style.setProperty("--accent",settings.accent);
+    }
+  }catch(e){}
 }
 function applyUiRadius(v){
   settings.uiRadius=v;
@@ -4467,6 +4475,7 @@ function bindSettingsEvents(id){
       sv("theme",key);applyThemeKey(key);document.querySelectorAll(".theme-btn").forEach(function(b){b.style.borderColor="transparent";});
       var res=resolveTheme(key);btn.style.borderColor=res?res.t.ac:"transparent";});});
       if(settings.theme)applyThemeKey(settings.theme);
+      reassertAccent();
       var curAcc=(settings.accent||"#8ab4f8").toLowerCase();
       document.querySelectorAll(".accent-swatch").forEach(function(b){b.classList.toggle("selected",b.dataset.color.toLowerCase()===curAcc);});
       document.querySelectorAll(".accent-swatch").forEach(function(btn){
