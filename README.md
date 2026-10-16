@@ -21,6 +21,20 @@ Old 34-day keys keep working till their expiry date.
 
 ---
 
+## How privacy works (mechanisms, not promises)
+
+Everything below is implemented in the open source (`src/privacy.js`, `src/adblock.js`, `src/main.js`) — verify, don't trust:
+
+* **Memory-only sessions**: cookies, cache, DOM storage, and IndexedDB live in RAM and die with the process. Quit (or crash) wipes website data; downloads in `~/Downloads` are never touched.
+* **Tracker & ad blocking**: EasyList + EasyPrivacy + annoyances lists, compiled to regexes with a hostname fast-path (~600x faster than linear scan, verdict-identical). Blocks ad/tracker subresources before they load.
+* **Cookie control**: three modes — block all, first-party only, allow — plus per-site shield exceptions. `Set-Cookie` headers are stripped at the network layer.
+* **Anti-fingerprinting**: generic-Chrome `navigator` spoof (webdriver, plugins, languages, platform, hardwareConcurrency via `userAgentData`), canvas readback noise, font enumeration protection, frozen Battery/Connection APIs, WebRTC IP handling policies (disable / public-only / default).
+* **Network hygiene**: `Referer` stripped or rewritten per shield, `DNT: 1` sent, optional DNS-over-HTTPS (Cloudflare/Quad9/Google, needs restart), mixed-content controls.
+* **Script & image switches**: global JavaScript/images kill-switches plus per-site shields (JS off / images off / cookies allow / shields down).
+* **Storage partitioning**: separate persistent partitions for app shell vs web content; guest popups (e.g. payment flows) run in the volatile session so bank cookies die too.
+* **Zero telemetry**: no analytics, no crash reports, no update pings with identifiers. License activation sends one device ID + key, once; the app works fully offline after that.
+* **Sync privacy**: bookmarks/settings sync as encrypted blobs the server stores but cannot read. Password resets intentionally destroy the old synced copy (new password = new key).
+
 ## Features
 
 * **Privacy-First & Offline-Focused**: No user tracking. Browsing data stays on your machine; optional account sync is end-to-end encrypted.
