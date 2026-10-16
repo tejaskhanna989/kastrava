@@ -60,6 +60,44 @@ def seednum(s):
     return int(hashlib.sha256(s.encode()).hexdigest()[:8], 16)
 
 
+def fam(hue):
+    h = hue % 360
+    if h < 15 or h >= 345:
+        return 'ember-red'
+    if h < 45:
+        return 'amber'
+    if h < 75:
+        return 'moss'
+    if h < 160:
+        return 'forest'
+    if h < 200:
+        return 'teal'
+    if h < 250:
+        return 'cobalt'
+    if h < 290:
+        return 'violet'
+    if h < 330:
+        return 'magenta'
+    return 'ember-red'
+
+
+def disp_name(name):
+    # 'Ember Emberfall' -> 'Emberfall', 'Cinder Cinder' -> 'Cinder'.
+    # Ids stay derived from the ORIGINAL name so existing entitlements keep working.
+    parts = name.split(' ')
+    if len(parts) == 2 and parts[1].lower().startswith(parts[0].lower()):
+        return parts[1][:1].upper() + parts[1][1:]
+    return name
+
+
+def theme_blurb(name, dark, hue, sat):
+    fills = ['evening', 'focus', 'reading', 'night-owl', 'studio', 'travel', 'coding', 'wind-down']
+    f = fills[seednum(name) % len(fills)]
+    vivid = 'vivid' if sat >= 24 else ('muted' if sat <= 18 else 'balanced')
+    return 'Hand-tuned %s %s theme in %s tones, built for %s.' % (
+        vivid, 'dark' if dark else 'light', fam(hue), f)
+
+
 # --- free tier (5): 3 hand originals + 2 generated ---
 add('theme-midnight-bloom', 'Midnight Bloom', 'theme', 0, 0, 'Deep violet night with a lavender accent.',
     {'bg': '#0d0a1a', 'ac': '#b388ff'},
@@ -87,21 +125,21 @@ while len([p for p in products if p['price_paise'] == 0]) < 5:
         {'bg': data['bg'], 'ac': data['ac']}, data)
 
 # --- logo packs ---
-add('logos-warm-pack', 'Warm Logo Pack', 'logos', 19900, 6,
+add('logos-warm-pack', 'Warm Logo Pack', 'logos', 12900, 4,
     'Ember, amber, rose and grape app badges.',
     {'bg': '#7a1f1f', 'ac': '#ffffff'},
     {'logos': [LOGO_URL % x for x in ['ember', 'amber', 'rose', 'grape']]})
-add('logos-cool-pack', 'Cool Logo Pack', 'logos', 19900, 6,
+add('logos-cool-pack', 'Cool Logo Pack', 'logos', 12900, 4,
     'Ocean, teal, forest and slate app badges.',
     {'bg': '#123a6d', 'ac': '#ffffff'},
     {'logos': [LOGO_URL % x for x in ['ocean', 'teal', 'forest', 'slate']]})
-add('logos-full-set', 'Full Logo Set', 'logos', 29900, 10,
+add('logos-full-set', 'Full Logo Set', 'logos', 19900, 7,
     'All eight app badges in one pack.',
     {'bg': '#101010', 'ac': '#b388ff'},
     {'logos': [LOGO_URL % x for x in LOGO_FILES]})
 
-INR_TIERS = [15000, 19900, 24900, 29900]
-USD_TIERS = [5, 6, 8, 10]
+INR_TIERS = [9900, 12900, 16900, 19900]
+USD_TIERS = [3, 4, 5, 7]
 idx = 0
 for name in name_pool:
     if len(products) >= 696 or name in seen:
@@ -116,15 +154,15 @@ for name in name_pool:
         if aname in seen:
             continue
         add('accents-' + aname.lower().replace(' ', '-'), aname, 'accents', INR_TIERS[slot % 4], USD_TIERS[slot % 4],
-            'Six harmonious accents.', {'bg': '#101010', 'ac': accents[0]}, {'accents': accents})
+            'Six %s accents that sit well together.' % fam(base), {'bg': '#101010', 'ac': accents[0]}, {'accents': accents})
     elif slot % 14 == 12:
         c1, c2 = hx(h % 360, 60, 12), hx((h + 60) % 360, 65, 30)
         wname = name + ' Wallpaper'
         if wname in seen:
             continue
         css = 'linear-gradient(135deg, %s, %s)' % (c1, c2)
-        add('wallpaper-' + wname.lower().replace(' ', '-'), wname, 'wallpaper', INR_TIERS[slot % 4], USD_TIERS[slot % 4],
-            'Gradient new-tab backdrop.', {'bg': c1, 'ac': c2}, {'css': css})
+        add('wallpaper-' + wname.lower().replace(' ', '-'), wname, 'wallpaper', 4900, 1,
+            '%s-to-%s gradient new-tab backdrop.' % (fam(h % 360).capitalize(), fam((h + 60) % 360)), {'bg': c1, 'ac': c2}, {'css': css})
     elif slot % 14 == 11:
         cc = hx(h % 360, 90, 60)
         cname = name + ' Cursor'
@@ -133,24 +171,24 @@ for name in name_pool:
         svg = ("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24'>"
                "<circle cx='12' cy='12' r='7' fill='%s'/></svg>" % cc).replace('#', '%23')
         add('cursor-' + cname.lower().replace(' ', '-'), cname, 'cursor', INR_TIERS[slot % 4], USD_TIERS[slot % 4],
-            'Color-dot pointer set.', {'bg': '#101010', 'ac': cc},
+            '%s color-dot pointer set.' % fam(h % 360).capitalize(), {'bg': '#101010', 'ac': cc},
             {'cursors': {'default': svg, 'pointer': svg}})
     else:
         dark = (h % 3) != 2
         hue = h % 360
         sat = 16 + (h % 5) * 4
         data = dark_theme(hue, sat, (hue + 140 + h) % 360) if dark else light_theme(hue, sat, (hue + 200 + h) % 360)
-        add('theme-' + name.lower().replace(' ', '-'), name, 'theme', INR_TIERS[slot % 4], USD_TIERS[slot % 4],
-            'Hand-tuned %s theme.' % ('dark' if dark else 'light'),
+        add('theme-' + name.lower().replace(' ', '-'), disp_name(name), 'theme', INR_TIERS[slot % 4], USD_TIERS[slot % 4],
+            theme_blurb(name, dark, hue, sat),
             {'bg': data['bg'], 'ac': data['ac']}, data)
 
 # --- combo packs (bundle ids that exist by now) ---
 theme_ids = [p['id'] for p in products if p['kind'] == 'theme' and p['price_paise'] != 0][:40]
-combos = [('combo-night-shift', 'Night Shift Bundle', 'Ten dark themes, one price.', 49900, 15, theme_ids[0:10]),
-          ('combo-daybreak', 'Daybreak Bundle', 'Ten light themes, one price.', 49900, 15,
+combos = [('combo-night-shift', 'Night Shift Bundle', 'Ten dark themes, one price.', 29900, 9, theme_ids[0:10]),
+          ('combo-daybreak', 'Daybreak Bundle', 'Ten light themes, one price.', 29900, 9,
            [p['id'] for p in products if p['kind'] == 'theme' and p['data'].get('mode') == 'light' and p['price_paise'] != 0][:10]),
-          ('combo-full-spectrum', 'Full Spectrum', 'Twenty themes across every hue.', 99900, 25, theme_ids[10:30]),
-          ('combo-creator', 'Creator Combo', 'Themes, accents and wallpapers for setup lovers.', 29900, 10,
+          ('combo-full-spectrum', 'Full Spectrum', 'Twenty themes across every hue.', 49900, 12, theme_ids[10:30]),
+          ('combo-creator', 'Creator Combo', 'Themes, accents and wallpapers for setup lovers.', 19900, 6,
            [p['id'] for p in products if p['kind'] == 'accents' and p['price_paise'] != 0][:3] +
            [p['id'] for p in products if p['kind'] == 'wallpaper'][:3] +
            theme_ids[30:36])]
@@ -165,13 +203,13 @@ for pid, name, blurb, price_inr, price_usd, members in combos:
 
 assert len(products) >= 700, len(products)
 pro_marked = 0
-for p in products:
-    if pro_marked >= 10:
-        break
-    if p['kind'] == 'theme' and p['price_paise'] != 0 and not p['pro_free']:
-        p['pro_free'] = True
+paid_themes = [p for p in products if p['kind'] == 'theme' and p['price_paise'] != 0]
+for i, p in enumerate(paid_themes):
+    p['pro_free'] = (i % 2 == 0)
+    if p['pro_free']:
         pro_marked += 1
-add('catalogue-pass', 'Full Catalogue Pass', 'pass', 899900, 999,
+        p['blurb'] = 'Free with Pro. ' + p['blurb']
+add('catalogue-pass', 'Full Catalogue Pass', 'pass', 499900, 499,
     'Every store item, 30 days. Manual renewal.',
     {'bg': '#16130e', 'ac': '#ffb300'}, {'days': 30})
 # --- exact-look preview images (faithful Kastrava UI mockups) ---
@@ -187,7 +225,7 @@ def svg_wrap(inner):
             inner + '</svg>')
 
 
-def svg_theme(d):
+def svg_theme(d, clock='09:41'):
     bg, tbg, tb, ac = d['bg'], d['tbg'], d['tb'], d['ac']
     fg = '#14110b' if d.get('mode') == 'light' else '#f3eee4'
     dim = '#8a8474' if d.get('mode') == 'light' else '#9d9484'
@@ -203,7 +241,7 @@ def svg_theme(d):
         "<rect x='64' y='44' width='250' height='20' rx='10' fill='%s'/>" % bg +
         "<circle cx='330' cy='54' r='9' fill='%s'/>" % ac +
         "<circle cx='210' cy='130' r='30' fill='none' stroke='%s' stroke-width='5'/>" % ac +
-        "<text x='210' y='190' text-anchor='middle' font-family='monospace' font-size='26' fill='%s'>09:41</text>" % fg +
+        "<text x='210' y='190' text-anchor='middle' font-family='monospace' font-size='26' fill='%s'>%s</text>" % (fg, clock) +
         ''.join("<rect x='%d' y='206' width='52' height='40' rx='9' fill='%s'/><circle cx='%d' cy='220' r='7' fill='%s'/>" % (96 + i * 60, tbg, 122 + i * 60, ac if i == 0 else dim)
                  for i in range(4)))
 
@@ -284,7 +322,9 @@ def build_previews():
         d = prod['data'] or {}
         try:
             if kind == 'theme':
-                svg = svg_theme(d)
+                hh = 1 + (seednum(pid) % 12)
+                mm = seednum(pid + 'm') % 60
+                svg = svg_theme(d, '%02d:%02d' % (hh, mm))
             elif kind == 'accents':
                 svg = svg_accents(d.get('accents') or [prod['preview']['ac']])
             elif kind == 'logos':
