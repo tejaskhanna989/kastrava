@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Store — Kastrava</title>
 <link rel="icon" type="image/png" href="favicon.png">
-<meta name="description" content="701 themes, accents, logos, wallpapers and cursors for the Kastrava browser. 5 free, 10 more with Pro, or unlock everything with the Full Catalogue Pass.">
+<meta name="description" content="701 themes, accents, logos, wallpapers and cursors for the Kastrava browser. 5 free, ~271 themes free with Pro, or unlock everything with the Full Catalogue Pass.">
 <script>
 (function(){try{
   var s=null;try{s=localStorage.getItem('kas-theme');}catch(e){}
@@ -32,36 +32,37 @@
   <img src="logo.png" alt="Kastrava">
   <a class="name" href="/">KASTRAVA</a>
   <div class="links">
-    <a href="/#features">Features</a>
-    <a href="/#premium">Premium</a>
-    <a href="/account.html">Account</a>
+    <a href="/#features" data-wl="nav_feat">Features</a>
+    <a href="/#premium" data-wl="nav_prem">Premium</a>
+    <a href="/account.html" data-wl="nav_acct">Account</a>
     <a href="https://store.kastrava.pp.ua/" style="color:var(--ink)">Store</a>
     <button id="theme-btn" class="theme-btn" title="Toggle theme" aria-label="Toggle theme">
       <svg class="ic-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       <svg class="ic-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
     </button>
-    <a class="dl" href="/#download">Download</a>
+    <button id="lang-btn" class="theme-btn" title="EN / RU" aria-label="Language" style="font-size:12px;font-weight:700;font-family:inherit">EN|РУ</button>
+    <a class="dl" href="/#download" data-wl="nav_dl">Download</a>
   </div>
 </div></nav>
 <main><div class="wrap store-hero">
   <div class="searchbar">
     <div class="box"><span style="color:var(--muted)">⌕</span>
-      <input id="store-q" placeholder="Search 701 items — try &quot;ocean&quot; or &quot;cursor&quot;">
+      <input id="store-q" data-wlp="search" placeholder="Search 701 items — try &quot;ocean&quot; or &quot;cursor&quot;">
     </div>
     <span class="pill" id="store-count">…</span>
   </div>
-  <div class="kicker" style="margin-top:22px">✦ Themes · Accents · Logos · Wallpapers · Cursors · Combos</div>
-  <h1>Dress your <span class="grad-text">browser.</span></h1>
-  <p class="sub" id="store-sub">Installs work inside the Kastrava browser only — 5 items free, 10 more free with Pro. Want everything? The Full Catalogue Pass, or buy items once and keep them.</p>
+  <div class="kicker" style="margin-top:22px" data-wl="kick">✦ Themes · Accents · Logos · Wallpapers · Cursors · Combos</div>
+  <h1 data-wl="h1">Dress your <span class="grad-text">browser.</span></h1>
+  <p class="sub" id="store-sub" data-wl="sub">Installs work inside the Kastrava browser only — 5 items free, ~271 themes free with Pro (50% of paid themes). Want everything? The Full Catalogue Pass, or buy items once and keep them.</p>
   <div id="browser-warn" class="lic-card" style="display:none;margin-top:18px">
-    <h2 style="font-size:16px">You're not in Kastrava</h2>
-    <p style="margin:0">Install buttons are greyed out here. Open this page inside the Kastrava browser to get items instantly.</p>
+    <h2 style="font-size:16px" data-wl="warn_h">You're not in Kastrava</h2>
+    <p style="margin:0" data-wl="warn_p">Install buttons are greyed out here. Open this page inside the Kastrava browser to get items instantly.</p>
   </div>
   <div class="lic-card" id="pass-banner" style="display:none;margin-top:18px">
     <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
       <div style="flex:1;min-width:200px">
-        <h2 style="font-size:19px;margin-bottom:2px">Full Catalogue Pass</h2>
-        <p style="font-size:13.5px;margin:0">Every item in the store, 30 days. Renews manually, never automatic.</p>
+        <h2 style="font-size:19px;margin-bottom:2px" data-wl="pass_h">Full Catalogue Pass</h2>
+        <p style="font-size:13.5px;margin:0" data-wl="pass_p">Every item in the store, 30 days. Renews manually, never automatic.</p>
       </div>
       <button class="btn btn-primary" id="pass-buy" style="padding:12px 26px;font-size:14.5px">Get the pass</button>
     </div>
@@ -71,16 +72,16 @@
   <div id="store-login" style="display:none;position:fixed;inset:0;z-index:150;background:rgba(0,0,0,.55);align-items:center;justify-content:center;padding:16px">
   <div class="lic-card" style="margin:0;max-width:400px;width:100%">
     <div style="display:flex;align-items:center;gap:10px">
-      <h2 style="font-size:19px;margin:0;flex:1">Log in to get items</h2>
+      <h2 style="font-size:19px;margin:0;flex:1" data-wl="log_h">Log in to get items</h2>
       <button id="login-x" style="border:none;background:transparent;color:var(--ink);font-size:20px;cursor:pointer" aria-label="Close">×</button>
     </div>
-    <p style="font-size:13px;color:var(--muted);margin:6px 0 0">Browsing is free. Installing anything needs an account.</p>
+    <p style="font-size:13px;color:var(--muted);margin:6px 0 0" data-wl="log_p">Browsing is free. Installing anything needs an account.</p>
     <div class="loginrow">
       <input id="st-email" type="email" placeholder="you@example.com" style="flex:2;min-width:180px">
-      <input id="st-pass" type="password" placeholder="Password" style="flex:1;min-width:140px" autocomplete="current-password">
+      <input id="st-pass" type="password" placeholder="Password" data-wlp="pw" style="flex:1;min-width:140px" autocomplete="current-password">
       <input id="st-code" inputmode="numeric" maxlength="6" placeholder="Email code" style="display:none;width:130px">
       <input id="st-totp" inputmode="numeric" maxlength="6" placeholder="2FA" style="display:none;width:110px">
-      <button class="btn btn-primary" id="st-go" style="padding:10px 22px">Log in</button>
+      <button class="btn btn-primary" id="st-go" style="padding:10px 22px" data-wl="go">Log in</button>
     </div>
     <div class="msg" id="st-msg"></div>
   </div>
@@ -96,6 +97,18 @@
   <div><p class="fh">SUPPORT</p><p style="margin-top:6px"><a href="mailto:khannatejas989@gmail.com">khannatejas989@gmail.com</a></p></div>
 </div></div></footer>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+var WEBSTR={en:{"nav_feat": "Features", "nav_prem": "Premium", "nav_acct": "Account", "nav_dl": "Download", "search": "Search 701 items — try \"ocean\" or \"cursor\"", "pw": "Password", "kick": "✦ Themes · Accents · Logos · Wallpapers · Cursors · Combos", "h1": "Dress your <span class=\"grad-text\">browser.</span>", "sub": "Installs work inside the Kastrava browser only — 5 items free, ~271 themes free with Pro (50% of paid themes). Want everything? The Full Catalogue Pass, or buy items once and keep them.", "warn_h": "You're not in Kastrava", "warn_p": "Install buttons are greyed out here. Open this page inside the Kastrava browser to get items instantly.", "pass_h": "Full Catalogue Pass", "pass_p": "Every item in the store, 30 days. Renews manually, never automatic.", "log_h": "Log in to get items", "log_p": "Browsing is free. Installing anything needs an account.", "go": "Log in", "free": "Free", "fwp": "free with Pro", "get": "Get", "got": "Installed ✓", "close": "Close", "cancel": "Cancel", "copy": "Copy data", "items": "items", "passbtn": "Get the pass", "unreach": "Store unreachable.", "pincl": "Premium · included", "via_pp": "via PayPal", "claim_paid": "That item is paid. Premium members get it free, or buy it once with the price button.", "claim_brow": "Open this Store page inside the Kastrava browser to install — other browsers are blocked.", "claim_fail": "Could not get that item. Try again.", "nocon": "Could not reach the store. Check connection and retry.", "wrong": "Wrong email or password."},ru:{"nav_feat": "Функции", "nav_prem": "Premium", "nav_acct": "Аккаунт", "nav_dl": "Скачать", "search": "Поиск по 701 товару — попробуйте «ocean» или «cursor»", "pw": "Пароль", "kick": "✦ Темы · Акценты · Логотипы · Обои · Курсоры · Комбо", "h1": "Одень свой <span class=\"grad-text\">браузер.</span>", "sub": "Установка работает только в браузере Kastrava — 5 товаров бесплатно, ~271 тема бесплатно с Pro (50% платных тем). Хотите всё? Full Catalogue Pass, либо покупайте товары разово навсегда.", "warn_h": "Вы не в Kastrava", "warn_p": "Здесь кнопки установки неактивны. Откройте страницу в браузере Kastrava, чтобы получать товары мгновенно.", "pass_h": "Full Catalogue Pass", "pass_p": "Весь каталог на 30 дней. Продление вручную, никакой автоматики.", "log_h": "Войдите, чтобы забирать товары", "log_p": "Просмотр бесплатный. Для установки нужен аккаунт.", "go": "Войти", "free": "Бесплатно", "fwp": "бесплатно с Pro", "get": "Забрать", "got": "Установлено ✓", "close": "Закрыть", "cancel": "Отмена", "copy": "Скопировать данные", "items": "шт.", "passbtn": "Забрать pass", "unreach": "Магазин недоступен.", "pincl": "Premium · включено", "via_pp": "через PayPal", "claim_paid": "Этот товар платный. С Premium — бесплатно, либо купите разово по кнопке с ценой.", "claim_brow": "Откройте магазин в браузере Kastrava для установки — другие браузеры заблокированы.", "claim_fail": "Не удалось забрать товар. Попробуйте снова.", "nocon": "Не удалось связаться с магазином. Проверьте соединение.", "wrong": "Неверная почта или пароль."},cats:{"all": ["All", "Все"], "theme": ["Themes", "Темы"], "accents": ["Accents", "Акценты"], "logos": ["Logos", "Логотипы"], "wallpaper": ["Wallpapers", "Обои"], "cursor": ["Cursors", "Курсоры"], "combo": ["Combos", "Комбо"]}};
+function wlLang(){var l='en';try{l=localStorage.getItem('kas-weblang')||'';}catch(e){}if(l!=='en'&&l!=='ru'){l=((navigator.language||'en')+'').toLowerCase().indexOf('ru')===0?'ru':'en';}return l;}
+function wlT(k){var l=wlLang();try{if(WEBSTR[l]&&WEBSTR[l][k]!=null)return WEBSTR[l][k];}catch(e){}return WEBSTR.en[k]!=null?WEBSTR.en[k]:k;}
+function wlCat(id){var l=wlLang();var c=WEBSTR.cats[id];if(!c)return id;return l==='ru'?c[1]:c[0];}
+function wlApply(){var l=wlLang();try{document.documentElement.setAttribute('lang',l==='ru'?'ru':'en');}catch(e){}
+document.querySelectorAll('[data-wl]').forEach(function(el){var k=el.getAttribute('data-wl');var d=WEBSTR[l]&&WEBSTR[l][k]!=null?WEBSTR[l][k]:WEBSTR.en[k];if(d==null)return;el.innerHTML=d;});
+document.querySelectorAll('[data-wlp]').forEach(function(el){var k=el.getAttribute('data-wlp');var d=(WEBSTR[l]&&WEBSTR[l][k])||WEBSTR.en[k];if(d==null)return;el.setAttribute('placeholder',d);});
+var b=document.getElementById('lang-btn');if(b)b.textContent=(l==='ru'?'RU|EN':'EN|РУ');}
+document.addEventListener('DOMContentLoaded',wlApply);
+(function(){var b=document.getElementById('lang-btn');if(b)b.addEventListener('click',function(){var n=wlLang()==='ru'?'en':'ru';try{localStorage.setItem('kas-weblang',n);}catch(e){}wlApply();try{if(typeof paint==='function'&&typeof ALL_ITEMS!=='undefined'&&ALL_ITEMS.length)paint(ALL_ITEMS);}catch(e){}});})();
+</script>
 <script>
 'use strict';
 /* Kastrava Store: catalog, search, claim, Razorpay/PayPal purchase. */
@@ -122,7 +135,7 @@ if(IS_MOBILE)CATS=CATS.filter(function(c){return c[0]!=='cursor';});
 function paintCats(){
   var el=$('store-cats');if(!el)return;
   el.innerHTML=CATS.map(function(c){
-    return '<button data-cat="'+c[0]+'" class="'+(c[0]===activeCat?'on':'')+'">'+c[1]+'</button>';
+    return '<button data-cat="'+c[0]+'" class="'+(c[0]===activeCat?'on':'')+'">'+esc(wlCat(c[0]))+'</button>';
   }).join('');
   el.querySelectorAll('button[data-cat]').forEach(function(b){
     b.addEventListener('click',function(){activeCat=b.dataset.cat;paintCats();paint(ALL_ITEMS);});
@@ -135,8 +148,8 @@ function matches(p){
   return true;
 }
 function priceOf(p){
-  if(p.free)return 'Free';
-  if(window.__isPremium)return 'Premium · included';
+  if(p.free)return wlT('free');
+  if(window.__isPremium)return wlT('pincl');
   if(p.disp&&p.disp.amount)return p.disp.amount+' '+p.disp.currency;
   return inr(p.price_paise);
 }
@@ -175,22 +188,22 @@ function artFor(p,h){
 }
 function tierLabel(p){
   if(p.free)return 'free';
-  if(p.pro_free)return 'free with Pro';
+  if(p.pro_free)return wlT('fwp');
   return (p.tier||'premium')+' · '+priceOf(p);
 }
 function cardButton(p){
   var base=' style="padding:8px 16px;font-size:13px"'+(IN_APP?'':' disabled');
-  if(owned[p.id])return '<button class="btn btn-ghost" data-got="'+esc(p.id)+'"'+base+'>Installed ✓</button>';
+  if(owned[p.id])return '<button class="btn btn-ghost" data-got="'+esc(p.id)+'"'+base+'>'+esc(wlT('got'))+'</button>';
   if(!p.free&&!window.__isPremium)
     return '<button class="btn btn-ghost" data-buy="'+esc(p.id)+'"'+base+'>'+esc(priceOf(p))+'</button>';
-  return '<button class="btn btn-primary" data-get="'+esc(p.id)+'"'+base+'>Get</button>';
+  return '<button class="btn btn-primary" data-get="'+esc(p.id)+'"'+base+'>'+esc(wlT('get'))+'</button>';
 }
 var IS_MOBILE=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');
 function paint(items){
   ALL_ITEMS=items||[];
   if(IS_MOBILE)ALL_ITEMS=ALL_ITEMS.filter(function(p){return p.kind!=='cursor';});
   paintPass();
-  $('store-count').textContent=ALL_ITEMS.length+' items';
+  $('store-count').textContent=ALL_ITEMS.length+' '+wlT('items');
   paintCats();
   var grid=$('store-grid');
   grid.innerHTML=ALL_ITEMS.filter(matches).map(function(p){
@@ -213,7 +226,7 @@ function paint(items){
 function paintPass(){
   var b=$('pass-banner');if(!b)return;
   var btn=$('pass-buy');if(!btn)return;
-  var label='Get the pass';
+  var label=wlT('passbtn');
   if(GEO&&GEO.prices&&GEO.prices.pass)label+=' — '+GEO.prices.pass.amount+' '+GEO.prices.pass.currency;
   else{var ps=null;for(var i=0;i<ALL_ITEMS.length;i++)if(ALL_ITEMS[i].id==='catalogue-pass')ps=ALL_ITEMS[i];
     if(ps&&!ps.free&&ps.disp)label+=' — '+ps.disp.amount+' '+ps.disp.currency;}
@@ -224,15 +237,15 @@ function paintPass(){
 function openDetail(id){
   var p=null;for(var i=0;i<ALL_ITEMS.length;i++)if(ALL_ITEMS[i].id===id)p=ALL_ITEMS[i];
   if(!p)return;
-  var btn=owned[id]?'<button class="btn btn-ghost" id="dt-copy" style="padding:10px 22px">Copy data</button>'
+  var btn=owned[id]?'<button class="btn btn-ghost" id="dt-copy" style="padding:10px 22px">'+esc(wlT('copy'))+'</button>'
     :((!p.free&&!window.__isPremium&&!owned[id])
       ?'<button class="btn btn-primary" id="dt-buy" style="padding:10px 22px">'+esc(priceOf(p))+'</button>'
-      :'<button class="btn btn-primary" id="dt-get" style="padding:10px 22px">Get</button>');
+      :'<button class="btn btn-primary" id="dt-get" style="padding:10px 22px">'+esc(wlT('get'))+'</button>');
   $('item-body').innerHTML=artFor(p,180)
     +'<h2 style="font-size:20px">'+esc(p.name)+'</h2>'
-    +'<p style="font-size:13px;color:var(--muted)">'+esc(p.kind)+' · '+esc(p.free?'free':(p.pro_free?'free with Pro':(p.tier||'premium')))+'</p>'
+    +'<p style="font-size:13px;color:var(--muted)">'+esc(p.kind)+' · '+esc(p.free?wlT('free'):(p.pro_free?wlT('fwp'):(p.tier||'premium')))+'</p>'
     +'<p style="font-size:14px;margin:8px 0 14px">'+esc(p.blurb)+'</p>'
-    +'<div style="display:flex;gap:8px">'+btn+'<button class="btn btn-ghost" id="dt-close" style="padding:10px 22px">Close</button></div>';
+    +'<div style="display:flex;gap:8px">'+btn+'<button class="btn btn-ghost" id="dt-close" style="padding:10px 22px">'+esc(wlT('close'))+'</button></div>';
   $('item-modal').style.display='flex';
   $('dt-close').addEventListener('click',closeDetail);
   var g=$('dt-get');if(g)g.addEventListener('click',function(){closeDetail();claim(id);});
@@ -273,9 +286,9 @@ function load(){
 function claimFail(j){
   var e=j&&j.error;
   if(e==='unauthorized'){needLogin();return;}
-  if(e==='wrong_browser'){alert('Open this Store page inside the Kastrava browser to install — other browsers are blocked.');return;}
-  if(e==='need_payment'){alert('That item is paid. Premium members get it free, or buy it once with the price button.');return;}
-  alert((j&&(j.msg||j.error))||'Could not get that item. Try again.');
+  if(e==='wrong_browser'){alert(wlT('claim_brow'));return;}
+  if(e==='need_payment'){alert(wlT('claim_paid'));return;}
+  alert((j&&(j.msg||j.error))||wlT('claim_fail'));
 }
 function claim(id){
   if(needLogin())return;
@@ -283,7 +296,7 @@ function claim(id){
   .then(function(r){return r.json();}).then(function(j){
     if(j&&j.ok){owned[id]=j.data;load();}
     else claimFail(j);
-  }).catch(function(){alert('Could not reach the store. Check connection and retry.');});
+  }).catch(function(){alert(wlT('nocon'));});
 }
 function copyOwned(id){
   var txt=JSON.stringify(owned[id]||{});
@@ -305,9 +318,9 @@ function loadPaypal(clientId,currency,cb){
 function buyPaypal(id,o){
   var p=null;for(var i=0;i<ALL_ITEMS.length;i++)if(ALL_ITEMS[i].id===id)p=ALL_ITEMS[i];
   $('item-body').innerHTML='<h2 style="font-size:20px">'+esc(p?p.name:id)+'</h2>'
-    +'<p style="font-size:14px;margin:8px 0">'+esc((o.amount||'')+' '+(o.currency||''))+' via PayPal</p>'
+    +'<p style="font-size:14px;margin:8px 0">'+esc((o.amount||'')+' '+(o.currency||''))+' '+wlT('via_pp')+'</p>'
     +'<div id="pp-buy-box"></div>'
-    +'<div style="margin-top:10px"><button class="btn btn-ghost" id="dt-close" style="padding:10px 22px">Cancel</button></div>';
+    +'<div style="margin-top:10px"><button class="btn btn-ghost" id="dt-close" style="padding:10px 22px">'+esc(wlT('cancel'))+'</button></div>';
   $('item-modal').style.display='flex';
   $('dt-close').addEventListener('click',closeDetail);
   loadPaypal(o.client_id||(GEO&&GEO.paypal_client_id),o.currency,function(){
@@ -374,7 +387,7 @@ $('st-go').addEventListener('click',function(){
     if(j&&j.ok&&j.token){save(j.token);return;}
     if(j&&j.ok&&j.otp_required){code.style.display='';code.focus();if(j.totp)totp.style.display='';return;}
     if(j&&j.error==='verify_required'){code.style.display='';code.focus();code.dataset.mode='verify';return;}
-    msg.textContent=(j&&(j.msg||j.error))||'Wrong email or password.';
+    msg.textContent=(j&&(j.msg||j.error))||wlT('wrong');
   }).catch(function(){msg.textContent='Could not reach the server.';});
 });
 $('st-code').addEventListener('keydown',function(e){
