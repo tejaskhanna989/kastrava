@@ -68,21 +68,32 @@
     <div class="lic-card">
       <h2>4. What the apps send home</h2>
       <ul>
-        <li><b>License checks:</b> activation and update checks contact <span class="mono">nexufog.pp.ua</span> with your key, device ID and app version.</li>
-        <li><b>Update checks:</b> the apps fetch a version file to learn about new releases.</li>
-        <li>That is the complete list. There is no analytics SDK, no advertiser ID collection, no browsing-history upload.</li>
+        <li><b>Update check (automatic, anonymous):</b> on launch the app asks GitHub for a version file — version numbers only, no identifiers. Free tier and logged-out installs contact nothing else, ever.</li>
+        <li><b>License refresh (Premium only):</b> logged-in Premium installs re-validate the key on launch (device ID + key, once).</li>
+        <li><b>Sync (logged in only):</b> encrypted blobs upload on change and download on login. The server cannot read them.</li>
+        <li><b>Everything else</b> (store, dashboard, payments, search) only happens when you open or use it.</li>
+        <li>That is the complete list. There is no analytics SDK, no advertiser ID collection, no browsing-history upload. Core browsing works fully offline.</li>
       </ul>
     </div>
     <div class="lic-card">
       <h2>5. Payments</h2>
-      <p>Card, UPI and netbanking payments are processed by <b>Razorpay</b>. Card numbers and bank credentials go to Razorpay, never to us — we only keep the order ID, amount, payment ID and the key it bought. Read Razorpay’s own privacy policy for their handling.</p>
+      <p>Payments are processed by <b>Razorpay</b> (India: UPI, cards, netbanking), <b>PayPal</b> (most countries), or <b>YooKassa</b> (Russia/CIS: MIR, SBP) depending on your location. Card numbers and bank credentials go to the processor, never to us — we only keep the order ID, amount, payment ID and the key or item it bought. Read each processor’s own privacy policy for their handling.</p>
     </div>
     <div class="lic-card">
       <h2>6. This website</h2>
       <p>These pages load no analytics trackers. The checkout loads Razorpay’s payment script, and pages use Google Fonts — that is all the third-party code here. The dashboard stores only your login token in the browser.</p>
     </div>
     <div class="lic-card">
-      <h2>7. Your rights</h2>
+      <h2>7. Retention &amp; honesty</h2>
+      <ul>
+        <li><b>Kept:</b> login sessions (expire after 30 days), email codes (10 minutes), last 100 security events per account, purchase receipts (order ID, amount, key — refunds and tax records).</li>
+        <li><b>Deleted on request:</b> everything else — keys, sync blobs, sessions, store items, audit — purged when you delete your account.</li>
+        <li><b>Transport:</b> everything is HTTPS (TLS). No plaintext anywhere.</li>
+        <li><b>No security audit (yet):</b> one developer, no third-party audit. The code is GPLv3 and open, so anyone can verify every claim on this page.</li>
+      </ul>
+    </div>
+    <div class="lic-card">
+      <h2>8. Your rights</h2>
       <p>Export or delete everything any time from the <a href="https://account.kastrava.pp.ua/">account dashboard</a> (Your data card). Deleting wipes the account, sessions, sync copy and security log, and cancels owned keys. Anything else: <a href="/contact.html">ask us</a>.</p>
     </div>
 </div></main>
