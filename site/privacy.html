@@ -73,6 +73,7 @@
         <li><b>Sync (logged in only):</b> encrypted blobs upload on change and download on login. The server cannot read them.</li>
         <li><b>Everything else</b> (store, dashboard, payments, search) only happens when you open or use it.</li>
         <li>That is the complete list. There is no analytics SDK, no advertiser ID collection, no browsing-history upload. Core browsing works fully offline.</li>
+        <li><b>Fingerprint hardening:</b> Network Information API (<span class="mono">navigator.connection</span>) is hidden, Battery API returns a frozen generic full-charge profile, <span class="mono">userAgentData</span> high-entropy values resolve empty, and the User-Agent is stock Chrome plus an honest <span class="mono">Kastrava/&lt;version&gt;</span> token (no Electron string) — the store install gate keys off that token so it never needs heuristics.</li>
       </ul>
     </div>
     <div class="lic-card">
