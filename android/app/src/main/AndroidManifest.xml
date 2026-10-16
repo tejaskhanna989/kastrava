@@ -63,6 +63,10 @@
             android:exported="false"
             android:label="@string/settings" />
         <activity
+            android:name=".StoreActivity"
+            android:exported="false"
+            android:label="Store" />
+        <activity
             android:name=".PremiumActivity"
             android:exported="false"
             android:label="@string/premium" />

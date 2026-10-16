@@ -116,6 +116,7 @@ $('theme-btn').addEventListener('click',function(){
 
 var owned={},ALL_ITEMS=[],GEO=null,activeCat='all',query='';
 var CATS=[['all','All'],['theme','Themes'],['accents','Accents'],['logos','Logos'],['wallpaper','Wallpapers'],['cursor','Cursors'],['combo','Combos']];
+if(IS_MOBILE)CATS=CATS.filter(function(c){return c[0]!=='cursor';});
 
 /* ---------- rendering ---------- */
 function paintCats(){
@@ -184,8 +185,10 @@ function cardButton(p){
     return '<button class="btn btn-ghost" data-buy="'+esc(p.id)+'"'+base+'>'+esc(priceOf(p))+'</button>';
   return '<button class="btn btn-primary" data-get="'+esc(p.id)+'"'+base+'>Get</button>';
 }
+var IS_MOBILE=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');
 function paint(items){
   ALL_ITEMS=items||[];
+  if(IS_MOBILE)ALL_ITEMS=ALL_ITEMS.filter(function(p){return p.kind!=='cursor';});
   paintPass();
   $('store-count').textContent=ALL_ITEMS.length+' items';
   paintCats();

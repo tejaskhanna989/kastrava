@@ -19,6 +19,25 @@ class Prefs(context: Context) {
         get() = p.getString("theme", "system") ?: "system"
         set(v) { p.edit().putString("theme", v).apply() }
 
+    // Store theme (data-only cosmetics from the Kastrava Store).
+    // Applied natively by ThemeEngine; cursors are desktop-only and
+    // never stored here.
+    var storeThemeId: String
+        get() = p.getString("storeThemeId", "") ?: ""
+        set(v) { p.edit().putString("storeThemeId", v).apply() }
+    var storeThemeBg: String
+        get() = p.getString("storeThemeBg", "") ?: ""
+        set(v) { p.edit().putString("storeThemeBg", v).apply() }
+    var storeThemeBar: String
+        get() = p.getString("storeThemeBar", "") ?: ""
+        set(v) { p.edit().putString("storeThemeBar", v).apply() }
+    var storeAccent: String
+        get() = p.getString("storeAccent", "") ?: ""
+        set(v) { p.edit().putString("storeAccent", v).apply() }
+    var storeWallpaper: String
+        get() = p.getString("storeWallpaper", "") ?: ""
+        set(v) { p.edit().putString("storeWallpaper", v).apply() }
+
     var blockers: Boolean
         get() = p.getBoolean("blockers", true)
         set(v) { p.edit().putBoolean("blockers", v).apply() }

@@ -269,6 +269,7 @@ class MainActivity : AppCompatActivity() {
         // Settings may have changed while away: push every live switch
         // into all tabs and re-apply the global cookie policy.
         applyCookiePolicy()
+        try { ThemeEngine.applyToActivity(this, app.prefs) } catch (e: Exception) { }
         tabs.forEach { applyTabSettings(it.view) }
     }
 
@@ -768,6 +769,10 @@ class MainActivity : AppCompatActivity() {
         startActivity(Intent(this, SettingsActivity::class.java))
     }
 
+    private fun openStore() {
+        startActivity(Intent(this, StoreActivity::class.java))
+    }
+
     private fun menuIconCell(iconRes: Int, label: String, onClick: () -> Unit): LinearLayout {
         val density = resources.displayMetrics.density
         return LinearLayout(this).apply {
@@ -899,11 +904,13 @@ class MainActivity : AppCompatActivity() {
             Triple(R.drawable.ic_star, if (saved) "Saved" else "Bookmark", { toggleBookmark() }),
             Triple(R.drawable.ic_download, "Downloads", { openDownloads() }),
             Triple(R.drawable.ic_share, "Share", { sharePage() }),
+            Triple(R.drawable.ic_star, "Store", { openStore() }),
             Triple(R.drawable.ic_settings, "Settings", { openSettings() }),
         ) else listOf(
             Triple(R.drawable.ic_plus, "New tab", { newTab() }),
             Triple(R.drawable.ic_download, "Downloads", { openDownloads() }),
             Triple(R.drawable.ic_share, "Share", { sharePage() }),
+            Triple(R.drawable.ic_star, "Store", { openStore() }),
             Triple(R.drawable.ic_settings, "Settings", { openSettings() }),
         )
         row1.weightSum = row1Items.size.toFloat()
