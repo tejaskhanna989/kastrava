@@ -55,6 +55,13 @@ class Store {
     return o
   }
 
+  orderByPaymentId(paymentId) {
+    for (const id in this.data.orders) {
+      if (this.data.orders[id].payment_id === paymentId) return this.data.orders[id]
+    }
+    return null
+  }
+
   keyForOrder(orderId) {
     for (const k in this.data.licenses) {
       if (this.data.licenses[k].order_id === orderId) return k

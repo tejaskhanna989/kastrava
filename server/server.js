@@ -20,6 +20,7 @@ require('./lib/env').loadEnv()
 const sign = require('./lib/sign')
 const razorpay = require('./lib/razorpay')
 const yookassa = require('./lib/yookassa')
+const cryptopay = require('./lib/crypto')
 const paypal = require('./lib/paypal')
 const geo = require('./lib/geo')
 const fx = require('./lib/fx')
@@ -442,6 +443,47 @@ async function handlePost(req, res, pathname) {
     const rc = makeReceipt(String(order_id), machine_id)
     return json(res, 200, { ok: true, key: r.key, renewed: r.renewed, already_paid: false, plan: r.plan, plan_days: planOf(r.plan).days,
       receipt: rc && rc.receipt, receipt_sig: rc && rc.receipt_sig })
+  }
+
+  // ---- manual crypto (USDT-TRC20): on-chain verify, auto-issue ----
+  // Buyer pays OUR_ADDR, pastes the TX hash; we confirm the inbound
+  // transfer on TronGrid (address, USDT contract, amount, unused hash)
+  // and finalize exactly like any other paid order. No processor involved.
+  if (pathname === '/api/crypto/verify') {
+    try {
+      const planName = (body.plan === 'monthly' || body.plan === 'daily') ? body.plan : 'monthly'
+      const txid = String(body.txid || '').trim()
+      if (!/^[0-9a-fA-F]{64}$/.test(txid)) return json(res, 400, { error: 'bad_txid' })
+      const payId = 'cu:' + txid.toLowerCase()
+      const dup = store.orderByPaymentId(payId)
+      if (dup) {
+        const dupId = dup.order_id || Object.keys(store.data.orders).find((id) => store.data.orders[id] === dup)
+        const k = dupId ? store.keyForOrder(dupId) : null
+        if (k) {
+          const rcDup = makeReceipt(dupId || '', '')
+          return json(res, 200, { ok: true, already_paid: true, key: k, plan: dup.plan || planName,
+            receipt: rcDup && rcDup.receipt, receipt_sig: rcDup && rcDup.receipt_sig })
+        }
+        return json(res, 402, { error: 'tx_reused' })
+      }
+      const v = await cryptopay.verifyTx(txid, planName)
+      if (!v.ok) return json(res, 402, { error: v.error || 'verify_failed', got: v.got, want: v.want })
+      const plan = planOf(planName)
+      const orderId = 'cu_' + Date.now().toString(36)
+      const meta = { plan: planName, provider: 'crypto', amount_paise: 0,
+        currency: 'USDT', crypto_amount: (cryptopay.PLAN_USDT[planName] || 0) }
+      const vacc = body.account_token ? store.getSessionAccount(String(body.account_token)) : null
+      if (vacc) meta.account_email = vacc.email
+      meta.order_id = orderId
+      store.createOrder(orderId, meta)
+      const r = finalizePayment(orderId, payId, '', vacc ? vacc.email : null)
+      const rc = makeReceipt(orderId, '')
+      return json(res, 200, { ok: true, key: r.key, renewed: r.renewed, already_paid: false,
+        plan: r.plan, plan_days: plan.days,
+        receipt: rc && rc.receipt, receipt_sig: rc && rc.receipt_sig })
+    } catch (e) {
+      return json(res, 500, { error: 'verify_failed', msg: String(e.message || e) })
+    }
   }
 
   // ---- one-time payments: webhook safety net (payment.captured) ----

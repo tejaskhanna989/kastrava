@@ -70,7 +70,7 @@
       <svg class="ic-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       <svg class="ic-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
     </button>
-    <button id="lang-btn" class="theme-btn" title="EN / RU" aria-label="Language" style="font-size:12px;font-weight:700;font-family:inherit">EN|РУ</button>
+    <button id="lang-btn" class="theme-btn" title="EN / RU" aria-label="Language" style="font-size:12px;font-weight:700;font-family:inherit;width:auto;min-width:64px;padding:0 12px;white-space:nowrap">EN|РУ</button>
     <a class="dl" href="#download" data-wl="nav_dl">Download</a>
   </div>
 </div></nav>
@@ -424,8 +424,33 @@ function showStep2(){
       +'<br><br><span class="mono" id="usdt-addr" style="font-size:13px;word-break:break-all">TPmPvoW7LBDvzWttS8tu7q9MCPzr354xjQ</span> '
       +'<button id="usdt-copy" class="btn btn-ghost" style="padding:4px 12px;font-size:12px;cursor:pointer">'+(isRu?'Копировать':'Copy')+'</button>'
       +'<br><br>'+(isRu
-      ?'Отправьте точную сумму, затем напишите на <a href="mailto:khannatejas989@gmail.com">khannatejas989@gmail.com</a> с хэшем транзакции и email вашего аккаунта — ключ выдадим вручную в течение дня.'
-      :'Send the exact amount, then email <a href="mailto:khannatejas989@gmail.com">khannatejas989@gmail.com</a> with the transaction hash and your account email — we issue the key manually within a day.');
+      ?'Отправьте точную сумму, затем вставьте хэш транзакции ниже — ключ выдадим автоматически. Не сработало? Напишите на <a href="mailto:khannatejas989@gmail.com">khannatejas989@gmail.com</a>.'
+      :'Send the exact amount, then paste the transaction hash below — the key is issued automatically. Stuck? Email <a href="mailto:khannatejas989@gmail.com">khannatejas989@gmail.com</a>.');
+    note.innerHTML+='<br><br><div style="display:flex;gap:8px;flex-wrap:wrap">'
+      +'<input id="usdt-tx" class="cmd" style="flex:1;min-width:200px" placeholder="'+(isRu?'Хэш транзакции (64 символа hex)':'Transaction hash (64 hex chars)')+'">'
+      +'<button id="usdt-go" class="btn btn-primary" style="white-space:nowrap">'+(isRu?'Я оплатил — выдать ключ':"I've paid — get key")+'</button></div>'
+      +'<p id="usdt-msg" class="mono" style="font-size:12px;color:var(--muted2);margin-top:8px"></p>';
+    var ug=$('usdt-go');
+    if(ug)ug.onclick=function(){
+      var tx=($('usdt-tx').value||'').trim(),msg=$('usdt-msg');
+      if(!/^[0-9a-fA-F]{64}$/.test(tx)){msg.textContent=(isRu?'Хэш — это 64 hex-символа из кошелька/биржи.':'The hash is 64 hex chars from your wallet/exchange.');return;}
+      ug.disabled=true;msg.textContent=(isRu?'Проверяем в блокчейне…':'Checking the blockchain…');
+      api('/api/crypto/verify',{txid:tx,plan:modalPlan,account_token:token()}).then(function(v){
+        ug.disabled=false;
+        if(v&&v.ok&&v.key){ppVerifyDone(v);return;}
+        var e=(v&&(v.error||''))||'verify_failed';
+        var emRu={'tx_not_found':'Транзакция не найдена. Подождите минуту и попробуйте снова.',
+          'underpaid':'Сумма меньше нужной.',
+          'tx_reused':'Этот хэш уже использован для ключа.',
+          'chain_unreachable':'Сеть TRON недоступна, попробуйте позже.'};
+        var emEn={'tx_not_found':'Transaction not found. Wait a minute, then retry.',
+          'underpaid':'Amount is short.',
+          'tx_reused':'This hash already claimed a key.',
+          'chain_unreachable':'TRON network unreachable, try later.'};
+        var em=isRu?emRu:emEn;
+        msg.textContent=em[e]||((isRu?'Ошибка: ':'Error: ')+e);
+      }).catch(function(){ug.disabled=false;msg.textContent=(isRu?'Нет связи с сервером.':'Could not reach the server.');});
+    };
     var cb=$('usdt-copy');
     if(cb)cb.onclick=function(){
       var done=function(){cb.textContent=(isRu?'Скопировано ✓':'Copied ✓');};
