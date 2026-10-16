@@ -35,6 +35,20 @@ Everything below is implemented in the open source (`src/privacy.js`, `src/adblo
 * **Zero telemetry**: no analytics, no crash reports, no update pings with identifiers. License activation sends one device ID + key, once; the app works fully offline after that.
 * **Sync privacy**: bookmarks/settings sync as encrypted blobs the server stores but cannot read. Password resets intentionally destroy the old synced copy (new password = new key).
 
+## Network truth: what talks to what, and when
+
+No account, no browsing telemetry — ever. The core browser works fully offline after install. Anything below happens only as stated:
+
+* **Update check (automatic, anonymous)**: on launch the app asks GitHub for `latest.yml` — version numbers only, no identifiers, no account needed. Disable it with AppImage builds (excluded by choice) or by blocking it; nothing breaks.
+* **License refresh (only if Premium)**: logged-in Premium installs re-validate the key on launch (device ID + key, once). Free tier and logged-out installs contact nothing.
+* **Sync (only if logged in)**: encrypted blobs upload on local change, download on login. The server never sees plaintext.
+* **Store, account dashboard, support pages**: ordinary HTTPS page loads, only when you open them. Browsing the web never touches our servers.
+* **Payments (only during checkout)**: Razorpay (India), PayPal (most countries), YooKassa (Russia/CIS). Handled by those processors; we store the receipt, never card data.
+* **Search**: only your queries, only to the engine you picked (KastravaSearch default).
+* **Transport**: everything above is HTTPS (TLS, Let's Encrypt). No plaintext, no custom protocols.
+* **Retention**: login sessions expire after 30 days; email codes after 10 minutes; security log keeps the last 100 events per account; deleting your account purges keys, sync blobs, sessions, items, and audit. Purchase receipts (order ID, amount, key) are kept for refunds and tax records.
+* **No security audit (yet)**: one developer, no third-party audit — stated plainly. The code is GPLv3 and every claim above points at the file that implements it, so anyone can verify.
+
 ## Features
 
 * **Privacy-First & Offline-Focused**: No user tracking. Browsing data stays on your machine; optional account sync is end-to-end encrypted.
