@@ -19,6 +19,26 @@
 .backrow a{font-family:var(--mono);font-size:12px;color:var(--blue);text-decoration:none}
 .doc-head h1{font-size:clamp(30px,4.5vw,44px);margin:14px 0 8px}
 .doc-head .lede{color:var(--muted);font-size:15px;max-width:680px;margin-bottom:8px}
+.sec-h{font-family:var(--mono);font-size:12px;letter-spacing:2px;color:var(--muted);margin:30px 0 14px;display:flex;align-items:center;gap:10px}
+.sec-h::after{content:"";flex:1;height:1px;background:var(--line)}
+.count-pill{font-size:11px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:2px 10px;color:var(--muted)}
+.authors-grid{display:grid;gap:14px}
+.author-card{display:flex;gap:16px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px}
+.author-card.big{padding:24px}
+.author-card h2{font-size:20px;margin:0 0 2px}
+.author-card .role{font-family:var(--mono);font-size:11px;letter-spacing:1.5px;color:var(--accent);display:block;margin-bottom:8px}
+.author-card p{color:var(--muted);font-size:14px;margin:0}
+.author-card p.links{margin-top:10px}
+.author-card p.links a{color:var(--blue);text-decoration:none;font-size:13px}
+.avatar{width:52px;height:52px;min-width:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:#0b0d12;background:linear-gradient(135deg,#ffb300,#ff5f57)}
+.avatar.aa{background:linear-gradient(135deg,#7CFC00,#00CED1)}
+.avatar.lm{background:linear-gradient(135deg,#ffec80,#ffb300)}
+.mini-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.mini-card{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.mini-card .avatar{width:40px;height:40px;min-width:40px;font-size:15px;border-radius:11px}
+.mini-card h2{font-size:16px;margin:0 0 4px}
+.mini-card p{color:var(--muted);font-size:13px;margin:0}
+.mini-card p a{color:var(--blue);text-decoration:none}
 </style>
 </head>
 <body>
