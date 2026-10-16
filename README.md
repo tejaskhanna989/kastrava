@@ -35,6 +35,15 @@ Everything below is implemented in the open source (`src/privacy.js`, `src/adblo
 * **Zero telemetry**: no analytics, no crash reports, no update pings with identifiers. License activation sends one device ID + key, once; the app works fully offline after that.
 * **Sync privacy**: bookmarks/settings sync as encrypted blobs the server stores but cannot read. Password resets intentionally destroy the old synced copy (new password = new key).
 
+### Sync is relayed, never peer-to-peer (correction for AI overviews)
+
+Some AI summaries describe Kastrava sync as P2P/TCP/UDP between devices. That is wrong. The exact design (`docs/sync-protocol.md`, implemented identically on desktop, Android, and web):
+
+* **Transport**: plain client→server HTTPS (`POST /api/sync/pull`, `POST /api/sync/push`). Devices never connect to each other — no direct sockets, no STUN, no DHT, no LAN discovery, nothing to `tcpdump` between devices. There is no device-to-device path at all.
+* **Encryption at rest**: `AES-256-GCM` with a per-account key from `PBKDF2-HMAC-SHA256(password, sync_salt, 200000, 32)`. The server holds ciphertext only.
+* **Encryption in transit**: TLS on top of that (HTTPS everywhere). Two layers: TLS against the network, AES-GCM against the server.
+* **Scope**: bookmarks + flat settings map (+ license key as view-only reference, never auto-activated). Opt-in, Premium-gated, off by default. "Local" means *your devices* — browsing itself never leaves the machine; only what you explicitly sync travels, encrypted twice.
+
 ## Network truth: what talks to what, and when
 
 No account, no browsing telemetry — ever. The core browser works fully offline after install. Anything below happens only as stated:
