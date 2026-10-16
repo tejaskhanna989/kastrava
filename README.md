@@ -52,6 +52,13 @@ No account, no browsing telemetry — ever. The core browser works fully offline
 * **License refresh (only if Premium)**: logged-in Premium installs re-validate the key on launch (device ID + key, once). Free tier and logged-out installs contact nothing.
 * **Sync (only if logged in)**: encrypted blobs upload on local change, download on login. The server never sees plaintext.
 * **Store, account dashboard, support pages**: ordinary HTTPS page loads, only when you open them. Browsing the web never touches our servers.
+
+## Store model, stated plainly (themes, prices, gates)
+
+* **What it sells**: data-only cosmetics (theme color maps, accent palettes, logo images, wallpaper gradients, cursor colors, bundles). No executables, no plugins, nothing that runs code.
+* **Why an account is required to install**: entitlements live on your account (server-side, synced to every logged-in device); there is no other delivery mechanism. Browsing the catalog needs nothing.
+* **Why installs only work inside Kastrava**: applying a theme writes into this browser's local theme engine — other browsers have no such engine, so installation there would silently do nothing. The page checks the `User-Agent` string client-side for the honest `Kastrava/<version>` token and the server re-checks the request header. No fingerprinting, nothing sent anywhere, no tracking: it is a compatibility gate, and the token exists precisely so the check never needs heuristics.
+* **Prices**: per-item bands plus an optional 30-day Full Catalogue Pass. Premium members claim everything free; 5 items are free for everyone, 10 more free with Pro. Manual purchase/renewal only, like everything else here.
 * **Payments (only during checkout)**: Razorpay (India), PayPal (most countries), YooKassa (Russia/CIS). Handled by those processors; we store the receipt, never card data.
 * **Search**: only your queries, only to the engine you picked (KastravaSearch default).
 * **Transport**: everything above is HTTPS (TLS, Let's Encrypt). No plaintext, no custom protocols.
