@@ -8,15 +8,14 @@ An open-source, GPLv3-licensed, privacy-first web browser designed for modern we
 
 Kastrava is 100% open source under the **GNU General Public License v3.0 (GPLv3)** for both free and paid offerings—with **zero cloud dependence and zero telemetry**.
 
-* **Free Community Edition**: Complete access to the full source code, build scripts, and desktop browser features under GPLv3.
-* **Paid / Pro Supporter Tier**: A paid option for pre-compiled official binaries, priority issue triage, direct developer support, and funding ongoing development—without locking away any core functionality or compromising local privacy.
+* **Free, forever**: Complete access to the full source code, build scripts, pre-compiled binaries, and core browser features under GPLv3. Downloads cost nothing.
+* **Premium (paid service, not software)**: A paid account service — license keys (up to 10 devices), encrypted sync infrastructure, and email support. The browser itself stays free and open.
 
 ## Premium & Renewal
 
-Premium is **$7/month (₹670, 30 days)** or **$2/day (₹190, 24 hours)**, one key per account, up to 10 devices. At payment you pick:
+Premium is **$49/month (₹499, 30 days)** or **$4.99/day (₹49, 24 hours)**, one key per account, up to 10 devices. India pays in INR via Razorpay; most other countries pay in local currency via PayPal.
 
-* **Manual renewal** (default) — pay again each cycle, nothing is stored.
-* **Auto-renewal** (Monthly only) — card/UPI mandate, cancel anytime from the account dashboard.
+* **Manual renewal only** — pay again each cycle. Nothing auto-charges, nothing is stored. Renewing extends the same key.
 
 Old 34-day keys keep working till their expiry date.
 
@@ -60,19 +59,19 @@ Ensure you have the following installed on your system before building:
 
 To compile production executables locally:
 
-npm run build
+npm install
+npm run dist
 
-The compiled binaries will be generated in the dist/ directory.
+The finished packages are generated in the release/ directory. (`npm start` runs a dev build from source.)
 
 ---
 
-## Paid Support & Sponsorship
+## Premium & Sponsorship
 
-While Kastrava is entirely free and open source, users and organizations can support the project financially:
+Kastrava is entirely free and open source. The project is funded by Premium subscriptions ($49/month or $4.99/day at https://kastrava.pp.ua/#premium):
 
-* Purchase official pre-compiled release packages to support maintenance.
-* Gain priority issue handling and direct consultation.
-* Enterprise sponsorship options to fund targeted offline security improvements.
+* Premium buyers get license keys, encrypted sync, and direct email support.
+* Contact khannatejas989@gmail.com for priority handling, consultation, or enterprise sponsorship.
 
 ---
 

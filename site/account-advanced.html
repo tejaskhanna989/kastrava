@@ -510,11 +510,43 @@ function showPayStep(){
     note.innerHTML='Charged '+money(pr.amount,pr.currency)+' via PayPal. By paying you agree to the <a href="/terms.html">Terms</a> and <a href="/refunds.html">Refund Policy</a>.';
     bb.style.display='none';
     renderPaypal();
+  }else if(GEO&&GEO.provider==='yookassa'&&GEO.prices&&GEO.prices[modalPlan]){
+    var yr=GEO.prices[modalPlan];
+    note.innerHTML='Оплата '+money(yr.amount,yr.currency)+' через ЮKassa (МИР, SBP). By paying you agree to the <a href="/terms.html">Terms</a> and <a href="/refunds.html">Refund Policy</a>.';
+    bb.style.display='';
+    bb.textContent='Pay '+money(yr.amount,yr.currency)+' — '+(modalPlan==='daily'?'24 hours':'30 days');
+    bb.onclick=function(){startYookassaAcc();};
   }else{
     note.innerHTML='Charged ₹'+m.inr+' via Razorpay (UPI, cards, netbanking). By paying you agree to the <a href="/terms.html">Terms</a> and <a href="/refunds.html">Refund Policy</a>.';
     bb.style.display='';
     bb.textContent='Pay '+(GEO&&GEO.currency&&GEO.currency!=='INR'?('$'+m.usd+' / ₹'+m.inr):('₹'+m.inr))+' — '+(modalPlan==='daily'?'24 hours':'30 days');
   }
+}
+var ykPollAcc=null;
+function stopYkPollAcc(){if(ykPollAcc){clearInterval(ykPollAcc);ykPollAcc=null;}}
+function startYookassaAcc(){
+  var bb=$('bm-buy');bb.disabled=true;
+  $('bm-pay-msg').textContent='Creating payment…';
+  post('/api/order',{account_token:tok(),plan:modalPlan,provider:'yookassa'},true).then(function(o){
+    if(!o||!o.order_id){$('bm-pay-msg').textContent=(o&&o.msg)||'Order failed.';bb.disabled=false;return;}
+    if(o.dev||!o.confirm_url){
+      return post('/api/verify',{order_id:o.order_id,account_token:tok()}).then(function(v){
+        bb.disabled=false;
+        if(v&&v.ok&&v.key)payDone(v.key,v.renewed);
+        else $('bm-pay-msg').textContent=(v&&v.msg)||'Payment could not be verified.';
+      });
+    }
+    $('bm-pay-msg').textContent='Pay in the opened tab, then wait here…';
+    try{window.open(o.confirm_url,'_blank');}catch(e){}
+    var tries=0;stopYkPollAcc();
+    ykPollAcc=setInterval(function(){
+      tries++;
+      if(tries>100){stopYkPollAcc();bb.disabled=false;$('bm-pay-msg').textContent='Timed out — if you paid, email your payment ID to support.';return;}
+      post('/api/verify',{order_id:o.order_id,account_token:tok()}).then(function(v){
+        if(v&&v.ok&&v.key){stopYkPollAcc();bb.disabled=false;payDone(v.key,v.renewed);}
+      }).catch(function(){});
+    },3000);
+  }).catch(function(e){bb.disabled=false;$('bm-pay-msg').textContent='Order failed.';});
 }
 function payDone(key,renewed){
   $('buy-modal').style.display='none';
@@ -524,6 +556,7 @@ function payDone(key,renewed){
   loadKeys();
 }
 $('bm-buy').addEventListener('click',function(){
+  if(GEO&&GEO.provider==='yookassa')return;
   var bb=this;bb.disabled=true;
   $('bm-pay-msg').textContent='Contacting store…';
   post('/api/order',{account_token:tok(),plan:modalPlan},true).then(function(o){
