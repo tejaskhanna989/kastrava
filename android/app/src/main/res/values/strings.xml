@@ -178,4 +178,9 @@
     <string name="vault_locked">Vault locked</string>
     <string name="title_hint">Title</string>
     <string name="dl_unavailable">System downloader unavailable</string>
+
+    <string name="language">Language</string>
+    <string name="lang_system">System</string>
+    <string name="lang_english">English</string>
+    <string name="lang_russian">Русский</string>
 </resources>

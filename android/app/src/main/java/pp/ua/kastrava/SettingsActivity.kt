@@ -71,6 +71,25 @@ class SettingsActivity : AppCompatActivity() {
             app.applyTheme()
         }
 
+        val langGroup: RadioGroup = findViewById(R.id.langGroup)
+        when (app.prefs.language) {
+            LocaleHelper.EN -> langGroup.check(R.id.langEn)
+            LocaleHelper.RU -> langGroup.check(R.id.langRu)
+            else -> langGroup.check(R.id.langSystem)
+        }
+        langGroup.setOnCheckedChangeListener { _, checkedId ->
+            val code = when (checkedId) {
+                R.id.langEn -> LocaleHelper.EN
+                R.id.langRu -> LocaleHelper.RU
+                else -> LocaleHelper.SYSTEM
+            }
+            if (app.prefs.language != code) {
+                app.prefs.language = code
+                LocaleHelper.apply(code)
+                recreate()
+            }
+        }
+
         val cbBlockers: CheckBox = findViewById(R.id.cbBlockers)
         cbBlockers.isChecked = app.prefs.blockers
         cbBlockers.setOnCheckedChangeListener { _, v -> app.prefs.blockers = v }

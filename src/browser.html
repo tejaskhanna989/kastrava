@@ -551,7 +551,7 @@ body.vtabs-collapsed .vtabs-new{border-style:solid}
   <div class="omnibox chrome-omnibox" id="omnibox">
     <span class="omni-prefix" id="omni-prefix">http://</span>
     <span class="omni-lock" id="omni-lock" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg></span>
-    <input class="url-input" type="text" id="url-input" placeholder="Search with KastravaSearch" spellcheck="false">
+    <input class="url-input" type="text" id="url-input" data-i18n-ph="searchPh" placeholder="Search with KastravaSearch" spellcheck="false">
     <button class="omni-copy" id="omni-copy" title="Copy link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 10a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
     <button class="bm-star" id="bm-star" title="Bookmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
   </div>
@@ -563,13 +563,13 @@ body.vtabs-collapsed .vtabs-new{border-style:solid}
 </div>
 <div class="more-menu" id="more-menu">
   <div class="mm-item" data-act="home">Home</div>
-  <div class="mm-item" data-act="hist">History</div>
-  <div class="mm-item" data-act="dls">Downloads</div>
+  <div class="mm-item" data-act="hist" data-i18n="history">History</div>
+  <div class="mm-item" data-act="dls" data-i18n="downloads">Downloads</div>
   <div class="mm-sep"></div>
   <div class="mm-item" data-act="reader">Reader Mode</div>
   <div class="mm-item" data-act="pip">Picture-in-Picture</div>
   <div class="mm-item" data-act="split">Split View</div>
-  <div class="mm-item" data-act="radar">Tracking Radar</div>
+  <div class="mm-item" data-act="radar" data-i18n="trackingRadar">Tracking Radar</div>
   <div class="mm-sep"></div>
   <div class="mm-item" data-act="vtabs">Vertical Tabs</div>
   <div class="mm-sep"></div>
@@ -578,7 +578,7 @@ body.vtabs-collapsed .vtabs-new{border-style:solid}
 </div>
 <div class="bm-bar" id="bm-bar"></div>
 <div class="find-bar" id="find-bar">
-  <input type="text" id="find-input" placeholder="Find in page..." spellcheck="false">
+  <input type="text" id="find-input" data-i18n-ph="findPh" placeholder="Find in page..." spellcheck="false">
   <button id="find-prev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 15l-6-6-6 6"/></svg></button>
   <button id="find-next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
   <button id="find-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
@@ -590,7 +590,7 @@ body.vtabs-collapsed .vtabs-new{border-style:solid}
     <span class="vtabs-count" id="vtabs-count">0</span>
     <button class="vtabs-tool" id="vtabs-collapse" title="Collapse sidebar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
   </div>
-  <input type="text" class="vtabs-search" id="vtabs-search" placeholder="Search tabs" spellcheck="false" autocomplete="off">
+  <input type="text" class="vtabs-search" id="vtabs-search" data-i18n-ph="tabsPh" placeholder="Search tabs" spellcheck="false" autocomplete="off">
   <div id="vtabs-list"></div>
   <div class="vtabs-footer">
     <button class="vtabs-new" id="vtabs-new" title="New tab"><svg viewBox="0 0 24 24" stroke-width="1.5" stroke-linecap="round"><path d="M12 22C17.5 22 22 17.5 22 12C22 6.5 17.5 2 12 2C6.5 2 2 6.5 2 12C2 17.5 6.5 22 12 22Z"/><path d="M8 12H16"/><path d="M12 16V8"/></svg><span>New tab</span></button>
@@ -603,7 +603,7 @@ body.vtabs-collapsed .vtabs-new{border-style:solid}
     <div class="ntp-time" id="ntp-time"></div>
     <div class="ntp-search">
       <svg class="ntp-search-icon" viewBox="0 0 24 24"><g><path d="M21.53 20.47l-3.66-3.66C19.195 15.24 20 13.214 20 11c0-4.97-4.03-9-9-9s-9 4.03-9 9 4.03 9 9 9c2.215 0 4.24-.804 5.808-2.13l3.66 3.66c.147.146.34.22.53.22s.385-.073.53-.22c.295-.293.295-.767.002-1.06zM3.5 11c0-4.135 3.365-7.5 7.5-7.5s7.5 3.365 7.5 7.5-3.365 7.5-7.5 7.5-7.5-3.365-7.5-7.5z"/></g></svg>
-      <input type="text" id="ntp-search-input" placeholder="Search with KastravaSearch">
+      <input type="text" id="ntp-search-input" data-i18n-ph="searchPh" placeholder="Search with KastravaSearch">
     </div>
     <div class="ntp-shortcuts" id="top-sites"></div>
     <div class="ntp-footer"><a href="https://github.com/tejaskhanna989/kastrava" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">Kastrava 101 · 100% Open Source (GPLv3)</a></div>
@@ -617,18 +617,18 @@ body.vtabs-collapsed .vtabs-new{border-style:solid}
 </div>
 
 <div class="workspaces-bar" id="workspaces-bar"></div>
-<div class="command-palette" id="command-palette"><input class="cp-input" id="cp-input" placeholder="Type a command..."><div class="cp-list" id="cp-list"></div></div>
+<div class="command-palette" id="command-palette"><input class="cp-input" id="cp-input" data-i18n-ph="cmdPh" placeholder="Type a command..."><div class="cp-list" id="cp-list"></div></div>
 <div class="ag-page" id="localhost-page" style="display:none">
   <div style="padding:20px;border-bottom:1px solid var(--c-border)"><h2>Localhost</h2><span style="font-size:11px;color:var(--c-text2)">On-device webapps — localhost:3000-9000</span></div>
   <div style="padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px" id="localhost-grid"></div>
-  <div style="padding:12px 16px;display:flex;gap:8px"><input id="localhost-custom" placeholder="localhost:3000" style="flex:1;padding:8px 12px;border-radius:20px;border:none;background:var(--c-omni);color:var(--c-text);font-size:13px;outline:none"><button id="localhost-go" style="padding:8px 18px;border:none;border-radius:20px;background:var(--accent);color:#202124;font-size:12px;cursor:pointer;font-weight:500">Open</button></div>
+  <div style="padding:12px 16px;display:flex;gap:8px"><input id="localhost-custom" placeholder="localhost:3000" style="flex:1;padding:8px 12px;border-radius:20px;border:none;background:var(--c-omni);color:var(--c-text);font-size:13px;outline:none"><button id="localhost-go" style="padding:8px 18px;border:none;border-radius:20px;background:var(--accent);color:#202124;font-size:12px;cursor:pointer;font-weight:500" data-i18n="open">Open</button></div>
 </div>
 
 <div class="drawer-backdrop" id="sp-backdrop"></div>
 <div class="drawer-backdrop" id="settings-backdrop"></div>
 <div class="settings-page" id="settings-page">
   <div class="settings-toolbar">
-    <span style="font-size:15px;font-weight:600">Settings</span>
+    <span style="font-size:15px;font-weight:600" data-i18n="settings">Settings</span>
     <div class="flex-spacer"></div>
     <button class="drawer-close" id="settings-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
   </div>
@@ -640,20 +640,20 @@ body.vtabs-collapsed .vtabs-new{border-style:solid}
 <div class="side-panel" id="side-panel">
   <div class="sp-header"><h3 id="sp-title">Bookmarks</h3><button class="sp-del" id="sp-delhist" title="Delete history" style="display:none"><svg viewBox="0 0 448 512"><path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z"/></svg></button><button class="sp-close" id="sp-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
   <div class="sp-tabs">
-    <div class="sp-tab active" data-tab="bookmarks">Bookmarks</div>
-    <div class="sp-tab" data-tab="history">History</div>
-    <div class="sp-tab" data-tab="downloads">Downloads</div>
+    <div class="sp-tab active" data-tab="bookmarks" data-i18n="bookmarks">Bookmarks</div>
+    <div class="sp-tab" data-tab="history" data-i18n="history">History</div>
+    <div class="sp-tab" data-tab="downloads" data-i18n="downloads">Downloads</div>
   </div>
-  <button class="sp-ag" id="sp-ag" title="Open the downloads page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>All Downloads</span></button>
+  <button class="sp-ag" id="sp-ag" title="Open the downloads page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span data-i18n="allDownloads">All Downloads</span></button>
   <div class="sp-body" id="sp-body"></div>
 </div>
 <div class="modal-overlay" id="prompt-modal">
   <div class="modal-box" style="text-align:left">
-    <div id="prompt-heading" style="font-size:15px;font-weight:600;margin-bottom:12px">Input</div>
+    <div id="prompt-heading" style="font-size:15px;font-weight:600;margin-bottom:12px" data-i18n="namePh">Input</div>
     <input id="prompt-input" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px;outline:none" spellcheck="false">
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
-      <button class="btn-sm" id="prompt-cancel">Cancel</button>
-      <button class="btn-sm btn-accent" id="prompt-ok">OK</button>
+      <button class="btn-sm" id="prompt-cancel" data-i18n="cancel">Cancel</button>
+      <button class="btn-sm btn-accent" id="prompt-ok" data-i18n="ok">OK</button>
     </div>
   </div>
 </div>
@@ -661,30 +661,30 @@ body.vtabs-collapsed .vtabs-new{border-style:solid}
   <div class="confirm-card">
     <button class="confirm-exit" id="confirm-close" title="Close"><svg viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/></svg></button>
     <div class="confirm-content">
-      <p class="confirm-heading" id="confirm-heading">Delete All History?</p>
-      <p class="confirm-desc" id="confirm-desc">This will delete all your browsing history. This cannot be reverted!</p>
+      <p class="confirm-heading" id="confirm-heading" data-i18n="delHistH">Delete All History?</p>
+      <p class="confirm-desc" id="confirm-desc" data-i18n="delHistD">This will delete all your browsing history. This cannot be reverted!</p>
     </div>
     <div class="confirm-btns">
-      <button class="confirm-btn secondary" id="confirm-cancel">Cancel</button>
-      <button class="confirm-btn primary" id="confirm-yes">Yes</button>
+      <button class="confirm-btn secondary" id="confirm-cancel" data-i18n="cancel">Cancel</button>
+      <button class="confirm-btn primary" id="confirm-yes" data-i18n="yes">Yes</button>
     </div>
   </div>
 </div>
 <div class="modal-overlay" id="add-site-modal">
   <div class="modal-box">
-    <p style="font-size:15px;font-weight:600;margin-bottom:14px">Add Shortcut</p>
-    <input id="as-title" class="as-input" placeholder="Name">
+    <p style="font-size:15px;font-weight:600;margin-bottom:14px" data-i18n="addShortcut">Add Shortcut</p>
+    <input id="as-title" class="as-input" data-i18n-ph="namePh" placeholder="Name">
     <input id="as-url" class="as-input" placeholder="https://example.com">
     <div style="display:flex;gap:8px;justify-content:center;margin-top:6px">
-      <button class="btn-sm btn-accent" id="as-save">Add</button>
-      <button class="btn-sm" id="as-cancel" style="background:var(--c-omni);color:var(--c-text2)">Cancel</button>
+      <button class="btn-sm btn-accent" id="as-save" data-i18n="add">Add</button>
+      <button class="btn-sm" id="as-cancel" data-i18n="cancel" style="background:var(--c-omni);color:var(--c-text2)">Cancel</button>
     </div>
   </div>
 </div>
 <div class="setup-wizard" id="setup-wizard"><div class="setup-ambient" aria-hidden="true"><div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div><div class="stars"></div><div class="vig"></div></div><div class="setup-card" id="setup-card"></div></div>
 <div class="radar-panel" id="radar-panel">
   <div class="radar-header">
-    <span class="t">Tracking Radar</span>
+    <span class="t" data-i18n="trackingRadar">Tracking Radar</span>
     <span class="radar-pulse" id="radar-pulse"></span>
     <button class="radar-close" id="radar-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
   </div>
@@ -721,7 +721,7 @@ function isBlank(u){return!u||u==="about:newtab"||u==="about:localhost"||u==="ab
 function err(fn,e){console.error("[Kastrava]",fn,e)}
 var tabs=[];var tabMap={};var activeTab=null;var tabIdCounter=0;
 var agDownloads=[];var agIdMap={};var bookmarkUrls=new Set();
-var settings={setupDone:"",searchEngine:"kastravasearch",accent:"#4fc3f7",fontSize:"12",reduceAnimations:"off",hwAcc:"on",dnt:"on",tracking:"strict",suggest:"off",bookmarkBar:"auto",startup:"last",confirmClose:"off",historyEnabled:"on",bookmarksEnabled:"on",cookies:"off",location:"block",zoom:"100",uiRadius:"medium",speedDial:"comfortable",showHomeBtn:"off",showCopyBtn:"on",showNtpClock:"on",showNtpLogo:"on",tabLayout:"horizontal",vtabsCollapsed:"off",shortcuts:{},uiStyle:"firefox",sleepTabs:"off",siteShields:{},jsGlobal:"on",images:"on",webrtcMode:"disable",doh:"off",proxy:{enabled:false},startupUrls:"",showFullUrls:"off",ntpQuick:"on",ntpSearch:"on",ntpBg:"default",ntpTiles:"8",tabFavicons:"on",clearHistoryOnExit:"off",historyKeep:"0",maxTabs:"0",askDlLoc:"off",dlDir:"",maxSuggestions:"8",launchMaximized:"off",sendReferrer:"off",cursorFx:"off",cursorFxMode:"color",cursorFxColor:"#4fc3f7",cursorFxForce:"medium",cursorFxSize:"medium",blobFx:"off",blobColor:"#2f6fed",blobCount:"3",blobSize:"medium",blobOpacity:"0.6",blobShape:"circle",glassFx:"off",glassColor:"#3b82f6",glassShape:"sphere",glassSize:"medium",glassOpacity:"0.5",particleFx:"off",particleColor:"#3b82f6",particleSize:"medium",particleDensity:"medium",clickSparkFx:"off",clickSparkColor:"#ffffff",clickSparkSize:"medium",clickSparkCount:"8",clickSparkDuration:"400",pixelTrailFx:"off",pixelTrailColor:"#ffffff",pixelTrailGrid:"medium",pixelTrailTrail:"medium",ribbonsFx:"off",ribbonsColor:"#2f6fed",ribbonsThickness:"medium",ribbonsPoints:"50",cursorStyle:"system",cursorStyleColor:"#ffffff",customThemes:[],customLogo:"",customWallpaper:""};
+var settings={setupDone:"",searchEngine:"kastravasearch",accent:"#4fc3f7",fontSize:"12",reduceAnimations:"off",hwAcc:"on",dnt:"on",tracking:"strict",suggest:"off",bookmarkBar:"auto",startup:"last",confirmClose:"off",historyEnabled:"on",bookmarksEnabled:"on",cookies:"off",lang:"en",location:"block",zoom:"100",uiRadius:"medium",speedDial:"comfortable",showHomeBtn:"off",showCopyBtn:"on",showNtpClock:"on",showNtpLogo:"on",tabLayout:"horizontal",vtabsCollapsed:"off",shortcuts:{},uiStyle:"firefox",sleepTabs:"off",siteShields:{},jsGlobal:"on",images:"on",webrtcMode:"disable",doh:"off",proxy:{enabled:false},startupUrls:"",showFullUrls:"off",ntpQuick:"on",ntpSearch:"on",ntpBg:"default",ntpTiles:"8",tabFavicons:"on",clearHistoryOnExit:"off",historyKeep:"0",maxTabs:"0",askDlLoc:"off",dlDir:"",maxSuggestions:"8",launchMaximized:"off",sendReferrer:"off",cursorFx:"off",cursorFxMode:"color",cursorFxColor:"#4fc3f7",cursorFxForce:"medium",cursorFxSize:"medium",blobFx:"off",blobColor:"#2f6fed",blobCount:"3",blobSize:"medium",blobOpacity:"0.6",blobShape:"circle",glassFx:"off",glassColor:"#3b82f6",glassShape:"sphere",glassSize:"medium",glassOpacity:"0.5",particleFx:"off",particleColor:"#3b82f6",particleSize:"medium",particleDensity:"medium",clickSparkFx:"off",clickSparkColor:"#ffffff",clickSparkSize:"medium",clickSparkCount:"8",clickSparkDuration:"400",pixelTrailFx:"off",pixelTrailColor:"#ffffff",pixelTrailGrid:"medium",pixelTrailTrail:"medium",ribbonsFx:"off",ribbonsColor:"#2f6fed",ribbonsThickness:"medium",ribbonsPoints:"50",cursorStyle:"system",cursorStyleColor:"#ffffff",customThemes:[],customLogo:"",customWallpaper:""};
 var splitOn=false;var splitPartner=null;var prevTabId=null;
 var closedTabs=[];
 function isPaymentUrl(u){
@@ -867,6 +867,22 @@ function showRenewModal(s){
   });
 }
 function saveSetting(k,v){settings[k]=v;if(api&&api.setSetting)api.setSetting(k,v);}
+/* ===== Minimal i18n (en default, ru) ===== */
+var STR={
+en:{settings:"Settings",newTab:"New tab",searchPh:"Search with KastravaSearch",cmdPh:"Type a command...",findPh:"Find in page...",tabsPh:"Search tabs",bookmarks:"Bookmarks",history:"History",downloads:"Downloads",allDownloads:"All Downloads",trackingRadar:"Tracking Radar",localhost:"Localhost",localhostSub:"On-device webapps — localhost:3000-9000",dlSub:"Kept private for this session — wiped when you quit. Save files you want to keep.",ok:"OK",cancel:"Cancel",close:"Close",save:"Save",delete:"Delete",add:"Add",yes:"Yes",no:"No",copy:"Copy",open:"Open",reset:"Reset",restore:"Restore",addShortcut:"Add Shortcut",namePh:"Name",urlPh:"https://example.com",delHistH:"Delete All History?",delHistD:"This will delete all your browsing history. This cannot be reverted!",navPremium:"Kastrava Premium",navAccount:"Account",navGeneral:"General",navAppearance:"Appearance",navSearch:"Search Engine",navPrivacy:"Privacy & Security",navShortcuts:"Shortcuts",navA11y:"Accessibility",navSystem:"System",navReset:"Reset Settings",navAbout:"About",snSearchPh:"Search settings",hGeneral:"General",hAppearance:"Appearance",hSearch:"Search Engine",hPrivacy:"Privacy & Security",hShortcuts:"Keyboard Shortcuts",hA11y:"Accessibility",hSystem:"System",hReset:"Reset Settings",hAbout:"About",language:"Language",languageD:"Interface language. Applies immediately.",lStartup:"Startup",lStartupPages:"Startup Pages",lFontSize:"Font Size",lDefaultZoom:"Default Zoom",lConfirmClose:"Confirm Close",lTabLimit:"Tab Limit",lFullUrls:"Always Show Full URLs",lClearExit:"Clear History on Exit",lKeepHist:"Keep History",lDark:"Dark Themes",lLight:"Light Themes",lAccent:"Accent Color",lRadius:"Corner Radius",lDial:"Speed Dial Size",lTiles:"Shortcut Tiles",lNtpBg:"New Tab Background",lNtpSearch:"New Tab Search",lNtpShort:"New Tab Shortcuts",lTabFav:"Tab Favicons",lUiStyle:"Interface Style",lTabLayout:"Tab Layout",lCollapse:"Collapse Vertical Sidebar",lHomeBtn:"Show Home Button",lCopyBtn:"Show Copy Link Button",lClock:"Show Clock on New Tab",lLogo:"Show Logo on New Tab",lDefEngine:"Default Search Engine",lJs:"JavaScript",lImages:"Images",lCookies:"Cookies",lRef:"Referrer Policy",lWebrtc:"WebRTC",lDoh:"Secure DNS",lProxy:"Proxy",lLoc:"Location Access",lPerms:"Permissions",lTrack:"Tracking Protection",lDnt:"Do Not Track",lClear:"Clear Data",lBm:"Bookmarks",lRadar:"Tracking Radar",lHist:"Browsing History",lHw:"Hardware Acceleration",lMax:"Launch Maximized",lAskDl:"Ask Where to Save",lDlDir:"Download Folder",lSleep:"Sleep Inactive Tabs",lClearHist:"Clear History",lClearAll:"Clear All Data",lResetAll:"Reset All Settings",lResetEv:"Reset Everything",lReplay:"Replay Welcome Setup",lUpdates:"Updates",oobWelcome:"Welcome",oobPremium:"Premium & plans",oobDone:"Done"},
+ru:{settings:"Настройки",newTab:"Новая вкладка",searchPh:"Поиск с KastravaSearch",cmdPh:"Введите команду...",findPh:"Найти на странице...",tabsPh:"Поиск по вкладкам",bookmarks:"Закладки",history:"История",downloads:"Загрузки",allDownloads:"Все загрузки",trackingRadar:"Радар трекинга",localhost:"Локальные приложения",localhostSub:"Приложения на устройстве — localhost:3000-9000",dlSub:"Хранится приватно только эту сессию — удаляется при выходе. Сохраните нужные файлы.",ok:"ОК",cancel:"Отмена",close:"Закрыть",save:"Сохранить",delete:"Удалить",add:"Добавить",yes:"Да",no:"Нет",copy:"Копировать",open:"Открыть",reset:"Сбросить",restore:"Восстановить",addShortcut:"Добавить ярлык",namePh:"Название",urlPh:"https://example.com",delHistH:"Удалить всю историю?",delHistD:"Вся история просмотров будет удалена. Это действие необратимо!",navPremium:"Kastrava Premium",navAccount:"Аккаунт",navGeneral:"Основные",navAppearance:"Оформление",navSearch:"Поиск",navPrivacy:"Приватность и защита",navShortcuts:"Горячие клавиши",navA11y:"Специальные возможности",navSystem:"Система",navReset:"Сброс настроек",navAbout:"О программе",snSearchPh:"Поиск по настройкам",hGeneral:"Основные",hAppearance:"Оформление",hSearch:"Поисковая система",hPrivacy:"Приватность и защита",hShortcuts:"Горячие клавиши",hA11y:"Специальные возможности",hSystem:"Система",hReset:"Сброс настроек",hAbout:"О программе",language:"Язык",languageD:"Язык интерфейса. Применяется сразу.",lStartup:"Запуск",lStartupPages:"Стартовые страницы",lFontSize:"Размер шрифта",lDefaultZoom:"Масштаб по умолчанию",lConfirmClose:"Подтверждение закрытия",lTabLimit:"Лимит вкладок",lFullUrls:"Всегда показывать полные URL",lClearExit:"Очищать историю при выходе",lKeepHist:"Хранить историю",lDark:"Тёмные темы",lLight:"Светлые темы",lAccent:"Акцентный цвет",lRadius:"Скругление углов",lDial:"Размер экспресс-панели",lTiles:"Плитки ярлыков",lNtpBg:"Фон новой вкладки",lNtpSearch:"Поиск на новой вкладке",lNtpShort:"Ярлыки на новой вкладке",lTabFav:"Значки сайтов во вкладках",lUiStyle:"Стиль интерфейса",lTabLayout:"Расположение вкладок",lCollapse:"Сворачивать боковую панель",lHomeBtn:"Кнопка «Домой»",lCopyBtn:"Кнопка копирования ссылки",lClock:"Часы на новой вкладке",lLogo:"Логотип на новой вкладке",lDefEngine:"Поиск по умолчанию",lJs:"JavaScript",lImages:"Изображения",lCookies:"Файлы cookie",lRef:"Политика реферера",lDoh:"Защищённый DNS",lWebrtc:"WebRTC",lProxy:"Прокси",lLoc:"Доступ к геопозиции",lPerms:"Разрешения",lTrack:"Защита от трекинга",lDnt:"Не отслеживать (DNT)",lClear:"Очистить данные",lBm:"Закладки",lRadar:"Радар трекинга",lHist:"История просмотров",lHw:"Аппаратное ускорение",lMax:"Запускать развёрнутым",lAskDl:"Спрашивать место сохранения",lDlDir:"Папка загрузок",lSleep:"Спящие неактивные вкладки",lClearHist:"Очистить историю",lClearAll:"Удалить все данные",lResetAll:"Сбросить все настройки",lResetEv:"Сбросить всё",lReplay:"Показать приветствие снова",lUpdates:"Обновления",oobWelcome:"Добро пожаловать",oobPremium:"Premium и тарифы",oobDone:"Готово"}
+};
+var OOBE_KEYS=["oobWelcome","oobPremium","oobDone"];
+function t(k){var L=(settings&&settings.lang)||"en";if(STR[L]&&STR[L][k]!=null)return STR[L][k];if(STR.en[k]!=null)return STR.en[k];return k;}
+function applyLang(){
+  var L=(settings&&settings.lang)||"en";
+  try{document.documentElement.lang=L;}catch(e){}
+  document.querySelectorAll("[data-i18n]").forEach(function(el){var k=el.getAttribute("data-i18n");el.textContent=t(k);});
+  document.querySelectorAll("[data-i18n-ph]").forEach(function(el){el.setAttribute("placeholder",t(el.getAttribute("data-i18n-ph")));});
+  document.querySelectorAll("[data-i18n-title]").forEach(function(el){el.setAttribute("title",t(el.getAttribute("data-i18n-title")));});
+  var map={"btn-back":"back","btn-fwd":"forward","btn-reload":"reload","btn-home":"home","btn-menu":"settings","btn-more":"more"};
+  void map;void L;
+}
 function applyFontSize(v){
   var s=parseInt(v,10)||12;
   settings.fontSize=String(s);
@@ -4215,8 +4231,8 @@ function closeSettings(){
 }
 function renderSettingsNav(){
   var nav=$("settings-nav");
-  var secs=[{id:"premium",l:"Kastrava Premium"},{id:"sync",l:"Account"},{id:"general",l:"General"},{id:"appearance",l:"Appearance"},{id:"search",l:"Search Engine"},{id:"privacy",l:"Privacy & Security"},{id:"shortcuts",l:"Shortcuts"},{id:"accessibility",l:"Accessibility"},{id:"system",l:"System"},{id:"reset",l:"Reset Settings"},{id:"about",l:"About"}];
-  nav.innerHTML="<input type=\"text\" class=\"sn-search\" id=\"sn-search\" placeholder=\"Search settings\" spellcheck=\"false\" autocomplete=\"off\">"+secs.map(function(s){return "<div class=\"sn-item\" data-s=\""+s.id+"\">"+s.l+"</div>";}).join("");
+  var NAVKEY={premium:"navPremium",sync:"navAccount",general:"navGeneral",appearance:"navAppearance",search:"navSearch",privacy:"navPrivacy",shortcuts:"navShortcuts",accessibility:"navA11y",system:"navSystem",reset:"navReset",about:"navAbout"};var secs=[{id:"premium",l:"Kastrava Premium"},{id:"sync",l:"Account"},{id:"general",l:"General"},{id:"appearance",l:"Appearance"},{id:"search",l:"Search Engine"},{id:"privacy",l:"Privacy & Security"},{id:"shortcuts",l:"Shortcuts"},{id:"accessibility",l:"Accessibility"},{id:"system",l:"System"},{id:"reset",l:"Reset Settings"},{id:"about",l:"About"}];
+  nav.innerHTML="<input type=\"text\" class=\"sn-search\" id=\"sn-search\" data-i18n-ph=\"snSearchPh\" placeholder=\"Search settings\" spellcheck=\"false\" autocomplete=\"off\">"+secs.map(function(s){return "<div class=\"sn-item\" data-s=\""+s.id+"\" data-i18n=\""+(NAVKEY[s.id]||s.id)+"\">"+t(NAVKEY[s.id]||s.id)+"</div>";}).join("");
   var snInp=$("sn-search");
   if(snInp)snInp.addEventListener("input",function(){
     var q=snInp.value.trim().toLowerCase();
@@ -4233,6 +4249,7 @@ function renderSettingsNav(){
     }
   });
   nav.querySelectorAll(".sn-item").forEach(function(el){el.addEventListener("click",function(){nav.querySelectorAll(".sn-item").forEach(function(x){x.classList.remove("active");});el.classList.add("active");renderSettingsSection(el.dataset.s);});});
+  try{applyLang();}catch(e){}
   nav.querySelector(".sn-item").classList.add("active");renderSettingsSection("general");
 }
 try{if(!window.__chromeVer){var m=navigator.userAgent.match(/Chrome\/([\d.]+)/);if(m)window.__chromeVer=m[1];}}catch(e){}
@@ -4269,7 +4286,8 @@ function renderSettingsSection(id){
       h+="<div class=\"sg\" id=\"sy-licrow\" style=\"display:none\"><div class=\"lbl\">Premium key on file</div><div class=\"desc\">Synced from another device — reference only. Keys stay on your account.</div><div class=\"mono\" id=\"sy-lickey\" style=\"margin:6px 0;font-size:13px\"></div><button class=\"btn-sm\" id=\"sy-activate\">Activate on this device</button></div>";
     }
   }
-  else if(id==="general"){h="<h3>General</h3>";
+  else if(id==="general"){h="<h3 data-i18n=\"hGeneral\">"+t("hGeneral")+"</h3>";
+    h+="<div class=\"sg\"><div class=\"lbl\" data-i18n=\"language\">"+t("language")+"</div><select id=\"s-lang\"><option value=\"en\">English</option><option value=\"ru\">\u0420\u0443\u0441\u0441\u043a\u0438\u0439</option></select><div class=\"desc\" data-i18n=\"languageD\">"+t("languageD")+"</div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Startup</div><select id=\"s-startup\"><option value=\"last\">Restore previous session</option><option value=\"blank\">New tab</option><option value=\"urls\">Open specific pages</option></select></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Startup Pages</div><textarea id=\"s-startupurls\" rows=\"3\" placeholder=\"https://example.com\" style=\"width:100%;margin-top:6px\"></textarea><div class=\"desc\">One URL per line. Used when Startup is set to specific pages.</div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Font Size</div><select id=\"s-fontsize\"><option value=\"11\">Small</option><option value=\"12\">Medium</option><option value=\"14\">Large</option></select></div>";
@@ -4414,7 +4432,7 @@ function renderSettingsSection(id){
     h+="<div class=\"sg\"><div class=\"lbl\">Updates</div><div class=\"desc\">Kastrava checks automatically. You can also check right now:</div><div style=\"margin-top:8px\"><button class=\"btn-sm btn-accent\" id=\"s-checkupd\">Check for updates</button></div></div>";
     h+="<div class=\"sg\"><div class=\"desc\" style=\"font-size:12px\">Kastrava 101 &ldquo;Starship Wonders&rdquo; &mdash; Built By The Community for the Community.<br>Privacy-first fork of Chromium, GPLv3.</div></div>";
   }
-  p.innerHTML=h;
+  p.innerHTML=h;try{applyLang();}catch(e){}
     (function(){
       document.querySelectorAll(".about-link").forEach(function(el){
         el.addEventListener("click",function(){
@@ -4446,6 +4464,8 @@ function bindSettingsEvents(id){
   try{
     if(id==="sync"){bindSyncPanel();}
     else if(id==="general"){
+      setSel("s-lang",settings.lang||"en");
+      bindChange("s-lang",function(v){sv("lang",(v==="ru"?"ru":"en"));try{applyLang();}catch(e){}try{renderSettingsNav();}catch(e){}try{renderSettingsSection("general");bindSettingsEvents("general");}catch(e){}});
       setSel("s-startup",settings.startup);
       setSel("s-fontsize",settings.fontSize);
       (function(){var z=parseInt(settings.zoom)||100;var r=$("s-zoom");if(r)r.value=String(z);var l=$("s-zoomval");if(l)l.textContent=z+"%";})();
@@ -4724,7 +4744,7 @@ function bindSettingsEvents(id){
       var ccm=$("s-liccopy");if(ccm)ccm.addEventListener("click",function(){copyText(LIC.machine);toast("Machine code copied");});
       var stp=$("s-licstop");if(stp)stp.addEventListener("click",function(){showConfirmModal(function(){stopPremium();},{title:"Stop Premium?",desc:"This ends Premium on this machine immediately. No refund is issued. You can buy again any time."});});
     }else if(id==="reset"){
-      function doResetSettings(){var keepT=settings.customThemes||[],keepL=settings.customLogo||"",keepW=settings.customWallpaper||"";settings={setupDone:"1",searchEngine:"kastravasearch",accent:"#4fc3f7",fontSize:"12",reduceAnimations:"off",hwAcc:"on",dnt:"on",tracking:"strict",suggest:"off",bookmarkBar:"auto",startup:"last",confirmClose:"off",historyEnabled:"on",bookmarksEnabled:"on",cookies:"off",location:"block",zoom:"100",uiRadius:"medium",speedDial:"comfortable",showHomeBtn:"off",showCopyBtn:"on",showNtpClock:"on",showNtpLogo:"on",tabLayout:"horizontal",vtabsCollapsed:"off",shortcuts:{},uiStyle:"firefox",sleepTabs:"off",siteShields:{},jsGlobal:"on",images:"on",webrtcMode:"disable",doh:"off",proxy:{enabled:false},startupUrls:"",showFullUrls:"off",ntpQuick:"on",ntpSearch:"on",ntpBg:"default",ntpTiles:"8",tabFavicons:"on",clearHistoryOnExit:"off",historyKeep:"0",maxTabs:"0",askDlLoc:"off",dlDir:"",maxSuggestions:"8",launchMaximized:"off",sendReferrer:"off",cursorFx:"off",cursorFxMode:"color",cursorFxColor:"#4fc3f7",cursorFxForce:"medium",cursorFxSize:"medium",blobFx:"off",blobColor:"#2f6fed",blobCount:"3",blobSize:"medium",blobOpacity:"0.6",blobShape:"circle",glassFx:"off",glassColor:"#3b82f6",glassShape:"sphere",glassSize:"medium",glassOpacity:"0.5",particleFx:"off",particleColor:"#3b82f6",particleSize:"medium",particleDensity:"medium",clickSparkFx:"off",clickSparkColor:"#ffffff",clickSparkSize:"medium",clickSparkCount:"8",clickSparkDuration:"400",pixelTrailFx:"off",pixelTrailColor:"#ffffff",pixelTrailGrid:"medium",pixelTrailTrail:"medium",ribbonsFx:"off",ribbonsColor:"#2f6fed",ribbonsThickness:"medium",ribbonsPoints:"50",cursorStyle:"system",cursorStyleColor:"#ffffff",customThemes:keepT,customLogo:keepL,customWallpaper:keepW};if(api&&api.setSetting){Object.keys(settings).forEach(function(k){api.setSetting(k,settings[k]);});}document.documentElement.style.cssText="";applyFontSize("12");applyReduceAnim("off");applyUiRadius("medium");applySpeedDial("comfortable");applyHomeBtn("off");applyCopyBtn("on");applyNtpClock("on");applyNtpLogo("on");applyTabLayout("horizontal");applyVtabsCollapsed("off");applyBookmarkBar("auto");applyHistoryEnabled("on");applyBookmarksEnabled("on");applyAllFx();toast("Settings reset.");}
+      function doResetSettings(){var keepT=settings.customThemes||[],keepL=settings.customLogo||"",keepW=settings.customWallpaper||"";settings={setupDone:"1",searchEngine:"kastravasearch",accent:"#4fc3f7",fontSize:"12",reduceAnimations:"off",hwAcc:"on",dnt:"on",tracking:"strict",suggest:"off",bookmarkBar:"auto",startup:"last",confirmClose:"off",historyEnabled:"on",bookmarksEnabled:"on",cookies:"off",lang:"en",location:"block",zoom:"100",uiRadius:"medium",speedDial:"comfortable",showHomeBtn:"off",showCopyBtn:"on",showNtpClock:"on",showNtpLogo:"on",tabLayout:"horizontal",vtabsCollapsed:"off",shortcuts:{},uiStyle:"firefox",sleepTabs:"off",siteShields:{},jsGlobal:"on",images:"on",webrtcMode:"disable",doh:"off",proxy:{enabled:false},startupUrls:"",showFullUrls:"off",ntpQuick:"on",ntpSearch:"on",ntpBg:"default",ntpTiles:"8",tabFavicons:"on",clearHistoryOnExit:"off",historyKeep:"0",maxTabs:"0",askDlLoc:"off",dlDir:"",maxSuggestions:"8",launchMaximized:"off",sendReferrer:"off",cursorFx:"off",cursorFxMode:"color",cursorFxColor:"#4fc3f7",cursorFxForce:"medium",cursorFxSize:"medium",blobFx:"off",blobColor:"#2f6fed",blobCount:"3",blobSize:"medium",blobOpacity:"0.6",blobShape:"circle",glassFx:"off",glassColor:"#3b82f6",glassShape:"sphere",glassSize:"medium",glassOpacity:"0.5",particleFx:"off",particleColor:"#3b82f6",particleSize:"medium",particleDensity:"medium",clickSparkFx:"off",clickSparkColor:"#ffffff",clickSparkSize:"medium",clickSparkCount:"8",clickSparkDuration:"400",pixelTrailFx:"off",pixelTrailColor:"#ffffff",pixelTrailGrid:"medium",pixelTrailTrail:"medium",ribbonsFx:"off",ribbonsColor:"#2f6fed",ribbonsThickness:"medium",ribbonsPoints:"50",cursorStyle:"system",cursorStyleColor:"#ffffff",customThemes:keepT,customLogo:keepL,customWallpaper:keepW};if(api&&api.setSetting){Object.keys(settings).forEach(function(k){api.setSetting(k,settings[k]);});}document.documentElement.style.cssText="";applyFontSize("12");applyReduceAnim("off");applyUiRadius("medium");applySpeedDial("comfortable");applyHomeBtn("off");applyCopyBtn("on");applyNtpClock("on");applyNtpLogo("on");applyTabLayout("horizontal");applyVtabsCollapsed("off");applyBookmarkBar("auto");applyHistoryEnabled("on");applyBookmarksEnabled("on");applyAllFx();toast("Settings reset.");}
       var rs=$("s-reset");if(rs)rs.addEventListener("click",function(){showConfirmModal(function(){doResetSettings();},{title:"Reset all settings?",desc:"Restore all settings to defaults. This cannot be reverted!"});});
       var ra=$("s-resetall");if(ra)ra.addEventListener("click",function(){showConfirmModal(function(){doResetSettings();clearAllData();},{title:"Reset everything?",desc:"Restore defaults and delete all history, bookmarks and top sites. This cannot be reverted!"});});
       var sr=$("s-setupreplay");if(sr)sr.addEventListener("click",function(){try{saveSetting("setupDone","");}catch(e){}setupRestart();});
@@ -4943,6 +4963,7 @@ function init(){
     loadSettings().then(function(){
       if(settings.theme){if(!applyThemeKey(settings.theme)&&settings.accent){document.documentElement.style.setProperty("--accent",settings.accent);}}
       else if(settings.accent){document.documentElement.style.setProperty("--accent",settings.accent);}
+      try{applyLang();}catch(e){}
       try{applyFontSize(settings.fontSize||"12");}catch(e){}
       try{applyReduceAnim(settings.reduceAnimations);}catch(e){}
       try{applyUiRadius(settings.uiRadius||"medium");}catch(e){}

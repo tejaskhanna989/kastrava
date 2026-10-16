@@ -178,4 +178,8 @@
     <string name="vault_locked">Сейф закрыт</string>
     <string name="title_hint">Заголовок</string>
     <string name="dl_unavailable">Системный загрузчик недоступен</string>
+    <string name="language">Язык</string>
+    <string name="lang_system">Системный</string>
+    <string name="lang_english">English</string>
+    <string name="lang_russian">Русский</string>
 </resources>

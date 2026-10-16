@@ -53,9 +53,26 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp">
-            <RadioButton android:id="@+id/themeSystem" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="System" />
+            <RadioButton android:id="@+id/themeSystem" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/lang_system" />
             <RadioButton android:id="@+id/themeLight" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Light" />
             <RadioButton android:id="@+id/themeDark" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Dark" />
+        </RadioGroup>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/language"
+            android:textSize="14sp" />
+
+        <RadioGroup
+            android:id="@+id/langGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <RadioButton android:id="@+id/langSystem" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/lang_system" />
+            <RadioButton android:id="@+id/langEn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/lang_english" />
+            <RadioButton android:id="@+id/langRu" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/lang_russian" />
         </RadioGroup>
 
         <CheckBox

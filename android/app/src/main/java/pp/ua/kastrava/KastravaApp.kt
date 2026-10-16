@@ -24,6 +24,7 @@ class KastravaApp : Application() {
         license = LicenseManager(this)
         account = AccountManager(this)
         applyTheme()
+        LocaleHelper.apply(prefs.language)
         // Crash leftovers must never outlive their session.
         Thread { downloads.wipe() }.start()
         Thread { filters.load() }.start()

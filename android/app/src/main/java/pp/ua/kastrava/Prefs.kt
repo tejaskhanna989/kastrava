@@ -19,6 +19,11 @@ class Prefs(context: Context) {
         get() = p.getString("theme", "system") ?: "system"
         set(v) { p.edit().putString("theme", v).apply() }
 
+    /** UI language: system | en | ru. Default follows the system. */
+    var language: String
+        get() = p.getString("language", "system") ?: "system"
+        set(v) { p.edit().putString("language", v).apply() }
+
     // Store theme (data-only cosmetics from the Kastrava Store).
     // Applied natively by ThemeEngine; cursors are desktop-only and
     // never stored here.
