@@ -415,11 +415,25 @@ function showStep2(){
     bb.style.display='none';
     renderPaypal();
   }else if(GEO&&GEO.provider==='yookassa'&&GEO.prices&&GEO.prices[modalPlan]){
-    var yr=GEO.prices[modalPlan];
-    note.innerHTML='Оплата '+money(yr.amount,yr.currency)+' через ЮKassa (МИР, SBP). By paying you agree to the <a href="/terms.html">Terms</a> and <a href="/refunds.html">Refund Policy</a>.';
-    bb.style.display='';
-    bb.textContent='Pay '+money(yr.amount,yr.currency)+' — '+(modalPlan==='daily'?'24 hours':'30 days');
-    bb.onclick=function(){startYookassa();};
+    var isRu=(typeof wlLang==='function'&&wlLang()==='ru');
+    var usdtAmt=(modalPlan==='daily'?'4.99':'49');
+    bb.style.display='none';pp.style.display='none';
+    note.innerHTML=(isRu
+      ?'Оплата вручную через <b>USDT (сеть TRON/TRC20)</b> — '+usdtAmt+' USDT за '+(modalPlan==='daily'?'24 часа':'30 дней')+'. Российские карты за рубежом не проходят, поэтому так.'
+      :'Manual payment via <b>USDT (TRON/TRC20 network)</b> — '+usdtAmt+' USDT for '+(modalPlan==='daily'?'24 hours':'30 days')+'. Russian cards are blocked abroad, so this is the way.')
+      +'<br><br><span class="mono" id="usdt-addr" style="font-size:13px;word-break:break-all">TPmPvoW7LBDvzWttS8tu7q9MCPzr354xjQ</span> '
+      +'<button id="usdt-copy" class="btn btn-ghost" style="padding:4px 12px;font-size:12px;cursor:pointer">'+(isRu?'Копировать':'Copy')+'</button>'
+      +'<br><br>'+(isRu
+      ?'Отправьте точную сумму, затем напишите на <a href="mailto:khannatejas989@gmail.com">khannatejas989@gmail.com</a> с хэшем транзакции и email вашего аккаунта — ключ выдадим вручную в течение дня.'
+      :'Send the exact amount, then email <a href="mailto:khannatejas989@gmail.com">khannatejas989@gmail.com</a> with the transaction hash and your account email — we issue the key manually within a day.');
+    var cb=$('usdt-copy');
+    if(cb)cb.onclick=function(){
+      var done=function(){cb.textContent=(isRu?'Скопировано ✓':'Copied ✓');};
+      try{
+        if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText('TPmPvoW7LBDvzWttS8tu7q9MCPzr354xjQ').then(done,done);
+        else{var ta=document.createElement('textarea');ta.value='TPmPvoW7LBDvzWttS8tu7q9MCPzr354xjQ';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(ta);done();}
+      }catch(e){done();}
+    };
   }else{
     note.innerHTML='Charged ₹'+m.inr+' via Razorpay (UPI, cards, netbanking). By paying you agree to the <a href="/terms.html">Terms</a> and <a href="/refunds.html">Refund Policy</a>.';
     bb.style.display='';
