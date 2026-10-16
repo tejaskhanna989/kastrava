@@ -11,9 +11,9 @@ android {
         applicationId = "pp.ua.kastrava"
         minSdk = 26
         targetSdk = 34
-        // Mirrors the desktop release: 101.5.15.
-        versionCode = 1015015
-        versionName = "101.5.15"
+        // Mirrors the desktop release: 101.5.16.
+        versionCode = 1015016
+        versionName = "101.5.16"
     }
 
     flavorDimensions += "market"
