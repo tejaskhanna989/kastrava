@@ -31,7 +31,7 @@ class PremiumActivity : AppCompatActivity() {
         machine.setOnClickListener {
             val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             cm.setPrimaryClip(ClipData.newPlainText("machine", machine.text.toString()))
-            Toast.makeText(this, "Machine code copied", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.machine_copied), Toast.LENGTH_SHORT).show()
         }
 
         fun refresh() {
@@ -42,22 +42,22 @@ class PremiumActivity : AppCompatActivity() {
                 val exp = st.expiresAtMs?.let {
                     java.text.DateFormat.getDateInstance().format(java.util.Date(it))
                 }
-                if (st.grace) "Premium active — renewal due (grace until $exp)$devTxt"
-                else "Premium active" + (if (exp != null) " · until $exp" else "") + devTxt
+                if (st.grace) getString(R.string.premium_active_grace, exp, devTxt)
+                else if (exp != null) getString(R.string.premium_active_until, exp, devTxt) else getString(R.string.premium_active) + devTxt
             } else {
-                "Free core" + (if (st.reason != null && st.reason != "no_license") " (${st.reason})" else "")
+                getString(R.string.free_core) + (if (st.reason != null && st.reason != "no_license") " (${st.reason})" else "")
             }
             if (st.key != null && key.text.isBlank()) key.setText(st.key)
         }
         refresh()
         // Logged in? The account key auto-activates this device on open.
         if (app.account.loggedIn()) {
-            msg.text = "Checking account key…"
+            msg.text = getString(R.string.checking_key)
             Thread {
                 val err = app.license.activateAccount(app.account.token() ?: "")
                 runOnUiThread {
                     if (err == null) {
-                        msg.text = "Premium activated on this device."
+                        msg.text = getString(R.string.premium_activated)
                         refresh()
                     } else {
                         msg.text = err
@@ -69,22 +69,22 @@ class PremiumActivity : AppCompatActivity() {
 
         activate.setOnClickListener {
             if (!app.account.loggedIn()) {
-                msg.text = "Log in first (Settings → Account) — Premium needs an account."
+                msg.text = getString(R.string.login_first_premium)
                 return@setOnClickListener
             }
             val k = key.text.toString().trim()
             if (k.isEmpty()) {
-                msg.text = "Enter the license key from your purchase."
+                msg.text = getString(R.string.enter_key)
                 return@setOnClickListener
             }
-            msg.text = "Activating…"
+            msg.text = getString(R.string.activating)
             activate.isEnabled = false
             Thread {
                 val err = app.license.activate(k)
                 runOnUiThread {
                     activate.isEnabled = true
                     if (err == null) {
-                        msg.text = "Activated on this device."
+                        msg.text = getString(R.string.activated_here)
                         refresh()
                     } else {
                         msg.text = err
@@ -96,21 +96,21 @@ class PremiumActivity : AppCompatActivity() {
         stop.setOnClickListener {
             val st0 = app.license.status()
             if (!st0.activated) {
-                msg.text = "No active Premium on this device."
+                msg.text = getString(R.string.no_premium_here)
                 return@setOnClickListener
             }
             com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
-                .setTitle("Stop Premium?")
-                .setMessage("This ends Premium on this device immediately. No refund is issued.")
-                .setPositiveButton("Stop") { _, _ ->
-                    msg.text = "Stopping Premium…"
+                .setTitle(getString(R.string.stop_premium_q))
+                .setMessage(getString(R.string.stop_premium_msg))
+                .setPositiveButton(getString(R.string.stop)) { _, _ ->
+                    msg.text = getString(R.string.stopping)
                     stop.isEnabled = false
                     Thread {
                         val err = app.license.cancel()
                         runOnUiThread {
                             stop.isEnabled = true
                             if (err == null) {
-                                msg.text = "Premium stopped. No refund was issued."
+                                msg.text = getString(R.string.stopped_no_refund)
                                 key.text.clear()
                                 refresh()
                             } else {
@@ -119,7 +119,7 @@ class PremiumActivity : AppCompatActivity() {
                         }
                     }.start()
                 }
-                .setNegativeButton("Keep", null)
+                .setNegativeButton(getString(R.string.keep), null)
                 .show()
         }
 

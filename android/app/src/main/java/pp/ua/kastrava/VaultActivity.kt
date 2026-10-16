@@ -37,12 +37,12 @@ class VaultActivity : AppCompatActivity() {
         val lock: Button = findViewById(R.id.vaultLockBtn)
 
         setupBtn.visibility = if (store.hasVault()) Button.GONE else Button.VISIBLE
-        unlock.text = if (store.hasVault()) "Unlock" else "Unlock"
+        unlock.text = if (store.hasVault()) getString(R.string.unlock) else getString(R.string.unlock)
 
         unlock.setOnClickListener {
             val pw = pass.text.toString()
             if (pw.isEmpty()) {
-                msg.text = "Enter your vault password."
+                msg.text = getString(R.string.enter_vault_pw)
                 return@setOnClickListener
             }
             Thread {
@@ -52,7 +52,7 @@ class VaultActivity : AppCompatActivity() {
                         pass.text.clear()
                         showMain()
                     } else {
-                        msg.text = "Wrong password."
+                        msg.text = getString(R.string.wrong_pw)
                     }
                 }
             }.start()
@@ -60,7 +60,7 @@ class VaultActivity : AppCompatActivity() {
         setupBtn.setOnClickListener {
             val pw = pass.text.toString()
             if (pw.length < 4) {
-                msg.text = "Password needs at least 4 characters."
+                msg.text = getString(R.string.vault_pw_short)
                 return@setOnClickListener
             }
             Thread {
@@ -71,7 +71,7 @@ class VaultActivity : AppCompatActivity() {
                         setupBtn.visibility = Button.GONE
                         showMain()
                     } else {
-                        msg.text = "Could not create vault."
+                        msg.text = getString(R.string.vault_create_fail)
                     }
                 }
             }.start()
@@ -80,7 +80,7 @@ class VaultActivity : AppCompatActivity() {
         lock.setOnClickListener {
             store.lock()
             showLock()
-            Toast.makeText(this, "Vault locked", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.vault_locked), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -111,7 +111,7 @@ class VaultActivity : AppCompatActivity() {
         val notes = store.list()
         if (notes.isEmpty()) {
             list.addView(TextView(this).apply {
-                text = "No notes yet."
+                text = getString(R.string.no_notes)
                 textSize = 13f
             })
             return
@@ -148,12 +148,12 @@ class VaultActivity : AppCompatActivity() {
             setPadding(pad, pad / 2, pad, 0)
         }
         val tTitle = EditText(this).apply {
-            hint = "Title"
+            hint = getString(R.string.title_hint)
             setText(title)
             inputType = InputType.TYPE_CLASS_TEXT
         }
         val tBody = EditText(this).apply {
-            hint = "Note"
+            hint = getString(R.string.note)
             setText(body)
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
             minLines = 4
@@ -162,11 +162,11 @@ class VaultActivity : AppCompatActivity() {
         wrap.addView(tTitle)
         wrap.addView(tBody)
         val dlg = MaterialAlertDialogBuilder(this)
-            .setTitle(if (id == 0L) "New note" else "Edit note")
+            .setTitle(if (id == 0L) getString(R.string.new_note) else getString(R.string.edit_note))
             .setView(wrap)
-            .setPositiveButton("Save", null)
-            .setNegativeButton("Cancel", null)
-        if (id != 0L) dlg.setNeutralButton("Delete", null)
+            .setPositiveButton(getString(R.string.save2), null)
+            .setNegativeButton(getString(R.string.cancel2), null)
+        if (id != 0L) dlg.setNeutralButton(getString(R.string.delete2), null)
         val d = dlg.create()
         d.setOnShowListener {
             d.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
@@ -175,7 +175,7 @@ class VaultActivity : AppCompatActivity() {
                     d.dismiss()
                     render()
                 } else {
-                    Toast.makeText(this, "Could not save", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.cannot_save), Toast.LENGTH_SHORT).show()
                 }
             }
             if (id != 0L) {

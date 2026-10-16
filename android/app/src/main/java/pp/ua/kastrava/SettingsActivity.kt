@@ -51,7 +51,7 @@ class SettingsActivity : AppCompatActivity() {
                 val t = (v as EditText).text.toString().trim()
                 app.prefs.customEngine = t
                 if (t.isNotEmpty() && Prefs.customIsPremium(t) && !app.license.status().activated) {
-                    Toast.makeText(this, "That search belongs to Premium", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.search_premium_only), Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -87,18 +87,18 @@ class SettingsActivity : AppCompatActivity() {
             }
             override fun onStartTrackingTouch(sb: SeekBar) {}
             override fun onStopTrackingTouch(sb: SeekBar) {
-                Toast.makeText(this@SettingsActivity, "Applies to tabs", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@SettingsActivity, getString(R.string.applies_to_tabs), Toast.LENGTH_SHORT).show()
             }
         })
 
         val tvUpdate: TextView = findViewById(R.id.tvUpdateStatus)
         val btnUpd: Button = findViewById(R.id.btnCheckUpdates)
         fun showUpdate(u: UpdateInfo?) {
-            tvUpdate.text = if (u == null) "Up to date."
-            else "Kastrava ${u.name} available." + (if (u.notes.isNotBlank()) " " + u.notes.take(120) else "")
+            tvUpdate.text = if (u == null) getString(R.string.up_to_date)
+            else getString(R.string.update_avail, u.name) + (if (u.notes.isNotBlank()) " " + u.notes.take(120) else "")
         }
         btnUpd.setOnClickListener {
-            tvUpdate.text = "Checking..."
+            tvUpdate.text = getString(R.string.checking)
             btnUpd.isEnabled = false
             Thread {
                 val u = Updater.check(this, force = true)
@@ -115,11 +115,11 @@ class SettingsActivity : AppCompatActivity() {
                         if (id >= 0) tvUpdate.text = "Downloading Kastrava ${u.name}..."
                     } else if (u != null && have != null) {
                         showUpdate(u)
-                        tvUpdate.text = "Update ready to install."
+                        tvUpdate.text = getString(R.string.update_ready)
                         Updater.promptInstall(this, have)
                     } else if (have != null && haveCode > 0) {
                         showUpdate(null)
-                        tvUpdate.text = "Update ready to install."
+                        tvUpdate.text = getString(R.string.update_ready)
                         Updater.promptInstall(this, have)
                     } else {
                         showUpdate(u)
@@ -132,7 +132,7 @@ class SettingsActivity : AppCompatActivity() {
         cbJs.isChecked = app.prefs.javaScript
         cbJs.setOnCheckedChangeListener { _, v ->
             app.prefs.javaScript = v
-            Toast.makeText(this, "Applies to new and current tabs", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.applies_to_new_tabs), Toast.LENGTH_SHORT).show()
         }
 
         val tvAccount: TextView = findViewById(R.id.tvAccountStatus)
@@ -150,25 +150,25 @@ class SettingsActivity : AppCompatActivity() {
         val btnSync: Button = findViewById(R.id.btnSyncNow)
         fun paintSync() {
             if (!app.account.loggedIn()) {
-                tvSync.text = "Log in above to sync."
+                tvSync.text = getString(R.string.login_above_sync)
                 return
             }
             val at = app.prefs.syncAt()
             tvSync.text = if (at > 0) {
                 "Last sync: " + java.text.DateFormat.getDateTimeInstance().format(java.util.Date(at))
             } else {
-                "Never synced on this device."
+                getString(R.string.never_synced)
             }
         }
         paintSync()
         btnSync.setOnClickListener {
-            tvSync.text = "Syncing..."
+            tvSync.text = getString(R.string.syncing)
             btnSync.isEnabled = false
             Thread {
                 val r = Sync.syncNow(app)
                 runOnUiThread {
                     btnSync.isEnabled = true
-                    tvSync.text = if (r.ok) "Synced." else r.msg
+                    tvSync.text = if (r.ok) getString(R.string.synced) else r.msg
                     paintSync()
                     paintAccount()
                 }
@@ -206,7 +206,7 @@ class SettingsActivity : AppCompatActivity() {
             val emailCode = etCode.text.toString().trim()
             val totp = etTotp.text.toString().trim()
             if (emailCode.isNotEmpty() || etCode.visibility == EditText.VISIBLE) {
-                tvAccount.text = "Verifying..."
+                tvAccount.text = getString(R.string.verifying)
                 btnIn.isEnabled = false
                 Thread {
                     val err = app.account.loginStep2(em, emailCode, totp)
@@ -215,7 +215,7 @@ class SettingsActivity : AppCompatActivity() {
                             btnIn.isEnabled = true
                             etTotp.visibility = EditText.VISIBLE
                             etTotp.requestFocus()
-                            tvAccount.text = "Also enter your authenticator code."
+                            tvAccount.text = getString(R.string.enter_totp)
                         }
                         return@Thread
                     }
@@ -235,7 +235,7 @@ class SettingsActivity : AppCompatActivity() {
                 }.start()
                 return@setOnClickListener
             }
-            tvAccount.text = "Logging in..."
+            tvAccount.text = getString(R.string.logging_in)
             btnIn.isEnabled = false
             Thread {
                 when (val r = app.account.loginStep1(em, pw)) {
@@ -257,14 +257,14 @@ class SettingsActivity : AppCompatActivity() {
             app.account.logout()
             etPass.text.clear()
             paintAccount()
-            Toast.makeText(this, "Logged out", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.logged_out), Toast.LENGTH_SHORT).show()
         }
 
         findViewById<Button>(R.id.btnAdvanced).setOnClickListener {
             try {
                 startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://account.kastrava.pp.ua")))
             } catch (e: Exception) {
-                Toast.makeText(this, "Could not open browser", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.cant_open_browser), Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -272,7 +272,7 @@ class SettingsActivity : AppCompatActivity() {
         cbBattery.isChecked = app.prefs.batterySaver
         cbBattery.setOnCheckedChangeListener { _, v ->
             app.prefs.batterySaver = v
-            Toast.makeText(this, if (v) "Background tabs will pause" else "Background tabs stay live", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, if (v) getString(R.string.bg_pause) else getString(R.string.bg_live), Toast.LENGTH_SHORT).show()
         }
 
         // Previously on-screen but inert: wire them to the store.
@@ -281,14 +281,14 @@ class SettingsActivity : AppCompatActivity() {
         cbImages.isChecked = app.prefs.loadImages
         cbImages.setOnCheckedChangeListener { _, v ->
             app.prefs.loadImages = v
-            Toast.makeText(this, "Applies to tabs", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.applies_to_tabs), Toast.LENGTH_SHORT).show()
         }
 
         val cbDesktop: CheckBox = findViewById(R.id.cbDesktop)
         cbDesktop.isChecked = app.prefs.desktopDefault
         cbDesktop.setOnCheckedChangeListener { _, v ->
             app.prefs.desktopDefault = v
-            Toast.makeText(this, if (v) "New tabs request desktop sites" else "New tabs request mobile sites", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, if (v) getString(R.string.desktop_on) else getString(R.string.desktop_off), Toast.LENGTH_SHORT).show()
         }
 
         val cbRestore: CheckBox = findViewById(R.id.cbRestore)
@@ -307,7 +307,7 @@ class SettingsActivity : AppCompatActivity() {
         cbHistory.isChecked = app.prefs.historyEnabled
         cbHistory.setOnCheckedChangeListener { _, v ->
             app.prefs.historyEnabled = v
-            Toast.makeText(this, if (v) "Tabs will be remembered" else "Tabs are forgotten on exit", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, if (v) getString(R.string.remember_on) else getString(R.string.remember_off), Toast.LENGTH_SHORT).show()
         }
 
         val cbConfirm: CheckBox = findViewById(R.id.cbConfirmClose)
@@ -330,7 +330,7 @@ class SettingsActivity : AppCompatActivity() {
         cbGeo.isChecked = app.prefs.geoEnabled
         cbGeo.setOnCheckedChangeListener { _, v ->
             app.prefs.geoEnabled = v
-            Toast.makeText(this, if (v) "Sites may request location" else "Location requests are denied", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, if (v) getString(R.string.loc_on) else getString(R.string.loc_off), Toast.LENGTH_SHORT).show()
         }
 
         val cbFile: CheckBox = findViewById(R.id.cbFile)
@@ -341,7 +341,7 @@ class SettingsActivity : AppCompatActivity() {
         cbHw.isChecked = app.prefs.hwAccel
         cbHw.setOnCheckedChangeListener { _, v ->
             app.prefs.hwAccel = v
-            Toast.makeText(this, "Applies to tabs", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.applies_to_tabs), Toast.LENGTH_SHORT).show()
         }
 
         val cookieGroup: RadioGroup = findViewById(R.id.rgCookies)
@@ -356,7 +356,7 @@ class SettingsActivity : AppCompatActivity() {
                 R.id.cookieAllow -> "allow"
                 else -> "block"
             }
-            Toast.makeText(this, "Applies immediately", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.applies_now), Toast.LENGTH_SHORT).show()
         }
 
         val tilesGroup: RadioGroup = findViewById(R.id.rgTiles)
@@ -401,7 +401,7 @@ class SettingsActivity : AppCompatActivity() {
             }
             override fun onStartTrackingTouch(sb: SeekBar) {}
             override fun onStopTrackingTouch(sb: SeekBar) {
-                Toast.makeText(this@SettingsActivity, "Applies to tabs", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@SettingsActivity, getString(R.string.applies_to_tabs), Toast.LENGTH_SHORT).show()
             }
         })
 
@@ -410,7 +410,7 @@ class SettingsActivity : AppCompatActivity() {
             try { android.webkit.CookieManager.getInstance().flush() } catch (e: Exception) { }
             try { android.webkit.WebStorage.getInstance().deleteAllData() } catch (e: Exception) { }
             try { android.webkit.WebView(this).clearCache(true) } catch (e: Exception) { }
-            Toast.makeText(this, "Browsing data deleted", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.data_deleted), Toast.LENGTH_SHORT).show()
         }
 
         findViewById<Button>(R.id.btnResetSettings).setOnClickListener {
@@ -419,13 +419,13 @@ class SettingsActivity : AppCompatActivity() {
                     .edit().clear().apply()
                 app.applyTheme()
             } catch (e: Exception) { }
-            Toast.makeText(this, "Settings reset", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.settings_reset), Toast.LENGTH_SHORT).show()
             recreate()
         }
 
         try {
             findViewById<TextView>(R.id.tvAboutVersion).text =
-                "Kastrava " + BuildConfig.VERSION_NAME + " · private by default, zero telemetry."
+                getString(R.string.about_line, BuildConfig.VERSION_NAME)
         } catch (e: Exception) { }
     }
 }

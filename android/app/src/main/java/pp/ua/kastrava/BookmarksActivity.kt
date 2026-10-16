@@ -24,7 +24,7 @@ class BookmarksActivity : AppCompatActivity() {
             val bm = items.getOrNull(pos) ?: return@setOnItemClickListener
             MaterialAlertDialogBuilder(this)
                 .setTitle(bm.title)
-                .setItems(arrayOf("Open", "Share", "Delete")) { _, which ->
+                .setItems(arrayOf(getString(R.string.open2), getString(R.string.m_share), getString(R.string.delete2))) { _, which ->
                     when (which) {
                         0 -> startActivity(
                             Intent(this@BookmarksActivity, MainActivity::class.java)
@@ -37,7 +37,7 @@ class BookmarksActivity : AppCompatActivity() {
                                     type = "text/plain"
                                     putExtra(Intent.EXTRA_TEXT, bm.url)
                                 },
-                                "Share bookmark",
+                                getString(R.string.share_bm),
                             ),
                         )
                         else -> {

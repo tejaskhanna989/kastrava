@@ -91,7 +91,7 @@ object Updater {
             val dm = ctx.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
             val req = DownloadManager.Request(Uri.parse(info.url)).apply {
                 setTitle("Kastrava ${info.name}")
-                setDescription("Downloading update")
+                setDescription(ctx.getString(R.string.dl_update))
                 setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
                 // App-private downloads dir: no storage permission needed on
                 // any API level, and no file:// URI exposure.
@@ -103,7 +103,7 @@ object Updater {
             id
         } catch (e: Exception) {
             try {
-                Toast.makeText(ctx, "System downloader unavailable", Toast.LENGTH_LONG).show()
+                Toast.makeText(ctx, ctx.getString(R.string.dl_unavailable), Toast.LENGTH_LONG).show()
             } catch (ignored: Exception) { }
             -1L
         }
@@ -152,7 +152,7 @@ object Updater {
             }
             true
         } catch (e: Exception) {
-            Toast.makeText(ctx, "Could not open installer", Toast.LENGTH_SHORT).show()
+            Toast.makeText(ctx, ctx.getString(R.string.no_installer), Toast.LENGTH_SHORT).show()
             false
         }
     }

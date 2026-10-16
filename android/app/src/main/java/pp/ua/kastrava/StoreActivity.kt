@@ -33,7 +33,7 @@ class StoreActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         app = application as KastravaApp
         setContentView(R.layout.activity_store)
-        title = "Store"
+        title = getString(R.string.store)
         findViewById<EditText>(R.id.storeSearch).addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
             override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
@@ -85,7 +85,7 @@ class StoreActivity : AppCompatActivity() {
         }.take(80)
         if (shown.isEmpty()) {
             val tv = TextView(this)
-            tv.text = if (catalog.isEmpty()) "Store unreachable — pull to retry by reopening." else "No matches."
+            tv.text = if (catalog.isEmpty()) getString(R.string.store_unreachable) else getString(R.string.no_matches)
             box.addView(tv)
             return
         }
@@ -102,17 +102,17 @@ class StoreActivity : AppCompatActivity() {
             val btn = Button(this).apply { isAllCaps = false }
             when {
                 owned.contains(item.id) -> {
-                    btn.text = "Apply"
+                    btn.text = getString(R.string.apply)
                     btn.setOnClickListener { applyOwned(item) }
                 }
                 !loggedIn -> {
-                    btn.text = if (item.free) "Get" else priceLabel(item)
+                    btn.text = if (item.free) getString(R.string.get) else priceLabel(item)
                     btn.setOnClickListener {
                         Toast.makeText(this, "Log in first (Settings → Account).", Toast.LENGTH_SHORT).show()
                     }
                 }
                 item.free || (premium && (item.proFree || item.tier == "premium")) -> {
-                    btn.text = "Get"
+                    btn.text = getString(R.string.get)
                     btn.setOnClickListener { claimItem(item) }
                 }
                 else -> {
@@ -126,7 +126,7 @@ class StoreActivity : AppCompatActivity() {
     }
 
     private fun priceLabel(item: StoreApi.Item): String {
-        if (item.free) return "Free"
+        if (item.free) return getString(R.string.free)
         return if (item.pricePaise > 0) "₹" + (item.pricePaise / 100) else "$" + item.priceUsd
     }
 
@@ -142,8 +142,8 @@ class StoreActivity : AppCompatActivity() {
                     status("Got ${item.name}. Tap Apply.")
                     render()
                 } else {
-                    status(err ?: "Not available.")
-                    Toast.makeText(this, err ?: "Not available.", Toast.LENGTH_SHORT).show()
+                    status(err ?: getString(R.string.not_available))
+                    Toast.makeText(this, err ?: getString(R.string.not_available), Toast.LENGTH_SHORT).show()
                 }
             }
         }.start()
@@ -151,7 +151,7 @@ class StoreActivity : AppCompatActivity() {
 
     private fun applyOwned(item: StoreApi.Item) {
         val data = ownedData[item.id] ?: run {
-            Toast.makeText(this, "Reopen the store to refresh.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.reopen_store), Toast.LENGTH_SHORT).show()
             return
         }
         when (item.kind) {
@@ -164,7 +164,7 @@ class StoreActivity : AppCompatActivity() {
                 val arr = data.optJSONArray("accents")
                 val first = if (arr != null && arr.length() > 0) arr.optString(0) else ""
                 if (first.isBlank()) {
-                    Toast.makeText(this, "Empty pack.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.empty_pack), Toast.LENGTH_SHORT).show()
                     return
                 }
                 ThemeEngine.applyAccent(app.prefs, first)
@@ -174,11 +174,11 @@ class StoreActivity : AppCompatActivity() {
             "wallpaper" -> {
                 val css = data.optString("css")
                 if (css.isBlank()) {
-                    Toast.makeText(this, "Empty wallpaper.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.empty_wallpaper), Toast.LENGTH_SHORT).show()
                     return
                 }
                 ThemeEngine.applyWallpaper(app.prefs, css)
-                Toast.makeText(this, "Wallpaper applied.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.wallpaper_applied), Toast.LENGTH_SHORT).show()
                 finish()
             }
             "logos" -> {
@@ -188,7 +188,7 @@ class StoreActivity : AppCompatActivity() {
                 Toast.makeText(this, "Combo unpacked into its items — apply them below.", Toast.LENGTH_SHORT).show()
                 refresh()
             }
-            else -> Toast.makeText(this, "Not applicable on mobile.", Toast.LENGTH_SHORT).show()
+            else -> Toast.makeText(this, getString(R.string.not_on_mobile), Toast.LENGTH_SHORT).show()
         }
     }
 

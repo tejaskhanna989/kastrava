@@ -349,6 +349,8 @@ api('/api/geo',{tz:tz()}).then(function(g){
   if(note){
     if(g.provider==='paypal'&&g.prices&&g.prices.monthly)
       note.innerHTML='Prices adapt to your location — you pay in '+g.currency+' via PayPal. By paying you agree to the <a href="/terms.html">Terms</a> and <a href="/refunds.html">Refund Policy</a>.';
+    else if(g.provider==='yookassa'&&g.prices&&g.prices.monthly)
+      note.innerHTML='Оплата в рублях через ЮKassa (карты МИР, SBP). By paying you agree to the <a href="/terms.html">Terms</a> and <a href="/refunds.html">Refund Policy</a>.';
     else
       note.innerHTML='Charged in INR (₹499 / ₹49) via Razorpay — UPI, cards, netbanking. By paying you agree to the <a href="/terms.html">Terms</a> and <a href="/refunds.html">Refund Policy</a>.';
   }
@@ -398,6 +400,12 @@ function showStep2(){
     note.innerHTML='Charged '+money(pr.amount,pr.currency)+' via PayPal. By paying you agree to the <a href="/terms.html">Terms</a> and <a href="/refunds.html">Refund Policy</a>.';
     bb.style.display='none';
     renderPaypal();
+  }else if(GEO&&GEO.provider==='yookassa'&&GEO.prices&&GEO.prices[modalPlan]){
+    var yr=GEO.prices[modalPlan];
+    note.innerHTML='Оплата '+money(yr.amount,yr.currency)+' через ЮKassa (МИР, SBP). By paying you agree to the <a href="/terms.html">Terms</a> and <a href="/refunds.html">Refund Policy</a>.';
+    bb.style.display='';
+    bb.textContent='Pay '+money(yr.amount,yr.currency)+' — '+(modalPlan==='daily'?'24 hours':'30 days');
+    bb.onclick=function(){startYookassa();};
   }else{
     note.innerHTML='Charged ₹'+m.inr+' via Razorpay (UPI, cards, netbanking). By paying you agree to the <a href="/terms.html">Terms</a> and <a href="/refunds.html">Refund Policy</a>.';
     bb.style.display='';
@@ -480,7 +488,47 @@ function devVerify(o){
     if(v.ok&&v.key)showKey(v.key,!!v.renewed,{order_id:o.order_id,payment_id:'pay_dev',amount:o.amount,currency:o.currency,machine_id:''});
   }).catch(function(e){$('bm-buy').disabled=false;$('bm-pay-msg').textContent=apiErr(e,'Dev checkout failed.');});
 }
-$('bm-buy').addEventListener('click',payRazorpay);
+var ykPoll=null;
+function stopYkPoll(){if(ykPoll){clearInterval(ykPoll);ykPoll=null;}}
+function startYookassa(){
+  var bb=$('bm-buy');bb.disabled=true;
+  document.getElementById('bm-pay-msg').textContent='Creating payment…';
+  api('/api/order',{machine_id:machineValue(),plan:modalPlan,provider:'yookassa'})
+  .then(function(o){
+    if(!o||!o.order_id)throw new Error((o&&o.msg)||'no order');
+    if(o.dev||!o.confirm_url){
+      return api('/api/verify',{order_id:o.order_id,machine_id:machineValue()})
+      .then(function(v){
+        bb.disabled=false;
+        if(v.ok&&v.key)ppVerifyDone(v);
+        else document.getElementById('bm-pay-msg').textContent=(v&&v.msg)||'Payment could not be verified.';
+      });
+    }
+    document.getElementById('bm-pay-msg').textContent='Pay in the opened tab, then wait here…';
+    try{window.open(o.confirm_url,'_blank');}catch(e){}
+    var tries=0;
+    stopYkPoll();
+    ykPoll=setInterval(function(){
+      tries++;
+      if(tries>100){stopYkPoll();bb.disabled=false;document.getElementById('bm-pay-msg').textContent='Timed out — if you paid, email your payment ID to support.';return;}
+      api('/api/verify',{order_id:o.order_id,machine_id:machineValue()})
+      .then(function(v){
+        if(v&&v.ok&&v.key){stopYkPoll();bb.disabled=false;ppVerifyDone(v);}
+      }).catch(function(){});
+    },3000);
+  })
+  .catch(function(e){bb.disabled=false;document.getElementById('bm-pay-msg').textContent=apiErr(e,e&&e.message);});
+}
+function ppVerifyDone(v){
+  var pt=document.getElementById("prem-plan");
+  if(pt&&v.plan){pt.style.display="block";pt.textContent=(v.plan==="daily"?"DAILY · 24 HOURS":"MONTHLY · 30 DAYS");}
+  showKey(v.key,!!v.renewed,{order_id:'',payment_id:'',amount:'',currency:'',machine_id:machineValue(),account_email:v.account_email||null,server_receipt:v.receipt||null,receipt_sig:v.receipt_sig||null});
+  setBusy(false);
+}
+$('bm-buy').addEventListener('click',function(e){
+  if(GEO&&GEO.provider==='yookassa'&&$('bm-buy').onclick)return;
+  payRazorpay();
+});
 function loadRazorpay(cb){
   if(window.Razorpay)return cb();
   if(window.__rzpLoading){var t=setInterval(function(){if(window.Razorpay){clearInterval(t);cb();}},150);return;}

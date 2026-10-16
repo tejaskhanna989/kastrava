@@ -19,6 +19,7 @@ const crypto = require('crypto')
 require('./lib/env').loadEnv()
 const sign = require('./lib/sign')
 const razorpay = require('./lib/razorpay')
+const yookassa = require('./lib/yookassa')
 const paypal = require('./lib/paypal')
 const geo = require('./lib/geo')
 const fx = require('./lib/fx')
@@ -56,8 +57,8 @@ const DEVICE_LIMIT = 10
 // builds working: no plan sent -> 34 days for INR 248, exactly as before.
 const PLANS = {
   legacy: { usd: 2.8, inr: 248, days: 34, label: 'Legacy 34-day' },
-  monthly: { usd: 49, inr: 499, days: 30, label: 'Monthly', interval: 'monthly' },
-  daily: { usd: 4.99, inr: 49, days: 1, label: 'Daily', interval: 'daily' }
+  monthly: { usd: 49, inr: 499, rub: 4490, days: 30, label: 'Monthly', interval: 'monthly' },
+  daily: { usd: 4.99, inr: 49, rub: 449, days: 1, label: 'Daily', interval: 'daily' }
 }
 function planOf(name) {
   return PLANS[name] || PLANS.legacy
@@ -309,11 +310,15 @@ async function handlePost(req, res, pathname) {
         const pl = planOf(pn)
         prices[pn] = g.provider === 'paypal'
           ? await fx.fromUsd(pl.usd, g.currency)
-          : { amount: String(pl.inr), currency: 'INR' }
+          : g.provider === 'yookassa'
+            ? { amount: String(pl.rub || Math.round(pl.usd * 90)), currency: 'RUB' }
+            : { amount: String(pl.inr), currency: 'INR' }
       }
       prices.pass = g.provider === 'paypal'
         ? await fx.fromUsd(999, g.currency)
-        : { amount: '8999', currency: 'INR' }
+        : g.provider === 'yookassa'
+          ? { amount: '89900', currency: 'RUB' }
+          : { amount: '8999', currency: 'INR' }
       return json(res, 200, { ok: true, country: g.country, currency: g.currency, via: g.via,
         provider: g.provider, paypal_client_id: g.provider === 'paypal' ? paypal.clientId() : null,
         paypal_dev: paypal.isDev(), prices })
@@ -327,6 +332,25 @@ async function handlePost(req, res, pathname) {
       const planName = (body.plan === 'monthly' || body.plan === 'daily') ? body.plan : 'legacy'
       const plan = planOf(planName)
       const wantPaypal = String(body.provider || '') === 'paypal'
+      const wantYk = String(body.provider || '') === 'yookassa'
+      if (wantYk) {
+        const rub = String(plan.rub || Math.round(plan.usd * 90))
+        const o = await yookassa.createPayment('yk_' + Date.now().toString(36), rub, 'RUB', 'Kastrava Premium ' + planName)
+        const ykOrderId = 'yk_' + o.yk_id
+        const meta = { plan: planName, provider: 'yookassa', amount_paise: plan.inr * 100,
+          currency: 'RUB', yk_amount: rub, yk_id: o.yk_id, dev: !!o.dev }
+        if (typeof body.name === 'string' && body.name) meta.name = body.name
+        if (typeof body.email === 'string' && body.email) meta.email = body.email
+        if (typeof body.machine_id === 'string' && body.machine_id.trim()) meta.machine_id = body.machine_id.trim().toUpperCase()
+        if (typeof body.account_token === 'string' && body.account_token) {
+          const acc = store.getSessionAccount(body.account_token)
+          if (acc) meta.account_email = acc.email
+        }
+        store.createOrder(ykOrderId, meta)
+        return json(res, 200, { ok: true, provider: 'yookassa', order_id: ykOrderId,
+          amount: rub, currency: 'RUB', dev: !!o.dev, plan: planName,
+          plan_days: plan.days, confirm_url: o.confirm_url || null })
+      }
       if (wantPaypal) {
         const g = await geo.resolveGeo(req, body.tz)
         const conv = await fx.fromUsd(plan.usd, g.currency)
@@ -366,6 +390,23 @@ async function handlePost(req, res, pathname) {
     if (!order_id) return json(res, 400, { error: 'bad_request' })
     const order = store.getOrder(order_id)
     if (!order) return json(res, 404, { error: 'order_not_found' })
+    if (order.provider === 'yookassa') {
+      if (order.status === 'paid') {
+        const k = store.keyForOrder(order_id)
+        if (k) {
+          const rc0 = makeReceipt(String(order_id), machine_id)
+          return json(res, 200, { ok: true, already_paid: true, key: k, plan: order.plan || 'legacy',
+            receipt: rc0 && rc0.receipt, receipt_sig: rc0 && rc0.receipt_sig })
+        }
+      }
+      const st = await yookassa.paymentStatus(String(order.yk_id || ''), String(order_id))
+      if (!st.ok) return json(res, 402, { error: 'capture_failed', msg: 'YooKassa payment was not completed.' })
+      const vacc0 = account_token ? store.getSessionAccount(String(account_token)) : null
+      const r0 = finalizePayment(String(order_id), String(order.yk_id || ''), machine_id, vacc0 ? vacc0.email : null)
+      const rc0 = makeReceipt(String(order_id), machine_id)
+      return json(res, 200, { ok: true, key: r0.key, renewed: r0.renewed, already_paid: false, plan: r0.plan, plan_days: planOf(r0.plan).days,
+        receipt: rc0 && rc0.receipt, receipt_sig: rc0 && rc0.receipt_sig })
+    }
     if (order.provider === 'paypal') {
       if (order.status === 'paid') {
         const k = store.keyForOrder(order_id)
@@ -1042,6 +1083,17 @@ async function handlePost(req, res, pathname) {
       return json(res, 200, { ok: true, id: String(body.id), data: prod.data })
     }
     try {
+      if (String(body.provider || '') === 'yookassa') {
+        const rub = String(Math.max(50, Math.round((prod.price_usd || 5) * 90)))
+        const yo = await yookassa.createPayment('yk_' + Date.now().toString(36), rub, 'RUB', 'Kastrava Store: ' + prod.name)
+        const ykOrderId = 'yk_' + yo.yk_id
+        store.createOrder(ykOrderId, { provider: 'store-yookassa', product: String(body.id),
+          account_email: acc.email, amount_paise: prod.price_paise || 0,
+          currency: 'RUB', yk_amount: rub, yk_id: yo.yk_id, dev: !!yo.dev })
+        return json(res, 200, { ok: true, provider: 'yookassa', order_id: ykOrderId,
+          amount: rub, currency: 'RUB', dev: !!yo.dev,
+          id: String(body.id), confirm_url: yo.confirm_url || null })
+      }
       if (String(body.provider || '') === 'paypal') {
         const g = await geo.resolveGeo(req, body.tz)
         const conv = await fx.fromUsd(prod.price_usd || 5, g.currency)
@@ -1066,7 +1118,7 @@ async function handlePost(req, res, pathname) {
     const { order_id, payment_id, signature, account_token } = body
     if (!order_id) return json(res, 400, { error: 'bad_request' })
     const order = store.getOrder(String(order_id))
-    if (!order || (order.provider !== 'store' && order.provider !== 'store-paypal')) return json(res, 404, { error: 'bad_order' })
+    if (!order || (order.provider !== 'store' && order.provider !== 'store-paypal' && order.provider !== 'store-yookassa')) return json(res, 404, { error: 'bad_order' })
     const acc = store.getSessionAccount(String(account_token || bearer(req) || ''))
     const email = acc ? acc.email : (order.account_email || null)
     if (!email) return json(res, 401, { error: 'unauthorized' })
@@ -1080,6 +1132,23 @@ async function handlePost(req, res, pathname) {
       const prod0 = products.get(order.product)
       if (!prod0) return json(res, 404, { error: 'no_item' })
       store.markPaid(String(order_id), String(cap.capture_id || ''), order.amount_paise || 0)
+      if (prod0.kind === 'pass') {
+        store.grantPass(email, String(order_id), (prod0.data && prod0.data.days) || 30)
+      } else {
+        store.grant(email, order.product, String(order_id))
+      }
+      store.audit(email, 'store_buy', order.product)
+      return json(res, 200, { ok: true, id: order.product, data: prod0.data })
+    }
+    if (order.provider === 'store-yookassa') {
+      const prod0 = products.get(order.product)
+      if (!prod0) return json(res, 404, { error: 'no_item' })
+      if (order.status === 'paid') {
+        return json(res, 200, { ok: true, already_paid: true, id: order.product, data: prod0.data })
+      }
+      const st = await yookassa.paymentStatus(String(order.yk_id || ''), String(order_id))
+      if (!st.ok) return json(res, 402, { error: 'capture_failed', msg: 'YooKassa payment was not completed.' })
+      store.markPaid(String(order_id), String(order.yk_id || ''), order.amount_paise || 0)
       if (prod0.kind === 'pass') {
         store.grantPass(email, String(order_id), (prod0.data && prod0.data.days) || 30)
       } else {

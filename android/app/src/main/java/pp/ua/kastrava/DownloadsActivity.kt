@@ -25,19 +25,19 @@ class DownloadsActivity : AppCompatActivity() {
             MaterialAlertDialogBuilder(this)
                 .setTitle(item.filename)
                 .setMessage("State: ${item.state}\nSize: ${formatSize(item.received)}")
-                .setPositiveButton("Save to Downloads") { _, _ ->
+                .setPositiveButton(getString(R.string.save_to_dl)) { _, _ ->
                     Thread {
                         val ok = app.downloads.saveToDownloads(item)
                         runOnUiThread {
                             Toast.makeText(
                                 this,
-                                if (ok) "Saved to Downloads" else "Save failed",
+                                if (ok) getString(R.string.saved_dl) else getString(R.string.save_fail),
                                 Toast.LENGTH_SHORT,
                             ).show()
                         }
                     }.start()
                 }
-                .setNegativeButton("Close", null)
+                .setNegativeButton(getString(R.string.close2), null)
                 .show()
         }
     }
@@ -50,7 +50,7 @@ class DownloadsActivity : AppCompatActivity() {
 
     private fun labels(): List<String> {
         val items = app.downloads.items
-        if (items.isEmpty()) return listOf("No downloads this session.")
+        if (items.isEmpty()) return listOf(getString(R.string.no_downloads))
         return items.map {
             val extra = when (it.state) {
                 "downloading" -> "… ${formatSize(it.received)}"

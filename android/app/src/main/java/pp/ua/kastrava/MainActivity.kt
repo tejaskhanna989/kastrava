@@ -471,11 +471,11 @@ class MainActivity : AppCompatActivity() {
         if (app.prefs.confirmClose && tabs.size > 1) {
             MaterialAlertDialogBuilder(this)
                 .setTitle("Close ${tabs.size} tabs?")
-                .setPositiveButton("Close all") { _, _ ->
+                .setPositiveButton(getString(R.string.close_all)) { _, _ ->
                     tabs.toList().indices.reversed().forEach { closeTab(it, quiet = true) }
                     showUndoSnackbar()
                 }
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton(getString(R.string.cancel), null)
                 .show()
             return
         }
@@ -516,7 +516,7 @@ class MainActivity : AppCompatActivity() {
                     try { tabs[idx].view.visibility = WebView.GONE } catch (e: Exception) { }
                 }
                 if (!url.isNullOrBlank()) wv.loadUrl(url)
-                Toast.makeText(this, "Tab recovered after a crash", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.tab_recovered), Toast.LENGTH_SHORT).show()
             } catch (e: Exception) { }
         }
     }
@@ -525,8 +525,8 @@ class MainActivity : AppCompatActivity() {
         val url = lastClosedUrl ?: return
         lastClosedUrl = null
         try {
-            Snackbar.make(container, "Tab closed", Snackbar.LENGTH_LONG)
-                .setAction("Undo") { newTab(url) }
+            Snackbar.make(container, getString(R.string.tab_closed), Snackbar.LENGTH_LONG)
+                .setAction(getString(R.string.undo)) { newTab(url) }
                 .show()
         } catch (e: Exception) { }
     }
@@ -542,11 +542,11 @@ class MainActivity : AppCompatActivity() {
             } catch (e: Exception) { null }
         }
         if (items.isEmpty()) {
-            Toast.makeText(this, "No history", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.no_history), Toast.LENGTH_SHORT).show()
             return
         }
         MaterialAlertDialogBuilder(this)
-            .setTitle(if (backward) "Back" else "Forward")
+            .setTitle(if (backward) getString(R.string.nav_back) else getString(R.string.nav_fwd))
             .setItems(items.map { it.first }.toTypedArray()) { _, which ->
                 val url = items[which].second
                 if (url.isNotBlank()) currentTab()?.loadUrl(url)
@@ -670,7 +670,7 @@ class MainActivity : AppCompatActivity() {
                     marginEnd = (8 * density).toInt()
                 }
             }
-            val title = wv.title?.takeIf { it.isNotBlank() } ?: wv.url ?: "New tab"
+            val title = wv.title?.takeIf { it.isNotBlank() } ?: wv.url ?: getString(R.string.new_tab)
             texts.addView(TextView(this).apply {
                 text = title
                 textSize = 15f
@@ -688,7 +688,7 @@ class MainActivity : AppCompatActivity() {
             val close = ImageButton(this).apply {
                 setImageResource(R.drawable.ic_close)
                 background = null
-                contentDescription = "Close tab"
+                contentDescription = getString(R.string.close_tab)
                 setOnClickListener { closeTab(i); refreshTabsSheet() }
             }
             row.addView(close)
@@ -697,7 +697,7 @@ class MainActivity : AppCompatActivity() {
         }
         if (tabs.size > 1) {
             val closeAllRow = TextView(this).apply {
-                text = "Close all tabs"
+                text = getString(R.string.close_all_tabs)
                 textSize = 16f
                 val vpad = (14 * density).toInt()
                 setPadding(0, vpad, 0, vpad)
@@ -880,7 +880,7 @@ class MainActivity : AppCompatActivity() {
             layoutParams = LinearLayout.LayoutParams((44 * density).toInt(), (44 * density).toInt())
             setImageResource(R.drawable.ic_share)
             background = null
-            contentDescription = "Share page"
+            contentDescription = getString(R.string.share_page)
             setOnClickListener { sheet.dismiss(); sharePage() }
         })
         body.addView(header)
@@ -900,18 +900,18 @@ class MainActivity : AppCompatActivity() {
         val pageUrl = currentTab()?.url
         val saved = pageUrl != null && BookmarkStore(this@MainActivity).contains(pageUrl)
         val row1Items = if (app.prefs.bookmarksEnabled) listOf(
-            Triple(R.drawable.ic_plus, "New tab", { newTab() }),
-            Triple(R.drawable.ic_star, if (saved) "Saved" else "Bookmark", { toggleBookmark() }),
-            Triple(R.drawable.ic_download, "Downloads", { openDownloads() }),
-            Triple(R.drawable.ic_share, "Share", { sharePage() }),
-            Triple(R.drawable.ic_star, "Store", { openStore() }),
-            Triple(R.drawable.ic_settings, "Settings", { openSettings() }),
+            Triple(R.drawable.ic_plus, getString(R.string.m_new_tab), { newTab() }),
+            Triple(R.drawable.ic_star, if (saved) getString(R.string.m_saved) else getString(R.string.m_bookmark), { toggleBookmark() }),
+            Triple(R.drawable.ic_download, getString(R.string.m_downloads), { openDownloads() }),
+            Triple(R.drawable.ic_share, getString(R.string.m_share), { sharePage() }),
+            Triple(R.drawable.ic_star, getString(R.string.store), { openStore() }),
+            Triple(R.drawable.ic_settings, getString(R.string.m_settings), { openSettings() }),
         ) else listOf(
-            Triple(R.drawable.ic_plus, "New tab", { newTab() }),
-            Triple(R.drawable.ic_download, "Downloads", { openDownloads() }),
-            Triple(R.drawable.ic_share, "Share", { sharePage() }),
-            Triple(R.drawable.ic_star, "Store", { openStore() }),
-            Triple(R.drawable.ic_settings, "Settings", { openSettings() }),
+            Triple(R.drawable.ic_plus, getString(R.string.m_new_tab), { newTab() }),
+            Triple(R.drawable.ic_download, getString(R.string.m_downloads), { openDownloads() }),
+            Triple(R.drawable.ic_share, getString(R.string.m_share), { sharePage() }),
+            Triple(R.drawable.ic_star, getString(R.string.store), { openStore() }),
+            Triple(R.drawable.ic_settings, getString(R.string.m_settings), { openSettings() }),
         )
         row1.weightSum = row1Items.size.toFloat()
         row1Items.forEach { (icon, label, action) ->
@@ -923,15 +923,15 @@ class MainActivity : AppCompatActivity() {
         // grid: find, desktop, text size, wipe, premium, default, about
         val desktopOn = currentWebTab()?.desktopMode == true
         val gridItems = listOf(
-            Triple(R.drawable.ic_search, "Find on page", { openFindBar() }),
-            Triple(R.drawable.ic_monitor, if (desktopOn) "Desktop ✓" else "Desktop site", { toggleDesktopMode() }),
-            Triple(R.drawable.ic_textsize, "Text size", { openTextSize() }),
-            Triple(R.drawable.ic_shot, "Screenshot", { takeScreenshot() }),
-            Triple(R.drawable.ic_trash, "Delete data", { wipeNow() }),
-            Triple(R.drawable.ic_vault, "Vault", { openVault() }),
-            Triple(R.drawable.ic_premium, "Premium", { openPremium() }),
-            Triple(R.drawable.ic_globe, "Default app", { requestDefaultBrowser() }),
-            Triple(R.drawable.ic_info, "About", { showAbout() }),
+            Triple(R.drawable.ic_search, getString(R.string.m_find), { openFindBar() }),
+            Triple(R.drawable.ic_monitor, if (desktopOn) getString(R.string.m_desktop_on) else getString(R.string.m_desktop), { toggleDesktopMode() }),
+            Triple(R.drawable.ic_textsize, getString(R.string.m_textsize), { openTextSize() }),
+            Triple(R.drawable.ic_shot, getString(R.string.m_shot), { takeScreenshot() }),
+            Triple(R.drawable.ic_trash, getString(R.string.m_wipe), { wipeNow() }),
+            Triple(R.drawable.ic_vault, getString(R.string.m_vault), { openVault() }),
+            Triple(R.drawable.ic_premium, getString(R.string.m_premium), { openPremium() }),
+            Triple(R.drawable.ic_globe, getString(R.string.m_default), { requestDefaultBrowser() }),
+            Triple(R.drawable.ic_info, getString(R.string.m_about), { showAbout() }),
         )
         val grid = android.widget.GridLayout(this).apply {
             columnCount = 4
@@ -965,7 +965,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun toggleBookmark() {
         if (!app.prefs.bookmarksEnabled) {
-            Toast.makeText(this, "Bookmarks are turned off in Settings", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.bm_off), Toast.LENGTH_SHORT).show()
             return
         }
         val wv = currentTab() ?: return
@@ -973,11 +973,11 @@ class MainActivity : AppCompatActivity() {
         val store = BookmarkStore(this)
         if (store.contains(url)) {
             store.remove(url)
-            Toast.makeText(this, "Bookmark removed", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.unbookmarked_t), Toast.LENGTH_SHORT).show()
         } else {
             val title = wv.title?.takeIf { it.isNotBlank() } ?: url
             store.add(title, url)
-            Toast.makeText(this, "Bookmarked", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.bookmarked_t), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -996,27 +996,27 @@ class MainActivity : AppCompatActivity() {
                 it.view.clearFormData()
             } catch (e: Exception) { }
         }
-        Toast.makeText(this, "Browsing data deleted", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, getString(R.string.data_wiped), Toast.LENGTH_SHORT).show()
     }
 
     private fun requestDefaultBrowser() {
         try {
             if (android.os.Build.VERSION.SDK_INT < 29) {
-                Toast.makeText(this, "Not supported on this Android version", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.no_support_ver), Toast.LENGTH_SHORT).show()
                 return
             }
             val rm = getSystemService(android.app.role.RoleManager::class.java) ?: return
             if (!rm.isRoleAvailable(android.app.role.RoleManager.ROLE_BROWSER)) {
-                Toast.makeText(this, "Not supported on this device", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.no_support_dev), Toast.LENGTH_SHORT).show()
                 return
             }
             if (rm.isRoleHeld(android.app.role.RoleManager.ROLE_BROWSER)) {
-                Toast.makeText(this, "Already the default browser", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.already_default), Toast.LENGTH_SHORT).show()
                 return
             }
             startActivity(rm.createRequestRoleIntent(android.app.role.RoleManager.ROLE_BROWSER))
         } catch (e: Exception) {
-            Toast.makeText(this, "Could not open system settings", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.no_sys_settings), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -1049,9 +1049,9 @@ class MainActivity : AppCompatActivity() {
             override fun onStopTrackingTouch(sb: SeekBar) {}
         })
         MaterialAlertDialogBuilder(this)
-            .setTitle("Text size")
+            .setTitle(getString(R.string.m_textsize))
             .setView(wrap)
-            .setPositiveButton("Done", null)
+            .setPositiveButton(getString(R.string.done), null)
             .show()
     }
 
@@ -1114,7 +1114,7 @@ class MainActivity : AppCompatActivity() {
             type = "text/plain"
             putExtra(Intent.EXTRA_TEXT, url)
         }
-        startActivity(Intent.createChooser(send, "Share page"))
+        startActivity(Intent.createChooser(send, getString(R.string.share_page_chooser)))
     }
 
     private fun openFindBar() {
@@ -1145,42 +1145,45 @@ class MainActivity : AppCompatActivity() {
         tab.view.settings.loadWithOverviewMode = true
     }
 
-    private fun copyLink(url: String, label: String = "Link copied") {
+    private fun copyLink(url: String, label: String? = null) {
         val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         cm.setPrimaryClip(ClipData.newPlainText("link", url))
-        Toast.makeText(this, label, Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, label ?: getString(R.string.link_copied), Toast.LENGTH_SHORT).show()
     }
 
     private fun showLinkMenu(url: String?, isImage: Boolean) {
         if (url.isNullOrBlank()) return
         val saved = BookmarkStore(this).contains(url)
-        val items = if (isImage) {
-            arrayOf("Open image in new tab", "Download image", "Share link", "Copy link")
+        // Index-based actions: labels are localized, positions are stable.
+        val items: Array<Pair<String, Int>> = if (isImage) {
+            arrayOf(getString(R.string.lm_open_img) to 0, getString(R.string.lm_download_img) to 1,
+                getString(R.string.lm_share) to 2, getString(R.string.lm_copy) to 3)
         } else if (saved) {
-            arrayOf("Open in new tab", "Remove bookmark", "Share link", "Copy link")
+            arrayOf(getString(R.string.lm_open) to 0, getString(R.string.lm_unbookmark) to 4,
+                getString(R.string.lm_share) to 2, getString(R.string.lm_copy) to 3)
         } else {
-            arrayOf("Open in new tab", "Bookmark link", "Share link", "Copy link")
+            arrayOf(getString(R.string.lm_open) to 0, getString(R.string.lm_bookmark) to 5,
+                getString(R.string.lm_share) to 2, getString(R.string.lm_copy) to 3)
         }
         MaterialAlertDialogBuilder(this)
-            .setItems(items) { _, which ->
-                val action = items[which]
-                when {
-                    action.startsWith("Open") -> newTab(url)
-                    action.startsWith("Bookmark") -> {
+            .setItems(items.map { it.first }.toTypedArray()) { _, which ->
+                when (items[which].second) {
+                    0 -> newTab(url)
+                    5 -> {
                         BookmarkStore(this@MainActivity).add(url, url)
-                        Toast.makeText(this@MainActivity, "Bookmarked", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@MainActivity, getString(R.string.lm_bookmarked), Toast.LENGTH_SHORT).show()
                     }
-                    action.startsWith("Remove bookmark") -> {
+                    4 -> {
                         BookmarkStore(this@MainActivity).remove(url)
-                        Toast.makeText(this@MainActivity, "Bookmark removed", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@MainActivity, getString(R.string.lm_unbookmarked), Toast.LENGTH_SHORT).show()
                     }
-                    action.startsWith("Download") -> startSessionDownload(url, null)
-                    action.startsWith("Share") -> {
+                    1 -> startSessionDownload(url, null)
+                    2 -> {
                         val send = Intent(Intent.ACTION_SEND).apply {
                             type = "text/plain"
                             putExtra(Intent.EXTRA_TEXT, url)
                         }
-                        startActivity(Intent.createChooser(send, "Share link"))
+                        startActivity(Intent.createChooser(send, getString(R.string.lm_share)))
                     }
                     else -> copyLink(url)
                 }
@@ -1193,9 +1196,9 @@ class MainActivity : AppCompatActivity() {
         homePremium.text = if (st.activated) {
             val exp = st.expiresAtMs?.let { java.text.DateFormat.getDateInstance().format(java.util.Date(it)) }
             if (st.grace) "Premium active — renewal due (grace until $exp)"
-            else "Premium active" + (if (exp != null) " · until $exp" else "")
+            else if (exp != null) getString(R.string.prem_active_until2, exp) else getString(R.string.premium_active)
         } else {
-            "Free core · Premium $7/mo · $2/day"
+            getString(R.string.prem_line_off, "$49", "$4.99")
         }
     }
 
@@ -1245,23 +1248,23 @@ class MainActivity : AppCompatActivity() {
 
     private fun takeScreenshot() {
         if (currentTab() == null) {
-            Toast.makeText(this, "Nothing to capture", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.shot_none), Toast.LENGTH_SHORT).show()
             return
         }
         try {
             val root = window.decorView
             if (root.width <= 0 || root.height <= 0) {
-                Toast.makeText(this, "Screenshot failed", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.shot_fail), Toast.LENGTH_SHORT).show()
                 return
             }
             val bmp = android.graphics.Bitmap.createBitmap(root.width, root.height, android.graphics.Bitmap.Config.ARGB_8888)
             val rect = android.graphics.Rect(0, 0, root.width, root.height)
             android.view.PixelCopy.request(window, rect, bmp, { res ->
                 if (res == android.view.PixelCopy.SUCCESS) saveScreenshot(bmp)
-                else runOnUiThread { Toast.makeText(this, "Screenshot failed", Toast.LENGTH_SHORT).show() }
+                else runOnUiThread { Toast.makeText(this, getString(R.string.shot_fail), Toast.LENGTH_SHORT).show() }
             }, android.os.Handler(mainLooper))
         } catch (e: Exception) {
-            Toast.makeText(this, "Screenshot failed", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.shot_fail), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -1303,10 +1306,10 @@ class MainActivity : AppCompatActivity() {
                 }
                 try { tmp.delete() } catch (ignored: Exception) { }
                 runOnUiThread {
-                    Toast.makeText(this, if (ok) "Saved to gallery: $name" else "Screenshot failed", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, if (ok) "Saved to gallery: $name" else getString(R.string.shot_fail), Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                runOnUiThread { Toast.makeText(this, "Screenshot failed", Toast.LENGTH_SHORT).show() }
+                runOnUiThread { Toast.makeText(this, getString(R.string.shot_fail), Toast.LENGTH_SHORT).show() }
             }
         }.start()
     }

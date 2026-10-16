@@ -15,14 +15,21 @@ const COUNTRY_CURRENCY = {
   CA: 'CAD', AU: 'AUD', NZ: 'NZD', SG: 'SGD', HK: 'HKD', JP: 'JPY',
   AE: 'AED', SA: 'SAR', QA: 'QAR', IL: 'ILS', ZA: 'ZAR', BR: 'BRL',
   MX: 'MXN', PH: 'PHP', TH: 'THB', MY: 'MYR', ID: 'IDR', KR: 'KRW',
-  TW: 'TWD', TR: 'TRY'
+  TW: 'TWD', TR: 'TRY',
+  RU: 'RUB', BY: 'BYN', KZ: 'KZT', AM: 'AMD', AZ: 'AZN', KG: 'KGS',
+  MD: 'MDL', TJ: 'TJS', UZ: 'UZS'
 }
 
 // Zero-decimal currencies (no minor units on PayPal).
 const ZERO_DECIMAL = new Set(['JPY', 'HUF', 'TWD'])
 
+// YooKassa is the only rail that works for Russian buyers: PayPal
+// exited Russia, Razorpay is India-only. RU -> yookassa/RUB.
+const YOOKASSA_COUNTRIES = new Set(['RU', 'BY', 'KZ', 'AM', 'AZ', 'KG', 'MD', 'TJ', 'UZ'])
 function providerFor(country) {
-  return country === 'IN' ? 'razorpay' : 'paypal'
+  if (country === 'IN') return 'razorpay'
+  if (YOOKASSA_COUNTRIES.has(country)) return 'yookassa'
+  return 'paypal'
 }
 
 function currencyFor(country) {

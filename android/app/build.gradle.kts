@@ -16,6 +16,19 @@ android {
         versionName = "101.5.15"
     }
 
+    flavorDimensions += "market"
+    productFlavors {
+        create("main") {
+            dimension = "market"
+            applicationId = "pp.ua.kastrava"
+        }
+        create("ru") {
+            dimension = "market"
+            // Separate listing for the Russian audience: own package id,
+            // Russian resources (src/ru/), RUB pricing via geo.
+            applicationId = "pp.ua.kastrava.ru"
+        }
+    }
     buildTypes {
         release {
             isMinifyEnabled = false

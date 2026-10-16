@@ -11,7 +11,9 @@ const FALLBACK_PER_INR = {
   SGD: 0.0143, HKD: 0.0866, JPY: 1.68, AED: 0.0408, SAR: 0.0416,
   QAR: 0.0404, ILS: 0.0368, ZAR: 0.196, BRL: 0.060, MXN: 0.207,
   PHP: 0.652, THB: 0.359, MYR: 0.0467, IDR: 184.5, KRW: 15.5,
-  TWD: 0.344, TRY: 0.46, INR: 1
+  TWD: 0.344, TRY: 0.46, INR: 1,
+  RUB: 1.08, BYN: 0.036, KZT: 5.6, AMD: 4.3, AZN: 0.019, KGS: 0.97,
+  MDL: 0.20, TJS: 0.12, UZS: 142.0
 }
 
 async function getRates() {
