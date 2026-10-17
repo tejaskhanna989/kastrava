@@ -18,7 +18,10 @@ android {
 
     flavorDimensions += "market"
     productFlavors {
-        create("main") {
+        // NB: the default flavor is "std", not "main" — a flavor named
+        // "main" collides with the default main/ source set and Gradle
+        // dies with "Multiple entries with same key: main".
+        create("std") {
             dimension = "market"
             applicationId = "pp.ua.kastrava"
         }

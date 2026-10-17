@@ -116,10 +116,10 @@ jobs:
           KASTRAVA_KS_FILE: ${{ github.workspace }}/android/keystore/kastrava-release.jks
           KASTRAVA_KS_PASS: ${{ secrets.ANDROID_KS_PASS }}
           KASTRAVA_KEY_ALIAS: kastrava
-      - name: Rename APKs to release filenames (main + RU flavors)
+      - name: Rename APKs to release filenames (std + RU flavors)
         run: |
           v=$(node -p "require('../package.json').version")
-          cp app/build/outputs/apk/main/release/app-main-release.apk "Kastrava-${v}.apk"
+          cp app/build/outputs/apk/std/release/app-std-release.apk "Kastrava-${v}.apk"
           cp app/build/outputs/apk/ru/release/app-ru-release.apk "Kastrava-ru-${v}.apk"
         shell: bash
       - uses: actions/upload-artifact@v4
