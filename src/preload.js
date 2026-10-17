@@ -28,6 +28,7 @@ contextBridge.exposeInMainWorld('api', {
 
   openExternal: (url) => ipcRenderer.invoke('open-external', url),
   openPath: (p) => ipcRenderer.invoke('open-path', p),
+  getAppVersion: () => ipcRenderer.invoke('app-version'),
 
   saveSession: (tabs) => ipcRenderer.invoke('save-session', tabs),
   saveSessionSync: (tabs) => ipcRenderer.send('save-session-sync', tabs),

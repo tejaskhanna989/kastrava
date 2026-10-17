@@ -132,6 +132,8 @@ function initBackend() {
 }
 
 let mainWindow
+// URLs handed to us by the OS at cold start (we are its default browser).
+let pendingHandedUrls = []
 
 function sendWinState() {
   mainWindow?.webContents.send('win-state', {
@@ -390,6 +392,20 @@ function createWindow() {
   // privacy.js skips the shell window via this handle when injecting page
   // spoofs (canvas noise must never touch our own UI).
   global.mainWindow = mainWindow
+
+  // Flush any URLs the OS handed us at cold start. The shell binds its
+  // onOpenNewTab listener during init(), so wait for the load + a tick.
+  if (pendingHandedUrls.length) {
+    const handed = pendingHandedUrls
+    pendingHandedUrls = []
+    mainWindow.webContents.once('did-finish-load', () => {
+      setTimeout(() => {
+        for (const u of handed) {
+          try { mainWindow.webContents.send('open-new-tab', u) } catch {}
+        }
+      }, 400)
+    })
+  }
 
 function sendShortcut(action) {
   try { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('menu-shortcut', action) } catch {}
@@ -850,7 +866,39 @@ function initLinuxSysUpdate() {
   } catch {}
 }
 
+// Single instance. We register as the OS browser for http/https, and
+// shell.openExternal() on Linux comes back through xdg-open to relaunch
+// US. Without this lock, every "open in browser" link spawned a whole
+// duplicate app that read no argv and silently dropped the URL on the
+// floor. Now the second launch hands its URLs to the running window.
+const gotSingleInstanceLock = app.requestSingleInstanceLock()
+if (!gotSingleInstanceLock) {
+  app.quit()
+} else {
+  // URLs the OS handed us: either a second-instance handoff or our own
+  // cold-start argv when another app opens a link with us as default.
+  function openHandedUrls(urls) {
+    if (!urls || !urls.length) return
+    if (!mainWindow || mainWindow.isDestroyed()) return
+    try {
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      mainWindow.focus()
+    } catch {}
+    for (const u of urls) {
+      try { mainWindow.webContents.send('open-new-tab', u) } catch {}
+    }
+  }
+  const argvUrls = process.argv.filter(a => /^https?:\/\//i.test(a))
+  app.on('second-instance', (_e, argv) => {
+    openHandedUrls((argv || []).filter(a => /^https?:\/\//i.test(a)))
+  })
+  // Cold start (we are the OS default browser, another app opened a link):
+  // stash them and flush once the shell has bound its IPC listener.
+  pendingHandedUrls = argvUrls
+}
+
 app.whenReady().then(async () => {
+  if (!gotSingleInstanceLock) return
   await initDatabase()
   initBackend()
   try { pruneHistory() } catch {}
@@ -1265,8 +1313,61 @@ ipcMain.handle('save-page-icon', async (_, { url, dataUrl }) => {
 })
 
 
-ipcMain.handle('open-external', (_, url) => {
-  try { shell.openExternal(String(url)) } catch {}
+ipcMain.handle('app-version', () => { try { return app.getVersion() } catch { return null } })
+
+// Open a URL as a tab in our own shell window. Used when delegating to the
+// OS would fail or would just relaunch us (we are the default browser).
+function openInShellTab(u) {
+  try {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      mainWindow.focus()
+      mainWindow.webContents.send('open-new-tab', u)
+      return true
+    }
+  } catch {}
+  return false
+}
+
+ipcMain.handle('open-external', async (_, url) => {
+  const u = String(url)
+  if (/^mailto:/i.test(u)) {
+    // shell.openExternal resolves even when nothing can handle the URL, so
+    // the "Get help" link did nothing at all on a machine without a mail
+    // app. Detect the unhandled case and give the user a real way out.
+    let handled = true
+    try {
+      if (process.platform === 'linux') {
+        const out = execFileSync('xdg-mime', ['query', 'default', 'x-scheme-handler/mailto'], { encoding: 'utf8' }).trim()
+        handled = !!out
+      } else if (process.platform === 'win32') {
+        // RegQueryValueExU on HKCU\Software\Classes\mailto\shell\open\command.
+        const out = execFileSync('reg', ['query', 'HKCU\\Software\\Classes\\mailto\\shell\\open\\command'], { encoding: 'utf8' }).trim()
+        handled = !!out
+      }
+      // darwin: no cheap reliable probe, and macOS ships Mail.app, so
+      // assume handled and let openExternal do its thing.
+    } catch { handled = false }
+    if (!handled) {
+      const addr = decodeURIComponent(u.replace(/^mailto:/i, '').split('?')[0])
+      const host = (addr.split('@')[1] || '').toLowerCase()
+      // Webmail compose for the one provider we can address unambiguously.
+      if (host === 'gmail.com' || host === 'googlemail.com') {
+        if (openInShellTab('https://mail.google.com/mail/?view=cm&to=' + encodeURIComponent(addr))) return
+      }
+      const r = await dialog.showMessageBox(mainWindow, {
+        type: 'info',
+        message: 'No email app is set up on this system.',
+        detail: 'Write to ' + addr + ' from your own email app.',
+        buttons: ['Copy address', 'Close'],
+        defaultId: 0,
+        cancelId: 1
+      })
+      if (r.response === 0) { try { clipboard.writeText(addr) } catch {} }
+      return
+    }
+  }
+  try { shell.openExternal(u) } catch {}
 })
 
 ipcMain.handle('open-path', (_, p) => {
