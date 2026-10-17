@@ -67,15 +67,6 @@
     <string name="data_deleted">Данные просмотра удалены</string>
     <string name="settings_reset">Настройки сброшены</string>
 
-    <string name="desktop_on">Новые вкладки запрашивают десктопные версии</string>
-    <string name="desktop_off">Новые вкладки запрашивают мобильные версии</string>
-    <string name="remember_on">Вкладки будут запомнены</string>
-    <string name="remember_off">Вкладки забываются при выходе</string>
-    <string name="loc_on">Сайты могут запрашивать местоположение</string>
-    <string name="loc_off">Запросы местоположения отклонены</string>
-    <string name="applies_now">Применяется немедленно</string>
-    <string name="data_deleted">Данные просмотра удалены</string>
-    <string name="settings_reset">Настройки сброшены</string>
     <string name="update_avail">Доступна Kastrava %1$s.</string>
     <string name="about_line">Kastrava %1$s · приватность по умолчанию, ноль телеметрии.</string>
 

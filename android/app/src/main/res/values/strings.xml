@@ -67,15 +67,6 @@
     <string name="data_deleted">Browsing data deleted</string>
     <string name="settings_reset">Settings reset</string>
 
-    <string name="desktop_on">New tabs request desktop sites</string>
-    <string name="desktop_off">New tabs request mobile sites</string>
-    <string name="remember_on">Tabs will be remembered</string>
-    <string name="remember_off">Tabs are forgotten on exit</string>
-    <string name="loc_on">Sites may request location</string>
-    <string name="loc_off">Location requests are denied</string>
-    <string name="applies_now">Applies immediately</string>
-    <string name="data_deleted">Browsing data deleted</string>
-    <string name="settings_reset">Settings reset</string>
     <string name="update_avail">Kastrava %1$s available.</string>
     <string name="about_line">Kastrava %1$s · private by default, zero telemetry.</string>
 
