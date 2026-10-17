@@ -2,11 +2,11 @@
   "version": "101.5.16",
   "codename": "Starship Wonders",
   "channel": "rc",
-  "url": "https://kastrava.pp.ua/dl/kastrava_101.5.15_amd64.deb",
-  "notes": "Kastrava 101 RC 'Starship Wonders' \u2014 the most private browser. Private-by-default downloads, Tracking Radar, KastravaSearch, Kastget downloads.",
-  "date": "2026-10-16",
+  "url": "https://kastrava.pp.ua/dl/kastrava_101.5.16_amd64.deb",
+  "notes": "Kastrava 101 RC 'Starship Wonders' — the most private browser. Private-by-default downloads, Tracking Radar, KastravaSearch, Kastget downloads.",
+  "date": "2026-10-17",
   "minimum": "26.0.0",
   "version_code": 1015016,
-  "apk_url": "https://kastrava.pp.ua/dl/Kastrava-101.5.15.apk",
-  "apk_size": 8290479
+  "apk_url": "https://kastrava.pp.ua/dl/Kastrava-101.5.16.apk",
+  "apk_size": 8365651
 }
