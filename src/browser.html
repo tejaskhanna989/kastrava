@@ -347,6 +347,18 @@ body.custom-cursor-on,body.custom-cursor-on *{cursor:none!important}
 .accent-swatch:has(+ *:hover){transform:scale(1.25);z-index:8}
 .accent-swatch:has(+ * + *:hover){transform:scale(1.12);z-index:7}
 .accent-swatch.selected{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+/* Store item tiles (Settings → Appearance → Store) */
+.store-grid{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.store-tile{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;width:76px;padding:6px 4px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);cursor:pointer;font-family:inherit;text-align:center;transition:border-color .15s,transform .15s}
+.store-tile:hover{border-color:var(--accent);transform:translateY(-1px)}
+.store-tile.applied{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.store-thumb{width:44px;height:32px;border-radius:5px;overflow:hidden;display:flex;align-items:center;justify-content:center;border:1px solid var(--c-border);background:#888}
+.store-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.store-name{font-size:10px;line-height:1.15;color:var(--c-text);word-break:break-word;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.3em}
+.store-kind{font-size:8.5px;letter-spacing:.03em;text-transform:uppercase;color:var(--c-text2)}
+.store-applied-tag{position:absolute;top:3px;right:3px;width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 2px var(--c-surface)}
+.store-swatches-row{display:flex;gap:1px;width:100%;height:100%}
+.store-swatches-row span{flex:1}
 /* Add-shortcut tile + modal inputs */
 .ts-add{cursor:pointer}
 .ts-add .sc-icon{background:transparent;border-style:dashed;border-color:var(--c-border);color:var(--c-text2);transition:color .2s,border-color .2s,transform .2s}
@@ -3710,35 +3722,65 @@ function refreshStoreOwned(){
   try{p=api.storeItems();}catch(e){box.innerHTML='<span class="desc">Log in to see your store items.</span>';return;}
   Promise.resolve(p).then(function(r){settled=true;
     var items=(r&&r.ok&&r.items)||[];
+    // Combos/passes are purchase bundles, not appliers — their member items
+    // already appear individually in this list. Filtering them removes the
+    // dead-end "needs its own applier" click.
+    items=items.filter(function(x){var k=x.kind;return k!=="combo"&&k!=="pass";});
     if(!items.length){box.innerHTML='<span class="desc">Nothing yet — hit Get themes.</span>';return;}
-    box.innerHTML="";
+    // Pull the accent colour out of a cursor's SVG data-URI (fill='%23rrggbb').
+    function cursorColor(x){
+      var s=x&&x.data&&x.data.cursors&&x.data.cursors.default||"";
+      var m=/fill(?:%3D|=)'?(%23|#)([0-9a-fA-F]{6})/.exec(s);
+      return m?"#"+m[2]:"#f5503d";
+    }
+    // Is this item the one currently applied?
+    function isApplied(x){
+      var d=x.data||{};
+      if(x.kind==="theme")return settings.theme==="custom-"+x.id;
+      if(x.kind==="accents"&&d.accents)return d.accents.indexOf(settings.accent)>=0;
+      if(x.kind==="logos"&&d.logos)return d.logos.indexOf(settings.customLogo)>=0;
+      if(x.kind==="wallpaper"&&d.css)return settings.customWallpaper===d.css;
+      if(x.kind==="cursor")return settings.cursorStyle==="custom"&&settings.cursorStyleColor===cursorColor(x);
+      return false;
+    }
+    var KIND_LABEL={theme:"Theme",wallpaper:"Wallpaper",accents:"Accents",logos:"Logo",cursor:"Cursor"};
+    var grid=document.createElement("div");grid.className="store-grid";
     items.slice(0,24).forEach(function(x){
-      if(x.kind==="accents"&&x.data&&x.data.accents&&x.data.accents.length){
-        var wrap=document.createElement("span");
-        wrap.title=x.name||x.id;
-        wrap.style.cssText="display:inline-flex;gap:3px;align-items:center;margin:2px;";
-        x.data.accents.slice(0,6).forEach(function(c){
-          var d=document.createElement("button");
-          d.className="theme-btn";d.title=(x.name||"accents")+" "+c;
-          d.style.cssText="width:22px;height:22px;border-radius:50%;background:"+c+";cursor:pointer;border:2px solid "+(settings.accent===c?c:"transparent")+";";
-          d.addEventListener("click",function(){applyAccentColor(c,x.name);});
-          wrap.appendChild(d);
-        });
-        box.appendChild(wrap);
-        return;
-      }
-      var sw=x.data&&x.data.bg?x.data.bg:(x.data&&x.data.accents?x.data.accents[0]:"#888");
-      var b=document.createElement("button");
-      b.className="theme-btn";b.title=x.name||x.id;b.dataset.sid=x.id;
-      b.style.cssText="width:28px;height:28px;border-radius:6px;background:"+sw+";cursor:pointer;border:2px solid transparent;position:relative;overflow:hidden";
-      b.addEventListener("click",function(){
-        var kind=(x.kind||"theme");
-        var ok=applyStoreTheme({id:x.id,name:x.name,kind:kind,data:x.data,preview:{ac:(x.data&&x.data.ac)||"#fff"}});
+      var d=x.data||{};
+      var t=document.createElement("button");
+      t.className="store-tile"+(isApplied(x)?" applied":"");
+      t.title=x.name||x.id;
+      // Build a kind-accurate thumbnail.
+      var thumb=document.createElement("div");thumb.className="store-thumb";
+      if(x.kind==="theme"){
+        thumb.style.background=d.bg||"#333";
+        var top=document.createElement("div");top.style.cssText="position:absolute;top:0;left:0;right:0;height:7px;background:"+(d.tbg||"transparent");
+        var bot=document.createElement("div");bot.style.cssText="position:absolute;bottom:0;left:0;right:0;height:4px;background:"+(d.tb||"transparent");
+        thumb.style.position="relative";thumb.appendChild(top);thumb.appendChild(bot);
+      }else if(x.kind==="wallpaper"&&d.css){
+        thumb.style.background=d.css;
+      }else if(x.kind==="accents"&&d.accents&&d.accents.length){
+        var row=document.createElement("div");row.className="store-swatches-row";
+        d.accents.slice(0,6).forEach(function(c){var s=document.createElement("span");s.style.background=c;row.appendChild(s);});
+        thumb.appendChild(row);
+      }else if(x.kind==="logos"&&d.logos&&d.logos.length){
+        var li=document.createElement("img");li.src=d.logos[0];li.alt="";thumb.appendChild(li);
+      }else if(x.kind==="cursor"){
+        var ci=document.createElement("img");ci.src=d.cursors&&d.cursors.default||"";ci.alt="";thumb.appendChild(ci);
+      }else{thumb.style.background="#555";}
+      t.appendChild(thumb);
+      var nm=document.createElement("div");nm.className="store-name";nm.textContent=x.name||x.id;t.appendChild(nm);
+      var kd=document.createElement("div");kd.className="store-kind";kd.textContent=KIND_LABEL[x.kind]||x.kind||"Item";t.appendChild(kd);
+      if(isApplied(x)){var tag=document.createElement("span");tag.className="store-applied-tag";t.appendChild(tag);}
+      t.addEventListener("click",function(){
+        var ac=(x.kind==="cursor")?cursorColor(x):(d.ac||(d.accents&&d.accents[0])||"#4fc3f7");
+        var ok=applyStoreTheme({id:x.id,name:x.name,kind:x.kind,data:d,preview:{ac:ac}});
         if(ok){toast("Applied "+(x.name||x.id));try{renderSettingsSection("appearance");bindSettingsEvents("appearance");}catch(e){}}
-        else{toast("That item needs its own applier.");}
+        else{toast("This item can't be applied on its own.");}
       });
-      box.appendChild(b);
+      grid.appendChild(t);
     });
+    box.innerHTML="";box.appendChild(grid);
   }).catch(function(){settled=true;box.innerHTML='<span class="desc">Log in to see your store items.</span>';});
 }
 function applyAccentColor(color,name){
