@@ -23,3 +23,7 @@ local.properties
 server/lib/products.js
 site/store-assets/preview-*.svg
 scripts/make-store-catalog.py
+
+# generated store assets (regenerate via scripts, deployed by scp)
+site/store-assets/wp/
+site/store-assets/preview/

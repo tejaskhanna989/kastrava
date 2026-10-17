@@ -582,13 +582,13 @@ class Store {
       // Pass holders see the whole catalogue (minus the pass itself).
       return Object.entries(prods.PRODUCTS || {})
         .filter(([id]) => id !== 'catalogue-pass')
-        .map(([id, prod]) => ({ id, name: prod.name, kind: prod.kind, data: prod.data, at: null, via_pass: true }))
+        .map(([id, prod]) => ({ id, name: prod.name, kind: prod.kind, data: prod.data, preview: prod.preview, at: null, via_pass: true }))
     }
     const owned = (this.data.entitlements || {})[e] || {}
     return Object.keys(owned).map((id) => {
       const p = prods.get(id)
       if (!p) return null
-      return { id, name: p.name, kind: p.kind, data: p.data, at: owned[id].at }
+      return { id, name: p.name, kind: p.kind, data: p.data, preview: p.preview, at: owned[id].at }
     }).filter(Boolean)
   }
 
