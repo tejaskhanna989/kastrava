@@ -12,8 +12,8 @@ android {
         minSdk = 26
         targetSdk = 34
         // Mirrors the desktop release: 101.5.16.
-        versionCode = 1015016
-        versionName = "101.5.16"
+        versionCode = 1015017
+        versionName = "101.5.17"
     }
 
     flavorDimensions += "market"

@@ -71,7 +71,11 @@ function loadKey(ss, store) {
   try {
     const enc = store.get('syncKeyEnc')
     if (!enc || !ss || !ss.isEncryptionAvailable || !ss.isEncryptionAvailable()) return null
-    memKey = Buffer.from(ss.decryptString(Buffer.from(enc, 'base64').toString('latin1')), 'hex')
+    // decryptString needs a Buffer. The old code passed a string (the
+    // .toString('latin1') result), which throws on newer Electron — the key
+    // silently failed to unwrap on restart and a valid session showed as
+    // logged out.
+    memKey = Buffer.from(ss.decryptString(Buffer.from(Buffer.from(enc, 'base64').toString('latin1'), 'latin1')), 'hex')
     memEmail = store.get('syncEmail')
     return memKey
   } catch { return null }
@@ -161,7 +165,11 @@ function status(store, ss) {
   const token = store.get('syncToken') || ''
   const hasKey = !!loadKey(ss, store)
   return {
-    loggedIn: !!(email && token && hasKey),
+    // Login is carried by the session token alone. The wrapped sync key is
+    // only needed to encrypt/decrypt synced data — if the OS keyring is
+    // locked or was reset, that must not drop a valid session to "logged out".
+    loggedIn: !!(email && token),
+    syncKeyOk: hasKey,
     email,
     rev: store.get('syncRev') || 0,
     lastSyncAt: store.get('syncLastAt') || null

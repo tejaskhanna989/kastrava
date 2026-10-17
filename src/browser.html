@@ -3841,7 +3841,11 @@ function bindSyncPanel(){
       if(creds)creds.style.display="none";
       if(lbtn)lbtn.style.display="none";
       if(ft)ft.textContent="Account";
-      if(fd)fd.textContent="You are signed in. Sync runs automatically; use Sync now to force it.";
+      if(st.syncKeyOk){
+        fd.textContent="You are signed in. Sync runs automatically; use Sync now to force it.";
+      }else{
+        fd.textContent="Signed in, but the sync key could not be unlocked (the system keyring was reset or is locked). Bookmarks and settings stay on this device; sign out and back in to re-provision sync.";
+      }
       if(lo)lo.style.display="";
       if(nw)nw.style.display="";
     }else{
