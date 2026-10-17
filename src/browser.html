@@ -1236,6 +1236,13 @@ function addTab(url,opts){
   try{if(window.__guestPreload)wv.setAttribute("preload",window.__guestPreload);}catch(e){}
   wv.setAttribute("autosize","on");
   wv.setAttribute("partition","kastrava");
+  // Without allowpopups, window.open() from any page returns null and is
+  // dropped before the main process ever sees it — so target="_blank" links
+  // and payment/bank popup redirects did nothing at all. The main-process
+  // setWindowOpenHandler (main.js) already routes these correctly: script
+  // popups stay real windows (window.opener must survive), plain link clicks
+  // become tabs, mailto is delegated. This attribute is what lets it run.
+  wv.setAttribute("allowpopups","");
   wv.style.cssText="position:absolute;inset:0;border:none;width:100%;height:100%";
   wrap.appendChild(wv);
   $("content").appendChild(wrap);
