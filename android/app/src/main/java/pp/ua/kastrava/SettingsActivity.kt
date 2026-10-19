@@ -112,6 +112,10 @@ class SettingsActivity : AppCompatActivity() {
 
         val tvUpdate: TextView = findViewById(R.id.tvUpdateStatus)
         val btnUpd: Button = findViewById(R.id.btnCheckUpdates)
+        // RuStore builds are updated by the store, not in-app — hide the whole
+        // updater section so there's no dead button.
+        findViewById<android.view.View>(R.id.updateSection).visibility =
+            if (BuildConfig.SELF_UPDATE) android.view.View.VISIBLE else android.view.View.GONE
         fun showUpdate(u: UpdateInfo?) {
             tvUpdate.text = if (u == null) getString(R.string.up_to_date)
             else getString(R.string.update_avail, u.name) + (if (u.notes.isNotBlank()) " " + u.notes.take(120) else "")

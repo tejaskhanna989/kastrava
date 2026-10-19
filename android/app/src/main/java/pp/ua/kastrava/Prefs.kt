@@ -19,9 +19,10 @@ class Prefs(context: Context) {
         get() = p.getString("theme", "system") ?: "system"
         set(v) { p.edit().putString("theme", v).apply() }
 
-    /** UI language: system | en | ru. Default follows the system. */
+    /** UI language: system | en | ru. Default comes from the flavor
+     *  (std = follow the device, ru = pinned to Russian). */
     var language: String
-        get() = p.getString("language", "system") ?: "system"
+        get() = p.getString("language", BuildConfig.DEFAULT_LANG) ?: BuildConfig.DEFAULT_LANG
         set(v) { p.edit().putString("language", v).apply() }
 
     // Store theme (data-only cosmetics from the Kastrava Store).
@@ -178,6 +179,11 @@ class Prefs(context: Context) {
 
     companion object {
         const val KASTRA_SEARCH = "https://kastravasearch.pp.ua/search?q="
+        // KastravaSearch (SearXNG) picks the result language from the
+        // requester's IP when none is given. The RU build pins it to Russian
+        // so results match the UI regardless of where the device is.
+        private val SEARCH_LANG_SUFFIX =
+            if (BuildConfig.SEARCH_LANG.isEmpty()) "" else "&language=" + BuildConfig.SEARCH_LANG
         val ENGINES = mapOf(
             "kastrava" to ("KastravaSearch" to KASTRA_SEARCH),
             "duckduckgo" to ("DuckDuckGo" to "https://duckduckgo.com/?q="),
@@ -194,10 +200,14 @@ class Prefs(context: Context) {
                 if (t.isNotEmpty() && (premium || !customIsPremium(t))) {
                     return if (t.contains("%s")) t.replace("%s", query) else t + query
                 }
-                return KASTRA_SEARCH + query
+                return KASTRA_SEARCH + query + SEARCH_LANG_SUFFIX
             }
             val key = if (!premium && engine !in FREE_ENGINES) "kastrava" else engine
-            return (ENGINES[key]?.second ?: KASTRA_SEARCH) + query
+            val base = ENGINES[key]?.second ?: KASTRA_SEARCH
+            // Pin the result language only for KastravaSearch; other engines
+            // follow their own locale handling.
+            val suffix = if (base == KASTRA_SEARCH) SEARCH_LANG_SUFFIX else ""
+            return base + query + suffix
         }
 
         /** True when a custom template points at a Premium engine's domain. */

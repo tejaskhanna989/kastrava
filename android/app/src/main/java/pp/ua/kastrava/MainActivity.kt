@@ -190,7 +190,9 @@ class MainActivity : AppCompatActivity() {
         handleIntent(intent)
         if (current < 0 && !restored) showHome()
         refreshPremiumLine()
-        Thread {
+        // RuStore builds manage their own updates — a sideload self-updater
+        // would bypass store review, so std-only.
+        if (BuildConfig.SELF_UPDATE) Thread {
             val u = Updater.check(this)
             if (u != null) runOnUiThread {
                 Toast.makeText(this, "Kastrava ${u.name} available — update in Settings", Toast.LENGTH_LONG).show()

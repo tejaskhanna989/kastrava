@@ -12,8 +12,8 @@ android {
         minSdk = 26
         targetSdk = 34
         // Mirrors the desktop release: 101.5.16.
-        versionCode = 1015022
-        versionName = "101.5.22"
+        versionCode = 1015023
+        versionName = "101.5.23"
     }
 
     flavorDimensions += "market"
@@ -24,12 +24,22 @@ android {
         create("std") {
             dimension = "market"
             applicationId = "pp.ua.kastrava"
+            // International: follow the device language, sideload self-update
+            // on, and let KastravaSearch auto-detect the result language.
+            buildConfigField("String", "DEFAULT_LANG", "\"system\"")
+            buildConfigField("boolean", "SELF_UPDATE", "true")
+            buildConfigField("String", "SEARCH_LANG", "\"\"")
         }
         create("ru") {
             dimension = "market"
             // Separate listing for the Russian audience: own package id,
-            // Russian resources (src/ru/), RUB pricing via geo.
+            // RUB pricing via geo. Defaults to Russian UI + Russian search
+            // results, and disables sideload self-update because RuStore
+            // owns the update channel (a self-updater would bypass it).
             applicationId = "pp.ua.kastrava.ru"
+            buildConfigField("String", "DEFAULT_LANG", "\"ru\"")
+            buildConfigField("boolean", "SELF_UPDATE", "false")
+            buildConfigField("String", "SEARCH_LANG", "\"ru\"")
         }
     }
     buildTypes {
