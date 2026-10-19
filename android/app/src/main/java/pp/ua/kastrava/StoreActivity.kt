@@ -111,7 +111,10 @@ class StoreActivity : AppCompatActivity() {
                         Toast.makeText(this, "Log in first (Settings → Account).", Toast.LENGTH_SHORT).show()
                     }
                 }
-                item.free || (premium && (item.proFree || item.tier == "premium")) -> {
+                // Only genuinely-free items are claimable. Every paid item —
+                // for every user, Premium included — goes through the website
+                // purchase flow (matches server /api/store/claim).
+                item.free -> {
                     btn.text = getString(R.string.get)
                     btn.setOnClickListener { claimItem(item) }
                 }
