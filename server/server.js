@@ -1099,9 +1099,9 @@ async function handlePost(req, res, pathname) {
       return json(res, 200, { ok: true, id: String(body.id), data: prod.data })
     }
     const priced = (prod.price_paise || 0) !== 0 || (prod.price_usd || 0) !== 0
-    if (priced && !hasLivePremium(acc.email)) {
+    if (priced) {
       return json(res, 402, { error: 'need_payment', amount: prod.price_paise || 0,
-        amount_usd: prod.price_usd || 0, msg: 'Premium unlocks this, or buy it once.' })
+        amount_usd: prod.price_usd || 0, msg: 'Buy it once to keep it.' })
     }
     store.grant(acc.email, String(body.id), null)
     store.audit(acc.email, 'store_claim', String(body.id))
@@ -1116,7 +1116,7 @@ async function handlePost(req, res, pathname) {
     if (store.owns(acc.email, String(body.id))) {
       return json(res, 200, { ok: true, id: String(body.id), data: prod.data })
     }
-    if (prod.price_paise === 0 || hasLivePremium(acc.email)) {
+    if (prod.price_paise === 0) {
       if (prod.kind === 'pass') {
         store.grantPass(acc.email, null, (prod.data && prod.data.days) || 30)
       } else {
