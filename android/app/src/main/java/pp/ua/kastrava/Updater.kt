@@ -30,7 +30,9 @@ data class UpdateInfo(
 )
 
 object Updater {
-    const val FEED = "https://kastrava.pp.ua/version.json"
+    // Per-market update feed: std -> version.json, ru -> ru-version.json.
+    // A separate RU channel guarantees RU builds can never pull a std APK.
+    val FEED = BuildConfig.UPDATE_FEED
     private const val PREF_LAST_CHECK = "update_last_check"
     private const val PREF_DL_ID = "update_dl_id"
     private const val CHECK_INTERVAL = 48L * 60 * 60 * 1000

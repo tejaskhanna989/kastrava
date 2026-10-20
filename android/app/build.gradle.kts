@@ -12,8 +12,8 @@ android {
         minSdk = 26
         targetSdk = 34
         // Mirrors the desktop release: 101.5.16.
-        versionCode = 1015024
-        versionName = "101.5.24"
+        versionCode = 1015025
+        versionName = "101.5.25"
     }
 
     flavorDimensions += "market"
@@ -30,18 +30,22 @@ android {
             buildConfigField("boolean", "SELF_UPDATE", "true")
             buildConfigField("String", "SEARCH_LANG", "\"\"")
             buildConfigField("boolean", "FORCE_RU", "false")
+            buildConfigField("String", "UPDATE_FEED", "\"https://kastrava.pp.ua/version.json\"")
         }
         create("ru") {
             dimension = "market"
             // Separate listing for the Russian audience: own package id,
-            // RUB pricing via geo. Defaults to Russian UI + Russian search
-            // results, and disables sideload self-update because RuStore
-            // owns the update channel (a self-updater would bypass it).
+            // RUB pricing via geo. Forced Russian UI + Russian search
+            // results. Self-update reads its own feed (ru-version.json) so
+            // RU builds can never pull a std APK — if this app ever ships
+            // through RuStore again, flip SELF_UPDATE off (the store owns
+            // the update channel there).
             applicationId = "pp.ua.kastrava.ru"
             buildConfigField("String", "DEFAULT_LANG", "\"ru\"")
-            buildConfigField("boolean", "SELF_UPDATE", "false")
+            buildConfigField("boolean", "SELF_UPDATE", "true")
             buildConfigField("String", "SEARCH_LANG", "\"ru\"")
             buildConfigField("boolean", "FORCE_RU", "true")
+            buildConfigField("String", "UPDATE_FEED", "\"https://kastrava.pp.ua/ru-version.json\"")
         }
     }
     buildTypes {
