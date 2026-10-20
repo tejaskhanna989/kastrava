@@ -1,5 +1,6 @@
 package pp.ua.kastrava
 
+import android.content.Context
 import android.os.Bundle
 import android.text.InputType
 import android.view.Gravity
@@ -12,6 +13,10 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class VaultActivity : AppCompatActivity() {
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LocaleHelper.force(newBase))
+    }
+
 
     private lateinit var store: VaultStore
     private lateinit var lockBox: LinearLayout

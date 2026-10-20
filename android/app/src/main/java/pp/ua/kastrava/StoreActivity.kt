@@ -1,5 +1,6 @@
 package pp.ua.kastrava
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -21,6 +22,10 @@ import org.json.JSONObject
  * (web Razorpay/PayPal checkout), apply owned themes/accents/wallpapers.
  */
 class StoreActivity : AppCompatActivity() {
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LocaleHelper.force(newBase))
+    }
+
 
     private lateinit var app: KastravaApp
     private var catalog: List<StoreApi.Item> = emptyList()
@@ -108,7 +113,7 @@ class StoreActivity : AppCompatActivity() {
                 !loggedIn -> {
                     btn.text = if (item.free) getString(R.string.get) else priceLabel(item)
                     btn.setOnClickListener {
-                        Toast.makeText(this, "Log in first (Settings → Account).", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, getString(R.string.login_first_store), Toast.LENGTH_SHORT).show()
                     }
                 }
                 // Only genuinely-free items are claimable. Every paid item —
@@ -160,7 +165,7 @@ class StoreActivity : AppCompatActivity() {
         when (item.kind) {
             "theme" -> {
                 ThemeEngine.applyTheme(app.prefs, item.id, item.name, data)
-                Toast.makeText(this, "Applied ${item.name}.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.applied_item, item.name), Toast.LENGTH_SHORT).show()
                 finish()
             }
             "accents" -> {
@@ -171,7 +176,7 @@ class StoreActivity : AppCompatActivity() {
                     return
                 }
                 ThemeEngine.applyAccent(app.prefs, first)
-                Toast.makeText(this, "Accent $first applied.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.accent_applied, first), Toast.LENGTH_SHORT).show()
                 finish()
             }
             "wallpaper" -> {
@@ -185,10 +190,10 @@ class StoreActivity : AppCompatActivity() {
                 finish()
             }
             "logos" -> {
-                Toast.makeText(this, "Logo packs apply on desktop; owned on your account.", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, getString(R.string.logo_desktop_only), Toast.LENGTH_LONG).show()
             }
             "combo" -> {
-                Toast.makeText(this, "Combo unpacked into its items — apply them below.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.combo_unpacked), Toast.LENGTH_SHORT).show()
                 refresh()
             }
             else -> Toast.makeText(this, getString(R.string.not_on_mobile), Toast.LENGTH_SHORT).show()

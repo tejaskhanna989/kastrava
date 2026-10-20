@@ -9,7 +9,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Files stay in this session until you save them to Downloads."
+        android:text="@string/dl_empty_desc"
         android:textSize="13sp" />
 
     <ListView

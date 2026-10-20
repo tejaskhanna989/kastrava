@@ -12,8 +12,8 @@ android {
         minSdk = 26
         targetSdk = 34
         // Mirrors the desktop release: 101.5.16.
-        versionCode = 1015023
-        versionName = "101.5.23"
+        versionCode = 1015024
+        versionName = "101.5.24"
     }
 
     flavorDimensions += "market"
@@ -29,6 +29,7 @@ android {
             buildConfigField("String", "DEFAULT_LANG", "\"system\"")
             buildConfigField("boolean", "SELF_UPDATE", "true")
             buildConfigField("String", "SEARCH_LANG", "\"\"")
+            buildConfigField("boolean", "FORCE_RU", "false")
         }
         create("ru") {
             dimension = "market"
@@ -40,6 +41,7 @@ android {
             buildConfigField("String", "DEFAULT_LANG", "\"ru\"")
             buildConfigField("boolean", "SELF_UPDATE", "false")
             buildConfigField("String", "SEARCH_LANG", "\"ru\"")
+            buildConfigField("boolean", "FORCE_RU", "true")
         }
     }
     buildTypes {

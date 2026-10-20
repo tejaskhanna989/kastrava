@@ -41,7 +41,7 @@
                 <ImageView
                     android:layout_width="72dp"
                     android:layout_height="72dp"
-                    android:contentDescription="Kastrava logo"
+                    android:contentDescription="@string/cd_logo"
                     android:src="@drawable/logo" />
 
                 <TextView
@@ -113,7 +113,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
-                            android:text="New tab"
+                            android:text="@string/new_tab"
                             android:textColor="@color/chrome_hint"
                             android:textSize="11sp" />
                     </LinearLayout>
@@ -139,7 +139,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
-                            android:text="Downloads"
+                            android:text="@string/downloads"
                             android:textColor="@color/chrome_hint"
                             android:textSize="11sp" />
                     </LinearLayout>
@@ -165,7 +165,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
-                            android:text="Premium"
+                            android:text="@string/m_premium"
                             android:textColor="@color/chrome_hint"
                             android:textSize="11sp" />
                     </LinearLayout>
@@ -191,7 +191,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
-                            android:text="Settings"
+                            android:text="@string/settings"
                             android:textColor="@color/chrome_hint"
                             android:textSize="11sp" />
                     </LinearLayout>
@@ -202,7 +202,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="24dp"
-                    android:text="Quick access"
+                    android:text="@string/quick_access"
                     android:textColor="@color/chrome_hint"
                     android:textSize="12sp" />
 
@@ -248,7 +248,7 @@
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Close find"
+            android:contentDescription="@string/cd_close_find"
             android:src="@drawable/ic_close" />
 
         <EditText
@@ -259,7 +259,7 @@
             android:layout_marginStart="4dp"
             android:layout_marginEnd="4dp"
             android:background="@drawable/field_bg"
-            android:hint="Find in page"
+            android:hint="@string/find_in_page"
             android:imeOptions="actionSearch"
             android:inputType="text"
             android:maxLines="1"
@@ -276,7 +276,7 @@
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Previous match"
+            android:contentDescription="@string/cd_prev_match"
             android:src="@drawable/ic_up" />
 
         <ImageButton
@@ -284,7 +284,7 @@
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Next match"
+            android:contentDescription="@string/cd_next_match"
             android:src="@drawable/ic_down" />
     </LinearLayout>
 
@@ -313,7 +313,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Tabs"
+                android:contentDescription="@string/cd_tabs"
                 android:src="@drawable/ic_tabs" />
 
             <TextView
@@ -333,7 +333,7 @@
             android:layout_width="44dp"
             android:layout_height="44dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Back"
+            android:contentDescription="@string/nav_back"
             android:src="@drawable/ic_back" />
 
         <ImageButton
@@ -341,7 +341,7 @@
             android:layout_width="44dp"
             android:layout_height="44dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Forward"
+            android:contentDescription="@string/nav_fwd"
             android:src="@drawable/ic_forward" />
 
         <FrameLayout
@@ -376,7 +376,7 @@
                 android:layout_gravity="center_vertical|end"
                 android:layout_marginEnd="6dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Reload"
+                android:contentDescription="@string/cd_reload"
                 android:src="@drawable/ic_reload" />
         </FrameLayout>
 
@@ -385,7 +385,7 @@
             android:layout_width="44dp"
             android:layout_height="44dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Menu"
+            android:contentDescription="@string/cd_menu"
             android:src="@drawable/ic_menu" />
     </LinearLayout>
 </LinearLayout>

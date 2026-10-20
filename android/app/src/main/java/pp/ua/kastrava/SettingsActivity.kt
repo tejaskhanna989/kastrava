@@ -1,5 +1,6 @@
 package pp.ua.kastrava
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -14,6 +15,10 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 
 class SettingsActivity : AppCompatActivity() {
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LocaleHelper.force(newBase))
+    }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -116,6 +121,12 @@ class SettingsActivity : AppCompatActivity() {
         // updater section so there's no dead button.
         findViewById<android.view.View>(R.id.updateSection).visibility =
             if (BuildConfig.SELF_UPDATE) android.view.View.VISIBLE else android.view.View.GONE
+        // Forced-Russian builds pin the locale in attachBaseContext, so the
+        // language selector would be a dead control — hide it entirely.
+        if (BuildConfig.FORCE_RU) {
+            findViewById<android.view.View>(R.id.langLabel).visibility = android.view.View.GONE
+            findViewById<android.view.View>(R.id.langGroup).visibility = android.view.View.GONE
+        }
         fun showUpdate(u: UpdateInfo?) {
             tvUpdate.text = if (u == null) getString(R.string.up_to_date)
             else getString(R.string.update_avail, u.name) + (if (u.notes.isNotBlank()) " " + u.notes.take(120) else "")

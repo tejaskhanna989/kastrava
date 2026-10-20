@@ -13,7 +13,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Search engine"
+            android:text="@string/set_engine"
             android:textStyle="bold"
             android:textSize="16sp" />
 
@@ -29,7 +29,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:background="@drawable/field_bg"
-            android:hint="Custom search URL, %s = query"
+            android:hint="@string/set_custom_engine_hint"
             android:inputType="textUri"
             android:maxLines="1"
             android:singleLine="true"
@@ -44,7 +44,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
-            android:text="Appearance &amp; home"
+            android:text="@string/set_appearance"
             android:textStyle="bold"
             android:textSize="16sp" />
 
@@ -54,11 +54,12 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp">
             <RadioButton android:id="@+id/themeSystem" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/lang_system" />
-            <RadioButton android:id="@+id/themeLight" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Light" />
-            <RadioButton android:id="@+id/themeDark" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Dark" />
+            <RadioButton android:id="@+id/themeLight" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/set_light" />
+            <RadioButton android:id="@+id/themeDark" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/set_dark" />
         </RadioGroup>
 
         <TextView
+            android:id="@+id/langLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
@@ -80,19 +81,19 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Show quick access on home" />
+            android:text="@string/set_show_quick" />
 
         <CheckBox
             android:id="@+id/cbBookmarks"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Enable bookmarks" />
+            android:text="@string/set_enable_bm" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Quick-access tiles"
+            android:text="@string/set_tiles"
             android:textSize="14sp" />
 
         <RadioGroup
@@ -109,7 +110,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
-            android:text="Content"
+            android:text="@string/set_content"
             android:textStyle="bold"
             android:textSize="16sp" />
 
@@ -118,31 +119,31 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Tracker &amp; ad blocking" />
+            android:text="@string/set_blockers" />
 
         <CheckBox
             android:id="@+id/cbJs"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="JavaScript (needed by most sites)" />
+            android:text="@string/set_js" />
 
         <CheckBox
             android:id="@+id/cbImages"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Load images (off saves data)" />
+            android:text="@string/set_images" />
 
         <CheckBox
             android:id="@+id/cbDesktop"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Desktop site by default" />
+            android:text="@string/set_desktop" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
-            android:text="Privacy &amp; security"
+            android:text="@string/set_privacy"
             android:textStyle="bold"
             android:textSize="16sp" />
 
@@ -150,16 +151,16 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Cookies"
+            android:text="@string/set_cookies"
             android:textSize="14sp" />
 
         <RadioGroup
             android:id="@+id/rgCookies"
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
-            <RadioButton android:id="@+id/cookieBlock" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Block all (default)" />
-            <RadioButton android:id="@+id/cookieThird" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="First-party only" />
-            <RadioButton android:id="@+id/cookieAllow" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Allow" />
+            <RadioButton android:id="@+id/cookieBlock" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/set_cookie_block" />
+            <RadioButton android:id="@+id/cookieThird" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/set_cookie_third" />
+            <RadioButton android:id="@+id/cookieAllow" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/set_cookie_allow" />
         </RadioGroup>
 
         <CheckBox
@@ -167,31 +168,31 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Safe Browsing (warn on dangerous sites)" />
+            android:text="@string/set_safe" />
 
         <CheckBox
             android:id="@+id/cbMixed"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Block insecure content on secure pages" />
+            android:text="@string/set_insecure" />
 
         <CheckBox
             android:id="@+id/cbGeo"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Allow sites to request location" />
+            android:text="@string/set_location" />
 
         <CheckBox
             android:id="@+id/cbFile"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Allow pages to read local files (less safe)" />
+            android:text="@string/set_localfiles" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
-            android:text="Tabs &amp; address bar"
+            android:text="@string/set_tabs_bar"
             android:textStyle="bold"
             android:textSize="16sp" />
 
@@ -200,31 +201,31 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Restore tabs on launch" />
+            android:text="@string/set_restore" />
 
         <CheckBox
             android:id="@+id/cbHistory"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Keep session (off = forget tabs on exit)" />
+            android:text="@string/set_keep_session" />
 
         <CheckBox
             android:id="@+id/cbConfirmClose"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Confirm before closing all tabs" />
+            android:text="@string/set_confirm_close" />
 
         <CheckBox
             android:id="@+id/cbFullUrls"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Always show full URLs" />
+            android:text="@string/set_full_urls" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Tab limit"
+            android:text="@string/set_tab_limit"
             android:textSize="14sp" />
 
         <RadioGroup
@@ -232,7 +233,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal">
-            <RadioButton android:id="@+id/maxNone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="No limit" />
+            <RadioButton android:id="@+id/maxNone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/set_no_limit" />
             <RadioButton android:id="@+id/max20" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="20" />
             <RadioButton android:id="@+id/max50" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="50" />
             <RadioButton android:id="@+id/max100" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="100" />
@@ -242,7 +243,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
-            android:text="Text size"
+            android:text="@string/m_textsize"
             android:textStyle="bold"
             android:textSize="16sp" />
 
@@ -275,7 +276,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Page font size"
+            android:text="@string/set_page_font"
             android:textSize="14sp" />
 
         <LinearLayout
@@ -307,7 +308,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
-            android:text="System"
+            android:text="@string/lang_system"
             android:textStyle="bold"
             android:textSize="16sp" />
 
@@ -316,19 +317,19 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Battery saver (pause background tabs)" />
+            android:text="@string/set_battery" />
 
         <CheckBox
             android:id="@+id/cbHw"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Hardware-accelerated rendering" />
+            android:text="@string/set_hwaccel" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
-            android:text="Browsing data"
+            android:text="@string/set_browsing_data"
             android:textStyle="bold"
             android:textSize="16sp" />
 
@@ -337,14 +338,14 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Delete browsing data now" />
+            android:text="@string/set_delete_now" />
 
         <Button
             android:id="@+id/btnResetSettings"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Reset all settings" />
+            android:text="@string/set_reset" />
 
         <TextView
             android:id="@+id/tvAboutVersion"
@@ -363,7 +364,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
-                android:text="Updates"
+                android:text="@string/set_updates"
                 android:textStyle="bold"
                 android:textSize="16sp" />
 
@@ -379,7 +380,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="Check for updates" />
+                android:text="@string/set_check_updates" />
 
         </LinearLayout>
 
@@ -387,7 +388,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
-            android:text="Account"
+            android:text="@string/set_account"
             android:textStyle="bold"
             android:textSize="16sp" />
 
@@ -404,7 +405,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:background="@drawable/field_bg"
-            android:hint="Email"
+            android:hint="@string/hint_email"
             android:inputType="textEmailAddress"
             android:maxLines="1"
             android:singleLine="true"
@@ -421,7 +422,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:background="@drawable/field_bg"
-            android:hint="Password (8+ characters)"
+            android:hint="@string/hint_password"
             android:inputType="textPassword"
             android:maxLines="1"
             android:singleLine="true"
@@ -438,7 +439,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:background="@drawable/field_bg"
-            android:hint="Email code"
+            android:hint="@string/hint_email_code"
             android:inputType="number"
             android:maxLines="1"
             android:maxLength="6"
@@ -457,7 +458,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:background="@drawable/field_bg"
-            android:hint="2FA code (if enabled)"
+            android:hint="@string/hint_2fa"
             android:inputType="number"
             android:maxLines="1"
             android:maxLength="6"
@@ -481,14 +482,14 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Log in" />
+                android:text="@string/btn_login" />
 
             <Button
                 android:id="@+id/btnAccountOut"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Log out" />
+                android:text="@string/btn_logout" />
         </LinearLayout>
 
         <TextView
@@ -503,20 +504,20 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Sync now" />
+            android:text="@string/btn_sync_now" />
 
         <Button
             android:id="@+id/btnAdvanced"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Advanced settings (web)" />
+            android:text="@string/set_advanced" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
-            android:text="Website data (cookies, cache, storage) lives in memory and is wiped when Kastrava exits. Settings and license stay on this device."
+            android:text="@string/set_data_note"
             android:textSize="13sp" />
     </LinearLayout>
 </ScrollView>

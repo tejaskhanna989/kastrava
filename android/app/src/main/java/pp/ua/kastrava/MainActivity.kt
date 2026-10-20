@@ -46,6 +46,10 @@ import androidx.appcompat.app.AppCompatActivity
  * - Website data wiped on exit (cookies, DOM storage, cache)
  */
 class MainActivity : AppCompatActivity() {
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LocaleHelper.force(newBase))
+    }
+
 
     private lateinit var app: KastravaApp
     private lateinit var container: FrameLayout
@@ -195,7 +199,7 @@ class MainActivity : AppCompatActivity() {
         if (BuildConfig.SELF_UPDATE) Thread {
             val u = Updater.check(this)
             if (u != null) runOnUiThread {
-                Toast.makeText(this, "Kastrava ${u.name} available — update in Settings", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, getString(R.string.update_toast_main, u.name), Toast.LENGTH_LONG).show()
             }
         }.start()
         // Silent license refresh once per process: an admin extend or renewal
@@ -416,7 +420,7 @@ class MainActivity : AppCompatActivity() {
         // silently piling up renderers on a low-end phone.
         val cap = app.prefs.maxTabs
         if (cap > 0 && tabs.size >= cap) {
-            Toast.makeText(this, "Tab limit reached ($cap) — close one first", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.tab_limit_reached, cap), Toast.LENGTH_SHORT).show()
             showTabs()
             return
         }
@@ -472,7 +476,7 @@ class MainActivity : AppCompatActivity() {
         if (tabs.isEmpty()) return
         if (app.prefs.confirmClose && tabs.size > 1) {
             MaterialAlertDialogBuilder(this)
-                .setTitle("Close ${tabs.size} tabs?")
+                .setTitle(getString(R.string.close_tabs_q, tabs.size))
                 .setPositiveButton(getString(R.string.close_all)) { _, _ ->
                     tabs.toList().indices.reversed().forEach { closeTab(it, quiet = true) }
                     showUndoSnackbar()
@@ -961,7 +965,7 @@ class MainActivity : AppCompatActivity() {
                     "Website data lives in memory and is wiped on exit.\n" +
                     "GPLv3 · kastrava.pp.ua",
             )
-            .setPositiveButton("OK", null)
+            .setPositiveButton(getString(R.string.ok_btn), null)
             .show()
     }
 
@@ -1324,7 +1328,7 @@ class MainActivity : AppCompatActivity() {
         val item = app.downloads.add(url, name)
         // WebViews must only be touched on the UI thread — snapshot the UA now.
         val ua = currentTab()?.settings?.userAgentString ?: System.getProperty("http.agent")
-        Toast.makeText(this, "Downloading: $name", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, getString(R.string.downloading_toast, name), Toast.LENGTH_SHORT).show()
         Thread {
             try {
                 val conn = java.net.URL(url).openConnection() as java.net.HttpURLConnection

@@ -13,6 +13,10 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 
 class PremiumActivity : AppCompatActivity() {
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LocaleHelper.force(newBase))
+    }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

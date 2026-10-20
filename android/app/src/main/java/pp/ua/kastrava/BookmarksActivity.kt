@@ -1,5 +1,6 @@
 package pp.ua.kastrava
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -9,6 +10,10 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class BookmarksActivity : AppCompatActivity() {
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LocaleHelper.force(newBase))
+    }
+
 
     private lateinit var adapter: ArrayAdapter<String>
     private var items: List<Bookmark> = emptyList()

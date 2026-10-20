@@ -147,7 +147,7 @@ object Updater {
                     .setData(Uri.parse("package:" + ctx.packageName))
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 ctx.startActivity(settings)
-                Toast.makeText(ctx, "Allow installs, then tap the downloaded APK", Toast.LENGTH_LONG).show()
+                Toast.makeText(ctx, ctx.getString(R.string.allow_installs), Toast.LENGTH_LONG).show()
                 return false
             }
             true

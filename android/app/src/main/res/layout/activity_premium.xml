@@ -21,7 +21,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="This device"
+            android:text="@string/prem_this_device"
             android:textStyle="bold" />
 
         <TextView
@@ -37,14 +37,14 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="License key"
+            android:text="@string/prem_license_key"
             android:textStyle="bold" />
 
         <EditText
             android:id="@+id/premKey"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="KAS-XXXX-…"
+            android:hint="@string/prem_key_hint"
             android:fontFamily="monospace"
             android:inputType="textCapCharacters"
             android:maxLines="1" />
@@ -60,14 +60,14 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Activate" />
+                android:text="@string/prem_activate" />
 
             <Button
                 android:id="@+id/premBuy"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Get key — $7/mo" />
+                android:text="@string/prem_get_key" />
         </LinearLayout>
 
         <Button
@@ -75,7 +75,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Stop Premium (no refund)" />
+            android:text="@string/prem_stop_btn" />
 
         <TextView
             android:id="@+id/premMsg"
@@ -88,7 +88,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:text="One account, 10 devices. Manual or auto-renew — same key extends."
+            android:text="@string/prem_devices"
             android:textSize="13sp" />
     </LinearLayout>
 </ScrollView>

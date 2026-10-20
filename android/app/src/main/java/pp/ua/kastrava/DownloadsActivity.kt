@@ -1,5 +1,6 @@
 package pp.ua.kastrava
 
+import android.content.Context
 import android.os.Bundle
 import android.widget.ArrayAdapter
 import android.widget.ListView
@@ -8,6 +9,10 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.appcompat.app.AppCompatActivity
 
 class DownloadsActivity : AppCompatActivity() {
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LocaleHelper.force(newBase))
+    }
+
 
     private lateinit var app: KastravaApp
     private lateinit var adapter: ArrayAdapter<String>
@@ -24,7 +29,7 @@ class DownloadsActivity : AppCompatActivity() {
             val item = app.downloads.items.getOrNull(pos) ?: return@setOnItemClickListener
             MaterialAlertDialogBuilder(this)
                 .setTitle(item.filename)
-                .setMessage("State: ${item.state}\nSize: ${formatSize(item.received)}")
+                .setMessage(getString(R.string.dl_state, item.state, formatSize(item.received)))
                 .setPositiveButton(getString(R.string.save_to_dl)) { _, _ ->
                     Thread {
                         val ok = app.downloads.saveToDownloads(item)

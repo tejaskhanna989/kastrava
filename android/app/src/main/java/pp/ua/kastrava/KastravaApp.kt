@@ -24,7 +24,8 @@ class KastravaApp : Application() {
         license = LicenseManager(this)
         account = AccountManager(this)
         applyTheme()
-        LocaleHelper.apply(prefs.language)
+        // Forced builds ignore any stored pref and pin the language.
+        LocaleHelper.apply(if (BuildConfig.FORCE_RU) LocaleHelper.RU else prefs.language)
         // Crash leftovers must never outlive their session.
         Thread { downloads.wipe() }.start()
         Thread { filters.load() }.start()

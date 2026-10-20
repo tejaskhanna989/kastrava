@@ -13,7 +13,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Vault"
+            android:text="@string/m_vault"
             android:textSize="20sp"
             android:textStyle="bold"
             android:textColor="@color/chrome_text" />
@@ -22,7 +22,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="Password-locked notes. AES-256 on this device only."
+            android:text="@string/vault_desc"
             android:textSize="13sp"
             android:textColor="@color/chrome_hint" />
 
@@ -38,7 +38,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@drawable/field_bg"
-                android:hint="Vault password"
+                android:hint="@string/vault_pw_hint"
                 android:inputType="textPassword"
                 android:maxLines="1"
                 android:paddingStart="16dp"
@@ -52,14 +52,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
-                android:text="Unlock" />
+                android:text="@string/unlock" />
 
             <Button
                 android:id="@+id/vaultSetup"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="Set password (new vault)" />
+                android:text="@string/vault_set_pw" />
         </LinearLayout>
 
         <LinearLayout
@@ -74,7 +74,7 @@
                 android:id="@+id/vaultAdd"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="+ New note" />
+                android:text="@string/vault_new_note" />
 
             <LinearLayout
                 android:id="@+id/vaultList"
@@ -88,7 +88,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:text="Lock vault" />
+                android:text="@string/vault_lock" />
         </LinearLayout>
 
         <TextView
