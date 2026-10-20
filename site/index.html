@@ -228,7 +228,7 @@
   </div>
   <div class="os" style="margin-top:12px">
     <h3>Android</h3><div class="plat">arm64 · v101.5.24</div>
-    <a class="dl-link" href="https://kastrava.pp.ua/dl/Kastrava-101.5.24.apk" target="_blank" rel="noopener">Direct APK<span class="fn mono">.apk</span></a>
+    <a class="dl-link" id="dl-apk" href="https://kastrava.pp.ua/dl/Kastrava-101.5.24.apk" target="_blank" rel="noopener">Direct APK<span class="fn mono">.apk</span></a>
     <p class="os-note" data-wl="d_and">Allow “Install unknown apps” when asked. Log in inside the app for Premium.</p>
   </div>
 </div></section>
@@ -347,6 +347,7 @@ function planPrice(plan){
 api('/api/geo',{tz:tz()}).then(function(g){
   if(!g||!g.ok)return;
   GEO=g;
+  if(g.country==='RU'){var apk=document.getElementById('dl-apk');if(apk){apk.setAttribute('href','https://kastrava.pp.ua/dl/Kastrava-ru-101.5.24.apk');var an=document.createElement('p');an.className='os-note';an.textContent=wlLang()==='ru'?'Русская версия — интерфейс всегда на русском.':'Russian edition — interface locked to Russian.';apk.parentNode.insertBefore(an,apk.nextSibling);}}
   var inr=g.currency==='INR';
   if(g.prices&&g.prices.monthly&&g.prices.daily){
     $('pm-m-main').textContent='Monthly — '+money(g.prices.monthly.amount,g.currency);
