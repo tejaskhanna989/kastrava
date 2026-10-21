@@ -91,6 +91,21 @@ contextBridge.exposeInMainWorld('api', {
   syncLogout: () => ipcRenderer.invoke('sync-logout'),
   syncNow: (d) => ipcRenderer.invoke('sync-now', d),
 
+  // Chrome Web Store / extension management
+  extList: () => ipcRenderer.invoke('ext-list'),
+  extInstallCws: (url) => ipcRenderer.invoke('ext-install-cws', url),
+  extInstallUrl: (url) => ipcRenderer.invoke('ext-install-url', url),
+  extImport: () => ipcRenderer.invoke('ext-import'),
+  extRemove: (id) => ipcRenderer.invoke('ext-remove', id),
+  extToggle: (id) => ipcRenderer.invoke('ext-toggle', id),
+  onExtUpdated: (cb) => ipcRenderer.on('extensions-updated', (_, items) => cb(items)),
+
+  // Shortcut remaps: the app menu holds the real accelerators (they fire
+  // regardless of focus), so the renderer pushes its map here and pauses
+  // the menu while a new combo is being recorded.
+  setShortcuts: (m) => ipcRenderer.invoke('set-shortcuts', m),
+  menuPause: (on) => ipcRenderer.invoke('menu-pause', on),
+
   // Auto-update (NSIS installer + AppImage; no-op elsewhere)
   checkUpdates: () => ipcRenderer.invoke('check-updates')
 })

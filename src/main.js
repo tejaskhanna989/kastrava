@@ -6,6 +6,7 @@ const { execFileSync, spawn } = require('child_process')
 const backend = require('./backend')
 const license = require('./license')
 const privacy = require('./privacy')
+const extManager = require('./extensions/manager')
 
 // Serve the browser UI over kastrava:// instead of file:// so no
 // filesystem paths leak (e.g. in DevTools titles) and the shell has a
@@ -393,6 +394,11 @@ function createWindow() {
   // spoofs (canvas noise must never touch our own UI).
   global.mainWindow = mainWindow
 
+  // Extensions: the manager pushes 'extensions-updated' into this window,
+  // and loadAll() pulls persisted extensions into the 'kastrava' page
+  // partition (same partition the webviews use).
+  try { extManager.init(mainWindow); extManager.loadAll() } catch (e) { console.error('[ExtMgr] init error:', e) }
+
   // Flush any URLs the OS handed us at cold start. The shell binds its
   // onOpenNewTab listener during init(), so wait for the load + a tick.
   if (pendingHandedUrls.length) {
@@ -413,19 +419,38 @@ function sendShortcut(action) {
 
 // OS-level keyboard accelerators. The renderer's keydown handler only fires
 // when the browser UI has focus; when a webpage (webview) is focused the
-// guest consumes all keys. Menu accelerators fire regardless of focus.
+// guest consumes all keys. Menu accelerators fire regardless of focus, so
+// the menu is the source of truth for shortcuts — the renderer pushes the
+// user's remapped combos here (set-shortcuts) and pauses the menu while a
+// new combo is being recorded (menu-pause), otherwise the menu would eat
+// the very keys being captured.
+let customShortcutMap = {}
+let menuPaused = false
+
 function buildMenu() {
+  // A(action, fallback): the user's remap wins, else the built-in default.
+  const A = (action, fallback) => {
+    const c = customShortcutMap[action]
+    return c ? String(c).replace(/^Meta\+/, 'Super+') : fallback
+  }
+  // For actions with a primary + alternate menu entry, the remap takes the
+  // primary slot and the alternate default is released.
+  const A2 = (action, fallback) => (customShortcutMap[action] ? undefined : fallback)
   const tabItems = []
   for (let i = 1; i <= 9; i++) {
     tabItems.push({ label: 'Go to Tab ' + i, accelerator: 'CommandOrControl+' + i, click: () => sendShortcut('tab' + i) })
   }
   const template = [
     { label: 'File', submenu: [
-      { label: 'New Tab', accelerator: 'CommandOrControl+T', click: () => sendShortcut('newTab') },
-      { label: 'New Tab', accelerator: 'CommandOrControl+N', click: () => sendShortcut('newTab') },
+      { label: 'New Tab', accelerator: A('newTab', 'CommandOrControl+T'), click: () => sendShortcut('newTab') },
+      { label: 'New Tab', accelerator: A2('newTab', 'CommandOrControl+N'), click: () => sendShortcut('newTab') },
       { type: 'separator' },
-      { label: 'Close Tab', accelerator: 'CommandOrControl+W', click: () => sendShortcut('closeTab') },
-      { label: 'Reopen Closed Tab', accelerator: 'CommandOrControl+Shift+T', click: () => sendShortcut('reopenTab') }
+      { label: 'Close Tab', accelerator: A('closeTab', 'CommandOrControl+W'), click: () => sendShortcut('closeTab') },
+      { label: 'Reopen Closed Tab', accelerator: A('reopenTab', 'CommandOrControl+Shift+T'), click: () => sendShortcut('reopenTab') },
+      { type: 'separator' },
+      { label: 'Duplicate Tab', accelerator: A('duplicateTab', 'CommandOrControl+Shift+D'), click: () => sendShortcut('duplicateTab') },
+      { label: 'Close Tabs to the Right', accelerator: customShortcutMap.closeRight, click: () => sendShortcut('closeRight') },
+      { label: 'Close Other Tabs', accelerator: customShortcutMap.closeOthers, click: () => sendShortcut('closeOthers') }
     ]},
     { label: 'Edit', submenu: [
       { role: 'undo' },
@@ -437,18 +462,18 @@ function buildMenu() {
       { role: 'selectAll' }
     ]},
     { label: 'View', submenu: [
-      { label: 'Reload', accelerator: 'CommandOrControl+R', click: () => sendShortcut('reload') },
+      { label: 'Reload', accelerator: A('reload', 'CommandOrControl+R'), click: () => sendShortcut('reload') },
       { type: 'separator' },
-      { label: 'Zoom In', accelerator: 'CommandOrControl+=', click: () => sendShortcut('zoomIn') },
-      { label: 'Zoom Out', accelerator: 'CommandOrControl+-', click: () => sendShortcut('zoomOut') },
-      { label: 'Reset Zoom', accelerator: 'CommandOrControl+0', click: () => sendShortcut('zoomReset') },
+      { label: 'Zoom In', accelerator: A('zoomIn', 'CommandOrControl+='), click: () => sendShortcut('zoomIn') },
+      { label: 'Zoom Out', accelerator: A('zoomOut', 'CommandOrControl+-'), click: () => sendShortcut('zoomOut') },
+      { label: 'Reset Zoom', accelerator: A('zoomReset', 'CommandOrControl+0'), click: () => sendShortcut('zoomReset') },
       { type: 'separator' },
-      { label: 'Toggle Fullscreen', accelerator: 'F11', click: () => { try { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.setFullScreen(!mainWindow.isFullScreen()) } catch {} } },
-      { label: 'Focus Address Bar', accelerator: 'CommandOrControl+L', click: () => sendShortcut('focusOmnibox') },
-      { label: 'Focus Address Bar', accelerator: 'Alt+D', click: () => sendShortcut('focusOmnibox') },
-      { label: 'Find in Page', accelerator: 'CommandOrControl+F', click: () => sendShortcut('find') },
+      { label: 'Toggle Fullscreen', accelerator: A('fullscreen', 'F11'), click: () => { try { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.setFullScreen(!mainWindow.isFullScreen()) } catch {} } },
+      { label: 'Focus Address Bar', accelerator: A('focusOmnibox', 'CommandOrControl+L'), click: () => sendShortcut('focusOmnibox') },
+      { label: 'Focus Address Bar', accelerator: A2('focusOmnibox', 'Alt+D'), click: () => sendShortcut('focusOmnibox') },
+      { label: 'Find in Page', accelerator: A('find', 'CommandOrControl+F'), click: () => sendShortcut('find') },
       { type: 'separator' },
-      { label: 'Toggle Vertical Tabs', accelerator: 'CommandOrControl+Shift+V', click: () => sendShortcut('vtabs') }
+      { label: 'Toggle Vertical Tabs', accelerator: A('vtabs', 'CommandOrControl+Shift+V'), click: () => sendShortcut('vtabs') }
     ]},
     { label: 'Tabs', submenu: [
       { label: 'Next Tab', accelerator: 'CommandOrControl+Tab', click: () => sendShortcut('nextTab') },
@@ -460,25 +485,44 @@ function buildMenu() {
       { label: 'Forward', accelerator: 'Alt+Right', click: () => sendShortcut('forward') }
     ]},
     { label: 'Tools', submenu: [
-      { label: 'Bookmark This Page', accelerator: 'CommandOrControl+D', click: () => sendShortcut('bookmark') },
-      { label: 'History', accelerator: 'CommandOrControl+H', click: () => sendShortcut('history') },
-      { label: 'Toggle Bookmark Bar', accelerator: 'CommandOrControl+Shift+B', click: () => sendShortcut('bookmarkBar') },
+      { label: 'Bookmark This Page', accelerator: A('bookmark', 'CommandOrControl+D'), click: () => sendShortcut('bookmark') },
+      { label: 'History', accelerator: A('history', 'CommandOrControl+H'), click: () => sendShortcut('history') },
+      { label: 'Toggle Bookmark Bar', accelerator: A('bookmarkBar', 'CommandOrControl+Shift+B'), click: () => sendShortcut('bookmarkBar') },
       { type: 'separator' },
-      { label: 'Picture-in-Picture', accelerator: 'CommandOrControl+P', click: () => sendShortcut('pip') },
-      { label: 'Reader Mode', accelerator: 'CommandOrControl+Shift+R', click: () => sendShortcut('reader') },
-      { label: 'Split View', accelerator: 'CommandOrControl+Shift+E', click: () => sendShortcut('split') },
-      { label: 'Tracking Radar', accelerator: 'CommandOrControl+Shift+K', click: () => sendShortcut('radar') },
-      { label: 'Screenshot', accelerator: 'CommandOrControl+Shift+S', click: () => sendShortcut('screenshot') },
-      { label: 'Mute Tab', accelerator: 'CommandOrControl+Shift+M', click: () => sendShortcut('mute') },
-      { label: 'Downloads', accelerator: 'CommandOrControl+Shift+P', click: () => sendShortcut('kastget') },
+      { label: 'Picture-in-Picture', accelerator: A('pip', 'CommandOrControl+P'), click: () => sendShortcut('pip') },
+      { label: 'Reader Mode', accelerator: A('reader', 'CommandOrControl+Shift+R'), click: () => sendShortcut('reader') },
+      { label: 'Split View', accelerator: A('split', 'CommandOrControl+Shift+E'), click: () => sendShortcut('split') },
+      { label: 'Tracking Radar', accelerator: A('radar', 'CommandOrControl+Shift+K'), click: () => sendShortcut('radar') },
+      { label: 'Screenshot', accelerator: A('screenshot', 'CommandOrControl+Shift+S'), click: () => sendShortcut('screenshot') },
+      { label: 'Mute Tab', accelerator: A('mute', 'CommandOrControl+Shift+M'), click: () => sendShortcut('mute') },
+      { label: 'Downloads', accelerator: A('kastget', 'CommandOrControl+Shift+P'), click: () => sendShortcut('kastget') },
       { label: 'Developer Tools', accelerator: 'F12', click: () => sendShortcut('devtools') },
       { label: 'Inspect', accelerator: 'CommandOrControl+Shift+I', click: () => sendShortcut('devtools') },
       { type: 'separator' },
-      { label: 'Settings', accelerator: 'CommandOrControl+,', click: () => sendShortcut('settings') }
+      { label: 'Settings', accelerator: A('settings', 'CommandOrControl+,'), click: () => sendShortcut('settings') }
     ]}
   ]
   try { Menu.setApplicationMenu(Menu.buildFromTemplate(template)) } catch (e) { console.error('menu build error:', e) }
 }
+
+// Renderer pushes its remap map (settings.shortcuts); rebuild the menu so
+// custom combos work while a webpage has focus. removeHandler guards make
+// this safe if createWindow() runs again (macOS 'activate').
+try { ipcMain.removeHandler('set-shortcuts') } catch {}
+ipcMain.handle('set-shortcuts', (_e, map) => {
+  customShortcutMap = (map && typeof map === 'object') ? map : {}
+  if (!menuPaused) buildMenu()
+  return true
+})
+// Recording a combo: drop the menu (its accelerators would fire before any
+// renderer keydown and eat the key being captured); resume rebuilds it.
+try { ipcMain.removeHandler('menu-pause') } catch {}
+ipcMain.handle('menu-pause', (_e, on) => {
+  menuPaused = !!on
+  if (menuPaused) { try { Menu.setApplicationMenu(null) } catch {} }
+  else buildMenu()
+  return true
+})
   if (settingsBackend && settingsBackend.get('launchMaximized') === 'on') {
     mainWindow.maximize()
   }
@@ -1235,6 +1279,29 @@ function guestPreloadUrl() {
   } catch { return null }
 }
 ipcMain.handle('get-guest-preload', async () => guestPreloadUrl());
+
+// Chrome Web Store one-click install + extension management
+ipcMain.handle('ext-list', () => {
+  try { return { ok: true, items: extManager.list() } } catch (e) { return { ok: false, error: String(e && e.message || e) } }
+})
+ipcMain.handle('ext-install-cws', async (_e, url) => {
+  try { const ext = await extManager.installFromCws(url); return { ok: true, ext } }
+  catch (e) { console.error('[ExtMgr] install-cws failed:', e); return { ok: false, error: String(e && e.message || e) } }
+})
+ipcMain.handle('ext-install-url', async (_e, url) => {
+  try { const ext = await extManager.installFromUrl(url); return { ok: true, ext } }
+  catch (e) { console.error('[ExtMgr] install-url failed:', e); return { ok: false, error: String(e && e.message || e) } }
+})
+ipcMain.handle('ext-import', async () => {
+  try { const ext = await extManager.loadCrx(); return { ok: true, ext } }
+  catch (e) { return { ok: false, error: String(e && e.message || e) } }
+})
+ipcMain.handle('ext-remove', (_e, id) => {
+  try { extManager.remove(id); return { ok: true } } catch (e) { return { ok: false, error: String(e && e.message || e) } }
+})
+ipcMain.handle('ext-toggle', (_e, id) => {
+  try { const ext = extManager.toggle(id); return { ok: true, ext } } catch (e) { return { ok: false, error: String(e && e.message || e) } }
+})
 ipcMain.handle('bridge-token', async (_, href) => {
   try {
     const h = new URL(String(href || '')).hostname.toLowerCase()

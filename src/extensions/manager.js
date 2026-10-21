@@ -3,7 +3,7 @@ const fs = require('fs')
 const path = require('path')
 const https = require('https')
 const http = require('http')
-const { spawnSync } = require('child_process')
+const zlib = require('zlib')
 const ExtensionRegistry = require('./registry')
 
 let registry
@@ -84,10 +84,10 @@ async function loadCrx() {
     const zipData = _extractCrxZip(buf)
     const tmpZip = path.join(extDir, 'ext.zip')
     fs.writeFileSync(tmpZip, zipData)
-    spawnSync('unzip', ['-o', tmpZip, '-d', extDir])
+    _unzip(fs.readFileSync(tmpZip), extDir)
     fs.unlinkSync(tmpZip)
   } else {
-    spawnSync('unzip', ['-o', filePath, '-d', extDir])
+    _unzip(fs.readFileSync(filePath), extDir)
   }
 
   const mfPath = path.join(extDir, 'manifest.json')
@@ -191,6 +191,44 @@ function _extractCrxZip(buf) {
   throw new Error('Unsupported CRX version: ' + version)
 }
 
+function _unzip(buf, destDir) {
+  // Minimal ZIP reader (stored + deflate). Extensions never use exotic
+  // methods, and this keeps installs working on Windows where the `unzip`
+  // binary doesn't exist.
+  let eocd = -1
+  for (let i = buf.length - 22; i >= 0 && i >= buf.length - 22 - 65535; i--) {
+    if (buf.readUInt32LE(i) === 0x06054b50) { eocd = i; break }
+  }
+  if (eocd < 0) throw new Error('Not a ZIP archive (no end-of-central-directory)')
+  const count = buf.readUInt16LE(eocd + 10)
+  let off = buf.readUInt32LE(eocd + 16)
+  for (let n = 0; n < count; n++) {
+    if (off + 46 > buf.length || buf.readUInt32LE(off) !== 0x02014b50) throw new Error('Bad ZIP central directory')
+    const method = buf.readUInt16LE(off + 10)
+    const compSize = buf.readUInt32LE(off + 20)
+    const nameLen = buf.readUInt16LE(off + 28)
+    const extraLen = buf.readUInt16LE(off + 30)
+    const commentLen = buf.readUInt16LE(off + 32)
+    const localOff = buf.readUInt32LE(off + 42)
+    const name = buf.slice(off + 46, off + 46 + nameLen).toString('utf8')
+    off += 46 + nameLen + extraLen + commentLen
+    if (name.endsWith('/')) continue            // directory entry
+    if (name.includes('..')) continue           // zip-slip guard
+    if (localOff + 30 > buf.length || buf.readUInt32LE(localOff) !== 0x04034b50) throw new Error('Bad ZIP local header: ' + name)
+    const lNameLen = buf.readUInt16LE(localOff + 26)
+    const lExtraLen = buf.readUInt16LE(localOff + 28)
+    const dataStart = localOff + 30 + lNameLen + lExtraLen
+    const raw = buf.slice(dataStart, dataStart + compSize)
+    let data
+    if (method === 0) data = raw
+    else if (method === 8) data = zlib.inflateRawSync(raw)
+    else throw new Error('Unsupported ZIP compression method ' + method + ': ' + name)
+    const outPath = path.join(destDir, name)
+    fs.mkdirSync(path.dirname(outPath), { recursive: true })
+    fs.writeFileSync(outPath, data)
+  }
+}
+
 async function installFromUrl(url) {
   if (!registry) return null
   const tmpDir = path.join(registry.dataDir, 'dl-' + Date.now())
@@ -208,7 +246,7 @@ async function installFromUrl(url) {
 
   const extDir = path.join(registry.dataDir, 'ext-' + Date.now())
   fs.mkdirSync(extDir, { recursive: true })
-  spawnSync('unzip', ['-o', tmpFile, '-d', extDir])
+  _unzip(fs.readFileSync(tmpFile), extDir)
   try { fs.unlinkSync(tmpFile) } catch {}
   try { fs.rmdirSync(tmpDir) } catch {}
 
@@ -258,7 +296,7 @@ async function installFromCws(url) {
 
   const extDir = path.join(registry.dataDir, 'ext-' + Date.now())
   fs.mkdirSync(extDir, { recursive: true })
-  spawnSync('unzip', ['-o', tmpZip, '-d', extDir])
+  _unzip(fs.readFileSync(tmpZip), extDir)
   try { fs.unlinkSync(tmpCrx) } catch {}
   try { fs.unlinkSync(tmpZip) } catch {}
   try { fs.rmdirSync(tmpDir) } catch {}

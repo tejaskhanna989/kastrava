@@ -566,6 +566,7 @@ body.vtabs-collapsed .vtabs-new{border-style:solid}
     <input class="url-input" type="text" id="url-input" data-i18n-ph="searchPh" placeholder="Search with KastravaSearch" spellcheck="false">
     <button class="omni-copy" id="omni-copy" title="Copy link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 10a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
     <button class="bm-star" id="bm-star" title="Bookmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+    <button class="omni-copy" id="cws-add" style="display:none" title="Add to Kastrava"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
   </div>
   <div class="tb-right"><button class="tb-btn" id="btn-devtools" title="Toggle DevTools (F12)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></button>
     <button class="tb-btn" id="btn-more" title="More"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></button>
@@ -759,6 +760,7 @@ function loadSettings(){
   if(!api||!api.getSettings)return Promise.resolve();
   return api.getSettings().then(function(saved){
     if(saved&&typeof saved==="object"){for(var k in saved){if(saved[k]!==undefined&&saved[k]!==null&&k!="session")settings[k]=saved[k];}}
+    try{if(api&&api.setShortcuts)api.setShortcuts(settings.shortcuts||{});}catch(e){}
     try{if(saved&&Array.isArray(saved.closedTabs))closedTabs=saved.closedTabs.filter(function(c){return c&&c.url&&!isBlank(c.url);}).slice(-30);}catch(x){}
   }).catch(function(e){err("loadSettings",e);});
 }
@@ -881,8 +883,8 @@ function showRenewModal(s){
 function saveSetting(k,v){settings[k]=v;if(api&&api.setSetting)api.setSetting(k,v);}
 /* ===== Minimal i18n (en default, ru) ===== */
 var STR={
-en:{settings:"Settings",newTab:"New tab",searchPh:"Search with KastravaSearch",cmdPh:"Type a command...",findPh:"Find in page...",tabsPh:"Search tabs",bookmarks:"Bookmarks",history:"History",downloads:"Downloads",allDownloads:"All Downloads",trackingRadar:"Tracking Radar",localhost:"Localhost",localhostSub:"On-device webapps — localhost:3000-9000",dlSub:"Kept private for this session — wiped when you quit. Save files you want to keep.",ok:"OK",cancel:"Cancel",close:"Close",save:"Save",delete:"Delete",add:"Add",yes:"Yes",no:"No",copy:"Copy",open:"Open",reset:"Reset",restore:"Restore",addShortcut:"Add Shortcut",namePh:"Name",urlPh:"https://example.com",delHistH:"Delete All History?",delHistD:"This will delete all your browsing history. This cannot be reverted!",navPremium:"Kastrava Premium",navAccount:"Account",navGeneral:"General",navAppearance:"Appearance",navSearch:"Search Engine",navPrivacy:"Privacy & Security",navShortcuts:"Shortcuts",navA11y:"Accessibility",navSystem:"System",navReset:"Reset Settings",navAbout:"About",snSearchPh:"Search settings",hGeneral:"General",hAppearance:"Appearance",hSearch:"Search Engine",hPrivacy:"Privacy & Security",hShortcuts:"Keyboard Shortcuts",hA11y:"Accessibility",hSystem:"System",hReset:"Reset Settings",hAbout:"About",language:"Language",languageD:"Interface language. Applies immediately.",lStartup:"Startup",lStartupPages:"Startup Pages",lFontSize:"Font Size",lDefaultZoom:"Default Zoom",lConfirmClose:"Confirm Close",lTabLimit:"Tab Limit",lFullUrls:"Always Show Full URLs",lClearExit:"Clear History on Exit",lKeepHist:"Keep History",lDark:"Dark Themes",lLight:"Light Themes",lAccent:"Accent Color",lRadius:"Corner Radius",lDial:"Speed Dial Size",lTiles:"Shortcut Tiles",lNtpBg:"New Tab Background",lNtpSearch:"New Tab Search",lNtpShort:"New Tab Shortcuts",lTabFav:"Tab Favicons",lUiStyle:"Interface Style",lTabLayout:"Tab Layout",lCollapse:"Collapse Vertical Sidebar",lHomeBtn:"Show Home Button",lCopyBtn:"Show Copy Link Button",lClock:"Show Clock on New Tab",lLogo:"Show Logo on New Tab",lDefEngine:"Default Search Engine",lJs:"JavaScript",lImages:"Images",lCookies:"Cookies",lRef:"Referrer Policy",lWebrtc:"WebRTC",lDoh:"Secure DNS",lProxy:"Proxy",lLoc:"Location Access",lPerms:"Permissions",lTrack:"Tracking Protection",lDnt:"Do Not Track",lClear:"Clear Data",lBm:"Bookmarks",lRadar:"Tracking Radar",lHist:"Browsing History",lHw:"Hardware Acceleration",lMax:"Launch Maximized",lAskDl:"Ask Where to Save",lDlDir:"Download Folder",lSleep:"Sleep Inactive Tabs",lClearHist:"Clear History",lClearAll:"Clear All Data",lResetAll:"Reset All Settings",lResetEv:"Reset Everything",lReplay:"Replay Welcome Setup",lUpdates:"Updates",oobWelcome:"Welcome",oobPremium:"Premium & plans",oobDone:"Done"},
-ru:{settings:"Настройки",newTab:"Новая вкладка",searchPh:"Поиск с KastravaSearch",cmdPh:"Введите команду...",findPh:"Найти на странице...",tabsPh:"Поиск по вкладкам",bookmarks:"Закладки",history:"История",downloads:"Загрузки",allDownloads:"Все загрузки",trackingRadar:"Радар трекинга",localhost:"Локальные приложения",localhostSub:"Приложения на устройстве — localhost:3000-9000",dlSub:"Хранится приватно только эту сессию — удаляется при выходе. Сохраните нужные файлы.",ok:"ОК",cancel:"Отмена",close:"Закрыть",save:"Сохранить",delete:"Удалить",add:"Добавить",yes:"Да",no:"Нет",copy:"Копировать",open:"Открыть",reset:"Сбросить",restore:"Восстановить",addShortcut:"Добавить ярлык",namePh:"Название",urlPh:"https://example.com",delHistH:"Удалить всю историю?",delHistD:"Вся история просмотров будет удалена. Это действие необратимо!",navPremium:"Kastrava Premium",navAccount:"Аккаунт",navGeneral:"Основные",navAppearance:"Оформление",navSearch:"Поиск",navPrivacy:"Приватность и защита",navShortcuts:"Горячие клавиши",navA11y:"Специальные возможности",navSystem:"Система",navReset:"Сброс настроек",navAbout:"О программе",snSearchPh:"Поиск по настройкам",hGeneral:"Основные",hAppearance:"Оформление",hSearch:"Поисковая система",hPrivacy:"Приватность и защита",hShortcuts:"Горячие клавиши",hA11y:"Специальные возможности",hSystem:"Система",hReset:"Сброс настроек",hAbout:"О программе",language:"Язык",languageD:"Язык интерфейса. Применяется сразу.",lStartup:"Запуск",lStartupPages:"Стартовые страницы",lFontSize:"Размер шрифта",lDefaultZoom:"Масштаб по умолчанию",lConfirmClose:"Подтверждение закрытия",lTabLimit:"Лимит вкладок",lFullUrls:"Всегда показывать полные URL",lClearExit:"Очищать историю при выходе",lKeepHist:"Хранить историю",lDark:"Тёмные темы",lLight:"Светлые темы",lAccent:"Акцентный цвет",lRadius:"Скругление углов",lDial:"Размер экспресс-панели",lTiles:"Плитки ярлыков",lNtpBg:"Фон новой вкладки",lNtpSearch:"Поиск на новой вкладке",lNtpShort:"Ярлыки на новой вкладке",lTabFav:"Значки сайтов во вкладках",lUiStyle:"Стиль интерфейса",lTabLayout:"Расположение вкладок",lCollapse:"Сворачивать боковую панель",lHomeBtn:"Кнопка «Домой»",lCopyBtn:"Кнопка копирования ссылки",lClock:"Часы на новой вкладке",lLogo:"Логотип на новой вкладке",lDefEngine:"Поиск по умолчанию",lJs:"JavaScript",lImages:"Изображения",lCookies:"Файлы cookie",lRef:"Политика реферера",lDoh:"Защищённый DNS",lWebrtc:"WebRTC",lProxy:"Прокси",lLoc:"Доступ к геопозиции",lPerms:"Разрешения",lTrack:"Защита от трекинга",lDnt:"Не отслеживать (DNT)",lClear:"Очистить данные",lBm:"Закладки",lRadar:"Радар трекинга",lHist:"История просмотров",lHw:"Аппаратное ускорение",lMax:"Запускать развёрнутым",lAskDl:"Спрашивать место сохранения",lDlDir:"Папка загрузок",lSleep:"Спящие неактивные вкладки",lClearHist:"Очистить историю",lClearAll:"Удалить все данные",lResetAll:"Сбросить все настройки",lResetEv:"Сбросить всё",lReplay:"Показать приветствие снова",lUpdates:"Обновления",oobWelcome:"Добро пожаловать",oobPremium:"Premium и тарифы",oobDone:"Готово"}
+en:{settings:"Settings",newTab:"New tab",searchPh:"Search with KastravaSearch",cmdPh:"Type a command...",findPh:"Find in page...",tabsPh:"Search tabs",bookmarks:"Bookmarks",history:"History",downloads:"Downloads",allDownloads:"All Downloads",trackingRadar:"Tracking Radar",localhost:"Localhost",localhostSub:"On-device webapps — localhost:3000-9000",dlSub:"Kept private for this session — wiped when you quit. Save files you want to keep.",ok:"OK",cancel:"Cancel",close:"Close",save:"Save",delete:"Delete",add:"Add",yes:"Yes",no:"No",copy:"Copy",open:"Open",reset:"Reset",restore:"Restore",addShortcut:"Add Shortcut",namePh:"Name",urlPh:"https://example.com",delHistH:"Delete All History?",delHistD:"This will delete all your browsing history. This cannot be reverted!",navPremium:"Kastrava Premium",navAccount:"Account",navGeneral:"General",navAppearance:"Appearance",navSearch:"Search Engine",navPrivacy:"Privacy & Security",navShortcuts:"Shortcuts",navA11y:"Accessibility",navSystem:"System",navReset:"Reset Settings",navAbout:"About",snSearchPh:"Search settings",hGeneral:"General",hAppearance:"Appearance",hSearch:"Search Engine",hPrivacy:"Privacy & Security",hShortcuts:"Keyboard Shortcuts",hA11y:"Accessibility",hSystem:"System",hReset:"Reset Settings",hAbout:"About",language:"Language",languageD:"Interface language. Applies immediately.",lStartup:"Startup",lStartupPages:"Startup Pages",lFontSize:"Font Size",lDefaultZoom:"Default Zoom",lConfirmClose:"Confirm Close",lTabLimit:"Tab Limit",lFullUrls:"Always Show Full URLs",lClearExit:"Clear History on Exit",lKeepHist:"Keep History",lDark:"Dark Themes",lLight:"Light Themes",lAccent:"Accent Color",lRadius:"Corner Radius",lDial:"Speed Dial Size",lTiles:"Shortcut Tiles",lNtpBg:"New Tab Background",lNtpSearch:"New Tab Search",lNtpShort:"New Tab Shortcuts",lTabFav:"Tab Favicons",lUiStyle:"Interface Style",lTabLayout:"Tab Layout",lCollapse:"Collapse Vertical Sidebar",lHomeBtn:"Show Home Button",lCopyBtn:"Show Copy Link Button",lClock:"Show Clock on New Tab",lLogo:"Show Logo on New Tab",lDefEngine:"Default Search Engine",lJs:"JavaScript",lImages:"Images",lCookies:"Cookies",lRef:"Referrer Policy",lWebrtc:"WebRTC",lDoh:"Secure DNS",lProxy:"Proxy",lLoc:"Location Access",lPerms:"Permissions",lTrack:"Tracking Protection",lDnt:"Do Not Track",lClear:"Clear Data",lBm:"Bookmarks",lRadar:"Tracking Radar",lHist:"Browsing History",lHw:"Hardware Acceleration",lMax:"Launch Maximized",lAskDl:"Ask Where to Save",lDlDir:"Download Folder",lSleep:"Sleep Inactive Tabs",lClearHist:"Clear History",lClearAll:"Clear All Data",lResetAll:"Reset All Settings",lResetEv:"Reset Everything",lReplay:"Replay Welcome Setup",lUpdates:"Updates",oobWelcome:"Welcome",oobPremium:"Premium & plans",oobDone:"Done",navExtensions:"Extensions",cws_add:"Add to Kastrava",cws_installed:"Installed — manage in Settings › Extensions",cws_installing:"Installing…",cws_done:"% installed ✓",cws_fail:"Install failed",ext_sub:"Install extensions from the Chrome Web Store — open any extension page and click + in the address bar, or paste a link below.",ext_installed_h:"Installed",ext_empty:"No extensions yet. Open a Chrome Web Store page or use the buttons below.",ext_addurl_h:"Install from link",ext_install:"Install",ext_import:"Import .crx / .zip file",ext_vpn_h:"VPN extensions",ext_vpn_sub:"50+ VPN providers — one click installs straight from the Chrome Web Store.",ext_on:"On",ext_off:"Disabled",ext_offbtn:"Enable",ext_remove:"Remove",ext_removed:"Extension removed",ext_installed_sh:"Installed"},
+ru:{settings:"Настройки",newTab:"Новая вкладка",searchPh:"Поиск с KastravaSearch",cmdPh:"Введите команду...",findPh:"Найти на странице...",tabsPh:"Поиск по вкладкам",bookmarks:"Закладки",history:"История",downloads:"Загрузки",allDownloads:"Все загрузки",trackingRadar:"Радар трекинга",localhost:"Локальные приложения",localhostSub:"Приложения на устройстве — localhost:3000-9000",dlSub:"Хранится приватно только эту сессию — удаляется при выходе. Сохраните нужные файлы.",ok:"ОК",cancel:"Отмена",close:"Закрыть",save:"Сохранить",delete:"Удалить",add:"Добавить",yes:"Да",no:"Нет",copy:"Копировать",open:"Открыть",reset:"Сбросить",restore:"Восстановить",addShortcut:"Добавить ярлык",namePh:"Название",urlPh:"https://example.com",delHistH:"Удалить всю историю?",delHistD:"Вся история просмотров будет удалена. Это действие необратимо!",navPremium:"Kastrava Premium",navAccount:"Аккаунт",navGeneral:"Основные",navAppearance:"Оформление",navSearch:"Поиск",navPrivacy:"Приватность и защита",navShortcuts:"Горячие клавиши",navA11y:"Специальные возможности",navSystem:"Система",navReset:"Сброс настроек",navAbout:"О программе",snSearchPh:"Поиск по настройкам",hGeneral:"Основные",hAppearance:"Оформление",hSearch:"Поисковая система",hPrivacy:"Приватность и защита",hShortcuts:"Горячие клавиши",hA11y:"Специальные возможности",hSystem:"Система",hReset:"Сброс настроек",hAbout:"О программе",language:"Язык",languageD:"Язык интерфейса. Применяется сразу.",lStartup:"Запуск",lStartupPages:"Стартовые страницы",lFontSize:"Размер шрифта",lDefaultZoom:"Масштаб по умолчанию",lConfirmClose:"Подтверждение закрытия",lTabLimit:"Лимит вкладок",lFullUrls:"Всегда показывать полные URL",lClearExit:"Очищать историю при выходе",lKeepHist:"Хранить историю",lDark:"Тёмные темы",lLight:"Светлые темы",lAccent:"Акцентный цвет",lRadius:"Скругление углов",lDial:"Размер экспресс-панели",lTiles:"Плитки ярлыков",lNtpBg:"Фон новой вкладки",lNtpSearch:"Поиск на новой вкладке",lNtpShort:"Ярлыки на новой вкладке",lTabFav:"Значки сайтов во вкладках",lUiStyle:"Стиль интерфейса",lTabLayout:"Расположение вкладок",lCollapse:"Сворачивать боковую панель",lHomeBtn:"Кнопка «Домой»",lCopyBtn:"Кнопка копирования ссылки",lClock:"Часы на новой вкладке",lLogo:"Логотип на новой вкладке",lDefEngine:"Поиск по умолчанию",lJs:"JavaScript",lImages:"Изображения",lCookies:"Файлы cookie",lRef:"Политика реферера",lDoh:"Защищённый DNS",lWebrtc:"WebRTC",lProxy:"Прокси",lLoc:"Доступ к геопозиции",lPerms:"Разрешения",lTrack:"Защита от трекинга",lDnt:"Не отслеживать (DNT)",lClear:"Очистить данные",lBm:"Закладки",lRadar:"Радар трекинга",lHist:"История просмотров",lHw:"Аппаратное ускорение",lMax:"Запускать развёрнутым",lAskDl:"Спрашивать место сохранения",lDlDir:"Папка загрузок",lSleep:"Спящие неактивные вкладки",lClearHist:"Очистить историю",lClearAll:"Удалить все данные",lResetAll:"Сбросить все настройки",lResetEv:"Сбросить всё",lReplay:"Показать приветствие снова",lUpdates:"Обновления",oobWelcome:"Добро пожаловать",oobPremium:"Premium и тарифы",oobDone:"Готово",navExtensions:"Расширения",cws_add:"Добавить в Kastrava",cws_installed:"Установлено — управление: Настройки › Расширения",cws_installing:"Установка…",cws_done:"% установлено ✓",cws_fail:"Не удалось установить",ext_sub:"Устанавливайте расширения из Chrome Web Store — откройте страницу расширения и нажмите + в адресной строке либо вставьте ссылку ниже.",ext_installed_h:"Установленные",ext_empty:"Пока нет расширений. Откройте страницу Chrome Web Store или воспользуйтесь кнопками ниже.",ext_addurl_h:"Установить по ссылке",ext_install:"Установить",ext_import:"Импорт .crx / .zip",ext_vpn_h:"VPN-расширения",ext_vpn_sub:"50+ VPN-провайдеров — установка в один клик прямо из Chrome Web Store.",ext_on:"Вкл",ext_off:"Выкл",ext_offbtn:"Включить",ext_remove:"Удалить",ext_removed:"Расширение удалено",ext_installed_sh:"Установлено"}
 };
 var OOBE_KEYS=["oobWelcome","oobPremium","oobDone"];
 function t(k){var L=(settings&&settings.lang)||"en";if(STR[L]&&STR[L][k]!=null)return STR[L][k];if(STR.en[k]!=null)return STR.en[k];return k;}
@@ -1191,11 +1193,17 @@ function bindShortcutRecorder(){
 function finishShortcutRec(combo){
   if(!shortcutRecording)return;
   var a=shortcutRecording.action;
+  var btn=document.querySelector('#s-shortcut-list .sh-row[data-act="'+a+'"] .sh-key');
+  // The app menu is paused while recording (menu accelerators would eat the
+  // keys being captured) — every exit path must resume it.
+  function resume(){try{if(api&&api.menuPause)api.menuPause(false);}catch(e){}}
+  function restoreLabel(){if(btn){btn.classList.remove("rec");btn.textContent=(settings.shortcuts||{})[a]||SHORTCUT_ACTIONS[a].default||"—";}}
+  if(combo===null){ // cancel — keep whatever was set before
+    restoreLabel();shortcutRecording=null;resume();return;
+  }
   // Viewing the shortcut list is free; assigning a custom combo is Premium.
   if(combo&&!isPremium()){
-    shortcutRecording=null;
-    var btn=document.querySelector('#s-shortcut-list .sh-row[data-act="'+a+'"] .sh-key');
-    if(btn)btn.classList.remove("rec");
+    restoreLabel();shortcutRecording=null;resume();
     toast("Custom shortcut remapping is a Premium feature");
     setTimeout(function(){openPremiumSection();},600);
     return;
@@ -1204,9 +1212,12 @@ function finishShortcutRec(combo){
   if(combo===""){delete cur[a];}
   else{cur[a]=combo;}
   saveSetting("shortcuts",cur);
-  var btn=document.querySelector('#s-shortcut-list .sh-row[data-act="'+a+'"] .sh-key');
-  if(btn){btn.textContent=combo?combo:"—";btn.classList.remove("rec");}
+  if(btn){btn.textContent=combo||SHORTCUT_ACTIONS[a].default?combo||SHORTCUT_ACTIONS[a].default:"—";btn.classList.remove("rec");}
   shortcutRecording=null;
+  // Menu accelerators are the app-wide source of truth for shortcuts —
+  // push the new map so the remap works while a webpage has focus.
+  try{if(api&&api.setShortcuts)api.setShortcuts(cur);}catch(e){}
+  resume();
 }
 function resolveUrl(url){
   url=url.trim();
@@ -1487,6 +1498,7 @@ function updNav(){
   if(inp)inp.classList.toggle("collapsed",collapsed);
   if(pref)pref.textContent=scheme||"";
   updateBmStar();
+  updateCwsBtn();
 }
 function updateBmStar(){var s=$("bm-star");if(!s||!activeTab||!activeTab.url)return;s.classList.toggle("on",bookmarkUrls.has(activeTab.url));}
 function goBack(){if(activeTab&&activeTab.wv)try{activeTab.wv.goBack();}catch(e){}}
@@ -3947,7 +3959,11 @@ function bindSyncPanel(){
   function paint(st){
     var s=$("sy-status");if(!s)return;
     var prem=isPremium();
-    ["sy-syncrow","sy-devrow","sy-licrow"].forEach(function(id){var el=$(id);if(el)el.style.display=prem?"":"none";});
+    ["sy-syncrow","sy-devrow"].forEach(function(id){var el=$(id);if(el)el.style.display=prem?"":"none";});
+    // The "activate this device" row is only meaningful when premium is NOT
+    // active yet and a key exists on the account — never after activation.
+    var lr=$("sy-licrow");var __showLr=!prem&&!!(window.LIC&&LIC.key);
+    if(lr){lr.style.display=__showLr?"":"none";if(__showLr){var lk=$("sy-lickey");if(lk&&!lk.textContent)lk.textContent=String(LIC.key);}}
     var creds=$("sy-creds"),lbtn=$("sy-login"),ft=$("sy-form-title"),fd=$("sy-form-desc"),lo=$("sy-logout"),nw=$("sy-now");
     if(st&&st.loggedIn){
       var when=st.lastSyncAt?(" · last sync "+String(st.lastSyncAt).slice(0,16).replace("T"," ")):"";
@@ -3974,9 +3990,9 @@ function bindSyncPanel(){
   }
   function showLic(key){
     var row=$("sy-licrow");if(!row)return;
-    if(key){row.style.display="";var k=$("sy-lickey");if(k)k.textContent=key;
-      var b=$("sy-activate");
-      if(b&&!b._bound){b._bound=true;b.addEventListener("click",function(){activatePremium(key);});}
+    // Only meaningful on a device that is NOT activated yet — once premium
+    // is active the "Activate on this device" row must disappear.
+    if(key&&!isPremium()){row.style.display="";var k=$("sy-lickey");if(k)k.textContent=key;
     }else{row.style.display="none";}
   }
   function refresh(){
@@ -3984,6 +4000,14 @@ function bindSyncPanel(){
     api.syncStatus().then(function(st){paint(st);}).catch(function(){});
     renderDevices();
   }
+  // Bind unconditionally at render time: showLic() only runs when sync
+  // happens to return a licenseOnFile, and waiting for that left this button
+  // dead (visible row, empty key, no click handler).
+  var sac=$("sy-activate");
+  if(sac&&!sac._bound){sac._bound=true;sac.addEventListener("click",function(){
+    var kk=(($("sy-lickey")&&String($("sy-lickey").textContent)||"").trim())||String((window.LIC&&LIC.key)||"").trim();
+    activatePremium(kk);
+  });}
   var adv=$("sy-advanced");
   if(adv)adv.addEventListener("click",function(){if(api&&api.openExternal)api.openExternal("https://account.kastrava.pp.ua");});
   function renderDevices(){
@@ -4092,8 +4116,8 @@ function syncNowAction(){
   toast("Syncing…");
   api.syncNow({apiBase:syncApiBase()}).then(function(r){toast(r&&r.ok?"Synced.":(r&&r.msg?r.msg:"Sync failed."));}).catch(function(){toast("Sync failed.");});
 }
-function toast(msg){var el=$("toast");if(!el)return;el.textContent=msg;el.classList.add("show");clearTimeout(el._t);el._t=setTimeout(function(){el.classList.remove("show");},2600);}
-function toastUndo(msg,onUndo){var el=$("toast");if(!el)return;el.textContent=msg;var b=document.createElement("button");b.textContent="Undo";b.style.cssText="margin-left:12px;border:none;background:none;color:var(--accent);font-weight:700;cursor:pointer;font-family:inherit;font-size:12px;padding:0";b.addEventListener("click",function(){clearTimeout(el._t);el.classList.remove("show");try{onUndo&&onUndo();}catch(e){}});el.appendChild(b);el.classList.add("show");clearTimeout(el._t);el._t=setTimeout(function(){el.classList.remove("show");},6000);}
+function toast(msg){var el=$("toast");if(!el)return;el.style.pointerEvents="";el.style.whiteSpace="";el.style.overflow="";el.textContent=msg;el.classList.add("show");clearTimeout(el._t);el._t=setTimeout(function(){el.classList.remove("show");},2600);}
+function toastUndo(msg,onUndo){var el=$("toast");if(!el)return;el.style.whiteSpace="normal";el.style.overflow="visible";el.textContent=msg;var b=document.createElement("button");b.textContent="Undo";b.style.cssText="margin-left:12px;border:none;background:none;color:var(--accent);font-weight:700;cursor:pointer;font-family:inherit;font-size:12px;padding:0";b.addEventListener("click",function(){clearTimeout(el._t);el.classList.remove("show");el.style.pointerEvents="";try{onUndo&&onUndo();}catch(e){}});el.appendChild(b);el.style.pointerEvents="auto";el.classList.add("show");clearTimeout(el._t);el._t=setTimeout(function(){el.classList.remove("show");el.style.pointerEvents="";},6000);}
 function reopenTab(){var t=null;while(closedTabs.length){t=closedTabs.pop();if(t&&!isPaymentUrl(t.url))break;t=null;}if(t){saveClosed();if(t.url&&!isBlank(t.url)&&t.url!=="about:kastget")addTab(t.url,{pinned:t.pinned,title:t.title});else addTab();}}
 
 /* Picture-in-Picture */
@@ -4339,18 +4363,162 @@ async function refreshBookmarkBar(){
   else if(settings.bookmarkBar==="always")bar.classList.add("visible");
   updateBmStar();
 }
+/* ---------- Chrome Web Store one-click install ---------- */
+var EXT_LIST=[];
+/* Curated VPN gallery: id = Chrome Web Store extension id, n = name, r = rating, u = user count. All ids harvested from Google's own CWS search data and CRX-verified (302) — every entry installs. */
+var VPN_EXTS=[
+{id:"eppiocemhmnlbhjplcgkofciiegomcon",n:"Urban VPN Proxy",r:4.7,u:68430},
+{id:"nlbejmccbhkncgokjcmghpfloaajcffj",n:"Hotspot Shield Free VPN Proxy - Unlimited VPN",r:4.2,u:67947},
+{id:"akcocjjpkmlniicdeemdceeajlmoabhg",n:"Free VPN Proxy - 1VPN",r:4.6,u:63484},
+{id:"majdfhpaihoncoakbjgbdhglocklcgno",n:"Free VPN for Chrome - VPN Proxy VeePN",r:4.5,u:53344},
+{id:"oofgbpoabipfcfjapgnbbjjaenockbdp",n:"SetupVPN - Lifetime Free VPN",r:4.0,u:47296},
+{id:"fcfhplploccackoneaefokcmbjfbkenj",n:"Free VPN for Chrome - VPN Proxy 1clickVPN",r:4.2,u:42025},
+{id:"omghfjlpggmjjaagoclmmobgdodcjboh",n:"Browsec VPN - Free VPN for Chrome",r:4.7,u:40875},
+{id:"omdakjcmkglenbhjadbccaookpfjihpa",n:"TunnelBear VPN",r:4.1,u:33150},
+{id:"gjknjjomckknofjidppipffbpoekiipm",n:"VPN Free - Betternet Unlimited VPN Proxy",r:4.1,u:29791},
+{id:"nbcojefnccbanplpoffopkoepjmhgdgh",n:"Hoxx VPN Proxy",r:4.0,u:26353},
+{id:"jddgbeighonaipjikdnfdpiefhoomlae",n:"YouBoost - VPN for YouTube. Unblock YouTube. VPN for browser",r:4.5,u:22955},
+{id:"lneaocagcijjdpkcabeanfpdbmapcjjg",n:"Free VPN & Proxy For Chrome - VPNLY",r:4.0,u:21309},
+{id:"hnmpcagpplmpfojmgmnngilcnanddlhb",n:"Free VPN For Chrome - VPN Extension - Windscribe",r:4.0,u:21025},
+{id:"mjnbclmflcpookeapghfhapeffmpodij",n:"UltraSurf Security, Privacy & Freedom VPN",r:4.4,u:20296},
+{id:"jaoafpkngncfpfggjefnekilbkcpjdgp",n:"Free VPN Proxy - VPN for Chrome uVPN",r:2.9,u:19720},
+{id:"pfpolingmjapeepkjhnimfaofmlhhfbf",n:"VRubel - VPN for YouTube from 1₽ per day",r:2.6,u:12921},
+{id:"kpiecbcckbofpmkkkdibbllpinceiihk",n:"DotVPN: Fast & Private VPN",r:3.4,u:9873},
+{id:"fjoaledfpmneenckfbpdfhkmimnjocfa",n:"VPN for Chrome: NordVPN proxy protection",r:4.4,u:9137},
+{id:"jajilbjjinjmgcibalaakngmkilboobh",n:"Astar VPN - Free and fast VPN for everyone",r:3.0,u:4708},
+{id:"jplgfhpmjnbigmhklmmbgecoobifkmpa",n:"Proton VPN: Fast & Secure",r:4.7,u:4611},
+{id:"bfidboloedlamgdmenmlbipfnccokknp",n:"PureVPN Proxy - Best VPN for Chrome",r:2.0,u:4050},
+{id:"ailoabdmgclmfmhdagmlohpjlbpffblp",n:"Surfshark Chrome VPN extension — fast, private, and free to start",r:4.1,u:3711},
+{id:"mpcaainmfjjigeicjnlkdfajbioopjko",n:"VPN Unlimited - VPN Proxy for Chrome",r:1.9,u:3639},
+{id:"hhdobjgopfphlmjbmnpglhfcgppchgje",n:"AdGuard VPN: free & secure proxy",r:3.3,u:3514},
+{id:"fgddmllnllkalaagkghckoinaemmogpe",n:"ExpressVPN: VPN & proxy browser extension",r:3.3,u:2836},
+{id:"adlpodnneegcnbophopdmhedicjbcgco",n:"Free VPN for Chrome - Troywell VPN",r:2.4,u:1972},
+{id:"bnlofglpdlboacepdieejiecfbfpmhlb",n:"Turbo VPN - Secure Free VPN Proxy",r:1.8,u:1482},
+{id:"lnfdmdhmfbimhhpaeocncdlhiodoblbd",n:"VPN Proxy Master: Change IP for Chrome",r:3.2,u:1442},
+{id:"ffbkglfijbcbgblgflchnbphjdllaogb",n:"CyberGhost VPN – Proxy for Chrome",r:2.2,u:1247},
+{id:"jcbiifklmgnkppebelchllpdbnibihel",n:"Free VPN",r:3.2,u:1120},
+{id:"odjkephjckgpjidmglobijkgdfeplhkp",n:"YouBooster – Free VPN for Chrome Extension",r:2.7,u:742},
+{id:"jplnlifepflhkbkgonidnobkakhmpnmh",n:"Private Internet Access – Proxy for Chrome",r:2.1,u:737},
+{id:"almalgbpmcfpdaopimbdchdliminoign",n:"Urban Browser Guard",r:4.6,u:698},
+{id:"ekgejlkdmgojnobgegkcomigednijpnl",n:"VPN Наружу для YouTube. Обход блокировки YouTube бесплатно",r:2.1,u:495},
+{id:"bmegimlflnccnpdmmjebfankomijelbg",n:"Aurora VPN — браузерный VPN",r:4.6,u:436},
+{id:"mhngpdlhojliikfknhfaglpnddniijfh",n:"WorkingVPN - Fast, Free & Private VPN Proxy",r:3.6,u:281},
+{id:"omklmcppldnjhpgchlffibpkndphfmli",n:"hidiffy vpn - работает в 2026",r:4.9,u:274},
+{id:"ohjocgmpmlfahafbipehkhbaacoemojp",n:"hide.me Proxy",r:3.3,u:268},
+{id:"hdjaegakdmgegngopkhpdnbkhlbecpof",n:"Turbo Vpn - Работает в 2026, быстрый VPN для браузера",r:4.9,u:260},
+{id:"jedieiamjmoflcknjdjhpieklepfglin",n:"FastestVPN Proxy for chrome",r:3.9,u:256},
+{id:"mhpggpolcfckhlmpdngnmjklojplngdm",n:"Free Vpn - Рабочий в рф 2026",r:4.9,u:255},
+{id:"paifkghgecedjhpiffccboiopabfkilj",n:"Windscribe VPN",r:5.0,u:247},
+{id:"knmhokeiipedacnhpjklbjmfgedfohco",n:"Greenhub Free VPN - Secure and Unblock VPN",r:2.1,u:245},
+{id:"abnmgemfnjndaolfflfpjcckiamamein",n:"VPN Browser",r:4.8,u:233},
+{id:"hgcpgjhpmoeknmgggeiaibkgdejgpaad",n:"Express vpn - Бесплатный для youtube Chrome",r:4.4,u:231},
+{id:"endhleicdnfalloabndbkhoconedaejo",n:"DotVPN - Быстрый приватный ВПН",r:4.9,u:217},
+{id:"khanepmegdcnjlmocgcdklabolfgojab",n:"Express VPN — Премиальный VPN для Chrome YouTube",r:4.9,u:216},
+{id:"alddieidogbjmfhacfefnlibhngfoeoc",n:"Mullvad VPN — Бесплатный VPN для ежедневного использования",r:4.9,u:214},
+{id:"nbadihaihfegbdaofhoilincgjhakdmm",n:"Hit VPN — Работает в РФ в 2026 для Chrome",r:5.0,u:213},
+{id:"pjjaekbbbfhnagmcffknohdoifagibpn",n:"Veepn Vpn - Надежный быстрый впн для Chrome",r:5.0,u:211},
+{id:"fohfimjllhajalhhkiiddfjijcfphppb",n:"Surfshark VPN — высокая скорость, стабильная работа в России и СНГ",r:4.9,u:209},
+{id:"bobmofohlfifmnjkpobblfoobpbiechp",n:"PureVPN",r:5.0,u:209},
+{id:"hgikgejnemplefjnopeekipnjceclkng",n:"Proton Vpn - рабочий впн в рф 2026",r:4.9,u:207},
+{id:"idiibjhjkcdnpcoiednphpfdmlpahgfo",n:"amnezia vpn - VPN который не тормозит в 2026",r:5.0,u:207},
+{id:"nkhaoepgpgfmgfihbpeagjfjnchnfgpe",n:"Mullvad VPN — Конфиденциальный VPN без ограничений",r:5.0,u:206},
+{id:"ngifmjfbjmccpgimmacbffmgfiinhnhd",n:"ADGUARD VPN",r:5.0,u:206},
+{id:"ndoafghdkgnafecpbeelfpffblpaladc",n:"Hola VPN — Бесплатный VPN в 2026 для Chrome YouTube",r:4.9,u:205},
+{id:"kpdlnkhkeimpdceckackhniadlcohafj",n:"HOLA VPN - рабочий впн в рф 2026",r:5.0,u:197},
+{id:"kefcopgdhdnideonkcdamfdondkhbobe",n:"1VPN — Приватный VPN для безопасного подключения",r:5.0,u:196},
+{id:"honjoefhlidgdidlcdbipobjnoliiaid",n:"Troywell VPN Lite - unlimited VPN proxy",r:2.5,u:182},
+{id:"fghcafllghpooedjmgghkflnknnlgbia",n:"Unlimited Free VPN and Ad & Popup Blocker",r:4.0,u:160},
+{id:"ojoiohfkfnfkdcmccickjhkmcdgeeifl",n:"VPNOnline - Fast VPN for Chrome",r:2.4,u:156},
+{id:"ijjkabfdfbaibohlepmcjfebnpbmibcj",n:"VPN для YouTube без ограничений в России: весь браузер или только YouTube",r:4.4,u:151},
+{id:"kgmgaojbkgbkfkpcklialeacldlbaejn",n:"VPNHouse – Fast VPN Proxy for Chrome",r:4.4,u:145}
+];
+function cwsIdFromUrl(u){if(!u)return null;var m=u.match(/chromewebstore\.google\.com\/detail\/[^/]+\/([a-z]{32})/i)||u.match(/chrome\.google\.com\/webstore\/detail\/[^/]+\/([a-z]{32})/i)||u.match(/[?&]id=([a-z]{32})/i);return m?m[1]:null;}
+function extHas(chromeId){if(!chromeId)return false;return EXT_LIST.some(function(e){return e.chromeId===chromeId||e.id===chromeId;});}
+function refreshExtList(){
+  if(!api||!api.extList)return;
+  api.extList().then(function(r){
+    if(r&&r.ok)EXT_LIST=r.items||[];
+    updateCwsBtn();
+    var p=$("ext-list");if(p)renderExtList();
+    var v=$("ext-vpn-grid");if(v)renderVpnGrid();
+  }).catch(function(){});
+}
+function updateCwsBtn(){
+  var b=$("cws-add");if(!b)return;
+  var id=activeTab&&activeTab.url?cwsIdFromUrl(activeTab.url):null;
+  if(!id||!api||!api.extInstallCws){b.style.display="none";return;}
+  b.style.display="flex";
+  if(b._busy)return;
+  if(extHas(id)){b.classList.add("installed");b.disabled=true;b.title=t("cws_installed");b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';}
+  else{b.classList.remove("installed");b.disabled=false;b.title=t("cws_add");b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';}
+}
+function cwsInstallCurrent(){
+  var url=activeTab&&activeTab.url,id=cwsIdFromUrl(url);
+  if(!id||!api||!api.extInstallCws)return;
+  var b=$("cws-add");if(!b||b.disabled||b._busy)return;
+  b._busy=true;b.disabled=true;b.title=t("cws_installing");
+  api.extInstallCws(url).then(function(r){
+    b._busy=false;
+    if(r&&r.ok&&r.ext)toast(t("cws_done").replace("%",r.ext.name||"Extension"));
+    else toast(t("cws_fail")+": "+((r&&r.error)||"error"));
+    refreshExtList();
+  }).catch(function(){b._busy=false;toast(t("cws_fail"));refreshExtList();});
+}
+function extInstallById(id,name){
+  if(!api||!api.extInstallCws)return;
+  api.extInstallCws("https://chromewebstore.google.com/detail/x/"+id).then(function(r){
+    if(r&&r.ok&&r.ext)toast(t("cws_done").replace("%",r.ext.name||name||"Extension"));
+    else toast(t("cws_fail")+": "+((r&&r.error)||"error"));
+    refreshExtList();
+  }).catch(function(){toast(t("cws_fail"));refreshExtList();});
+}
+function renderExtList(){
+  var box=$("ext-list");if(!box)return;
+  if(!EXT_LIST.length){box.innerHTML='<div class="desc">'+t("ext_empty")+"</div>";return;}
+  box.innerHTML=EXT_LIST.map(function(e){
+    var icon=e.icon?'<img src="file://'+e.icon+'" style="width:26px;height:26px;border-radius:6px;flex-shrink:0" alt="">':'<div style="width:26px;height:26px;border-radius:6px;background:var(--c-hover);flex-shrink:0"></div>';
+    return '<div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--c-border)">'+icon+
+      '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(e.name)+"</div>"+
+      '<div class="desc" style="font-size:11.5px;margin:0">v'+esc(String(e.version))+(e.enabled?"":" · "+t("ext_off"))+"</div></div>"+
+      '<button class="btn-sm" data-ext-toggle="'+esc(e.id)+'">'+(e.enabled?t("ext_on"):t("ext_offbtn"))+"</button>"+
+      '<button class="btn-sm btn-danger" data-ext-remove="'+esc(e.id)+'">'+t("ext_remove")+"</button></div>";
+  }).join("");
+  box.querySelectorAll("[data-ext-toggle]").forEach(function(b){b.addEventListener("click",function(){api.extToggle(b.getAttribute("data-ext-toggle")).then(function(){refreshExtList();});});});
+  box.querySelectorAll("[data-ext-remove]").forEach(function(b){b.addEventListener("click",function(){api.extRemove(b.getAttribute("data-ext-remove")).then(function(){toast(t("ext_removed"));refreshExtList();});});});
+}
+function fmtUsers(u){return u>=1e6?(u/1e6).toFixed(1)+"M":u>=1e3?Math.round(u/1e3)+"K":String(u);}
+function renderVpnGrid(){
+  var g=$("ext-vpn-grid");if(!g)return;
+  g.innerHTML=VPN_EXTS.map(function(v){
+    var on=extHas(v.id);
+    var stats=v.u?("★ "+v.r+" · "+fmtUsers(v.u)+" users"):esc(v.d||"");
+    return '<div style="border:1px solid var(--c-border);border-radius:10px;padding:10px;background:var(--c-surface)">'+
+      '<div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(v.n)+"</div>"+
+      '<div class="desc" style="font-size:11.5px;margin:2px 0 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+stats+"</div>"+
+      '<button class="btn-sm '+(on?"":"btn-accent")+'" data-vpn="'+esc(v.id)+'"'+(on?" disabled":"")+' style="width:100%">'+(on?"✓ "+t("ext_installed_sh"):t("ext_install"))+"</button></div>";
+  }).join("");
+  g.querySelectorAll("[data-vpn]").forEach(function(b){b.addEventListener("click",function(){
+    b.disabled=true;b.textContent=t("cws_installing");
+    extInstallById(b.getAttribute("data-vpn"),b.getAttribute("data-vpn"));
+  });});
+}
+(function(){var b=$("cws-add");if(b)b.addEventListener("click",cwsInstallCurrent);})();
+if(api&&api.onExtUpdated)api.onExtUpdated(function(items){EXT_LIST=items||[];updateCwsBtn();var p=$("ext-list");if(p)renderExtList();var v=$("ext-vpn-grid");if(v)renderVpnGrid();});
+refreshExtList();
+
 function openSettings(){
   $("settings-page").classList.add("visible");
   var bd=$("settings-backdrop");if(bd)bd.classList.add("show");
   renderSettingsNav();
 }
 function closeSettings(){
+  if(shortcutRecording)finishShortcutRec(null); // resume menu accelerators
   $("settings-page").classList.remove("visible");
   var bd=$("settings-backdrop");if(bd)bd.classList.remove("show");
 }
 function renderSettingsNav(){
   var nav=$("settings-nav");
-  var NAVKEY={premium:"navPremium",sync:"navAccount",general:"navGeneral",appearance:"navAppearance",search:"navSearch",privacy:"navPrivacy",shortcuts:"navShortcuts",accessibility:"navA11y",system:"navSystem",reset:"navReset",about:"navAbout"};var secs=[{id:"premium",l:"Kastrava Premium"},{id:"sync",l:"Account"},{id:"general",l:"General"},{id:"appearance",l:"Appearance"},{id:"search",l:"Search Engine"},{id:"privacy",l:"Privacy & Security"},{id:"shortcuts",l:"Shortcuts"},{id:"accessibility",l:"Accessibility"},{id:"system",l:"System"},{id:"reset",l:"Reset Settings"},{id:"about",l:"About"}];
+  var NAVKEY={premium:"navPremium",sync:"navAccount",general:"navGeneral",appearance:"navAppearance",search:"navSearch",privacy:"navPrivacy",shortcuts:"navShortcuts",accessibility:"navA11y",system:"navSystem",reset:"navReset",about:"navAbout",extensions:"navExtensions"};var secs=[{id:"premium",l:"Kastrava Premium"},{id:"sync",l:"Account"},{id:"general",l:"General"},{id:"appearance",l:"Appearance"},{id:"search",l:"Search Engine"},{id:"privacy",l:"Privacy & Security"},{id:"shortcuts",l:"Shortcuts"},{id:"accessibility",l:"Accessibility"},{id:"system",l:"System"},{id:"reset",l:"Reset Settings"},{id:"about",l:"About"},{id:"extensions",l:"Extensions"}];
   nav.innerHTML="<input type=\"text\" class=\"sn-search\" id=\"sn-search\" data-i18n-ph=\"snSearchPh\" placeholder=\"Search settings\" spellcheck=\"false\" autocomplete=\"off\">"+secs.map(function(s){return "<div class=\"sn-item\" data-s=\""+s.id+"\" data-i18n=\""+(NAVKEY[s.id]||s.id)+"\">"+t(NAVKEY[s.id]||s.id)+"</div>";}).join("");
   var snInp=$("sn-search");
   if(snInp)snInp.addEventListener("input",function(){
@@ -4374,7 +4542,39 @@ function renderSettingsNav(){
 try{if(!window.__chromeVer){var m=navigator.userAgent.match(/Chrome\/([\d.]+)/);if(m)window.__chromeVer=m[1];}}catch(e){}
 function renderSettingsSection(id){
   var p=$("settings-panel");var h="";
-  if(id==="premium"){h="<h3>Kastrava Premium</h3>";
+  if(shortcutRecording)finishShortcutRec(null); // navigating away must not leave the menu paused
+  if(id==="extensions"){h="<h3>"+t("navExtensions")+"</h3>";
+    h+="<div class=\"desc\">"+t("ext_sub")+"</div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">"+t("ext_installed_h")+"</div><div id=\"ext-list\"><div class=\"desc\">…</div></div></div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">"+t("ext_addurl_h")+"</div><div style=\"display:flex;gap:8px\"><input id=\"ext-url-in\" type=\"text\" placeholder=\"https://chromewebstore.google.com/detail/…\" style=\"flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px\"><button class=\"btn-sm btn-accent\" id=\"ext-url-go\">"+t("ext_install")+"</button></div><div style=\"margin-top:8px\"><button class=\"btn-sm\" id=\"ext-import\">"+t("ext_import")+"</button></div></div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">"+t("ext_vpn_h")+"</div><div class=\"desc\">"+t("ext_vpn_sub")+"</div><div id=\"ext-vpn-grid\" style=\"display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-top:10px\"></div></div>";
+    p.innerHTML=h;
+    renderExtList();renderVpnGrid();
+    var go=$("ext-url-go");
+    if(go)go.addEventListener("click",function(){
+      var u=(($("ext-url-in")||{}).value||"").trim();if(!u)return;
+      go.disabled=true;go.textContent=t("cws_installing");
+      api.extInstallUrl(u).then(function(r){
+        go.disabled=false;go.textContent=t("ext_install");
+        if(r&&r.ok&&r.ext)toast(t("cws_done").replace("%",r.ext.name||""));
+        else if(r&&r.ok&&!r.ext){} /* dialog canceled */
+        else toast(t("cws_fail")+": "+((r&&r.error)||"error"));
+        refreshExtList();
+      }).catch(function(){go.disabled=false;go.textContent=t("ext_install");toast(t("cws_fail"));});
+    });
+    var im=$("ext-import");
+    if(im)im.addEventListener("click",function(){
+      api.extImport().then(function(r){
+        if(r&&r.ok&&r.ext)toast(t("cws_done").replace("%",r.ext.name||""));
+        else if(r&&r.ok&&!r.ext){} /* dialog canceled */
+        else toast(t("cws_fail")+": "+((r&&r.error)||"error"));
+        refreshExtList();
+      }).catch(function(){refreshExtList();});
+    });
+    refreshExtList();
+    return;
+  }
+  else if(id==="premium"){h="<h3>Kastrava Premium</h3>";
     h+="<div class=\"desc\" style=\"margin-bottom:12px\">Unlock Tracking Radar, Cursor FX, Workspaces, Split View and every theme \u2014 <b>\u20B9499 for 30 days (~$49), up to 10 devices. Manual renewal by default.</b></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Your Machine Code</div><div style=\"display:flex;gap:8px;align-items:center\"><code id=\"pm-machine\" style=\"flex:1;word-break:break-all;font-size:12px\">"+(LIC.machine||"…")+"</code><button class=\"btn-sm\" id=\"pm-copy\">Copy</button></div><div class=\"desc\">This code identifies <b>this device</b> on your account. One key covers up to 10 devices.</div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Device Nickname</div><div style=\"display:flex;gap:8px;align-items:center\"><input id=\"s-devnick\" type=\"text\" maxlength=\"60\" placeholder=\"e.g. Office PC\" value=\""+esc(settings.deviceName||"")+"\" style=\"flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px\"></div><div class=\"desc\">Shown on your account dashboard instead of a bare hostname. Applies on next activation or sync.</div></div>";
@@ -4422,6 +4622,8 @@ function renderSettingsSection(id){
     (isPremium()?LIGHT_THEMES:[LIGHT_THEMES[0]]).forEach(function(p,i){h+="<div data-idx=\""+i+"\" data-type=\"light\" style=\"width:28px;height:28px;border-radius:6px;background:"+p.bg+";cursor:pointer;border:2px solid "+(settings.theme===("light-"+i)?p.ac:"transparent")+";position:relative;overflow:hidden;transition:border .15s,transform .15s\" title=\""+p.n+"\" class=\"theme-btn\"><div style=\"position:absolute;top:0;left:0;right:0;height:6px;background:"+p.tbg+"\"></div><div style=\"position:absolute;bottom:0;left:0;right:0;height:3px;background:"+p.tb+"\"></div></div>";});
     h+="</div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Store</div><div class=\"desc\">Themes, logos, wallpapers and more from the Kastrava Store.</div><div style=\"display:flex;gap:8px;flex-wrap:wrap;margin:8px 0\" id=\"store-owned\"><span class=\"desc\">Loading…</span></div><div><button class=\"btn-sm btn-accent\" id=\"s-storeopen\" data-open-store=\"https://store.kastrava.pp.ua/\">Get themes</button></div></div>";
+    if(settings.customLogo){h+="<div class=\"sg\"><div class=\"lbl\">Custom Logo</div><div style=\"display:flex;gap:8px;align-items:center\"><span class=\"desc\" style=\"flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap\">Applied from the store</span><button class=\"btn-sm btn-danger\" id=\"s-rmlogo\">Remove</button></div></div>";}
+    if(settings.customWallpaper){h+="<div class=\"sg\"><div class=\"lbl\">Custom Wallpaper</div><div style=\"display:flex;gap:8px;align-items:center\"><span class=\"desc\" style=\"flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap\">Applied from the store</span><button class=\"btn-sm btn-danger\" id=\"s-rmwallpaper\">Remove</button></div></div>";}
     h+="<div class=\"sg\"><div class=\"lbl\">Show Bookmark Bar</div><select id=\"s-bmbar\"><option value=\"auto\">Auto</option><option value=\"always\">Always</option><option value=\"never\">Never</option></select></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Accent Color</div><div class=\"accent-row\" id=\"accent-swatches\">";
     var AC_COLORS=["#4fc3f7","#3b82f6","#0ea5e9","#14b8a6","#10b981","#84cc16","#facc15","#fb923c","#94a3b8","#8b5cf6"];
@@ -4609,6 +4811,8 @@ function bindSettingsEvents(id){
       bindChange("s-historykeep",function(v){sv("historyKeep",v);toast("History kept "+(v==="0"?"forever":v+" days"));});
       var su=$("s-startupurls");if(su){su.value=settings.startupUrls||"";su.addEventListener("change",function(e){sv("startupUrls",e.target.value);});}
     }else if(id==="appearance"){
+      var __rl=$("s-rmlogo");if(__rl)__rl.addEventListener("click",function(){saveSetting("customLogo","");applyCustomLogo("");toast("Custom logo removed");renderSettingsSection("appearance");bindSettingsEvents("appearance");});
+      var __rw=$("s-rmwallpaper");if(__rw)__rw.addEventListener("click",function(){saveSetting("customWallpaper","");applyCustomWallpaper("");toast("Wallpaper removed");renderSettingsSection("appearance");bindSettingsEvents("appearance");});
       try{
         var so2=$("s-storeopen");
         if(so2)so2.addEventListener("click",function(){try{closeSettings();}catch(e){}addTab("https://store.kastrava.pp.ua/");});
@@ -4823,6 +5027,10 @@ function bindSettingsEvents(id){
           shortcutRecording={action:a,btn:btn};
           btn.textContent="Press keys...";
           btn.classList.add("rec");
+          // Menu accelerators fire before any renderer keydown — without
+          // pausing the menu, recording e.g. Ctrl+T would open a tab instead
+          // of being captured.
+          try{if(api&&api.menuPause)api.menuPause(true);}catch(e){}
         });
       });
     }else if(id==="premium"){
