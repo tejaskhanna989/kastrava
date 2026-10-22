@@ -201,7 +201,7 @@
     panel.id = 'wl-panel';
     panel.style.cssText = 'position:fixed;right:14px;bottom:64px;background:var(--card,#14161d);border:1px solid var(--line,#2a2e39);border-radius:12px;padding:8px;display:none;grid-template-columns:1fr 1fr;gap:2px;z-index:99999;box-shadow:0 12px 40px rgba(0,0,0,.5);max-width:320px';
     var item = document.createElement('button');
-    item.style.cssText = 'text-align:left;background:none;border:none;color:var(--text,#e7e9ee);font:13px/1.5 inherit;padding:5px 10px;border-radius:7px;cursor:pointer;white-space:nowrap';
+    item.style.cssText = 'text-align:left;background:none;border:none;color:var(--text,#e7e9ee);font-family:Inter,system-ui,-apple-system,Segoe UI,Noto Sans JP,Noto Sans KR,Noto Sans SC,Hiragino Sans,Malgun Gothic,PingFang SC,sans-serif;font-size:13px;line-height:1.5;padding:5px 10px;border-radius:7px;cursor:pointer;white-space:nowrap';
     WL_LANGS.forEach(function (pair) {
       var b2 = item.cloneNode(false);
       b2.textContent = pair[1] + '  ·  ' + pair[0].toUpperCase();

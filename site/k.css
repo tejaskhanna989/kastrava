@@ -1,6 +1,6 @@
 /* Kastrava Pro — restrained professional design system. Loaded after each
    page's legacy <style> so these rules win ties; page markup is untouched. */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap');
 
 :root{
   --bg:#0b0e14; --bg2:#0e1219; --card:#121722; --card2:#171d2a;
@@ -10,7 +10,7 @@
   --vio:#2e6bf0; --cy:#2e6bf0; --gold:#b98a1d; --blue:#4d86f5;
   --grad:#2e6bf0;
   --glow:none;
-  --r:14px; --mono:'JetBrains Mono',ui-monospace,monospace;
+  --r:14px; --mono:'JetBrains Mono',ui-monospace,'Noto Sans JP','Noto Sans KR','Noto Sans SC','Malgun Gothic','Microsoft YaHei',monospace;
   --navbg:rgba(11,14,20,.85);
   color-scheme:dark;
 }
@@ -27,13 +27,13 @@ html[data-theme="light"]{
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{
-  font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif !important;
+  font-family:'Inter',system-ui,-apple-system,'Segoe UI','Noto Sans JP','Noto Sans KR','Noto Sans SC','Hiragino Sans','Yu Gothic UI','Meiryo','Malgun Gothic','PingFang SC','Microsoft YaHei',sans-serif !important;
   background:var(--bg) !important;
   color:var(--text) !important;
   line-height:1.65; overflow-x:hidden;
   -webkit-font-smoothing:antialiased;
 }
-h1,h2,h3,.sec-title,header h1{font-family:'Space Grotesk',sans-serif !important;color:var(--ink) !important;letter-spacing:-.015em}
+h1,h2,h3,.sec-title,header h1{font-family:'Space Grotesk','Noto Sans JP','Noto Sans KR','Noto Sans SC','Hiragino Sans','Yu Gothic UI','Meiryo','Malgun Gothic','PingFang SC','Microsoft YaHei',sans-serif !important;color:var(--ink) !important;letter-spacing:-.015em}
 .wrap,.container{max-width:1080px !important;margin:0 auto;padding:0 28px;position:relative;z-index:1}
 
 /* ---- nav ---- */
