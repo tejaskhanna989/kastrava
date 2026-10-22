@@ -36,20 +36,13 @@
     s?(s==='dark'?'dark':'light'):((window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'));
 }catch(e){}})();
 </script>
-<link rel="stylesheet" href="/k.css?v=5">
+<link rel="stylesheet" href="/k.css?v=6">
 <style>
-.hero-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:36px;align-items:center}
-.hero-shot{background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden}
-.hero-shot .bar{display:flex;gap:6px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
-.hero-shot .bar i{width:10px;height:10px;border-radius:50%;background:var(--line2);font-style:normal}
-.hero-shot .url{flex:1;font-family:var(--mono);font-size:11px;color:var(--muted);background:var(--card2);border-radius:7px;padding:5px 12px;margin-left:6px}
-.hero-shot .page{padding:26px 22px;text-align:center}
-.hero-shot .ring{width:64px;height:64px;border:4px solid var(--blue);border-radius:50%;margin:6px auto 12px}
-.hero-shot .clock{font-family:var(--mono);font-size:24px;color:var(--ink)}
-.hero-shot .tiles{display:flex;gap:8px;justify-content:center;margin-top:14px}
-.hero-shot .tiles span{width:46px;height:36px;border-radius:8px;background:var(--card2);border:1px solid var(--line)}
+.hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:center}
+.hero-shot{border-radius:16px;overflow:hidden;box-shadow:0 1px 2px rgba(60,64,67,.3),0 12px 32px 4px rgba(60,64,67,.18),0 4px 8px 3px rgba(60,64,67,.10);border:1px solid var(--line);background:#000;line-height:0}
+.hero-shot .shot{width:100%;height:auto;display:block}
 .plan-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:18px 0 4px}
-.plan-card .big{font-weight:700;font-size:21px;margin:6px 0 2px;color:var(--ink)}
+.plan-card .big{font-weight:600;font-size:21px;margin:6px 0 2px;color:var(--ink);font-family:'Rubik','Roboto',sans-serif}
 .plan-card .small{font-size:12.5px;color:var(--muted)}
 .plan-card .go{margin-top:12px;font-weight:600;font-size:14px;color:var(--blue)}
 .plan-card .k{font-size:11px;letter-spacing:1.5px;color:var(--muted);font-family:var(--mono)}
@@ -95,9 +88,7 @@
       <div class="row"><span class="k" data-wl="sp_lic">License</span><span class="v" data-wl="sp_lic_v">GPLv3 — read it all</span></div>
     </div>
     <div class="hero-shot" aria-hidden="true">
-      <div class="bar"><i></i><i></i><i></i><span class="url">search.kastrava.in</span></div>
-      <div class="page"><div class="ring"></div><div class="clock">09:41</div>
-      <div class="tiles"><span></span><span></span><span></span><span></span></div></div>
+      <img class="shot" src="/hero-ntp.png" alt="" width="1366" height="748" loading="eager" decoding="async">
     </div>
   </div>
 </div></header>
