@@ -33,6 +33,7 @@
   var WL_GEO_API = 'https://api.kastrava.in/api/geo';
   var WL_LANG = 'en';
   var WL_GEO_DONE = false;
+  var WL_EXT = null;   /* which language's dict WEBSTR_X currently holds */
 
   function wlValid(l) { return l && WL_SET[l]; }
 
@@ -84,7 +85,7 @@
   /* --- external dict --------------------------------------------------- */
   function wlHasDict(l) {
     if (l === 'en') return true;
-    if (typeof WEBSTR_X !== 'undefined' && WEBSTR_X) return true;
+    if (typeof WEBSTR_X !== 'undefined' && WEBSTR_X && WL_EXT === l) return true;
     if (typeof WEBSTR !== 'undefined' && WEBSTR && WEBSTR[l]) return true;
     return false;
   }
@@ -92,8 +93,8 @@
   function wlLoadExt(l, cb) {
     if (l === 'en' || wlHasDict(l)) { cb && cb(); return; }
     var s = document.createElement('script');
-    s.src = '/lang/' + l + '.js?v=1';
-    s.onload = function () { cb && cb(); };
+    s.src = '/lang/' + l + '.js?v=2';
+    s.onload = function () { WL_EXT = l; cb && cb(); };
     s.onerror = function () { cb && cb(); };
     document.head.appendChild(s);
   }
@@ -102,7 +103,8 @@
   var WL_INITIAL = wlStored() || wlSessionGeo() || wlNavGuess() || 'en';
   WL_LANG = WL_INITIAL;
   if (WL_LANG !== 'en' && document.readyState === 'loading') {
-    document.write('<script src="/lang/' + WL_LANG + '.js?v=1"><\/script>');
+    WL_EXT = WL_LANG;
+    document.write('<script src="/lang/' + WL_LANG + '.js?v=2"><\/script>');
   } else if (WL_LANG !== 'en') {
     wlLoadExt(WL_LANG);
   }
@@ -110,7 +112,7 @@
   /* --- lookup + apply --------------------------------------------------- */
   function wlDict(l) {
     var d = {};
-    try { if (typeof WEBSTR_X !== 'undefined' && WEBSTR_X) d = WEBSTR_X; } catch (e) {}
+    try { if (typeof WEBSTR_X !== 'undefined' && WEBSTR_X && WL_EXT === l) d = WEBSTR_X; } catch (e) {}
     return d;
   }
 
