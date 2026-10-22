@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kast Manager — A dark, minimal system monitor</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="canonical" href="https://kastrava.in/kastmanager.html">
+<meta name="description" content="Kast Manager is a dark, minimal system monitor built in C with GTK4 and libadwaita — live dashboard, sortable processes, hand-drawn graphs, disks and a file browser. GPLv3, free.">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#131314">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kastrava">
+<meta property="og:title" content="Kast Manager — dark system monitor">
+<meta property="og:description" content="Live dashboard, processes, graphs, disks and files. Built in C with GTK4.">
+<meta property="og:url" content="https://kastrava.in/kastmanager.html">
+<meta property="og:image" content="https://kastrava.in/logo.png">
+<script src="/wl.js?v=2"></script>
+<script>
+(function(){try{
+  var s=null;try{s=localStorage.getItem('kas-theme');}catch(e){}
+  document.documentElement.setAttribute('data-theme',
+    s?(s==='dark'?'dark':'light'):((window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'));
+}catch(e){}})();
+</script>
+<link rel="stylesheet" href="/k.css?v=6">
+<style>
+.prod-hero{padding:64px 0 28px}
+.prod-hero .badge{display:inline-flex;font-family:var(--mono);font-size:12px;letter-spacing:.5px;padding:5px 13px;border-radius:100px;color:#137333;background:rgba(19,115,51,.12);font-weight:500;margin-bottom:20px}
+html[data-theme="dark"] .prod-hero .badge{color:#81c995}
+.prod-hero h1{font-size:clamp(40px,6vw,68px) !important;font-weight:500 !important;line-height:1.03;letter-spacing:-.02em}
+.prod-hero .lede{font-size:19px;max-width:600px}
+.shot-frame{border-radius:18px;overflow:hidden;box-shadow:0 1px 2px rgba(60,64,67,.3),0 16px 40px 6px rgba(60,64,67,.2),0 6px 12px 4px rgba(60,64,67,.10);border:1px solid var(--line);background:#0b0e14;line-height:0;margin-top:36px}
+.shot-frame svg{width:100%;height:auto;display:block}
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.fcard{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:26px;box-shadow:var(--e1)}
+.fcard .ic{width:44px;height:44px;border-radius:12px;background:var(--bg2);display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.fcard h3{font-size:18px;font-weight:500;margin-bottom:6px}
+.fcard p{font-size:14.5px;color:var(--text);margin:0}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.cta-row2{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
+@media(max-width:820px){.feat-grid,.two{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<nav><div class="wrap">
+  <a href="/" style="display:flex;align-items:center;gap:12px;text-decoration:none"><img src="/logo.png" alt="Kastrava"><span class="name">Kastrava</span></a>
+  <div class="links">
+    <a href="/products.html">Products</a>
+    <a href="/#premium">Premium</a>
+    <a href="/store.html">Store</a>
+    <a href="https://us.kastrava.in/">Team</a>
+    <button id="theme-btn" class="theme-btn" title="Toggle theme" aria-label="Toggle theme">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+    <a class="dl" href="https://github.com/tejaskhanna989/kastmanager/releases" target="_blank" rel="noopener">Get it</a>
+  </div>
+</div></nav>
+
+<header class="prod-hero"><div class="wrap">
+  <span class="badge">ACTIVE · v2.6.0</span>
+  <h1>Kast Manager.<br>Your system, <em>at a glance.</em></h1>
+  <p class="lede">A fresh, minimal system companion with a dark neon interface. Live dashboard, sortable processes with kill, hand-drawn graphs, disk usage and a file browser — written from scratch in C with GTK4.</p>
+  <div class="cta-row2" style="margin-top:28px">
+    <a class="btn btn-primary" href="https://snapcraft.io/kastmanager" target="_blank" rel="noopener">Install from Snap</a>
+    <a class="btn btn-ghost" href="https://github.com/tejaskhanna989/kastmanager" target="_blank" rel="noopener">View source</a>
+  </div>
+  <p class="hero-meta" style="margin-top:20px;margin-bottom:0">Linux · GTK4 / libadwaita · C · GPLv3</p>
+  <div class="shot-frame">
+    <svg viewBox="0 0 1200 640" xmlns="http://www.w3.org/2000/svg" aria-label="Kast Manager screenshot">
+      <rect width="1200" height="640" fill="#0b0e14"/>
+      <!-- sidebar -->
+      <rect width="220" height="640" fill="#0e1219"/>
+      <text x="28" y="46" font-family="'Roboto',sans-serif" font-size="16" fill="#e7e9ee" font-weight="600">Kast</text>
+      <rect x="16" y="76" width="188" height="38" rx="10" fill="#171d2a"/>
+      <rect x="30" y="88" width="16" height="16" rx="4" fill="#4d86f5"/>
+      <text x="58" y="102" font-family="'Roboto',sans-serif" font-size="14" fill="#e7e9ee">Dashboard</text>
+      <text x="58" y="146" font-family="'Roboto',sans-serif" font-size="14" fill="#8b93a5">Processes</text>
+      <text x="58" y="190" font-family="'Roboto',sans-serif" font-size="14" fill="#8b93a5">Graphs</text>
+      <text x="58" y="234" font-family="'Roboto',sans-serif" font-size="14" fill="#8b93a5">File Systems</text>
+      <text x="58" y="278" font-family="'Roboto',sans-serif" font-size="14" fill="#8b93a5">Files</text>
+      <!-- main header -->
+      <rect x="220" y="0" width="980" height="64" fill="#0e1219"/>
+      <text x="252" y="40" font-family="'Roboto',sans-serif" font-size="18" fill="#e7e9ee" font-weight="600">Dashboard</text>
+      <!-- stat cards -->
+      <g>
+        <rect x="252" y="92" width="210" height="110" rx="14" fill="#121722" stroke="#1f2633"/>
+        <text x="276" y="126" font-family="monospace" font-size="12" fill="#8b93a5">CPU</text>
+        <text x="276" y="168" font-family="'Roboto',sans-serif" font-size="30" fill="#4d86f5" font-weight="700">23%</text>
+        <rect x="486" y="92" width="210" height="110" rx="14" fill="#121722" stroke="#1f2633"/>
+        <text x="510" y="126" font-family="monospace" font-size="12" fill="#8b93a5">MEMORY</text>
+        <text x="510" y="168" font-family="'Roboto',sans-serif" font-size="30" fill="#b98a1d" font-weight="700">5.2 GB</text>
+        <rect x="720" y="92" width="210" height="110" rx="14" fill="#121722" stroke="#1f2633"/>
+        <text x="744" y="126" font-family="monospace" font-size="12" fill="#8b93a5">PROCESSES</text>
+        <text x="744" y="168" font-family="'Roboto',sans-serif" font-size="30" fill="#e7e9ee" font-weight="700">218</text>
+        <rect x="954" y="92" width="210" height="110" rx="14" fill="#121722" stroke="#1f2633"/>
+        <text x="978" y="126" font-family="monospace" font-size="12" fill="#8b93a5">UPTIME</text>
+        <text x="978" y="168" font-family="'Roboto',sans-serif" font-size="30" fill="#81c995" font-weight="700">3d 4h</text>
+      </g>
+      <!-- graph panel -->
+      <rect x="252" y="228" width="600" height="330" rx="14" fill="#121722" stroke="#1f2633"/>
+      <text x="276" y="262" font-family="monospace" font-size="12" fill="#8b93a5">CPU OVER TIME</text>
+      <polyline points="276,470 336,410 396,440 456,340 516,380 576,300 636,360 696,320 756,420 816,360" fill="none" stroke="#4d86f5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <polyline points="276,500 336,480 396,490 456,450 516,470 576,430 636,460 696,440 756,490 816,460" fill="none" stroke="#b98a1d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity=".7"/>
+      <line x1="276" y1="530" x2="828" y2="530" stroke="#1f2633"/>
+      <!-- disk panel -->
+      <rect x="880" y="228" width="284" height="330" rx="14" fill="#121722" stroke="#1f2633"/>
+      <text x="904" y="262" font-family="monospace" font-size="12" fill="#8b93a5">FILE SYSTEMS</text>
+      <text x="904" y="304" font-family="'Roboto',sans-serif" font-size="13" fill="#e7e9ee">/ (root)</text>
+      <rect x="904" y="316" width="236" height="8" rx="4" fill="#1f2633"/>
+      <rect x="904" y="316" width="150" height="8" rx="4" fill="#4d86f5"/>
+      <text x="904" y="360" font-family="'Roboto',sans-serif" font-size="13" fill="#e7e9ee">/home</text>
+      <rect x="904" y="372" width="236" height="8" rx="4" fill="#1f2633"/>
+      <rect x="904" y="372" width="90" height="8" rx="4" fill="#b98a1d"/>
+      <text x="904" y="416" font-family="'Roboto',sans-serif" font-size="13" fill="#e7e9ee">/vault</text>
+      <rect x="904" y="428" width="236" height="8" rx="4" fill="#1f2633"/>
+      <rect x="904" y="428" width="45" height="8" rx="4" fill="#81c995"/>
+    </svg>
+  </div>
+</div></header>
+
+<section><div class="wrap">
+  <h2 class="sec-title">Everything you need. Nothing you don't.</h2>
+  <p class="sec-sub">Kast Manager 2.x is written from scratch — no GNOME System Monitor code. Just a fast, dark, ad-free companion for your machine.</p>
+  <div class="feat-grid">
+    <div class="fcard">
+      <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a73e8" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
+      <h3>Live dashboard</h3>
+      <p>Stat cards for CPU, memory, processes and uptime — updating in real time at a glance.</p>
+    </div>
+    <div class="fcard">
+      <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a73e8" stroke-width="2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></div>
+      <h3>Sortable processes</h3>
+      <p>Searchable, sortable process list with End and Kill actions. Find and stop anything instantly.</p>
+    </div>
+    <div class="fcard">
+      <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a73e8" stroke-width="2" stroke-linecap="round"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg></div>
+      <h3>Hand-drawn graphs</h3>
+      <p>Smooth, custom-rendered CPU and memory graphs — no heavyweight charting libraries.</p>
+    </div>
+    <div class="fcard">
+      <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a73e8" stroke-width="2" stroke-linecap="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 10h20"/></svg></div>
+      <h3>File systems</h3>
+      <p>See usage across every mounted partition with clean, readable bars.</p>
+    </div>
+    <div class="fcard">
+      <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a73e8" stroke-width="2" stroke-linecap="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
+      <h3>File browser</h3>
+      <p>Navigate, open, create folders and trash — a minimal file manager built right in.</p>
+    </div>
+    <div class="fcard">
+      <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a73e8" stroke-width="2" stroke-linecap="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M6 12h.01M10 12h.01M6 16h8"/></svg></div>
+      <h3>Terminal UI</h3>
+      <p>A companion TUI for when you're already in the shell and want the same data.</p>
+    </div>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <h2 class="sec-title">Get Kast Manager.</h2>
+  <p class="sec-sub">Free and open source under GPLv3. Pick whichever install method you like.</p>
+  <div class="two">
+    <div class="os">
+      <h3>Snap</h3>
+      <div class="plat">Easiest · auto-updates</div>
+      <div class="dl-link" style="cursor:default"><span class="mono">sudo snap install kastmanager</span></div>
+      <p class="os-note">Available on the Snap Store.</p>
+    </div>
+    <div class="os">
+      <h3>Manual</h3>
+      <div class="plat">.deb (Ubuntu 24.04+) · AppImage</div>
+      <a class="dl-link" href="https://github.com/tejaskhanna989/kastmanager/releases" target="_blank" rel="noopener">GitHub releases<span class="mono">↗</span></a>
+      <a class="dl-link" href="https://github.com/tejaskhanna989/kastmanager" target="_blank" rel="noopener">Source &amp; build<span class="mono">↗</span></a>
+    </div>
+  </div>
+  <div class="band" style="margin-top:20px;display:flex;justify-content:space-between;align-items:center;text-decoration:none">
+    <span class="mono" style="font-size:13px">github.com/tejaskhanna989/kastmanager</span>
+    <span class="go" style="font-weight:600">Star the repo →</span>
+  </div>
+</div></section>
+
+<footer><div class="wrap"><div class="foot-grid">
+  <div><p class="fh">KASTRAVA</p>
+    <p style="margin-top:6px">Privacy-first, GPLv3 open source. Built by the community, for the community.</p></div>
+  <div><p class="fh">PRODUCTS</p>
+    <p style="margin-top:6px"><a href="/">Kastrava Browser</a></p>
+    <p style="margin-top:4px"><a href="/kastrafiles.html">KastraFiles</a></p>
+    <p style="margin-top:4px"><a href="/kastmanager.html">Kast Manager</a></p></div>
+  <div><p class="fh">COMPANY</p>
+    <p style="margin-top:6px"><a href="https://us.kastrava.in/">Team</a></p>
+    <p style="margin-top:4px"><a href="/products.html">All products</a></p>
+    <p style="margin-top:4px"><a href="https://github.com/tejaskhanna989" target="_blank" rel="noopener">GitHub</a></p></div>
+  <div><p class="fh">LEGAL</p>
+    <p style="margin-top:6px"><a href="/terms.html">Terms</a> · <a href="/privacy.html">Privacy</a></p>
+    <p style="margin-top:4px"><a href="/license.html">License</a> · <a href="/contact.html">Contact</a></p></div>
+</div></div></footer>
+
+<script>
+(function(){
+  var b=document.getElementById('theme-btn');
+  if(b)b.addEventListener('click',function(){
+    var cur=document.documentElement.getAttribute('data-theme');
+    var next=cur==='dark'?'light':'dark';
+    document.documentElement.setAttribute('data-theme',next);
+    try{localStorage.setItem('kas-theme',next);}catch(e){}
+  });
+})();
+</script>
+</body>
+</html>
