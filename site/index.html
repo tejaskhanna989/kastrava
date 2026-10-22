@@ -38,27 +38,95 @@
 </script>
 <link rel="stylesheet" href="/k.css?v=6">
 <style>
-.hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:center}
-.hero-shot{border-radius:16px;overflow:hidden;box-shadow:0 1px 2px rgba(60,64,67,.3),0 12px 32px 4px rgba(60,64,67,.18),0 4px 8px 3px rgba(60,64,67,.10);border:1px solid var(--line);background:#000;line-height:0}
+/* ---- Chrome-style landing: floating logo, colored pill highlights,
+       circular arrow buttons, right-aligned divided list, blue CTA ---- */
+.hero-shot{border-radius:18px;overflow:hidden;box-shadow:0 1px 2px rgba(60,64,67,.28),0 18px 44px 6px rgba(60,64,67,.20),0 6px 14px 4px rgba(60,64,67,.10);border:1px solid var(--line);background:#000;line-height:0;max-width:960px;margin:0 auto;width:100%}
 .hero-shot .shot{width:100%;height:auto;display:block}
+
+/* colored pill highlight on a word (Chrome's headline signature) */
+.hl{display:inline-block;background:rgba(26,115,232,.12);color:var(--blue);border-radius:.5em;padding:.02em .38em;line-height:1.05}
+.hl.green{background:rgba(52,168,83,.14);color:#188038}
+.hl.amber{background:rgba(251,188,5,.18);color:#b06000}
+html[data-theme="dark"] .hl.green{color:#81c995}
+html[data-theme="dark"] .hl.amber{color:#fdd663}
+
+/* hero (Chrome: centered, floating logo, pill headline, blue pill btn, text link) */
+.hero-chrome{text-align:center;padding:56px 0 24px !important}
+.hero-chrome .wrap{display:flex;flex-direction:column;align-items:center}
+.hero-logo{width:96px;height:96px;border-radius:24px;object-fit:contain;filter:drop-shadow(0 6px 18px rgba(60,64,67,.18));margin-bottom:28px}
+.hero-chrome h1{font-size:clamp(40px,6.4vw,80px) !important;font-weight:500 !important;line-height:1.02 !important;letter-spacing:-.025em !important;max-width:15ch;margin:0 auto 8px !important}
+.hero-dl-row{display:flex;flex-direction:column;align-items:center;gap:18px;margin-top:34px}
+.btn-dl{display:inline-flex;align-items:center;gap:12px;background:var(--blue) !important;color:#fff !important;font-size:17px !important;font-weight:500 !important;padding:16px 34px !important;border-radius:100px !important;box-shadow:var(--e2);transition:box-shadow .2s,transform .2s}
+.btn-dl:hover{background:#1765cc !important;box-shadow:var(--e3);transform:translateY(-1px)}
+html[data-theme="dark"] .btn-dl:hover{background:#9dc2fa !important}
+.hero-textlink{color:var(--blue);font-size:15.5px;font-weight:500}
+.hero-textlink:hover{text-decoration:underline}
+.hero-shot-wrap{margin-top:48px}
+
+/* full-bleed tagline card */
+.tagline-card{border-radius:28px;padding:clamp(48px,7vw,96px) 32px;text-align:center;background:linear-gradient(135deg,#1a73e8,#0d47a1);color:#fff;box-shadow:var(--e3);margin-top:16px}
+.tagline-card h2{color:#fff !important;font-size:clamp(30px,4.6vw,56px) !important;font-weight:500 !important;margin:0;letter-spacing:-.02em}
+.tagline-card p{color:rgba(255,255,255,.9);font-size:18px;margin-top:16px;max-width:52ch;margin-left:auto;margin-right:auto}
+
+/* section heading variants */
+.sec-center{text-align:center}
+.sec-center .sec-sub{margin-left:auto;margin-right:auto}
+
+/* feature grid with circular arrow buttons (Chrome cards) */
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.fgrid.three{grid-template-columns:repeat(3,1fr)}
+.fcard2{position:relative;background:var(--card);border:1px solid var(--line);border-radius:24px;padding:30px;box-shadow:var(--e1);transition:box-shadow .2s,transform .2s;overflow:hidden}
+.fcard2:hover{box-shadow:var(--e2);transform:translateY(-2px)}
+.fcard2.blue{background:var(--blue);border-color:transparent;color:#fff}
+.fcard2.blue h3,.fcard2.blue p{color:#fff}
+.fcard2.blue p{color:rgba(255,255,255,.92)}
+.fcard2 .fico{width:52px;height:52px;border-radius:14px;background:var(--bg2);display:flex;align-items:center;justify-content:center;margin-bottom:18px}
+.fcard2.blue .fico{background:rgba(255,255,255,.18)}
+.fcard2 h3{font-size:20px;font-weight:500;margin-bottom:8px}
+.fcard2 p{font-size:15px;color:var(--text);margin:0;line-height:1.55}
+.arrow-btn{position:absolute;right:22px;bottom:22px;width:40px;height:40px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:var(--e1);transition:transform .2s}
+.fcard2.blue .arrow-btn{background:#fff;color:var(--blue)}
+.fcard2:hover .arrow-btn{transform:translateX(3px)}
+
+/* right-aligned divided feature list (Chrome "vertical tabs" pattern) */
+.rlist{display:flex;flex-direction:column;text-align:right;gap:0}
+.rlist .ri{padding:22px 0;border-top:1px solid var(--line)}
+.rlist .ri:last-child{border-bottom:1px solid var(--line)}
+.rlist .ri h3{font-size:22px;font-weight:500;margin:0 0 6px}
+.rlist .ri p{font-size:15px;color:var(--muted);margin:0}
+
+/* big blue CTA banner (Chrome closing) */
+.cta-banner{border-radius:28px;background:linear-gradient(135deg,#1a73e8,#0b57d0);color:#fff;text-align:center;padding:clamp(44px,6vw,80px) 32px;box-shadow:var(--e3);margin-top:24px;position:relative;overflow:hidden}
+.cta-banner h2{color:#fff !important;font-size:clamp(30px,4.4vw,52px) !important;font-weight:500 !important;margin:0 0 14px;letter-spacing:-.02em}
+.cta-banner p{color:rgba(255,255,255,.9);font-size:17px;max-width:50ch;margin:0 auto 30px}
+.cta-banner .btn-white{display:inline-flex;align-items:center;gap:10px;background:#fff;color:#0b57d0 !important;font-weight:500;font-size:16px;padding:15px 32px;border-radius:100px;box-shadow:0 2px 8px rgba(0,0,0,.14);transition:transform .2s,box-shadow .2s}
+.cta-banner .btn-white:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.2);text-decoration:none}
+
+/* download platform cards */
+.plat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.plat-card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:28px;box-shadow:var(--e1)}
+.plat-card h3{font-size:21px;font-weight:500;margin-bottom:2px}
+.plat-card .plat{font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:16px}
+
 .plan-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:18px 0 4px}
 .plan-card .big{font-weight:600;font-size:21px;margin:6px 0 2px;color:var(--ink);font-family:'Rubik','Roboto',sans-serif}
 .plan-card .small{font-size:12.5px;color:var(--muted)}
 .plan-card .go{margin-top:12px;font-weight:600;font-size:14px;color:var(--blue)}
 .plan-card .k{font-size:11px;letter-spacing:1.5px;color:var(--muted);font-family:var(--mono)}
-@media(max-width:820px){.hero-grid{grid-template-columns:1fr}}
+@media(max-width:900px){.fgrid,.fgrid.three,.plat-grid{grid-template-columns:1fr}.rlist{text-align:left}}
 </style>
 </head>
 <body>
 
 <nav><div class="wrap">
-  <img src="logo.png" alt="Kastrava">
-  <span class="name">KASTRAVA</span><span class="beta">RC</span>
+  <a class="brand" href="/" style="display:flex;align-items:center;gap:10px;text-decoration:none">
+    <img src="logo.png" alt="" style="width:28px;height:28px;border-radius:8px;object-fit:contain">
+    <span class="name" style="font-family:'Rubik','Roboto',sans-serif;font-size:22px;font-weight:500;letter-spacing:-.5px;color:var(--ink);text-transform:lowercase">kastrava</span>
+  </a>
   <div class="links">
     <a href="#features" data-wl="nav_feat">Features</a>
     <a href="/products.html" data-wl="nav_prod">Products</a>
     <a href="#premium" data-wl="nav_prem">Premium</a>
-    <a href="#download" data-wl="nav_dl2">Download</a>
     <a href="/account.html" data-wl="nav_acct">Account</a>
     <a href="https://store.kastrava.in/">Store</a>
     <a href="https://us.kastrava.in/">Team</a>
@@ -67,42 +135,82 @@
       <svg class="ic-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
     </button>
     <button id="lang-btn" class="theme-btn" title="EN / RU" aria-label="Language" style="font-size:12px;font-weight:700;font-family:inherit;width:auto;min-width:64px;padding:0 12px;white-space:nowrap">EN|РУ</button>
-    <a class="dl" href="#download" data-wl="nav_dl">Download</a>
+    <a class="dl" href="#download" data-wl="nav_dl" style="padding:10px 20px;border-radius:100px">Download</a>
   </div>
 </div></nav>
 
-<header class="hero-center"><div class="wrap">
-  <div class="kicker" data-wl="hero_kick">v101.5.25-rc · Starship Wonders · GPLv3 open source</div>
-  <h1 data-wl="hero_h">The browser<br>that <em>forgets you.</em></h1>
-  <p class="lede" data-wl="hero_lede">Kastrava keeps nothing on your disk — no cache, no cookies, no site databases. Everything runs in memory and is wiped when you quit. Chromium underneath, so the whole web just works.</p>
-  <div class="cta-row">
-    <a class="btn btn-primary" href="#download" data-wl="hero_dl">Download Free</a>
-    <a class="btn btn-ghost" href="#premium" id="hero-prem">Go Premium — $49/mo</a>
-  </div>
-  <p class="mono hero-meta" data-wl="hero_meta">Linux · Windows · Android · Free forever · Premium $49/mo · $4.99/day</p>
-  <div class="hero-grid" style="text-align:left">
-    <div class="spec">
-      <div class="row"><span class="k" data-wl="sp_tel">Telemetry sent</span><span class="v mono">0 bytes</span></div>
-      <div class="row"><span class="k" data-wl="sp_cook">Cookies left on disk</span><span class="v mono">0</span></div>
-      <div class="row"><span class="k" data-wl="sp_ws">Web storage</span><span class="v" data-wl="sp_ws_v">RAM only, wiped on exit</span></div>
-      <div class="row"><span class="k" data-wl="sp_eng">Engine</span><span class="v">Chromium</span></div>
-      <div class="row"><span class="k" data-wl="sp_lic">License</span><span class="v" data-wl="sp_lic_v">GPLv3 — read it all</span></div>
+<!-- Chrome-style hero: floating logo, huge headline with pill highlight,
+     blue pill download button, text link, big browser screenshot -->
+<header class="hero-center hero-chrome">
+  <div class="wrap">
+    <img class="hero-logo" src="logo.png" alt="" width="96" height="96">
+    <h1 data-wl="hero_h">The browser<br>that <span class="hl">forgets you.</span></h1>
+    <div class="hero-dl-row">
+      <a class="btn btn-dl" href="#download" data-wl="hero_dl">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>Download Kastrava</span>
+      </a>
+      <a class="hero-textlink" href="#premium" id="hero-prem" data-wl="hero-prem">Go Premium — $49/mo</a>
     </div>
-    <div class="hero-shot" aria-hidden="true">
-      <img class="shot" src="/hero-ntp.png" alt="" width="1366" height="748" loading="eager" decoding="async">
+    <div class="hero-shot-wrap" style="width:100%">
+      <div class="hero-shot" aria-hidden="true">
+        <img class="shot" src="/hero-ntp.png" alt="" width="1366" height="748" loading="eager" decoding="async">
+      </div>
     </div>
   </div>
-</div></header>
+</header>
 
-<section id="features"><div class="wrap">
-  <h2 class="sec-title" data-wl="f_h">Private by construction.</h2>
-  <p class="sec-sub" data-wl="f_s">Not a mode you turn on. The architecture itself. Every claim below is verifiable in the public source.</p>
-  <div class="feat"><div class="n">01</div><div><h3 data-wl="f1_h">Memory-only sessions</h3><p data-wl="f1_p">Cache, cookies and site data never touch your disk. Quit — or crash — and it's gone. Downloads are yours and stay.</p></div></div>
-  <div class="feat"><div class="n">02</div><div><h3 data-wl="f2_h">Live tracker radar</h3><p data-wl="f2_p">Per-tab count of third-party requests and cookies with a score. Strict blocking, DNT, no referrers.</p></div></div>
-  <div class="feat"><div class="n">03</div><div><h3 data-wl="f3_h">Independent search</h3><p data-wl="f3_p">KastravaSearch by default. One click to DuckDuckGo, Brave, Google or Ecosia.</p></div></div>
-  <div class="feat"><div class="n">04</div><div><h3 data-wl="f4_h">Real browser chrome</h3><p data-wl="f4_p">Tabs, workspaces, split view, vertical tabs, video pop-out, screenshots, full keyboard control, devtools.</p></div></div>
-  <div class="feat"><div class="n">05</div><div><h3 data-wl="f5_h">Your data, synced E2E</h3><p data-wl="f5_p">Bookmarks, settings and keys sync encrypted. We can't read them; lose your password and not even we can recover them.</p></div></div>
-  <div class="feat"><div class="n">06</div><div><h3 data-wl="f6_h">One account, 10 devices</h3><p data-wl="f6_p">Premium lives on your account, not a machine. Log in anywhere and it switches on.</p></div></div>
+<!-- full-bleed tagline card (Chrome's "There's no place like Chrome") -->
+<div class="wrap"><div class="tagline-card">
+  <h2 data-wl="tag_h">Nothing stays. Nothing tracks.</h2>
+  <p data-wl="tag_p">Cache, cookies and site databases never touch your disk. Quit — or crash — and it's all gone.</p>
+</div></div>
+
+<!-- "Private by construction." — centered heading + feature grid with circular arrow buttons -->
+<section id="features" style="padding-top:40px"><div class="wrap">
+  <div class="sec-center">
+    <h2 class="sec-title" data-wl="f_h">Private by <span class="hl">construction.</span></h2>
+    <p class="sec-sub" data-wl="f_s">Not a mode you turn on. The architecture itself. Every claim below is verifiable in the public source.</p>
+  </div>
+  <div class="fgrid" style="margin-top:44px">
+    <div class="fcard2">
+      <div class="fico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg></div>
+      <h3 data-wl="f1_h">Memory-only sessions</h3>
+      <p data-wl="f1_p">Cache, cookies and site data never touch your disk. Quit — or crash — and it's gone. Downloads are yours and stay.</p>
+      <div class="arrow-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg></div>
+    </div>
+    <div class="fcard2 blue">
+      <div class="fico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+      <h3 data-wl="f2_h">Live tracker radar</h3>
+      <p data-wl="f2_p">Per-tab count of third-party requests and cookies with a score. Strict blocking, DNT, no referrers.</p>
+      <div class="arrow-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg></div>
+    </div>
+    <div class="fcard2 blue">
+      <div class="fico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+      <h3 data-wl="f3_h">Independent search</h3>
+      <p data-wl="f3_p">KastravaSearch by default. One click to DuckDuckGo, Brave, Google or Ecosia.</p>
+      <div class="arrow-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg></div>
+    </div>
+    <div class="fcard2">
+      <div class="fico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></div>
+      <h3 data-wl="f4_h">Real browser chrome</h3>
+      <p data-wl="f4_p">Tabs, workspaces, split view, vertical tabs, video pop-out, screenshots, full keyboard control, devtools.</p>
+      <div class="arrow-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg></div>
+    </div>
+  </div>
+
+  <!-- Chrome's right-aligned divided feature list -->
+  <div style="display:grid;grid-template-columns:1fr 1.1fr;gap:48px;align-items:center;margin-top:72px" class="hero-grid">
+    <div>
+      <h2 style="font-size:clamp(28px,3.4vw,42px);font-weight:500;letter-spacing:-.02em;line-height:1.12;margin-bottom:18px">Your data, synced <span class="hl green">end-to-end.</span></h2>
+      <p style="font-size:16px;color:var(--muted);line-height:1.6">Bookmarks, settings and keys sync encrypted. We can't read them; lose your password and not even we can recover them.</p>
+    </div>
+    <div class="rlist">
+      <div class="ri"><h3 data-wl="f5_h">Your data, synced E2E</h3><p data-wl="f5_p">Bookmarks, settings and keys sync encrypted. We can't read them; lose your password and not even we can recover them.</p></div>
+      <div class="ri"><h3 data-wl="f6_h">One account, 10 devices</h3><p data-wl="f6_p">Premium lives on your account, not a machine. Log in anywhere and it switches on.</p></div>
+      <div class="ri"><h3 data-wl="sp_tel">Telemetry sent</h3><p class="mono" style="color:#188038;font-weight:600">0 bytes</p></div>
+    </div>
+  </div>
 </div></section>
 
 <section id="premium"><div class="wrap">
@@ -205,25 +313,32 @@
 </div></section>
 
 <section id="download"><div class="wrap">
-  <h2 class="sec-title" data-wl="d_h">Get Kastrava.</h2>
-  <p class="sec-sub" data-wl="d_s">v101.5.25 — free core, forever. Premium unlocks inside the app after you log in.</p>
-  <div class="os">
-    <h3>Linux</h3><div class="plat">x86_64 · v101.5.25-rc</div>
-    <a class="dl-link" href="https://kastrava.in/dl/kastrava-101.5.25-1-x86_64.pkg.tar.zst" target="_blank" rel="noopener">Arch<span class="fn mono">.pkg.tar.zst</span></a>
-    <a class="dl-link" href="https://kastrava.in/dl/kastrava_101.5.25_amd64.deb" target="_blank" rel="noopener">Debian / Ubuntu<span class="fn mono">.deb</span></a>
-    <a class="dl-link" href="https://kastrava.in/dl/Kastrava-101.5.25.AppImage" target="_blank" rel="noopener">AppImage, any distro<span class="fn mono">.AppImage</span></a>
-    <a class="dl-link" href="https://kastrava.in/dl/kastrava-101.5.25.x86_64.rpm" target="_blank" rel="noopener">Fedora / RHEL<span class="fn mono">.rpm</span></a>
+  <div class="sec-center">
+    <h2 class="sec-title" data-wl="d_h">Get <span class="hl">Kastrava.</span></h2>
+    <p class="sec-sub" data-wl="d_s">v101.5.25 — free core, forever. Premium unlocks inside the app after you log in.</p>
   </div>
-  <div class="os" style="margin-top:12px">
-    <h3>Windows</h3><div class="plat">x86_64 · v101.5.25</div>
-    <a class="dl-link" href="https://kastrava.in/dl/Kastrava-Setup-101.5.25.exe" target="_blank" rel="noopener">Installer<span class="fn mono">.exe</span></a>
-    <a class="dl-link" href="https://kastrava.in/dl/Kastrava-101.5.25.exe" target="_blank" rel="noopener">Portable, no install<span class="fn mono">.exe</span></a>
-    <p class="os-note" data-wl="d_win">Files are unsigned — SmartScreen warns. More info → Run anyway.</p>
-  </div>
-  <div class="os" style="margin-top:12px">
-    <h3>Android</h3><div class="plat">arm64 · v101.5.25</div>
-    <a class="dl-link" id="dl-apk" href="https://kastrava.in/dl/Kastrava-101.5.25.apk" target="_blank" rel="noopener">Direct APK<span class="fn mono">.apk</span></a>
-    <p class="os-note" data-wl="d_and">Allow “Install unknown apps” when asked. Log in inside the app for Premium.</p>
+  <div class="plat-grid" style="margin-top:40px">
+    <div class="plat-card">
+      <div class="fico" style="width:44px;height:44px;border-radius:12px;background:var(--bg2);display:flex;align-items:center;justify-content:center;margin-bottom:14px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+      <h3>Linux</h3><div class="plat">x86_64 · v101.5.25-rc</div>
+      <a class="dl-link" href="https://kastrava.in/dl/kastrava-101.5.25-1-x86_64.pkg.tar.zst" target="_blank" rel="noopener">Arch<span class="fn mono">.pkg.tar.zst</span></a>
+      <a class="dl-link" href="https://kastrava.in/dl/kastrava_101.5.25_amd64.deb" target="_blank" rel="noopener">Debian / Ubuntu<span class="fn mono">.deb</span></a>
+      <a class="dl-link" href="https://kastrava.in/dl/Kastrava-101.5.25.AppImage" target="_blank" rel="noopener">AppImage, any distro<span class="fn mono">.AppImage</span></a>
+      <a class="dl-link" href="https://kastrava.in/dl/kastrava-101.5.25.x86_64.rpm" target="_blank" rel="noopener">Fedora / RHEL<span class="fn mono">.rpm</span></a>
+    </div>
+    <div class="plat-card">
+      <div class="fico" style="width:44px;height:44px;border-radius:12px;background:var(--bg2);display:flex;align-items:center;justify-content:center;margin-bottom:14px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#188038" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"/><line x1="2" y1="9" x2="22" y2="9"/></svg></div>
+      <h3>Windows</h3><div class="plat">x86_64 · v101.5.25</div>
+      <a class="dl-link" href="https://kastrava.in/dl/Kastrava-Setup-101.5.25.exe" target="_blank" rel="noopener">Installer<span class="fn mono">.exe</span></a>
+      <a class="dl-link" href="https://kastrava.in/dl/Kastrava-101.5.25.exe" target="_blank" rel="noopener">Portable, no install<span class="fn mono">.exe</span></a>
+      <p class="os-note" data-wl="d_win">Files are unsigned — SmartScreen warns. More info → Run anyway.</p>
+    </div>
+    <div class="plat-card">
+      <div class="fico" style="width:44px;height:44px;border-radius:12px;background:var(--bg2);display:flex;align-items:center;justify-content:center;margin-bottom:14px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#b06000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg></div>
+      <h3>Android</h3><div class="plat">arm64 · v101.5.25</div>
+      <a class="dl-link" id="dl-apk" href="https://kastrava.in/dl/Kastrava-101.5.25.apk" target="_blank" rel="noopener">Direct APK<span class="fn mono">.apk</span></a>
+      <p class="os-note" data-wl="d_and">Allow “Install unknown apps” when asked. Log in inside the app for Premium.</p>
+    </div>
   </div>
 </div></section>
 
@@ -257,6 +372,16 @@
   </div>
 </div></section>
 
+<!-- Chrome-style closing blue CTA banner -->
+<div class="wrap"><div class="cta-banner">
+  <h2>Take your browser with you.</h2>
+  <p data-wl="cta_p">Linux, Windows and Android. Free forever — Premium unlocks inside the app.</p>
+  <a class="btn-white" href="#download">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    <span data-wl="cta_btn">Download Kastrava</span>
+  </a>
+</div></div>
+
 <footer><div class="wrap"><div class="foot-grid">
   <div><p class="fh">KASTRAVA</p>
     <p style="margin-top:6px">101 RC “Starship Wonders” · Built by the community, for the community · <a href="/authors.html">Authors</a> · <a href="https://us.kastrava.in/">Team</a></p></div>
@@ -273,7 +398,7 @@
 
 <script>
 /* i18n EN/РУ — no deps. */
-var WEBSTR={en:{"nav_feat": "Features", "nav_prod": "Products", "nav_prem": "Premium", "nav_dl": "Download", "nav_dl2": "Download", "nav_acct": "Account", "hero_kick": "v101.5.25-rc · Starship Wonders · GPLv3 open source", "hero_h": "The browser<br>that <em>forgets you.</em>", "hero_lede": "Kastrava keeps nothing on your disk — no cache, no cookies, no site databases. Everything runs in memory and is wiped when you quit. Chromium underneath, so the whole web just works.", "hero_dl": "Download Free", "hero-prem": "Go Premium — $49/mo", "hero_meta": "Linux · Windows · Android · Free forever · Premium $49/mo · $4.99/day", "sp_tel": "Telemetry sent", "sp_cook": "Cookies left on disk", "sp_ws": "Web storage", "sp_ws_v": "RAM only, wiped on exit", "sp_eng": "Engine", "sp_lic": "License", "sp_lic_v": "GPLv3 — read it all", "f_h": "Private by construction.", "f_s": "Not a mode you turn on. The architecture itself. Every claim below is verifiable in the public source.", "f1_h": "Memory-only sessions", "f1_p": "Cache, cookies and site data never touch your disk. Quit — or crash — and it's gone. Downloads are yours and stay.", "f2_h": "Live tracker radar", "f2_p": "Per-tab count of third-party requests and cookies with a score. Strict blocking, DNT, no referrers.", "f3_h": "Independent search", "f3_p": "KastravaSearch by default. One click to DuckDuckGo, Brave, Google or Ecosia.", "f4_h": "Real browser chrome", "f4_p": "Tabs, workspaces, split view, vertical tabs, video pop-out, screenshots, full keyboard control, devtools.", "f5_h": "Your data, synced E2E", "f5_p": "Bookmarks, settings and keys sync encrypted. We can't read them; lose your password and not even we can recover them.", "f6_h": "One account, 10 devices", "f6_p": "Premium lives on your account, not a machine. Log in anywhere and it switches on.", "p_h": "Premium.", "p_s": "The core is free forever. Premium funds development — <b>$49 for 30 days or $4.99 for a day</b>, manual renewal, nothing ever auto-charges.", "p_e": "Everything, everywhere.", "p_sub": "Tracking Radar · Cursor FX · Workspaces · Split View · all themes · 10 devices", "p_usd": "Click a plan — account first, payment second, key instantly", "pl1": "<b>Tracking Radar</b> — live per-tab tracker score", "pl2": "<b>Cursor effects</b> — 8 effects plus custom arrow", "pl3": "<b>Workspaces</b> — grouped tabs", "pl4": "<b>Split View</b> — two tabs side by side", "pl5": "<b>All themes</b> — full dark + light sets", "pl6": "<b>More engines</b> — Brave, Google, Ecosia", "pl7": "<b>Video pop-out</b> and screenshots", "pl8": "<b>Vertical tabs</b> — tabs on the side", "pl9": "<b>Localhost Dashboard</b> — local web apps", "pl10": "<b>Bookmark import/export</b> as HTML", "pl11": "<b>Custom shortcuts</b> — remap anything", "pl12": "<b>10 devices</b> — one account covers all", "ch_m": "Choose Monthly →", "ch_d": "Choose Daily →", "pay_note": "India pays in ₹ via Razorpay (UPI, cards, netbanking). Everywhere else pays via PayPal in local currency. Prices adapt to your location automatically.", "m_login": "Log in", "m_signup": "New account", "m_cont": "Continue", "m_ver": "Check your inbox for the code — <a href=\"#\" id=\"bm-resend\">resend</a>", "m_keyh": "Log in inside the app — Premium switches on by itself. No pasting needed.", "m_rcpt": "Download receipt (PDF)", "s1t": "STEP 1 — CHOOSE", "s1h": "Pick Daily or Monthly", "s1p": "Two cards above. Click one — a popup walks you through the rest.", "s2t": "STEP 2 — PAY", "s2h": "Account, then payment", "s2p": "Log in or create an account in the popup, then pay. Your key appears instantly.", "s3t": "STEP 3 — SYNC", "s3h": "Log in inside the app", "s3p": "Premium turns on by itself on up to 10 devices. Renewing extends the same key.", "d_h": "Get Kastrava.", "d_s": "v101.5.25 — free core, forever. Premium unlocks inside the app after you log in.", "d_win": "Files are unsigned — SmartScreen warns. More info → Run anyway.", "d_and": "Allow “Install unknown apps” when asked. Log in inside the app for Premium.", "o_h": "Yours. Literally.", "o_s": "100% GPLv3 — Electron (Chromium + Node) with our own browser code on top. Audit it, fork it, build it yourself.", "q_h": "Straight answers.", "p_done": "Done with Premium? <a href=\"#\" id=\"prem-stop\">Stop it here</a> — ends immediately, no refund.", "q1_s": "What disappears when I quit?", "q1_p": "Everything sites stored: cache, cookies, site data. It lives in RAM and is wiped on exit. Downloads, settings, bookmarks and history stay — unless you switch those off too.", "q2_s": "Is the core really free?", "q2_p": "Yes, forever. Premium ($49/month or $4.99/day) funds development. Everything else — sessions, blockers, downloads, Reader Mode, KastravaSearch, themes — costs nothing.", "q3_s": "What does Premium unlock?", "q3_p": "Radar, cursor effects, Workspaces, Split View, all themes, extra search engines, video pop-out, screenshots, Localhost Dashboard, bookmark tools, vertical tabs, custom shortcuts. One account, 10 devices.", "q4_s": "How do renewals work?", "q4_p": "Manually. You pay each time; nothing auto-charges. Paying again extends your same key, and every logged-in device picks it up.", "q5_s": "How do I pay?", "q5_p": "India: Razorpay in ₹ (UPI, cards, netbanking). Everywhere else: PayPal in your local currency. The page detects your location and shows the right rail.", "q6_s": "I lost my key. Now what?", "q6_p": "Email <a href=\"mailto:khannatejas989@gmail.com\">khannatejas989@gmail.com</a> with your payment ID and we re-issue it.", "q7_s": "Does activation spy on me?", "q7_p": "No. One device ID plus your key, once. Browsing never leaves the machine, and the app works fully offline after activation.", "q8_s": "Why “RC”?", "q8_p": "Release candidate — still being built, rough edges exist. The privacy core already works.", "q9_s": "Which platforms?", "q9_p": "Linux (Arch, Debian/Ubuntu, AppImage, Fedora), Windows (installer + portable) and Android (APK). No macOS.", "q10_s": "Chromium-based?", "q10_p": "Yes — same engine as Chrome, our own browser on top. None of their accounts or tracking.", "step1": "Step 1 of 2 — your account", "step2": "Step 2 of 2 — payment", "login_cont": "Log in & continue", "signup_cont": "Create account & continue", "apkr_note": "Russian edition — interface locked to Russian."},ru:{"nav_feat": "Функции", "nav_prod": "Продукты", "nav_prem": "Premium", "nav_dl": "Скачать", "nav_dl2": "Скачать", "nav_acct": "Аккаунт", "hero_kick": "v101.5.25-rc · Starship Wonders · открытый код GPLv3", "hero_h": "Браузер,<br>который <em>забывает вас.</em>", "hero_lede": "Kastrava ничего не хранит на диске — ни кэша, ни cookie, ни баз сайтов. Всё работает в памяти и стирается при выходе. Внутри Chromium, поэтому весь веб просто работает.", "hero_dl": "Скачать бесплатно", "hero-prem": "Premium — $49/мес", "hero_meta": "Linux · Windows · Android · Бесплатно навсегда · Premium $49/мес · $4.99/день", "sp_tel": "Телеметрия", "sp_cook": "Cookie на диске", "sp_ws": "Веб-хранилище", "sp_ws_v": "Только RAM, стирается при выходе", "sp_eng": "Движок", "sp_lic": "Лицензия", "sp_lic_v": "GPLv3 — читать целиком", "f_h": "Приватность по построению.", "f_s": "Не режим, который включают. А сама архитектура. Каждое утверждение ниже проверяется в открытом коде.", "f1_h": "Сессии только в памяти", "f1_p": "Кэш, cookie и данные сайтов не касаются диска. Вышли — или упали — и всё исчезло. Загрузки остаются вашими.", "f2_h": "Радар трекеров", "f2_p": "Счётчик сторонних запросов и cookie на вкладку с оценкой. Строгая блокировка, DNT, без рефереров.", "f3_h": "Независимый поиск", "f3_p": "По умолчанию KastravaSearch. В один клик — DuckDuckGo, Brave, Google или Ecosia.", "f4_h": "Настоящий браузер", "f4_p": "Вкладки, рабочие пространства, сплит-режим, вертикальные вкладки, видео поверх окон, скриншоты, полное управление с клавиатуры, devtools.", "f5_h": "Ваши данные, E2E-синхронизация", "f5_p": "Закладки, настройки и ключи синхронизируются зашифрованно. Мы не можем их прочитать; потеряете пароль — не восстановим даже мы.", "f6_h": "Один аккаунт — 10 устройств", "f6_p": "Premium живёт в аккаунте, а не на устройстве. Войдите где угодно — и он включится.", "p_h": "Premium.", "p_s": "Ядро бесплатно навсегда. Premium финансирует разработку — <b>$49 за 30 дней или $4.99 за день</b>, ручное продление, автоплатежей нет.", "p_e": "Всё, везде.", "p_sub": "Радар трекинга · Эффекты курсора · Пространства · Сплит-режим · все темы · 10 устройств", "p_usd": "Выберите план — сначала аккаунт, потом оплата, ключ мгновенно", "pl1": "<b>Радар трекинга</b> — живая оценка трекеров на вкладку", "pl2": "<b>Эффекты курсора</b> — 8 эффектов и своя стрелка", "pl3": "<b>Пространства</b> — группы вкладок", "pl4": "<b>Сплит-режим</b> — две вкладки рядом", "pl5": "<b>Все темы</b> — полные тёмные и светлые наборы", "pl6": "<b>Больше поисковиков</b> — Brave, Google, Ecosia", "pl7": "<b>Видео поверх окон</b> и скриншоты", "pl8": "<b>Вертикальные вкладки</b> — вкладки сбоку", "pl9": "<b>Localhost-панель</b> — локальные веб-приложения", "pl10": "<b>Импорт/экспорт закладок</b> в HTML", "pl11": "<b>Свои горячие клавиши</b> — переназначьте всё", "pl12": "<b>10 устройств</b> — один аккаунт на всё", "ch_m": "Выбрать на месяц →", "ch_d": "Выбрать на день →", "pay_note": "Индия платит в ₹ через Razorpay (UPI, карты, нетбанкинг). Остальные — через PayPal в местной валюте. Цены подстраиваются под вашу страну автоматически.", "m_login": "Войти", "m_signup": "Новый аккаунт", "m_cont": "Продолжить", "m_ver": "Проверьте почту — там код — <a href=\"#\" id=\"bm-resend\">отправить снова</a>", "m_keyh": "Войдите в приложении — Premium включится сам. Ничего вставлять не нужно.", "m_rcpt": "Скачать чек (PDF)", "s1t": "ШАГ 1 — ВЫБОР", "s1h": "Выберите: день или месяц", "s1p": "Две карточки выше. Нажмите одну — всплывающее окно проведёт дальше.", "s2t": "ШАГ 2 — ОПЛАТА", "s2h": "Сначала аккаунт, потом оплата", "s2p": "Войдите или создайте аккаунт во всплывающем окне, затем оплатите. Ключ появится мгновенно.", "s3t": "ШАГ 3 — СИНХРОНИЗАЦИЯ", "s3h": "Войдите в приложении", "s3p": "Premium включится сам на 10 устройствах. Продление продлевает тот же ключ.", "d_h": "Заберите Kastrava.", "d_s": "v101.5.25 — бесплатное ядро навсегда. Premium разблокируется в приложении после входа.", "d_win": "Файлы не подписаны — SmartScreen предупредит. Подробнее → Всё равно запустить.", "d_and": "Разрешите «Установку из неизвестных источников», когда спросят. Войдите в приложении для Premium.", "o_h": "Ваш. Буквально.", "o_s": "100% GPLv3 — Electron (Chromium + Node) и наш собственный код браузера поверх. Аудит, форк, соберите сами.", "q_h": "Прямые ответы.", "p_done": "Premium больше не нужен? <a href=\"#\" id=\"prem-stop\">Отключить здесь</a> — закончится сразу, без возврата.", "q1_s": "Что исчезает при выходе?", "q1_p": "Всё, что сохранили сайты: кэш, cookie, данные. Живёт в RAM и стирается при выходе. Загрузки, настройки, закладки и история остаются — если вы их сами не отключите.", "q2_s": "Ядро правда бесплатное?", "q2_p": "Да, навсегда. Premium ($49/месяц или $4.99/день) финансирует разработку. Всё остальное — сессии, блокировщики, загрузки, режим чтения, KastravaSearch, темы — бесплатно.", "q3_s": "Что открывает Premium?", "q3_p": "Радар, эффекты курсора, пространства, сплит-режим, все темы, доп. поисковики, видео поверх окон, скриншоты, Localhost-панель, инструменты закладок, вертикальные вкладки, свои горячие клавиши. Один аккаунт, 10 устройств.", "q4_s": "Как работают продления?", "q4_p": "Вручную. Вы платите каждый раз; автоплатежей нет. Повторная оплата продлевает тот же ключ, и каждое устройство подхватит его.", "q5_s": "Как оплатить?", "q5_p": "Индия: Razorpay в ₹ (UPI, карты, нетбанкинг). Остальные: PayPal в местной валюте. Страница сама определит страну и покажет нужный способ.", "q6_s": "Потерял ключ. Что делать?", "q6_p": "Напишите на <a href=\"mailto:khannatejas989@gmail.com\">khannatejas989@gmail.com</a> с ID платежа — перевыпустим.", "q7_s": "Активация шпионит за мной?", "q7_p": "Нет. Один ID устройства плюс ключ, один раз. Браузинг не покидает машину, после активации приложение работает полностью офлайн.", "q8_s": "Почему «RC»?", "q8_p": "Релиз-кандидат — ещё строится, шероховатости есть. Приватное ядро уже работает.", "q9_s": "Какие платформы?", "q9_p": "Linux (Arch, Debian/Ubuntu, AppImage, Fedora), Windows (установщик + portable) и Android (APK). Без macOS.", "q10_s": "На Chromium?", "q10_p": "Да — тот же движок, что у Chrome, наш браузер поверх. Без их аккаунтов и слежки.", "step1": "Шаг 1 из 2 — ваш аккаунт", "step2": "Шаг 2 из 2 — оплата", "login_cont": "Войти и продолжить", "signup_cont": "Создать аккаунт и продолжить", "apkr_note": "Русская версия — интерфейс всегда на русском."}};
+var WEBSTR={en:{"nav_feat": "Features", "nav_prod": "Products", "nav_prem": "Premium", "nav_dl": "Download", "nav_dl2": "Download", "nav_acct": "Account", "hero_kick": "v101.5.25-rc · Starship Wonders · GPLv3 open source", "hero_h": "The browser<br>that <span class=\"hl\">forgets you.</span>", "tag_h": "Nothing stays. Nothing tracks.", "tag_p": "Cache, cookies and site databases never touch your disk. Quit — or crash — and it's all gone.", "cta_p": "Linux, Windows and Android. Free forever — Premium unlocks inside the app.", "cta_btn": "Download Kastrava", "hero_lede": "Kastrava keeps nothing on your disk — no cache, no cookies, no site databases. Everything runs in memory and is wiped when you quit. Chromium underneath, so the whole web just works.", "hero_dl": "Download Kastrava", "hero-prem": "Go Premium — $49/mo", "hero_meta": "Linux · Windows · Android · Free forever · Premium $49/mo · $4.99/day", "sp_tel": "Telemetry sent", "sp_cook": "Cookies left on disk", "sp_ws": "Web storage", "sp_ws_v": "RAM only, wiped on exit", "sp_eng": "Engine", "sp_lic": "License", "sp_lic_v": "GPLv3 — read it all", "f_h": "Private by <span class=\"hl\">construction.</span>", "f_s": "Not a mode you turn on. The architecture itself. Every claim below is verifiable in the public source.", "f1_h": "Memory-only sessions", "f1_p": "Cache, cookies and site data never touch your disk. Quit — or crash — and it's gone. Downloads are yours and stay.", "f2_h": "Live tracker radar", "f2_p": "Per-tab count of third-party requests and cookies with a score. Strict blocking, DNT, no referrers.", "f3_h": "Independent search", "f3_p": "KastravaSearch by default. One click to DuckDuckGo, Brave, Google or Ecosia.", "f4_h": "Real browser chrome", "f4_p": "Tabs, workspaces, split view, vertical tabs, video pop-out, screenshots, full keyboard control, devtools.", "f5_h": "Your data, synced E2E", "f5_p": "Bookmarks, settings and keys sync encrypted. We can't read them; lose your password and not even we can recover them.", "f6_h": "One account, 10 devices", "f6_p": "Premium lives on your account, not a machine. Log in anywhere and it switches on.", "p_h": "Premium.", "p_s": "The core is free forever. Premium funds development — <b>$49 for 30 days or $4.99 for a day</b>, manual renewal, nothing ever auto-charges.", "p_e": "Everything, everywhere.", "p_sub": "Tracking Radar · Cursor FX · Workspaces · Split View · all themes · 10 devices", "p_usd": "Click a plan — account first, payment second, key instantly", "pl1": "<b>Tracking Radar</b> — live per-tab tracker score", "pl2": "<b>Cursor effects</b> — 8 effects plus custom arrow", "pl3": "<b>Workspaces</b> — grouped tabs", "pl4": "<b>Split View</b> — two tabs side by side", "pl5": "<b>All themes</b> — full dark + light sets", "pl6": "<b>More engines</b> — Brave, Google, Ecosia", "pl7": "<b>Video pop-out</b> and screenshots", "pl8": "<b>Vertical tabs</b> — tabs on the side", "pl9": "<b>Localhost Dashboard</b> — local web apps", "pl10": "<b>Bookmark import/export</b> as HTML", "pl11": "<b>Custom shortcuts</b> — remap anything", "pl12": "<b>10 devices</b> — one account covers all", "ch_m": "Choose Monthly →", "ch_d": "Choose Daily →", "pay_note": "India pays in ₹ via Razorpay (UPI, cards, netbanking). Everywhere else pays via PayPal in local currency. Prices adapt to your location automatically.", "m_login": "Log in", "m_signup": "New account", "m_cont": "Continue", "m_ver": "Check your inbox for the code — <a href=\"#\" id=\"bm-resend\">resend</a>", "m_keyh": "Log in inside the app — Premium switches on by itself. No pasting needed.", "m_rcpt": "Download receipt (PDF)", "s1t": "STEP 1 — CHOOSE", "s1h": "Pick Daily or Monthly", "s1p": "Two cards above. Click one — a popup walks you through the rest.", "s2t": "STEP 2 — PAY", "s2h": "Account, then payment", "s2p": "Log in or create an account in the popup, then pay. Your key appears instantly.", "s3t": "STEP 3 — SYNC", "s3h": "Log in inside the app", "s3p": "Premium turns on by itself on up to 10 devices. Renewing extends the same key.", "d_h": "Get <span class=\"hl\">Kastrava.</span>", "d_s": "v101.5.25 — free core, forever. Premium unlocks inside the app after you log in.", "d_win": "Files are unsigned — SmartScreen warns. More info → Run anyway.", "d_and": "Allow “Install unknown apps” when asked. Log in inside the app for Premium.", "o_h": "Yours. Literally.", "o_s": "100% GPLv3 — Electron (Chromium + Node) with our own browser code on top. Audit it, fork it, build it yourself.", "q_h": "Straight answers.", "p_done": "Done with Premium? <a href=\"#\" id=\"prem-stop\">Stop it here</a> — ends immediately, no refund.", "q1_s": "What disappears when I quit?", "q1_p": "Everything sites stored: cache, cookies, site data. It lives in RAM and is wiped on exit. Downloads, settings, bookmarks and history stay — unless you switch those off too.", "q2_s": "Is the core really free?", "q2_p": "Yes, forever. Premium ($49/month or $4.99/day) funds development. Everything else — sessions, blockers, downloads, Reader Mode, KastravaSearch, themes — costs nothing.", "q3_s": "What does Premium unlock?", "q3_p": "Radar, cursor effects, Workspaces, Split View, all themes, extra search engines, video pop-out, screenshots, Localhost Dashboard, bookmark tools, vertical tabs, custom shortcuts. One account, 10 devices.", "q4_s": "How do renewals work?", "q4_p": "Manually. You pay each time; nothing auto-charges. Paying again extends your same key, and every logged-in device picks it up.", "q5_s": "How do I pay?", "q5_p": "India: Razorpay in ₹ (UPI, cards, netbanking). Everywhere else: PayPal in your local currency. The page detects your location and shows the right rail.", "q6_s": "I lost my key. Now what?", "q6_p": "Email <a href=\"mailto:khannatejas989@gmail.com\">khannatejas989@gmail.com</a> with your payment ID and we re-issue it.", "q7_s": "Does activation spy on me?", "q7_p": "No. One device ID plus your key, once. Browsing never leaves the machine, and the app works fully offline after activation.", "q8_s": "Why “RC”?", "q8_p": "Release candidate — still being built, rough edges exist. The privacy core already works.", "q9_s": "Which platforms?", "q9_p": "Linux (Arch, Debian/Ubuntu, AppImage, Fedora), Windows (installer + portable) and Android (APK). No macOS.", "q10_s": "Chromium-based?", "q10_p": "Yes — same engine as Chrome, our own browser on top. None of their accounts or tracking.", "step1": "Step 1 of 2 — your account", "step2": "Step 2 of 2 — payment", "login_cont": "Log in & continue", "signup_cont": "Create account & continue", "apkr_note": "Russian edition — interface locked to Russian."},ru:{"nav_feat": "Функции", "nav_prod": "Продукты", "nav_prem": "Premium", "nav_dl": "Скачать", "nav_dl2": "Скачать", "nav_acct": "Аккаунт", "hero_kick": "v101.5.25-rc · Starship Wonders · открытый код GPLv3", "hero_h": "Браузер,<br>который <span class=\"hl\">забывает вас.</span>", "tag_h": "Ничего не остаётся. Ничего не отслеживается.", "tag_p": "Кэш, cookie и базы сайтов не касаются вашего диска. Выходите — или упадите — и всё исчезает.", "cta_p": "Linux, Windows и Android. Бесплатно навсегда — Premium включается внутри приложения.", "cta_btn": "Скачать Kastrava", "hero_lede": "Kastrava ничего не хранит на диске — ни кэша, ни cookie, ни баз сайтов. Всё работает в памяти и стирается при выходе. Внутри Chromium, поэтому весь веб просто работает.", "hero_dl": "Скачать Kastrava", "hero-prem": "Premium — $49/мес", "hero_meta": "Linux · Windows · Android · Бесплатно навсегда · Premium $49/мес · $4.99/день", "sp_tel": "Телеметрия", "sp_cook": "Cookie на диске", "sp_ws": "Веб-хранилище", "sp_ws_v": "Только RAM, стирается при выходе", "sp_eng": "Движок", "sp_lic": "Лицензия", "sp_lic_v": "GPLv3 — читать целиком", "f_h": "Приватность по <span class=\"hl\">построению.</span>", "f_s": "Не режим, который включают. А сама архитектура. Каждое утверждение ниже проверяется в открытом коде.", "f1_h": "Сессии только в памяти", "f1_p": "Кэш, cookie и данные сайтов не касаются диска. Вышли — или упали — и всё исчезло. Загрузки остаются вашими.", "f2_h": "Радар трекеров", "f2_p": "Счётчик сторонних запросов и cookie на вкладку с оценкой. Строгая блокировка, DNT, без рефереров.", "f3_h": "Независимый поиск", "f3_p": "По умолчанию KastravaSearch. В один клик — DuckDuckGo, Brave, Google или Ecosia.", "f4_h": "Настоящий браузер", "f4_p": "Вкладки, рабочие пространства, сплит-режим, вертикальные вкладки, видео поверх окон, скриншоты, полное управление с клавиатуры, devtools.", "f5_h": "Ваши данные, E2E-синхронизация", "f5_p": "Закладки, настройки и ключи синхронизируются зашифрованно. Мы не можем их прочитать; потеряете пароль — не восстановим даже мы.", "f6_h": "Один аккаунт — 10 устройств", "f6_p": "Premium живёт в аккаунте, а не на устройстве. Войдите где угодно — и он включится.", "p_h": "Premium.", "p_s": "Ядро бесплатно навсегда. Premium финансирует разработку — <b>$49 за 30 дней или $4.99 за день</b>, ручное продление, автоплатежей нет.", "p_e": "Всё, везде.", "p_sub": "Радар трекинга · Эффекты курсора · Пространства · Сплит-режим · все темы · 10 устройств", "p_usd": "Выберите план — сначала аккаунт, потом оплата, ключ мгновенно", "pl1": "<b>Радар трекинга</b> — живая оценка трекеров на вкладку", "pl2": "<b>Эффекты курсора</b> — 8 эффектов и своя стрелка", "pl3": "<b>Пространства</b> — группы вкладок", "pl4": "<b>Сплит-режим</b> — две вкладки рядом", "pl5": "<b>Все темы</b> — полные тёмные и светлые наборы", "pl6": "<b>Больше поисковиков</b> — Brave, Google, Ecosia", "pl7": "<b>Видео поверх окон</b> и скриншоты", "pl8": "<b>Вертикальные вкладки</b> — вкладки сбоку", "pl9": "<b>Localhost-панель</b> — локальные веб-приложения", "pl10": "<b>Импорт/экспорт закладок</b> в HTML", "pl11": "<b>Свои горячие клавиши</b> — переназначьте всё", "pl12": "<b>10 устройств</b> — один аккаунт на всё", "ch_m": "Выбрать на месяц →", "ch_d": "Выбрать на день →", "pay_note": "Индия платит в ₹ через Razorpay (UPI, карты, нетбанкинг). Остальные — через PayPal в местной валюте. Цены подстраиваются под вашу страну автоматически.", "m_login": "Войти", "m_signup": "Новый аккаунт", "m_cont": "Продолжить", "m_ver": "Проверьте почту — там код — <a href=\"#\" id=\"bm-resend\">отправить снова</a>", "m_keyh": "Войдите в приложении — Premium включится сам. Ничего вставлять не нужно.", "m_rcpt": "Скачать чек (PDF)", "s1t": "ШАГ 1 — ВЫБОР", "s1h": "Выберите: день или месяц", "s1p": "Две карточки выше. Нажмите одну — всплывающее окно проведёт дальше.", "s2t": "ШАГ 2 — ОПЛАТА", "s2h": "Сначала аккаунт, потом оплата", "s2p": "Войдите или создайте аккаунт во всплывающем окне, затем оплатите. Ключ появится мгновенно.", "s3t": "ШАГ 3 — СИНХРОНИЗАЦИЯ", "s3h": "Войдите в приложении", "s3p": "Premium включится сам на 10 устройствах. Продление продлевает тот же ключ.", "d_h": "Заберите <span class=\"hl\">Kastrava.</span>", "d_s": "v101.5.25 — бесплатное ядро навсегда. Premium разблокируется в приложении после входа.", "d_win": "Файлы не подписаны — SmartScreen предупредит. Подробнее → Всё равно запустить.", "d_and": "Разрешите «Установку из неизвестных источников», когда спросят. Войдите в приложении для Premium.", "o_h": "Ваш. Буквально.", "o_s": "100% GPLv3 — Electron (Chromium + Node) и наш собственный код браузера поверх. Аудит, форк, соберите сами.", "q_h": "Прямые ответы.", "p_done": "Premium больше не нужен? <a href=\"#\" id=\"prem-stop\">Отключить здесь</a> — закончится сразу, без возврата.", "q1_s": "Что исчезает при выходе?", "q1_p": "Всё, что сохранили сайты: кэш, cookie, данные. Живёт в RAM и стирается при выходе. Загрузки, настройки, закладки и история остаются — если вы их сами не отключите.", "q2_s": "Ядро правда бесплатное?", "q2_p": "Да, навсегда. Premium ($49/месяц или $4.99/день) финансирует разработку. Всё остальное — сессии, блокировщики, загрузки, режим чтения, KastravaSearch, темы — бесплатно.", "q3_s": "Что открывает Premium?", "q3_p": "Радар, эффекты курсора, пространства, сплит-режим, все темы, доп. поисковики, видео поверх окон, скриншоты, Localhost-панель, инструменты закладок, вертикальные вкладки, свои горячие клавиши. Один аккаунт, 10 устройств.", "q4_s": "Как работают продления?", "q4_p": "Вручную. Вы платите каждый раз; автоплатежей нет. Повторная оплата продлевает тот же ключ, и каждое устройство подхватит его.", "q5_s": "Как оплатить?", "q5_p": "Индия: Razorpay в ₹ (UPI, карты, нетбанкинг). Остальные: PayPal в местной валюте. Страница сама определит страну и покажет нужный способ.", "q6_s": "Потерял ключ. Что делать?", "q6_p": "Напишите на <a href=\"mailto:khannatejas989@gmail.com\">khannatejas989@gmail.com</a> с ID платежа — перевыпустим.", "q7_s": "Активация шпионит за мной?", "q7_p": "Нет. Один ID устройства плюс ключ, один раз. Браузинг не покидает машину, после активации приложение работает полностью офлайн.", "q8_s": "Почему «RC»?", "q8_p": "Релиз-кандидат — ещё строится, шероховатости есть. Приватное ядро уже работает.", "q9_s": "Какие платформы?", "q9_p": "Linux (Arch, Debian/Ubuntu, AppImage, Fedora), Windows (установщик + portable) и Android (APK). Без macOS.", "q10_s": "На Chromium?", "q10_p": "Да — тот же движок, что у Chrome, наш браузер поверх. Без их аккаунтов и слежки.", "step1": "Шаг 1 из 2 — ваш аккаунт", "step2": "Шаг 2 из 2 — оплата", "login_cont": "Войти и продолжить", "signup_cont": "Создать аккаунт и продолжить", "apkr_note": "Русская версия — интерфейс всегда на русском."}};
 window.wlSkipKeys=['hero-prem'];
 window.wlApplyExtra=function(){var hp=document.getElementById('hero-prem');if(!hp||hp.dataset.geo)return;var k=(typeof wlT==='function')?wlT('hero-prem'):'';if(k&&k!=='hero-prem')hp.innerHTML=k;};
 </script>
