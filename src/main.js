@@ -1001,7 +1001,7 @@ app.whenReady().then(async () => {
           const u = new URL(wc.getURL())
           if (u.protocol !== 'https:') return
           const h = (u.hostname || '').toLowerCase()
-          if (h !== 'kastrava.pp.ua' && h !== 'store.kastrava.pp.ua' && h !== 'account.kastrava.pp.ua') return
+          if (h !== 'kastrava.in' && h !== 'store.kastrava.in' && h !== 'account.kastrava.in' && h !== 'kastrava.pp.ua' && h !== 'store.kastrava.pp.ua' && h !== 'account.kastrava.pp.ua') return
           const t = settingsBackend && settingsBackend.get('syncToken')
           if (!t) return
           try { console.log('[bridge] injecting login for ' + h) } catch {}
@@ -1265,7 +1265,7 @@ function guestPreloadUrl() {
     // (The wc.executeJavaScript leg hangs on some guests; this replaces it.)
     const bridge = ';(function(){try{'
       + "var h=(location.hostname||'').toLowerCase();"
-      + "if(h!=='kastrava.pp.ua'&&h!=='store.kastrava.pp.ua'&&h!=='account.kastrava.pp.ua')return;"
+      + "if(h!=='kastrava.in'&&h!=='store.kastrava.in'&&h!=='account.kastrava.in'&&h!=='kastrava.pp.ua'&&h!=='store.kastrava.pp.ua'&&h!=='account.kastrava.pp.ua')return;"
       + 'var ipc=null;try{ipc=require(\'electron\').ipcRenderer;}catch(e){}'
       + 'if(!ipc||!ipc.invoke)return;'
       + "ipc.invoke('bridge-token',location.href).then(function(t){"
@@ -1305,24 +1305,24 @@ ipcMain.handle('ext-toggle', (_e, id) => {
 ipcMain.handle('bridge-token', async (_, href) => {
   try {
     const h = new URL(String(href || '')).hostname.toLowerCase()
-    if (h !== 'kastrava.pp.ua' && h !== 'store.kastrava.pp.ua' && h !== 'account.kastrava.pp.ua') return null
+    if (h !== 'kastrava.in' && h !== 'store.kastrava.in' && h !== 'account.kastrava.in' && h !== 'kastrava.pp.ua' && h !== 'store.kastrava.pp.ua' && h !== 'account.kastrava.pp.ua') return null
     return settingsBackend ? (settingsBackend.get('syncToken') || null) : null
   } catch { return null }
 });
 ipcMain.handle('sync-login', async (_, { apiBase, email, password }) => {
-  try { return await syncEngine.login(apiBase || 'https://nexufog.pp.ua', email, password, syncStore(), safeStorage) } catch { return { ok: false, msg: 'Login failed.' } }
+  try { return await syncEngine.login(apiBase || 'https://api.kastrava.in', email, password, syncStore(), safeStorage) } catch { return { ok: false, msg: 'Login failed.' } }
 })
 ipcMain.handle('sync-login-otp', async (_, { apiBase, email, password, code, totp }) => {
-  try { return await syncEngine.loginOtp(apiBase || 'https://nexufog.pp.ua', email, password, code, totp, syncStore(), safeStorage) } catch { return { ok: false, msg: 'Login failed.' } }
+  try { return await syncEngine.loginOtp(apiBase || 'https://api.kastrava.in', email, password, code, totp, syncStore(), safeStorage) } catch { return { ok: false, msg: 'Login failed.' } }
 })
 ipcMain.handle('sync-verify', async (_, { apiBase, email, password, code }) => {
-  try { return await syncEngine.verifyEmail(apiBase || 'https://nexufog.pp.ua', email, password, code, syncStore(), safeStorage) } catch { return { ok: false, msg: 'Verification failed.' } }
+  try { return await syncEngine.verifyEmail(apiBase || 'https://api.kastrava.in', email, password, code, syncStore(), safeStorage) } catch { return { ok: false, msg: 'Verification failed.' } }
 })
 ipcMain.handle('sync-logout', async () => {
   try { return await syncEngine.logout(syncStore()) } catch { return { ok: false } }
 })
 ipcMain.handle('sync-now', async (_, { apiBase }) => {
-  try { return await syncEngine.syncNow(apiBase || 'https://nexufog.pp.ua', syncStore(), safeStorage, syncData()) } catch { return { ok: false, msg: 'Sync failed.' } }
+  try { return await syncEngine.syncNow(apiBase || 'https://api.kastrava.in', syncStore(), safeStorage, syncData()) } catch { return { ok: false, msg: 'Sync failed.' } }
 })
 
 ipcMain.handle('get-bookmarks', () => {

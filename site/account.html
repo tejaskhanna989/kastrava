@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Account — Kastrava</title>
 <link rel="icon" type="image/png" href="favicon.png">
-<link rel="canonical" href="https://kastrava.pp.ua/account.html">
+<link rel="canonical" href="https://kastrava.in/account.html">
 <meta name="description" content="One Kastrava login syncs bookmarks and settings across devices. Encrypted end to end — the server stores your data but cannot read it.">
 <script>
 (function(){try{
@@ -32,7 +32,7 @@
   <div class="links">
     <a href="/#features">Features</a>
     <a href="/#premium">Premium</a>
-    <a href="https://store.kastrava.pp.ua/">Store</a>
+    <a href="https://store.kastrava.in/">Store</a>
     <a href="/#premium">Premium</a>
     <a href="/#download">Download</a>
     <button id="theme-btn" class="theme-btn" title="Toggle theme" aria-label="Toggle theme">
@@ -79,7 +79,7 @@
 'use strict';
 /* Account auth: login / signup / email-code / TOTP. Token -> kas_sync_token. */
 (function(){
-var KAS_API=((window.KAS_API)||(location.search.match(/[?&]api=([^&]+)/)||[])[1]||'https://nexufog.pp.ua').replace(/\/$/,'');
+var KAS_API=((window.KAS_API)||(location.search.match(/[?&]api=([^&]+)/)||[])[1]||'https://api.kastrava.in').replace(/\/$/,'');
 function $(id){return document.getElementById(id);}
 function tok(){try{return localStorage.getItem('kas_sync_token')||'';}catch(e){return '';}}
 function post(path,body,auth){

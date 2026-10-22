@@ -45,7 +45,7 @@ async function createPayment(ourOrderId, amount, currency, description, returnUr
     body: JSON.stringify({
       amount: { value: String(amount), currency },
       capture: true,
-      confirmation: { type: 'redirect', return_url: returnUrl || 'https://kastrava.pp.ua/' },
+      confirmation: { type: 'redirect', return_url: returnUrl || 'https://kastrava.in/' },
       description: String(description || 'Kastrava').slice(0, 128),
       metadata: { kastrava_order: String(ourOrderId) }
     })

@@ -25,7 +25,7 @@ license server.
 
 CI (`android` job in `.github/workflows/release.yml`) builds a **release**
 APK on every tag/dispatch: `Kastrava-<version>.apk`, attached to the GitHub
-Release and served from `kastrava.pp.ua/dl/`. It is signed with the release
+Release and served from `kastrava.in/dl/`. It is signed with the release
 keystore when the `ANDROID_KS_B64` / `ANDROID_KS_PASS` repo secrets exist,
 otherwise debug-signed (CI says so in the log — never ship that one).
 

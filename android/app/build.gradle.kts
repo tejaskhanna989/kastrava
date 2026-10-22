@@ -30,7 +30,7 @@ android {
             buildConfigField("boolean", "SELF_UPDATE", "true")
             buildConfigField("String", "SEARCH_LANG", "\"\"")
             buildConfigField("boolean", "FORCE_RU", "false")
-            buildConfigField("String", "UPDATE_FEED", "\"https://kastrava.pp.ua/version.json\"")
+            buildConfigField("String", "UPDATE_FEED", "\"https://kastrava.in/version.json\"")
         }
         create("ru") {
             dimension = "market"
@@ -45,7 +45,7 @@ android {
             buildConfigField("boolean", "SELF_UPDATE", "true")
             buildConfigField("String", "SEARCH_LANG", "\"ru\"")
             buildConfigField("boolean", "FORCE_RU", "true")
-            buildConfigField("String", "UPDATE_FEED", "\"https://kastrava.pp.ua/ru-version.json\"")
+            buildConfigField("String", "UPDATE_FEED", "\"https://kastrava.in/ru-version.json\"")
         }
     }
     buildTypes {

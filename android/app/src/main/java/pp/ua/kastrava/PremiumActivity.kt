@@ -130,7 +130,7 @@ class PremiumActivity : AppCompatActivity() {
         buy.setOnClickListener {
             // Checkout lives on the site; the machine code is passed along
             // so the payment page can pre-fill it (same as desktop).
-            val url = "https://kastrava.pp.ua/#premium?machine=" +
+            val url = "https://kastrava.in/#premium?machine=" +
                 Uri.encode(app.license.machineCode())
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
         }

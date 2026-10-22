@@ -178,7 +178,7 @@ class Prefs(context: Context) {
         set(v) { p.edit().putInt("session_active", v).apply() }
 
     companion object {
-        const val KASTRA_SEARCH = "https://kastravasearch.pp.ua/search?q="
+        const val KASTRA_SEARCH = "https://search.kastrava.in/search?q="
         // KastravaSearch (SearXNG) picks the result language from the
         // requester's IP when none is given. The RU build pins it to Russian
         // so results match the UI regardless of where the device is.

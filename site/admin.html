@@ -76,7 +76,7 @@
     <button class="atab" data-t="grant"><span class="dot"></span><span>Grant</span></button>
     <button class="atab" data-t="email"><span class="dot"></span><span>Email</span></button>
   </nav>
-  <div class="foot"><a href="https://kastrava.pp.ua/">← site</a> · <a href="/account.html">account</a></div>
+  <div class="foot"><a href="https://kastrava.in/">← site</a> · <a href="/account.html">account</a></div>
 </aside>
 <main class="main">
   <div class="topbar">
@@ -187,7 +187,7 @@
 /* Admin console: token lock, tabs, overview, receipt verify, issue,
    licenses, accounts, grants, broadcast email. */
 (function(){
-var KAS_API=((window.KAS_API)||(location.search.match(/[?&]api=([^&]+)/)||[])[1]||'https://nexufog.pp.ua').replace(/\/$/,'');
+var KAS_API=((window.KAS_API)||(location.search.match(/[?&]api=([^&]+)/)||[])[1]||'https://api.kastrava.in').replace(/\/$/,'');
 function $(id){return document.getElementById(id);}
 function token(){try{return sessionStorage.getItem('kas_admin_token')||'';}catch(e){return '';}}
 function headers(){return {'Content-Type':'application/json','X-Admin-Token':token()};}

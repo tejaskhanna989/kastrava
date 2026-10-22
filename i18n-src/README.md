@@ -13,7 +13,7 @@
 | Android | standard resources: `values-<dir>/strings.xml`, per-app locale via `LocaleHelper` + `locale_config.xml` (Android 13+ system picker) | `android/app/src/main/res/values-<dir>/strings.xml`, `LocaleHelper.LANGS`, `res/xml/locale_config.xml` |
 
 Language choice priority on the site: **manual choice (localStorage
-`kas-weblang`) → visitor IP country (`nexufog.pp.ua/api/geo`, cached per
+`kas-weblang`) → visitor IP country (`api.kastrava.in/api/geo`, cached per
 session in `sessionStorage`) → browser language (`navigator.languages`) →
 en**. The app languages are chosen in-app (Settings → Language); Android
 also exposes them in system Settings → App language (13+).

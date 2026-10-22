@@ -300,7 +300,7 @@ class SettingsActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.btnAdvanced).setOnClickListener {
             try {
-                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://account.kastrava.pp.ua")))
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://account.kastrava.in")))
             } catch (e: Exception) {
                 Toast.makeText(this, getString(R.string.cant_open_browser), Toast.LENGTH_SHORT).show()
             }

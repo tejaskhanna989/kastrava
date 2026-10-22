@@ -1,7 +1,7 @@
 # Contributing to Kastrava
 
 Kastrava is built by the community, for the community — under **GPLv3**.
-Land a PR and you land on the [Authors page](https://kastrava.pp.ua/authors.html).
+Land a PR and you land on the [Authors page](https://kastrava.in/authors.html).
 
 ## Golden rule: never push to `main`
 

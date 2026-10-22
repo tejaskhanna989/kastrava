@@ -867,7 +867,7 @@ class MainActivity : AppCompatActivity() {
             setTypeface(typeface, android.graphics.Typeface.BOLD)
         })
         titleBox.addView(TextView(this).apply {
-            text = wv?.url ?: "kastrava.pp.ua"
+            text = wv?.url ?: "kastrava.in"
             textSize = 12f
             maxLines = 1
             setTextColor(getColor(R.color.chrome_hint))
@@ -963,7 +963,7 @@ class MainActivity : AppCompatActivity() {
             .setMessage(
                 "Private browser · zero telemetry.\n" +
                     "Website data lives in memory and is wiped on exit.\n" +
-                    "GPLv3 · kastrava.pp.ua",
+                    "GPLv3 · kastrava.in",
             )
             .setPositiveButton(getString(R.string.ok_btn), null)
             .show()

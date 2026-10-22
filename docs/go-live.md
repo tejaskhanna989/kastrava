@@ -9,7 +9,7 @@ Target state after this runbook:
 
 - `RAZORPAY_KEY_ID=rzp_live_…` / `RAZORPAY_KEY_SECRET=…` in `server/.env`
 - Existing webhook delivers `payment.captured` (account-wide; see §2)
-- `curl https://nexufog.pp.ua/api/health` → `{"dev":false,"price":248,"period_days":34,"grace_days":3,…}`
+- `curl https://api.kastrava.in/api/health` → `{"dev":false,"price":248,"period_days":34,"grace_days":3,…}`
 - A real purchase (₹499/30d monthly or ₹49/1d daily) mints a license, activation binds it to the first
   machine, a second ₹248 payment with the same machine code **extends the same
   key**.
@@ -19,7 +19,7 @@ Target state after this runbook:
 ## 0. Pre-flight
 
 ```bash
-curl -s https://nexufog.pp.ua/api/health
+curl -s https://api.kastrava.in/api/health
 # expect 200, "dev":false, price 248, period_days 34, grace_days 3
 ```
 
@@ -50,13 +50,13 @@ You get two values:
 ## 2. Webhook — confirm, don't re-create
 
 Razorpay webhooks are **account-wide**: the existing webhook
-(`TeYttVf3oxa35W`, URL `https://nexufog.pp.ua/api/webhook`, event
+(`TeYttVf3oxa35W`, URL `https://api.kastrava.in/api/webhook`, event
 `payment.captured`) already fires for **both** test and live payments, using
 the same secret. So live needs **no new webhook**.
 
 What to check in the dashboard (Settings → Webhooks → the configured webhook):
 
-- Webhook URL = `https://nexufog.pp.ua/api/webhook`
+- Webhook URL = `https://api.kastrava.in/api/webhook`
 - Event **`payment.captured`** is enabled (the server ignores every other
   event, so nothing else is needed)
 - Status is **Active** (not paused)
@@ -90,19 +90,19 @@ sudo systemctl restart kastrava-license
 sudo systemctl status kastrava-license      # active (running)
 ```
 
-`KAS_HOST=https://nexufog.pp.ua` is already correct — leave it alone.
+`KAS_HOST=https://api.kastrava.in` is already correct — leave it alone.
 
 ## 4. Verify
 
 1. **Health**
    ```bash
-   curl -s https://nexufog.pp.ua/api/health
+   curl -s https://api.kastrava.in/api/health
    # 200, dev:false, price:248, period_days:34, grace_days:3
    ```
 
 2. **Live key in play** — smoke order (do NOT pay it):
    ```bash
-   curl -s -X POST https://nexufog.pp.ua/api/order \
+   curl -s -X POST https://api.kastrava.in/api/order \
      -H 'content-type: application/json' \
      -d '{"machine_id":"KAS2-SMOKE-LIVE-0001"}'
    # 200 with "order_id":"order_…" and "key_id":"rzp_live_…"  <- live confirmed
@@ -119,7 +119,7 @@ sudo systemctl status kastrava-license      # active (running)
 
 4. **Real purchase — the decisive test** (do it when you're happy to take real
    ₹248):
-   - https://kastrava.pp.ua → **Premium** → pay ₹248 (card/UPI/netbanking).
+   - https://kastrava.in → **Premium** → pay ₹248 (card/UPI/netbanking).
    - Checkout callback settles → key shown (plan days + 3 grace).
    - **Renewal**: open Premium again from the app (brings your machine code,
      locked read-only) → pay again → **same key**, expiry extends; the app

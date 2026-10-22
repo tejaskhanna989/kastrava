@@ -213,8 +213,10 @@ async function loadFilters() {
 const NEVER_BLOCK = new Set([
   'api.razorpay.com', 'checkout.razorpay.com',
   'paypal.com', 'www.paypal.com', 'paypalobjects.com',
+  'kastrava.in', 'store.kastrava.in', 'api.kastrava.in',
+  'search.kastrava.in',
   'kastrava.pp.ua', 'store.kastrava.pp.ua', 'nexufog.pp.ua',
-  'kastravasearch.pp.ua'
+  'kastravasearch.pp.ua', 'account.kastrava.pp.ua'
 ])
 function shouldBlock(url) {
   if (!isLoaded || !filterRegex.length) return false

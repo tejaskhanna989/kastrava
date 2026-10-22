@@ -12,7 +12,7 @@ import java.net.URL
  * ones natively. Must run off the main thread.
  */
 object StoreApi {
-    const val STORE_URL = "https://store.kastrava.pp.ua/"
+    const val STORE_URL = "https://store.kastrava.in/"
 
     data class Item(
         val id: String,

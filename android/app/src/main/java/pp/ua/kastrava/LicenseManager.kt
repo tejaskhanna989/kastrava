@@ -12,7 +12,7 @@ import java.security.Signature
 import java.security.spec.X509EncodedKeySpec
 
 /**
- * Premium licensing against https://nexufog.pp.ua — same protocol as desktop:
+ * Premium licensing against https://api.kastrava.in — same protocol as desktop:
  * POST /api/activate { key, machine_id } -> { license: { key, payload, sig } }.
  * The payload signature (Ed25519, server-held private key) is verified
  * on-device before the license is stored, exactly like src/license.js.
@@ -20,7 +20,7 @@ import java.security.spec.X509EncodedKeySpec
 class LicenseManager(private val context: Context) {
 
     companion object {
-        const val API = "https://nexufog.pp.ua"
+        const val API = "https://api.kastrava.in"
         private const val PREFS = "kastrava_license"
         // SPKI DER of the kastrasoft Ed25519 public key (same key as
         // src/kastraPublic.js on desktop). Signature authority, not a secret.

@@ -56,7 +56,7 @@ html[data-theme="dark"] .pill.off{background:rgba(255,255,255,.08)}
       <svg class="ic-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       <svg class="ic-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
     </button>
-    <a href="https://store.kastrava.pp.ua/" style="font-size:13px;color:var(--muted);text-decoration:none">Store</a>
+    <a href="https://store.kastrava.in/" style="font-size:13px;color:var(--muted);text-decoration:none">Store</a>
     <a class="dl" href="/">← home</a>
   </div>
 </div></nav>
@@ -190,7 +190,7 @@ html[data-theme="dark"] .pill.off{background:rgba(255,255,255,.08)}
       <div class="msg" id="totp-msg"></div>
       <div style="margin-top:8px"><button class="btn btn-primary" id="totp-start">Set up 2FA</button></div></div>
     <div class="lic-card" style="margin-top:0"><h2>Store items</h2>
-      <p class="sub">Themes and accents you own. Apply them from the <a href="https://store.kastrava.pp.ua/">Store</a> — one click inside Kastrava.</p>
+      <p class="sub">Themes and accents you own. Apply them from the <a href="https://store.kastrava.in/">Store</a> — one click inside Kastrava.</p>
       <div id="items-out">Loading…</div></div>
     <div class="lic-card" style="margin-top:0"><h2>Your data</h2>
       <p class="sub">Download everything on your account, or delete it entirely (owned keys are cancelled, shared access ends).</p>
@@ -212,7 +212,7 @@ html[data-theme="dark"] .pill.off{background:rgba(255,255,255,.08)}
 'use strict';
 /* Account dashboard: auth, keys, geo-priced purchase, sync, 2FA, data. */
 (function(){
-var KAS_API=((window.KAS_API)||(location.search.match(/[?&]api=([^&]+)/)||[])[1]||'https://nexufog.pp.ua').replace(/\/$/,'');
+var KAS_API=((window.KAS_API)||(location.search.match(/[?&]api=([^&]+)/)||[])[1]||'https://api.kastrava.in').replace(/\/$/,'');
 function $(id){return document.getElementById(id);}
 function tok(){try{return localStorage.getItem('kas_sync_token')||'';}catch(e){return '';}}
 function authz(){return {'Content-Type':'application/json','Authorization':'Bearer '+tok()};}

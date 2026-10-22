@@ -284,7 +284,7 @@ function finalizePayment(orderId, paymentId, machineIdRaw, accountEmailRaw) {
     mailer.sendAsync(account, renewed ? 'Kastrava Premium renewed' : 'Your Kastrava Premium key',
       (renewed ? 'Your Premium was renewed.\n\n' : 'Thanks for buying Kastrava Premium.\n\n') +
       'License key: ' + key + '\nValid until: ' + exp + '\nDevices: up to 10 on your account.\n\n' +
-      'Manage everything at https://account.kastrava.pp.ua/\n\nIf you did not make this purchase, reply to this email at once.')
+      'Manage everything at https://account.kastrava.in/\n\nIf you did not make this purchase, reply to this email at once.')
     try { store.audit(account, 'purchase', 'key ' + (renewed ? 'renewed' : 'issued')) } catch {}
   }
   return { key, renewed, plan: (order && order.plan) || 'legacy' }

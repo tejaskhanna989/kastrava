@@ -30,7 +30,7 @@
     MR: 'ar', SO: 'ar', DJ: 'ar', KM: 'ar', BD: 'bn', IN: 'hi'
   };
 
-  var WL_GEO_API = 'https://nexufog.pp.ua/api/geo';
+  var WL_GEO_API = 'https://api.kastrava.in/api/geo';
   var WL_LANG = 'en';
   var WL_GEO_DONE = false;
 

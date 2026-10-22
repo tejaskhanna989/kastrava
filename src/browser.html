@@ -747,7 +747,7 @@ var readerUrls={};
 var radarEvents={};var radarOpen=false;
 var customSites=[];
 var cursorFxDispose=null;
-var SEARCH_ENGINES={kastravasearch:"https://kastravasearch.pp.ua/search?q=%s",duckduckgo:"https://duckduckgo.com/?q=%s",brave:"https://search.brave.com/search?q=%s",google:"https://www.google.com/search?q=%s",ecosia:"https://www.ecosia.org/search?q=%s"};
+var SEARCH_ENGINES={kastravasearch:"https://search.kastrava.in/search?q=%s",duckduckgo:"https://duckduckgo.com/?q=%s",brave:"https://search.brave.com/search?q=%s",google:"https://www.google.com/search?q=%s",ecosia:"https://www.ecosia.org/search?q=%s"};
 // Premium-only extras. Free ships KastravaSearch + DuckDuckGo.
 var PREMIUM_ENGINES={brave:1,google:1,ecosia:1};
 function customEngineIsPremium(tpl){
@@ -1559,7 +1559,7 @@ function favSweep(root){
 }
 function loadTopSites(){
   var c2=$("top-sites");if(!c2)return;
-  var sites=[{u:"https://kastrava.pp.ua",t:"Kastrava",i:"K"}];
+  var sites=[{u:"https://kastrava.in",t:"Kastrava",i:"K"}];
   try{customSites=JSON.parse(localStorage.getItem("as_custom_sites")||"[]")||[];}catch(e){customSites=[];}
   var hiddenSites=[];
   try{hiddenSites=JSON.parse(localStorage.getItem("as_hidden_sites")||"[]")||[];}catch(e){hiddenSites=[];}
@@ -3964,7 +3964,7 @@ function shieldItems(){
     {text:(sh.cookies==="allow"?"\u2713 Allow cookies on ":"Allow cookies on ")+host,action:function(){setShield(host,{cookies:sh.cookies==="allow"?"default":"allow"});toast(sh.cookies==="allow"?("Cookies back to global on "+host):("Cookies allowed on "+host));reloadPage();}}
   ];
 }
-function syncApiBase(){try{if(typeof KAS_API!=="undefined"&&KAS_API)return KAS_API;}catch(e){}return "https://nexufog.pp.ua";}
+function syncApiBase(){try{if(typeof KAS_API!=="undefined"&&KAS_API)return KAS_API;}catch(e){}return "https://api.kastrava.in";}
 function bindSyncPanel(){
   var goPrem=$("s-syncgo");if(goPrem){goPrem.addEventListener("click",function(){openPremiumSection();});}
   function msg(t){var m=$("sy-msg");if(m)m.textContent=t||"";}
@@ -4021,7 +4021,7 @@ function bindSyncPanel(){
     activatePremium(kk);
   });}
   var adv=$("sy-advanced");
-  if(adv)adv.addEventListener("click",function(){if(api&&api.openExternal)api.openExternal("https://account.kastrava.pp.ua");});
+  if(adv)adv.addEventListener("click",function(){if(api&&api.openExternal)api.openExternal("https://account.kastrava.in");});
   function renderDevices(){
     var box=$("sy-devices");if(!box||!api||!api.licDevices)return;
     api.licDevices().then(function(r){
@@ -4601,7 +4601,7 @@ function renderSettingsSection(id){
       }
       h+="<div class=\"sg\" id=\"s-licneed\"><div class=\"lbl\">Premium needs an account</div><div class=\"desc\">Log in under Account — the account key activates this device itself, up to 10 devices. No keys to paste, even after updating.</div><div style=\"margin-top:8px;display:flex;gap:8px;flex-wrap:wrap\"><button class=\"btn-sm btn-accent\" id=\"s-licgoacc\">Open Account</button></div></div>";
       h+="<div class=\"sg\" style=\"display:flex;gap:8px;flex-wrap:wrap\">"+(LIC.reason==="expired"?"<button class=\"btn-sm btn-accent\" id=\"s-licrenew\">Renew Premium</button>":"")+"<button class=\"btn-sm\" id=\"s-licbuy\">Buy Premium</button></div>";
-      h+="<div class=\"desc\" id=\"s-licgeo\" style=\"margin-top:6px\">No key yet? Buy at <a href=\"#\" id=\"s-licbuylink\" style=\"color:var(--accent)\">kastrava.pp.ua/#premium</a> \u2014 you'll get a key instantly after payment (Razorpay in India, PayPal elsewhere). Plans from \u20B949/day. Manual renewal.</div>";
+      h+="<div class=\"desc\" id=\"s-licgeo\" style=\"margin-top:6px\">No key yet? Buy at <a href=\"#\" id=\"s-licbuylink\" style=\"color:var(--accent)\">kastrava.in/#premium</a> \u2014 you'll get a key instantly after payment (Razorpay in India, PayPal elsewhere). Plans from \u20B949/day. Manual renewal.</div>";
     }
     h+="<div class=\"sg\"><div class=\"lbl\">What's in Premium</div><div class=\"desc\">\u2022 Tracking Radar (live per-tab tracker score)<br>\u2022 Cursor Effects: Mouse Style, Fluid Splash, Blob Trail, Glass Lens, Particle Trail, Click Spark, Pixel Trail, Ribbons<br>\u2022 Workspaces<br>\u2022 Split View<br>\u2022 All 20 dark + light themes<br>\u2022 Extra search engines: Brave, Google, Ecosia<br>\u2022 Custom cursor arrow<br>\u2022 Picture-in-Picture, Screenshot<br>\u2022 Localhost Dashboard<br>\u2022 Vertical tabs layout<br>\u2022 Bookmark import &amp; export<br>\u2022 Custom shortcut remapping</div></div>";
   }
@@ -4610,7 +4610,7 @@ function renderSettingsSection(id){
       h+="<div class=\"sg\"><div class=\"lbl\">Premium unlocks sync</div><div class=\"desc\">Logging in is free. Sync and auto-activate need Premium.</div><div style=\"margin-top:10px\"><button class=\"btn-sm btn-accent\" id=\"s-syncgo\">Get Premium</button></div></div>";
     }
     {
-      h+="<div class=\"sg\"><div class=\"lbl\">Kastrava account</div><div class=\"desc\">Same login as kastrava.pp.ua/account.html. Bookmarks and settings sync encrypted.</div><div id=\"sy-status\" class=\"desc\" style=\"margin-top:6px\">Checking…</div></div>";
+      h+="<div class=\"sg\"><div class=\"lbl\">Kastrava account</div><div class=\"desc\">Same login as kastrava.in/account.html. Bookmarks and settings sync encrypted.</div><div id=\"sy-status\" class=\"desc\" style=\"margin-top:6px\">Checking…</div></div>";
       h+="<div class=\"sg\" id=\"sy-form\"><div class=\"lbl\" id=\"sy-form-title\">Log in</div><div class=\"desc\" id=\"sy-form-desc\" style=\"margin-bottom:6px\">Optional — bookmarks, settings and history stay on this device with or without an account.</div><div id=\"sy-creds\"><input id=\"sy-email\" type=\"email\" placeholder=\"you@example.com\" autocomplete=\"email\" style=\"width:100%;margin:6px 0;padding:9px 12px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px\"><input id=\"sy-code\" inputmode=\"numeric\" maxlength=\"6\" placeholder=\"Email code\" autocomplete=\"one-time-code\" style=\"width:100%;margin:0 0 6px;padding:9px 12px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px;display:none\"><input id=\"sy-totp\" inputmode=\"numeric\" maxlength=\"6\" placeholder=\"2FA code (if enabled)\" autocomplete=\"one-time-code\" style=\"width:100%;margin:0 0 6px;padding:9px 12px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px;display:none\"><input id=\"sy-pass\" type=\"password\" placeholder=\"Password\" autocomplete=\"current-password\" style=\"width:100%;margin:0 0 6px;padding:9px 12px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px\"></div><div style=\"display:flex;gap:8px;margin-top:4px\"><button class=\"btn-sm btn-accent\" id=\"sy-login\">Log in</button><button class=\"btn-sm\" id=\"sy-logout\">Log out</button><button class=\"btn-sm\" id=\"sy-now\">Sync now</button></div><div id=\"sy-msg\" class=\"desc\" style=\"margin-top:6px\"></div></div>";
       h+="<div class=\"sg\" id=\"sy-devrow\"><div class=\"lbl\">Devices on this key</div><div class=\"desc\">Up to 10 per key. Remove one to free its slot.</div><div id=\"sy-devices\" class=\"desc\" style=\"margin-top:6px\">—</div></div>";
       h+="<div class=\"sg\"><div class=\"lbl\">Advanced settings</div><div class=\"desc\">Devices, keys and sync on the web dashboard.</div><div style=\"margin-top:8px\"><button class=\"btn-sm\" id=\"sy-advanced\">Open account dashboard</button></div></div>";
@@ -4635,7 +4635,7 @@ function renderSettingsSection(id){
     h+="<div class=\"sg\"><div class=\"lbl\">Light Themes</div><div id=\"s-presets-light\" style=\"display:flex;gap:6px;flex-wrap:wrap\">";
     (isPremium()?LIGHT_THEMES:[LIGHT_THEMES[0]]).forEach(function(p,i){h+="<div data-idx=\""+i+"\" data-type=\"light\" style=\"width:28px;height:28px;border-radius:6px;background:"+p.bg+";cursor:pointer;border:2px solid "+(settings.theme===("light-"+i)?p.ac:"transparent")+";position:relative;overflow:hidden;transition:border .15s,transform .15s\" title=\""+p.n+"\" class=\"theme-btn\"><div style=\"position:absolute;top:0;left:0;right:0;height:6px;background:"+p.tbg+"\"></div><div style=\"position:absolute;bottom:0;left:0;right:0;height:3px;background:"+p.tb+"\"></div></div>";});
     h+="</div></div>";
-    h+="<div class=\"sg\"><div class=\"lbl\">Store</div><div class=\"desc\">Themes, logos, wallpapers and more from the Kastrava Store.</div><div style=\"display:flex;gap:8px;flex-wrap:wrap;margin:8px 0\" id=\"store-owned\"><span class=\"desc\">Loading…</span></div><div><button class=\"btn-sm btn-accent\" id=\"s-storeopen\" data-open-store=\"https://store.kastrava.pp.ua/\">Get themes</button></div></div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">Store</div><div class=\"desc\">Themes, logos, wallpapers and more from the Kastrava Store.</div><div style=\"display:flex;gap:8px;flex-wrap:wrap;margin:8px 0\" id=\"store-owned\"><span class=\"desc\">Loading…</span></div><div><button class=\"btn-sm btn-accent\" id=\"s-storeopen\" data-open-store=\"https://store.kastrava.in/\">Get themes</button></div></div>";
     if(settings.customLogo){h+="<div class=\"sg\"><div class=\"lbl\">Custom Logo</div><div style=\"display:flex;gap:8px;align-items:center\"><span class=\"desc\" style=\"flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap\">Applied from the store</span><button class=\"btn-sm btn-danger\" id=\"s-rmlogo\">Remove</button></div></div>";}
     if(settings.customWallpaper){h+="<div class=\"sg\"><div class=\"lbl\">Custom Wallpaper</div><div style=\"display:flex;gap:8px;align-items:center\"><span class=\"desc\" style=\"flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap\">Applied from the store</span><button class=\"btn-sm btn-danger\" id=\"s-rmwallpaper\">Remove</button></div></div>";}
     h+="<div class=\"sg\"><div class=\"lbl\">Show Bookmark Bar</div><select id=\"s-bmbar\"><option value=\"auto\">Auto</option><option value=\"always\">Always</option><option value=\"never\">Never</option></select></div>";
@@ -4829,7 +4829,7 @@ function bindSettingsEvents(id){
       var __rw=$("s-rmwallpaper");if(__rw)__rw.addEventListener("click",function(){saveSetting("customWallpaper","");applyCustomWallpaper("");toast("Wallpaper removed");renderSettingsSection("appearance");bindSettingsEvents("appearance");});
       try{
         var so2=$("s-storeopen");
-        if(so2)so2.addEventListener("click",function(){try{closeSettings();}catch(e){}addTab("https://store.kastrava.pp.ua/");});
+        if(so2)so2.addEventListener("click",function(){try{closeSettings();}catch(e){}addTab("https://store.kastrava.in/");});
         refreshStoreOwned();
       }catch(e){}
       (function(){
@@ -5523,7 +5523,7 @@ document.addEventListener('click',function(e){
   var b=e.target&&e.target.closest?e.target.closest('[data-open-store]'):null;
   if(!b)return;
   e.preventDefault();
-  var url=b.getAttribute('data-open-store')||'https://store.kastrava.pp.ua/';
+  var url=b.getAttribute('data-open-store')||'https://store.kastrava.in/';
   try{if(typeof closeSettings==='function')closeSettings();}catch(x){}
   try{
     if(typeof addTab==='function'){addTab(url);return;}

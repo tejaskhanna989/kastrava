@@ -6,7 +6,7 @@ import java.security.MessageDigest
 
 /**
  * One-device machine identity, interoperable with the desktop licensing flow
- * (src/license.js) and the nexufog.pp.ua license server, which treats
+ * (src/license.js) and the api.kastrava.in license server, which treats
  * machine_id as an opaque uppercase string.
  *
  * Desktop:  sha256("linux|x64|<os-anchor>")  -> KAS2-XXXX-…

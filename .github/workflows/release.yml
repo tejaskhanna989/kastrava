@@ -29,8 +29,8 @@ jobs:
       - name: Build premium bundle (stamped with live API/store hosts)
         run: npm run build:prod
         env:
-          KAS_API: https://nexufog.pp.ua
-          KAS_STORE: https://kastrava.pp.ua
+          KAS_API: https://api.kastrava.in
+          KAS_STORE: https://kastrava.in
       - name: Package Windows installers (unsigned)
         run: npx electron-builder --win nsis portable --x64 --publish never
       # MSIX paused: no .appx built until Store submission resumes.
@@ -59,8 +59,8 @@ jobs:
       - name: Build premium bundle (stamped with live API/store hosts)
         run: npm run build:prod
         env:
-          KAS_API: https://nexufog.pp.ua
-          KAS_STORE: https://kastrava.pp.ua
+          KAS_API: https://api.kastrava.in
+          KAS_STORE: https://kastrava.in
       - name: Package Linux (deb / rpm / AppImage / pacman)
         run: npx electron-builder --linux deb rpm AppImage pacman --x64 --publish never
       - name: Convert pacman artifact to .pkg.tar.zst (site filename)

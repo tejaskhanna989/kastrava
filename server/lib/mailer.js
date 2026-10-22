@@ -3,6 +3,7 @@
 'use strict'
 const { execFile } = require('child_process')
 
+// TODO(kastrava.in): flip FROM to noreply@kastrava.in after SPF/DKIM/DMARC published for the new domain
 const FROM = process.env.KAS_MAIL_FROM || 'noreply@kastrava.pp.ua'
 const DEV = process.env.KAS_MAIL_DEV === '1'
 

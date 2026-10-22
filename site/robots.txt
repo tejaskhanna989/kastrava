@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://kastrava.pp.ua/sitemap.xml
+Sitemap: https://kastrava.in/sitemap.xml
