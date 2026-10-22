@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kastrava — Open Source Team</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="canonical" href="https://us.kastrava.in/">
+<meta name="description" content="The team behind Kastrava. We build privacy-first, GPL-licensed open source software — browsers, file managers, system tools, and games.">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#f7f8fa">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0b0e14">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kastrava">
+<meta property="og:title" content="Kastrava — Open Source Team">
+<meta property="og:description" content="Privacy-first, GPL-licensed open source software. Built by the community, for the community.">
+<meta property="og:url" content="https://us.kastrava.in/">
+<meta property="og:image" content="https://kastrava.in/logo.png">
+<script>
+(function(){try{
+  var s=null;try{s=localStorage.getItem('kas-theme');}catch(e){}
+  document.documentElement.setAttribute('data-theme',
+    s?(s==='dark'?'dark':'light'):((window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'));
+}catch(e){}})();
+</script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+:root{
+  --bg:#0b0e14; --bg2:#0e1219; --card:#121722; --card2:#171d2a;
+  --ink:#f2f4f8; --text:#c3c9d4; --muted:#8b93a5; --muted2:#626b7e;
+  --line:#1f2633; --line2:#2c3547; --blue:#4d86f5; --navbg:rgba(11,14,20,.85);
+  --r:14px; --mono:'JetBrains Mono',ui-monospace,monospace; color-scheme:dark;
+}
+html[data-theme="light"]{
+  --bg:#f7f8fa; --bg2:#f1f3f6; --card:#ffffff; --card2:#f4f6f9;
+  --ink:#131722; --text:#3d4452; --muted:#697182; --muted2:#9aa1b0;
+  --line:#e4e7ec; --line2:#d3d8e1; --blue:#1f4fd6; --navbg:rgba(247,248,250,.88);
+  color-scheme:light;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:var(--blue);text-decoration:none}
+h1,h2,h3{font-family:'Space Grotesk',sans-serif;color:var(--ink);letter-spacing:-.015em;line-height:1.12}
+.wrap{max-width:1080px;margin:0 auto;padding:0 28px}
+.mono{font-family:var(--mono)}
+
+/* nav */
+nav{position:sticky;top:0;z-index:50;background:var(--navbg);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;align-items:center;gap:12px;height:64px}
+nav img{width:34px;height:34px;border-radius:9px}
+nav .name{font-family:'Space Grotesk';font-size:14px;font-weight:700;letter-spacing:2.5px;color:var(--ink)}
+nav .links{margin-left:auto;display:flex;align-items:center;gap:26px}
+nav .links a{color:var(--text);font-size:14px;font-weight:500}
+nav .links a:hover{color:var(--ink)}
+nav .back{border:1px solid var(--line2);border-radius:9px;padding:8px 15px;font-size:13px;font-weight:600}
+
+/* hero */
+header{padding:96px 0 64px;text-align:center}
+.kicker{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;color:var(--muted);border:1px solid var(--line2);background:var(--card);padding:6px 13px;border-radius:999px;letter-spacing:.4px;margin-bottom:26px}
+.kicker .dot{width:6px;height:6px;border-radius:50%;background:var(--blue)}
+h1.title{font-size:clamp(38px,6vw,66px);font-weight:700;max-width:14ch;margin:0 auto}
+h1.title .grad{color:var(--blue)}
+.sub{font-size:clamp(16px,2.2vw,20px);color:var(--muted);max-width:56ch;margin:22px auto 0}
+.cta{display:flex;gap:12px;justify-content:center;margin-top:34px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:14px;padding:13px 26px;border-radius:10px;cursor:pointer;border:none}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-ghost{background:var(--card);color:var(--ink);border:1px solid var(--line2)}
+.btn:hover{filter:brightness(1.08)}
+
+/* sections */
+section{padding:56px 0}
+.sec-head{margin-bottom:34px}
+.sec-kicker{font-family:var(--mono);font-size:11px;letter-spacing:2px;color:var(--blue);text-transform:uppercase}
+.sec-title{font-size:clamp(26px,3.5vw,36px);font-weight:700;margin-top:10px}
+.sec-sub{color:var(--muted);font-size:15.5px;margin-top:12px;max-width:60ch}
+
+/* flagship */
+.flag{display:grid;grid-template-columns:1.1fr .9fr;gap:32px;align-items:center;background:linear-gradient(135deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:20px;padding:36px}
+.flag .tag{display:inline-block;font-family:var(--mono);font-size:10.5px;letter-spacing:1.5px;color:var(--blue);border:1px solid var(--line2);border-radius:6px;padding:3px 9px;margin-bottom:16px}
+.flag h3{font-size:30px}
+.flag p{color:var(--muted);margin-top:12px;font-size:15.5px}
+.flag .meta{display:flex;gap:18px;margin-top:18px;font-family:var(--mono);font-size:12px;color:var(--muted2)}
+.flag .go{margin-top:22px;display:inline-flex;gap:8px;font-weight:600;font-size:14px}
+.flag-shot{background:var(--bg);border:1px solid var(--line);border-radius:14px;overflow:hidden;aspect-ratio:16/10;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px}
+.flag-shot img{width:70px;height:70px;opacity:.9}
+.flag-shot span{font-family:var(--mono);font-size:11px;color:var(--muted2)}
+
+/* project grid */
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.proj{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px;transition:border-color .15s,transform .15s}
+.proj:hover{border-color:var(--line2);transform:translateY(-2px)}
+.proj .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.proj .lang{font-family:var(--mono);font-size:10.5px;color:var(--muted2);border:1px solid var(--line2);border-radius:6px;padding:3px 8px}
+.proj .status{font-family:var(--mono);font-size:10.5px;padding:3px 8px;border-radius:6px}
+.status.active{color:#4ade80;background:rgba(74,222,128,.1)}
+.status.retired{color:var(--muted);background:var(--card2)}
+.status.alpha{color:#fbbf24;background:rgba(251,191,36,.1)}
+.proj h3{font-size:19px}
+.proj p{color:var(--muted);font-size:14px;margin-top:10px;flex:1}
+.proj .go{margin-top:16px;font-weight:600;font-size:13.5px;display:inline-flex;align-items:center;gap:6px}
+.proj.disabled{opacity:.72}
+
+/* principles */
+.prin{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.pcard{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:26px}
+.pcard .ic{width:40px;height:40px;border-radius:10px;background:var(--card2);border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.pcard h3{font-size:17px}
+.pcard p{color:var(--muted);font-size:14px;margin-top:8px}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:8px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:24px;text-align:center}
+.stat .n{font-family:'Space Grotesk';font-size:34px;font-weight:700;color:var(--ink)}
+.stat .l{font-family:var(--mono);font-size:11px;letter-spacing:1px;color:var(--muted);margin-top:6px;text-transform:uppercase}
+
+/* footer */
+footer{border-top:1px solid var(--line);padding:48px 0;margin-top:40px}
+.foot-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:28px}
+.fh{font-family:'Space Grotesk';font-size:11.5px;font-weight:700;letter-spacing:2px;color:var(--ink);margin-bottom:12px}
+footer p{font-size:14px;color:var(--muted);margin-top:6px}
+footer a{color:var(--blue)}
+
+@media(max-width:860px){
+  .flag{grid-template-columns:1fr}
+  .grid,.prin{grid-template-columns:1fr 1fr}
+  .stats{grid-template-columns:1fr 1fr}
+  .foot-grid{grid-template-columns:1fr}
+  nav .links a:not(.back){display:none}
+}
+@media(max-width:560px){
+  .grid,.prin,.stats{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<nav><div class="wrap">
+  <img src="/logo.png" alt="Kastrava">
+  <span class="name">KASTRAVA</span>
+  <div class="links">
+    <a href="#projects">Projects</a>
+    <a href="#principles">Principles</a>
+    <a class="back" href="https://kastrava.in">← Main site</a>
+  </div>
+</div></nav>
+
+<header><div class="wrap">
+  <div class="kicker"><span class="dot"></span> Open source · GPLv3 · Built in the open</div>
+  <h1 class="title">We build software that <span class="grad">respects you.</span></h1>
+  <p class="sub">Kastrava is a small team building privacy-first, freely-licensed tools — a browser, file managers, system utilities, and the occasional game. No telemetry, no lock-in, source always public.</p>
+  <div class="cta">
+    <a class="btn btn-primary" href="#projects">See what we build</a>
+    <a class="btn btn-ghost" href="https://github.com/tejaskhanna989" target="_blank" rel="noopener">GitHub ↗</a>
+  </div>
+</div></header>
+
+<section id="flagship"><div class="wrap">
+  <div class="flag">
+    <div>
+      <span class="tag">FLAGSHIP PROJECT</span>
+      <h3>Kastrava</h3>
+      <p>A privacy-first Chromium browser. Zero telemetry, memory-only sessions wiped on quit, and a GPLv3 core. Free forever, with an optional Premium tier that funds everything else we make.</p>
+      <div class="meta"><span>GPLv3</span><span>·</span><span>Chromium</span><span>·</span><span>Linux · Windows · Android</span></div>
+      <a class="go" href="https://kastrava.in" target="_blank" rel="noopener">kastrava.in →</a>
+    </div>
+    <div class="flag-shot">
+      <img src="/logo.png" alt="Kastrava">
+      <span>the browser that forgets you</span>
+    </div>
+  </div>
+</div></section>
+
+<section id="projects"><div class="wrap">
+  <div class="sec-head">
+    <div class="sec-kicker">Projects</div>
+    <h2 class="sec-title">Everything we make</h2>
+    <p class="sec-sub">Each project is independently open source under GPLv3. Some are actively maintained, some are archived — all are free to fork and keep alive.</p>
+  </div>
+  <div class="grid">
+    <a class="proj" href="https://github.com/tejaskhanna989/kastrava" target="_blank" rel="noopener">
+      <div class="top"><span class="lang">Chromium</span><span class="status active">ACTIVE</span></div>
+      <h3>Kastrava</h3>
+      <p>Privacy-first browser. Zero telemetry, memory-only sessions, wiped on quit. The project that started it all.</p>
+      <span class="go">View repo →</span>
+    </a>
+    <a class="proj" href="https://github.com/tejaskhanna989/kastrafiles" target="_blank" rel="noopener">
+      <div class="top"><span class="lang">C++</span><span class="status active">ACTIVE</span></div>
+      <h3>KastraFiles</h3>
+      <p>A fast, modern Wayland file manager with Miller columns and a built-in AES-256 secure vault.</p>
+      <span class="go">View repo →</span>
+    </a>
+    <a class="proj" href="https://github.com/tejaskhanna989/kastmanager" target="_blank" rel="noopener">
+      <div class="top"><span class="lang">C</span><span class="status active">ACTIVE</span></div>
+      <h3>Kast Manager</h3>
+      <p>Dark system monitor: dashboard, processes, graphs, disks, files, ratings, controls — plus a terminal UI.</p>
+      <span class="go">View repo →</span>
+    </a>
+    <a class="proj disabled" href="https://github.com/tejaskhanna989/hannahfiles" target="_blank" rel="noopener">
+      <div class="top"><span class="lang">C#</span><span class="status retired">RETIRED</span></div>
+      <h3>HannahFiles</h3>
+      <p>A jokey file manager for Windows and Linux — "best of both worlds." A joke that shipped. Now retired.</p>
+      <span class="go">View repo →</span>
+    </a>
+    <a class="proj disabled" href="https://github.com/tejaskhanna989/mr2047" target="_blank" rel="noopener">
+      <div class="top"><span class="lang">Lua · LÖVE</span><span class="status alpha">STOPPED · ALPHA</span></div>
+      <h3>Mad Rocketer 2047</h3>
+      <p>An SFS-style 2D rocket game built in LÖVE, all original work. Stopped in alpha — playable but unfinished.</p>
+      <span class="go">View repo →</span>
+    </a>
+    <a class="proj" href="https://github.com/tejaskhanna989" target="_blank" rel="noopener">
+      <div class="top"><span class="lang">ALL</span><span class="status active">MORE ↗</span></div>
+      <h3>And more</h3>
+      <p>Browse the full org on GitHub — experiments, tools, and whatever we're building next.</p>
+      <span class="go">github.com/tejaskhanna989 →</span>
+    </a>
+  </div>
+</div></section>
+
+<section id="principles"><div class="wrap">
+  <div class="sec-head">
+    <div class="sec-kicker">How we work</div>
+    <h2 class="sec-title">Principles, not policies</h2>
+  </div>
+  <div class="prin">
+    <div class="pcard">
+      <div class="ic">🔒</div>
+      <h3>Privacy first</h3>
+      <p>No telemetry, no tracking, no phone-home. If it leaves your machine, you'll know why.</p>
+    </div>
+    <div class="pcard">
+      <div class="ic">📜</div>
+      <h3>GPLv3, always</h3>
+      <p>Every project is copyleft. Forks stay open. The source is the product.</p>
+    </div>
+    <div class="pcard">
+      <div class="ic">🌱</div>
+      <h3>Community-built</h3>
+      <p>Built by the community, for the community. Premium funds the free work — nothing is paywalled that shouldn't be.</p>
+    </div>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="n">5</div><div class="l">Projects</div></div>
+    <div class="stat"><div class="n">100%</div><div class="l">Open source</div></div>
+    <div class="stat"><div class="n">0</div><div class="l">Telemetry</div></div>
+    <div class="stat"><div class="n">3</div><div class="l">Active</div></div>
+  </div>
+</div></section>
+
+<footer><div class="wrap"><div class="foot-grid">
+  <div>
+    <div class="fh">KASTRAVA</div>
+    <p>Open source software that respects your privacy. Built by the community, for the community.</p>
+  </div>
+  <div>
+    <div class="fh">PROJECTS</div>
+    <p><a href="https://kastrava.in">Kastrava Browser</a></p>
+    <p><a href="https://github.com/tejaskhanna989/kastrafiles">KastraFiles</a></p>
+    <p><a href="https://github.com/tejaskhanna989/kastmanager">Kast Manager</a></p>
+  </div>
+  <div>
+    <div class="fh">ELSEWHERE</div>
+    <p><a href="https://github.com/tejaskhanna989" target="_blank" rel="noopener">GitHub</a></p>
+    <p><a href="https://kastrava.in">Main site</a></p>
+    <p><a href="mailto:khannatejas989@gmail.com">Contact</a></p>
+  </div>
+</div></div></footer>
+
+</body>
+</html>
