@@ -216,6 +216,21 @@ function clear() {
   try { fs.rmSync(licensePath(), { force: true }) } catch {}
 }
 
+// On account logout: drop ONLY the account-bound license (payload.acc set).
+// A legacy manually-entered machine key (no acc) is not tied to the account
+// and survives logout. Re-login re-fetches the account license via
+// activateAccount(), so Premium returns on the next sign-in.
+function clearAccountBound() {
+  try {
+    const lic = loadLicense()
+    if (lic && lic.payload && lic.payload.acc) {
+      fs.rmSync(licensePath(), { force: true })
+      return true
+    }
+  } catch {}
+  return false
+}
+
 // Renewal pickup, no auto-renew: on startup we re-activate a key that is
 // either still valid (picks up a server-side extension after a renewal
 // payment) or expired (retries once in case the user renewed in the store
@@ -223,6 +238,12 @@ function clear() {
 async function refreshIfLicensed() {
   const lic = loadLicense()
   if (!lic || !lic.key) return
+  // Account-bound licenses (payload.acc) are refreshed by the account flow
+  // (activateAccount via the logged-in token), which preserves acc. The legacy
+  // key-only activate() re-signs WITHOUT acc, which would silently downgrade an
+  // account-bound license to machine-bound and let it survive logout. Skip it
+  // here so logout's clearAccountBound() still works.
+  if (lic.payload && lic.payload.acc) return
   const st = status()
   if (!st.activated && st.reason !== 'expired') return
   try {
@@ -233,4 +254,4 @@ async function refreshIfLicensed() {
   } catch {}
 }
 
-module.exports = { machineCode, machineIdRaw, status, activate, activateAccount, cancel, verifyPayload, loadLicense, refreshIfLicensed, clear, API }
+module.exports = { machineCode, machineIdRaw, status, activate, activateAccount, cancel, verifyPayload, loadLicense, refreshIfLicensed, clear, clearAccountBound, API }

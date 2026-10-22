@@ -777,7 +777,7 @@ function loadLicense(){
       api.syncStatus().then(function(st){
         if(st&&st.loggedIn&&api.licActivateAccount){
           api.licActivateAccount().then(function(r){if(r&&r.ok){try{loadLicense();}catch(e){}}}).catch(function(){});
-        }else if(s&&s.activated&&s.key&&api.licActivate){
+        }else if(s&&s.activated&&s.key&&!s.acc&&api.licActivate){
           api.licActivate(s.key).then(function(r){if(r&&r.ok){try{loadLicense();}catch(e){}}}).catch(function(){});
         }
       }).catch(function(){});
@@ -4089,7 +4089,7 @@ function bindSyncPanel(){
       msg(r&&r.msg?r.msg:"Login failed.");done();}).catch(function(){msg("Could not reach the server.");done();});
   });
   var lo=$("sy-logout");
-  if(lo)lo.addEventListener("click",function(){if(!api||!api.syncLogout)return;api.syncLogout().then(function(){msg("Logged out.");paint(null);showLic(null);}).catch(function(){});});
+  if(lo)lo.addEventListener("click",function(){if(!api||!api.syncLogout)return;api.syncLogout().then(function(){msg("Logged out.");paint(null);showLic(null);try{loadLicense();}catch(e){}}).catch(function(){});});
   var nw=$("sy-now");
   if(nw)nw.addEventListener("click",function(){
     if(!isPremium()){openPremiumSection();return;}

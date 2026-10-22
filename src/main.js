@@ -1319,7 +1319,13 @@ ipcMain.handle('sync-verify', async (_, { apiBase, email, password, code }) => {
   try { return await syncEngine.verifyEmail(apiBase || 'https://api.kastrava.in', email, password, code, syncStore(), safeStorage) } catch { return { ok: false, msg: 'Verification failed.' } }
 })
 ipcMain.handle('sync-logout', async () => {
-  try { return await syncEngine.logout(syncStore()) } catch { return { ok: false } }
+  try {
+    const r = await syncEngine.logout(syncStore())
+    // Logout must revoke account-bound Premium on this device. A legacy
+    // manually-entered machine key (no acc) is untouched. Re-login restores.
+    try { license.clearAccountBound() } catch {}
+    return r
+  } catch { return { ok: false } }
 })
 ipcMain.handle('sync-now', async (_, { apiBase }) => {
   try { return await syncEngine.syncNow(apiBase || 'https://api.kastrava.in', syncStore(), safeStorage, syncData()) } catch { return { ok: false, msg: 'Sync failed.' } }
