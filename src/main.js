@@ -463,6 +463,7 @@ function buildMenu() {
     ]},
     { label: 'View', submenu: [
       { label: 'Reload', accelerator: A('reload', 'CommandOrControl+R'), click: () => sendShortcut('reload') },
+      { label: 'Hard Reload', accelerator: A('hardReload', 'CommandOrControl+Shift+R'), click: () => sendShortcut('hardReload') },
       { type: 'separator' },
       { label: 'Zoom In', accelerator: A('zoomIn', 'CommandOrControl+='), click: () => sendShortcut('zoomIn') },
       { label: 'Zoom Out', accelerator: A('zoomOut', 'CommandOrControl+-'), click: () => sendShortcut('zoomOut') },
@@ -490,7 +491,7 @@ function buildMenu() {
       { label: 'Toggle Bookmark Bar', accelerator: A('bookmarkBar', 'CommandOrControl+Shift+B'), click: () => sendShortcut('bookmarkBar') },
       { type: 'separator' },
       { label: 'Picture-in-Picture', accelerator: A('pip', 'CommandOrControl+P'), click: () => sendShortcut('pip') },
-      { label: 'Reader Mode', accelerator: A('reader', 'CommandOrControl+Shift+R'), click: () => sendShortcut('reader') },
+      { label: 'Reader Mode', accelerator: A('reader', 'CommandOrControl+Shift+U'), click: () => sendShortcut('reader') },
       { label: 'Split View', accelerator: A('split', 'CommandOrControl+Shift+E'), click: () => sendShortcut('split') },
       { label: 'Tracking Radar', accelerator: A('radar', 'CommandOrControl+Shift+K'), click: () => sendShortcut('radar') },
       { label: 'Screenshot', accelerator: A('screenshot', 'CommandOrControl+Shift+S'), click: () => sendShortcut('screenshot') },

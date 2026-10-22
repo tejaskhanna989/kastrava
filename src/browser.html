@@ -557,7 +557,7 @@ body.vtabs-collapsed .vtabs-new{border-style:solid}
   <button class="tb-btn" id="btn-reload" title="Reload"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6m16 10v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg></button>
   <button class="tb-btn" id="btn-home" title="Home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></button>
   <button class="tb-btn" id="btn-pip" title="Picture-in-Picture (Ctrl+P)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><rect x="12" y="11" width="8" height="6" rx="1" fill="currentColor" stroke="none"/></svg></button>
-  <button class="tb-btn" id="btn-reader" title="Reader mode (Ctrl+Shift+R)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></button>
+  <button class="tb-btn" id="btn-reader" title="Reader mode (Ctrl+Shift+U)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></button>
   <button class="tb-btn" id="btn-split" title="Split view (Ctrl+Shift+E)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/></svg></button>
   <button class="tb-btn" id="btn-radar" title="Tracking Radar (Ctrl+Shift+K)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/><line x1="12" y1="12" x2="18" y2="6"/></svg></button>
   <div class="omnibox chrome-omnibox" id="omnibox">
@@ -1101,6 +1101,7 @@ var SHORTCUT_ACTIONS={
   settings:{label:"Open settings",default:"Ctrl+,"},
   find:{label:"Find in page",default:"Ctrl+F"},
   reload:{label:"Reload page",default:"Ctrl+R"},
+  hardReload:{label:"Hard reload (bypass cache)",default:"Ctrl+Shift+R",extra:["Ctrl+F5"]},
   zoomIn:{label:"Zoom in",default:"Ctrl+="},
   zoomOut:{label:"Zoom out",default:"Ctrl+-"},
   zoomReset:{label:"Reset zoom",default:"Ctrl+0"},
@@ -1109,7 +1110,7 @@ var SHORTCUT_ACTIONS={
   history:{label:"Open history",default:"Ctrl+H"},
   bookmarkBar:{label:"Toggle bookmark bar",default:"Ctrl+Shift+B"},
   pip:{label:"Picture-in-Picture",default:"Ctrl+P"},
-  reader:{label:"Reader mode",default:"Ctrl+Shift+R"},
+  reader:{label:"Reader mode",default:"Ctrl+Shift+U"},
   split:{label:"Split view",default:"Ctrl+Shift+E"},
   radar:{label:"Tracking Radar",default:"Ctrl+Shift+K"},
   screenshot:{label:"Screenshot",default:"Ctrl+Shift+S"},
@@ -1157,6 +1158,7 @@ function runShortcut(a){
     case "settings":openSettings();break;
     case "find":openFindBar();break;
     case "reload":reloadPage();break;
+    case "hardReload":reloadPage(true);break;
     case "zoomIn":doZoom(10);break;
     case "zoomOut":doZoom(-10);break;
     case "zoomReset":setZoom(100);break;
@@ -1521,7 +1523,7 @@ function openLink(u,e){
   else addTab(u);
 }
 function goForward(){if(activeTab&&activeTab.wv)try{activeTab.wv.goForward();}catch(e){}}
-function reloadPage(){if(activeTab&&activeTab.wv)try{if(activeTab._failedUrl){activeTab.wv.loadURL(activeTab._failedUrl);}else{activeTab.wv.reload();}}catch(e){}updNav();}
+function reloadPage(hard){if(activeTab&&activeTab.wv)try{if(activeTab._failedUrl){activeTab.wv.loadURL(activeTab._failedUrl);}else if(hard&&activeTab.wv.reloadIgnoringCache){activeTab.wv.reloadIgnoringCache();}else{activeTab.wv.reload();}}catch(e){}updNav();}
 function goHome(){addTab();}
 function initClock(){var el=$("ntp-time");if(!el)return;function tick(){var d=new Date();el.textContent=d.toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit",hour12:false});}tick();setInterval(tick,10000);}
 var favCache={};
@@ -4155,7 +4157,12 @@ function toggleReader(){
   // differentiators (Radar, workspaces, themes), not commodities.
   if(!activeTab)return;
   var id=activeTab.id;
-  if(readerUrls[id]&&activeTab.url.indexOf("data:text/html")===0){
+  // Use the LIVE webview URL, not the cached activeTab.url — data: URLs don't
+  // always fire did-navigate, so the cache still held the original page and the
+  // exit branch below never matched ("reader mode never exits").
+  var liveUrl="";try{liveUrl=activeTab.wv.getURL()||"";}catch(e){}
+  if(!liveUrl)liveUrl=activeTab.url||"";
+  if(readerUrls[id]&&liveUrl.indexOf("data:text/html")===0){
     var orig=readerUrls[id];delete readerUrls[id];
     activeTab.wv.loadURL(orig);
     $("btn-reader").classList.remove("on");
