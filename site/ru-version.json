@@ -1,12 +1,12 @@
 {
-  "version": "101.5.25",
+  "version": "101.9.0",
   "codename": "Starship Wonders",
   "channel": "rc",
-  "url": "https://kastrava.in/dl/kastrava_101.5.25_amd64.deb",
-  "notes": "Kastrava 101 RC «Звёздные чудеса» — приватный браузер без телеметрии. Обновления ядра и интерфейса, исправления.",
-  "date": "2026-10-20",
+  "url": "https://kastrava.in/dl/kastrava_101.9.0_amd64.deb",
+  "notes": "Kastrava 101 RC «Звёздные чудеса» — приватный браузер без телеметрии. Жёсткая перезагрузка (Ctrl+Shift+R), исправлен режим чтения, новое окно настройки, улучшения KastravaSearch.",
+  "date": "2026-10-23",
   "minimum": "26.0.0",
-  "version_code": 1015025,
-  "apk_url": "https://kastrava.in/dl/Kastrava-ru-101.5.25.apk",
-  "apk_size": 8405871
+  "version_code": 1019000,
+  "apk_url": "https://kastrava.in/dl/Kastrava-ru-101.9.0.apk",
+  "apk_size": 8634952
 }
