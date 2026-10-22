@@ -593,6 +593,47 @@ class Store {
   }
 
   // ---- audit log (security events per account, newest last, capped) ----
+  // ---- email suppression (hard bounces / complaints / opt-outs) ----
+  // A suppressed address is NEVER mailed again — this is the guard-rail that
+  // keeps the OCI sender reputation (and the mailbox) from being killed by
+  // repeated bounces. Seeded manually or by inbound bounce processing.
+  ensureSuppression() {
+    if (!this.data.suppression) this.data.suppression = {}
+  }
+
+  isSuppressed(email) {
+    this.ensureSuppression()
+    const e = String(email || '').trim().toLowerCase()
+    return !!(e && this.data.suppression[e])
+  }
+
+  suppress(email, reason, source) {
+    this.ensureSuppression()
+    const e = String(email || '').trim().toLowerCase()
+    if (!e) return false
+    this.data.suppression[e] = {
+      reason: String(reason || 'manual').slice(0, 40),
+      source: String(source || 'admin').slice(0, 40),
+      at: new Date().toISOString()
+    }
+    this.save()
+    return true
+  }
+
+  unsuppress(email) {
+    this.ensureSuppression()
+    const e = String(email || '').trim().toLowerCase()
+    if (!this.data.suppression[e]) return false
+    delete this.data.suppression[e]
+    this.save()
+    return true
+  }
+
+  listSuppression() {
+    this.ensureSuppression()
+    return this.data.suppression
+  }
+
   audit(email, type, detail) {
     this.ensureAccountMaps()
     const e = String(email || '').toLowerCase()

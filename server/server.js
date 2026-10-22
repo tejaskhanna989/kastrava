@@ -1353,26 +1353,49 @@ async function handlePost(req, res, pathname) {
     const subject = String(body.subject || '').replace(/[\r\n]/g, ' ').slice(0, 120)
     const text = String(body.text || '').slice(0, 5000)
     if (!subject || !text) return json(res, 400, { error: 'bad_request' })
-    let targets = []
+    let candidates = []
     const dump = store.all()
+    const accts = dump.accounts || {}
+    // verified=true means the user clicked the code we mailed them — a
+    // proven-reachable address. undefined = grandfathered (legacy) = trusted.
+    const isVerified = (em) => { const a = accts[em]; return !a || a.verified !== false }
     if (body.to === 'all') {
-      targets = Object.keys(dump.accounts || {})
+      candidates = Object.keys(accts)
     } else if (body.to === 'paid') {
       // Customers with at least one paid order — the launch/announcement list.
       const paid = new Set()
       for (const o of Object.values(dump.orders || {})) {
         if (o && o.status === 'paid' && o.account_email) paid.add(String(o.account_email).toLowerCase())
       }
-      targets = [...paid]
+      candidates = [...paid]
     } else if (typeof body.to === 'string' && body.to.includes('@')) {
       const one = body.to.trim().toLowerCase()
       if (!validEmail(one)) return json(res, 400, { error: 'bad_email' })
-      targets = [one]
+      candidates = [one]
     } else {
       return json(res, 400, { error: 'bad_request' })
     }
-    if (targets.length === 0) return json(res, 200, { ok: true, sent: 0, total: 0 })
-    if (body.preview) return json(res, 200, { ok: true, preview: true, total: targets.length, sample: targets.slice(0, 5) })
+    // Bounce protection: suppressed addresses are ALWAYS dropped. Broadcasts
+    // (all/paid) also require a verified address unless explicitly overridden —
+    // this is what keeps the sender reputation from being killed by bounces.
+    const broadcast = body.to === 'all' || body.to === 'paid'
+    const requireVerified = broadcast && body.include_unverified !== true
+    let skippedSuppressed = 0, skippedUnverified = 0
+    const targets = []
+    for (const em of candidates) {
+      if (store.isSuppressed(em)) { skippedSuppressed++; continue }
+      if (requireVerified && !isVerified(em)) { skippedUnverified++; continue }
+      targets.push(em)
+    }
+    if (targets.length === 0) {
+      return json(res, 200, { ok: true, sent: 0, total: 0,
+        skipped_suppressed: skippedSuppressed, skipped_unverified: skippedUnverified })
+    }
+    if (body.preview) {
+      return json(res, 200, { ok: true, preview: true, total: targets.length,
+        sample: targets.slice(0, 5), skipped_suppressed: skippedSuppressed,
+        skipped_unverified: skippedUnverified })
+    }
     let sent = 0
     for (const em of targets.slice(0, 5000)) {
       try {
@@ -1381,8 +1404,9 @@ async function handlePost(req, res, pathname) {
       } catch {}
       await new Promise((r) => setTimeout(r, 120))
     }
-    store.audit('admin', 'admin_email', subject + ' -> ' + targets.length + ' recipient(s), ' + sent + ' accepted')
-    return json(res, 200, { ok: true, sent, total: targets.length })
+    store.audit('admin', 'admin_email', subject + ' -> ' + targets.length + ' recipient(s), ' + sent + ' accepted, ' + skippedSuppressed + ' suppressed, ' + skippedUnverified + ' unverified skipped')
+    return json(res, 200, { ok: true, sent, total: targets.length,
+      skipped_suppressed: skippedSuppressed, skipped_unverified: skippedUnverified })
   }
 
   // ---- Admin Email Center: the email-center@kastrava.in inbox ----
@@ -1422,6 +1446,30 @@ async function handlePost(req, res, pathname) {
     const ok = await mailer.sendAsync(to, subject, text, null, mailer.TEAM_FROM)
     store.audit('admin', 'admin_reply', to + ' :: ' + subject + (ok ? ' (sent)' : ' (FAILED)'))
     return json(res, ok ? 200 : 502, { ok: !!ok, to, subject })
+  }
+
+  // ---- Admin: bounce suppression list (never-mail addresses) ----
+  if (pathname === '/api/admin/suppression') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const sup = store.listSuppression()
+    const rows = Object.keys(sup).map((e) => Object.assign({ email: e }, sup[e]))
+      .sort((a, b) => String(b.at || '').localeCompare(String(a.at || '')))
+    return json(res, 200, { ok: true, count: rows.length, rows })
+  }
+  if (pathname === '/api/admin/suppression/add') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const em = String(body.email || '').trim().toLowerCase()
+    if (!validEmail(em)) return json(res, 400, { error: 'bad_email' })
+    store.suppress(em, body.reason || 'manual', 'admin')
+    store.audit('admin', 'suppress_add', em + ' :: ' + (body.reason || 'manual'))
+    return json(res, 200, { ok: true, email: em })
+  }
+  if (pathname === '/api/admin/suppression/remove') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const em = String(body.email || '').trim().toLowerCase()
+    const ok = store.unsuppress(em)
+    if (ok) store.audit('admin', 'suppress_remove', em)
+    return json(res, 200, { ok, email: em })
   }
   if (pathname === '/api/account/export') {
     const acc = store.getSessionAccount(bearer(req))

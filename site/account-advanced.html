@@ -415,7 +415,7 @@ function downloadKeyReceipt(key){
       doc.setFont('helvetica','bold');doc.setFontSize(20);
       doc.text(receiptText('Kastrava Premium - Key Receipt'),x,y);y+=16;
       doc.setFont('helvetica','normal');doc.setFontSize(11);
-      doc.text(receiptText('Kastrasoft - khannatejas989@gmail.com'),x,y);y+=30;
+      doc.text(receiptText('Kastrava - khannatejas989@gmail.com'),x,y);y+=30;
       doc.setFont('courier','normal');doc.setFontSize(11);
       var amt=(r.amount_paise!=null&&r.currency==='INR')?('INR '+(r.amount_paise/100).toFixed(2)):receiptText((r.currency||'')+' '+(r.amount_paise==null?'':r.amount_paise));
       [['License key',d.key||'-'],['Status',(d.status||'-')+' · '+(d.devices_used||0)+'/'+(d.device_limit||10)+' devices'],

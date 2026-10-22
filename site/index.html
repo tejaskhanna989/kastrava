@@ -718,7 +718,7 @@ function buildReceipt(){
   doc.setFont('helvetica','bold');doc.setFontSize(20);
   doc.text(clean('Kastrava Premium — Payment Receipt'),x,y);y+=16;
   doc.setFont('helvetica','normal');doc.setFontSize(11);
-  doc.text(clean('Kastrasoft — '+SUPPORT),x,y);y+=30;
+  doc.text(clean('Kastrava — '+SUPPORT),x,y);y+=30;
   var rows=[
     ['Date',now.toLocaleString()],['Plan',planText()],
     ['Order ID',d.order_id||'-'],['Payment ID',d.payment_id||'-'],

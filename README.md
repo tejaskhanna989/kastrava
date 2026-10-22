@@ -1,4 +1,4 @@
-# Kastrava Browser
+# Kastrava
 
 An open-source, GPLv3-licensed, privacy-first web browser designed for modern web standards, deep desktop integration, and flexible user workflows.
 
@@ -131,7 +131,7 @@ Kastrava is entirely free and open source. The project is funded by Premium subs
 
 ## License
 
-Kastrava Browser  
+Kastrava  
 Copyright (C) 2026 Tejas Khanna
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
