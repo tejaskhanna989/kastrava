@@ -888,8 +888,20 @@ ru:{settings:"Настройки",newTab:"Новая вкладка",searchPh:"�
 };
 var OOBE_KEYS=["oobWelcome","oobPremium","oobDone"];
 function t(k){var L=(settings&&settings.lang)||"en";if(STR[L]&&STR[L][k]!=null)return STR[L][k];if(STR.en[k]!=null)return STR.en[k];return k;}
+/* 20 shipped languages. en/ru live inline in STR; the other 18 load from
+   locales/<code>.json (copied from static/locales by webpack, served over
+   the kastrava:// protocol) — infra scales to 100+ by adding files. */
+var LANG_LIST=[["en","English"],["hi","हिन्दी"],["ru","Русский"],["ja","日本語"],["ko","한국어"],["zh","中文"],["ar","العربية"],["de","Deutsch"],["fr","Français"],["es","Español"],["pt","Português"],["tr","Türkçe"],["id","Bahasa Indonesia"],["th","ไทย"],["uk","Українська"],["it","Italiano"],["pl","Polski"],["nl","Nederlands"],["bn","বাংলা"]];
+function langName(c){for(var i=0;i<LANG_LIST.length;i++)if(LANG_LIST[i][0]===c)return LANG_LIST[i][1];return c;}
+function loadLocale(c){
+  if(!c||c==="en"||STR[c])return Promise.resolve();
+  return fetch("locales/"+c+".json").then(function(r){return r.ok?r.json():null;}).then(function(j){if(j&&typeof j==="object")STR[c]=j;}).catch(function(){});
+}
 function applyLang(){
   var L=(settings&&settings.lang)||"en";
+  // Non-inline language not fetched yet (startup or first switch): load it,
+  // then re-apply — one guarded retry, no loop.
+  if(L!=="en"&&!STR[L]&&!applyLang._loading){applyLang._loading=L;loadLocale(L).then(function(){applyLang._loading=null;applyLang();});return;}
   try{document.documentElement.lang=L;}catch(e){}
   document.querySelectorAll("[data-i18n]").forEach(function(el){var k=el.getAttribute("data-i18n");el.textContent=t(k);});
   document.querySelectorAll("[data-i18n-ph]").forEach(function(el){el.setAttribute("placeholder",t(el.getAttribute("data-i18n-ph")));});
@@ -4606,7 +4618,9 @@ function renderSettingsSection(id){
     }
   }
   else if(id==="general"){h="<h3 data-i18n=\"hGeneral\">"+t("hGeneral")+"</h3>";
-    h+="<div class=\"sg\"><div class=\"lbl\" data-i18n=\"language\">"+t("language")+"</div><select id=\"s-lang\"><option value=\"en\">English</option><option value=\"ru\">\u0420\u0443\u0441\u0441\u043a\u0438\u0439</option></select><div class=\"desc\" data-i18n=\"languageD\">"+t("languageD")+"</div></div>";
+    h+="<div class=\"sg\"><div class=\"lbl\" data-i18n=\"language\">"+t("language")+"</div><select id=\"s-lang\">";
+    for(var __li=0;__li<LANG_LIST.length;__li++){h+="<option value=\""+LANG_LIST[__li][0]+"\">"+LANG_LIST[__li][1]+"</option>";}
+    h+="</select><div class=\"desc\" data-i18n=\"languageD\">"+t("languageD")+"</div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Startup</div><select id=\"s-startup\"><option value=\"last\">Restore previous session</option><option value=\"blank\">New tab</option><option value=\"urls\">Open specific pages</option></select></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Startup Pages</div><textarea id=\"s-startupurls\" rows=\"3\" placeholder=\"https://example.com\" style=\"width:100%;margin-top:6px\"></textarea><div class=\"desc\">One URL per line. Used when Startup is set to specific pages.</div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Font Size</div><select id=\"s-fontsize\"><option value=\"11\">Small</option><option value=\"12\">Medium</option><option value=\"14\">Large</option></select></div>";
@@ -4786,7 +4800,7 @@ function bindSettingsEvents(id){
     if(id==="sync"){bindSyncPanel();}
     else if(id==="general"){
       setSel("s-lang",settings.lang||"en");
-      bindChange("s-lang",function(v){sv("lang",(v==="ru"?"ru":"en"));try{applyLang();}catch(e){}try{renderSettingsNav();}catch(e){}try{renderSettingsSection("general");bindSettingsEvents("general");}catch(e){}});
+      bindChange("s-lang",function(v){var code=(v&&/^[a-z]{2}$/.test(v))?v:"en";sv("lang",code);loadLocale(code).then(function(){try{applyLang();}catch(e){}try{renderSettingsNav();}catch(e){}try{renderSettingsSection("general");bindSettingsEvents("general");}catch(e){}});});
       setSel("s-startup",settings.startup);
       setSel("s-fontsize",settings.fontSize);
       (function(){var z=parseInt(settings.zoom)||100;var r=$("s-zoom");if(r)r.value=String(z);var l=$("s-zoomval");if(l)l.textContent=z+"%";})();

@@ -70,10 +70,9 @@
             android:id="@+id/langGroup"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:orientation="vertical">
             <RadioButton android:id="@+id/langSystem" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/lang_system" />
-            <RadioButton android:id="@+id/langEn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/lang_english" />
-            <RadioButton android:id="@+id/langRu" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/lang_russian" />
+            <!-- language options are added in code from LocaleHelper.LANGS -->
         </RadioGroup>
 
         <CheckBox

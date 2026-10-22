@@ -12,11 +12,22 @@ object LocaleHelper {
     const val EN = "en"
     const val RU = "ru"
 
+    /** (code, native label) — every shipped language; picked in Settings. */
+    val LANGS = listOf(
+        "en" to "English", "hi" to "हिन्दी", "ru" to "Русский", "ja" to "日本語",
+        "ko" to "한국어", "zh" to "中文", "ar" to "العربية", "de" to "Deutsch",
+        "fr" to "Français", "es" to "Español", "pt" to "Português", "tr" to "Türkçe",
+        "id" to "Bahasa Indonesia", "th" to "ไทย",
+        "uk" to "Українська", "it" to "Italiano", "pl" to "Polski",
+        "nl" to "Nederlands", "bn" to "বাংলা"
+    )
+
     fun apply(code: String) {
-        val locales = when (code) {
-            EN -> LocaleListCompat.forLanguageTags("en")
-            RU -> LocaleListCompat.forLanguageTags("ru")
-            else -> LocaleListCompat.getEmptyLocaleList()
+        val supported = LANGS.any { it.first == code }
+        val locales = if (code == SYSTEM || !supported) {
+            LocaleListCompat.getEmptyLocaleList()
+        } else {
+            LocaleListCompat.forLanguageTags(code)
         }
         AppCompatDelegate.setApplicationLocales(locales)
     }

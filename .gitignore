@@ -27,3 +27,4 @@ scripts/make-store-catalog.py
 # generated store assets (regenerate via scripts, deployed by scp)
 site/store-assets/wp/
 site/store-assets/preview/
+i18n-src/batch-cache.jsonl

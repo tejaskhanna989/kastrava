@@ -1,0 +1,986 @@
+{
+ "app_name": {
+  "xml": "Kastrava",
+  "formatted": null
+ },
+ "settings": {
+  "xml": "Settings",
+  "formatted": null
+ },
+ "premium": {
+  "xml": "Kastrava Premium",
+  "formatted": null
+ },
+ "downloads": {
+  "xml": "Downloads",
+  "formatted": null
+ },
+ "search_hint": {
+  "xml": "Search or enter address",
+  "formatted": null
+ },
+ "home_title": {
+  "xml": "Kastrava",
+  "formatted": null
+ },
+ "home_sub": {
+  "xml": "Private browser · zero telemetry",
+  "formatted": null
+ },
+ "store": {
+  "xml": "Store",
+  "formatted": null
+ },
+ "store_unreachable": {
+  "xml": "Store unreachable — pull to retry by reopening.",
+  "formatted": null
+ },
+ "no_matches": {
+  "xml": "No matches.",
+  "formatted": null
+ },
+ "apply": {
+  "xml": "Apply",
+  "formatted": null
+ },
+ "get": {
+  "xml": "Get",
+  "formatted": null
+ },
+ "free": {
+  "xml": "Free",
+  "formatted": null
+ },
+ "not_available": {
+  "xml": "Not available.",
+  "formatted": null
+ },
+ "reopen_store": {
+  "xml": "Reopen the store to refresh.",
+  "formatted": null
+ },
+ "empty_pack": {
+  "xml": "Empty pack.",
+  "formatted": null
+ },
+ "empty_wallpaper": {
+  "xml": "Empty wallpaper.",
+  "formatted": null
+ },
+ "wallpaper_applied": {
+  "xml": "Wallpaper applied.",
+  "formatted": null
+ },
+ "not_on_mobile": {
+  "xml": "Not applicable on mobile.",
+  "formatted": null
+ },
+ "machine_copied": {
+  "xml": "Machine code copied",
+  "formatted": null
+ },
+ "premium_active_grace": {
+  "xml": "Premium active — renewal due (grace until %1$s)%2$s",
+  "formatted": null
+ },
+ "premium_active_until": {
+  "xml": "Premium active · until %1$s%2$s",
+  "formatted": null
+ },
+ "premium_active": {
+  "xml": "Premium active",
+  "formatted": null
+ },
+ "free_core": {
+  "xml": "Free version",
+  "formatted": null
+ },
+ "premium_activated": {
+  "xml": "Premium activated on this device.",
+  "formatted": null
+ },
+ "login_first_premium": {
+  "xml": "Log in first (Settings → Account) — Premium needs an account.",
+  "formatted": null
+ },
+ "enter_key": {
+  "xml": "Enter the license key from your purchase.",
+  "formatted": null
+ },
+ "activated_here": {
+  "xml": "Activated on this device.",
+  "formatted": null
+ },
+ "no_premium_here": {
+  "xml": "No active Premium on this device.",
+  "formatted": null
+ },
+ "stop_premium_q": {
+  "xml": "Stop Premium?",
+  "formatted": null
+ },
+ "stop_premium_msg": {
+  "xml": "This ends Premium on this device immediately. No refund is issued.",
+  "formatted": null
+ },
+ "stop": {
+  "xml": "Stop",
+  "formatted": null
+ },
+ "keep": {
+  "xml": "Keep",
+  "formatted": null
+ },
+ "stopped_no_refund": {
+  "xml": "Premium stopped. No refund was issued.",
+  "formatted": null
+ },
+ "checking_key": {
+  "xml": "Checking account key…",
+  "formatted": null
+ },
+ "activating": {
+  "xml": "Activating…",
+  "formatted": null
+ },
+ "stopping": {
+  "xml": "Stopping Premium…",
+  "formatted": null
+ },
+ "search_premium_only": {
+  "xml": "That search belongs to Premium",
+  "formatted": null
+ },
+ "applies_to_tabs": {
+  "xml": "Applies to tabs",
+  "formatted": null
+ },
+ "up_to_date": {
+  "xml": "Up to date.",
+  "formatted": null
+ },
+ "checking": {
+  "xml": "Checking...",
+  "formatted": null
+ },
+ "update_ready": {
+  "xml": "Update ready to install.",
+  "formatted": null
+ },
+ "applies_to_new_tabs": {
+  "xml": "Applies to new and current tabs",
+  "formatted": null
+ },
+ "login_above_sync": {
+  "xml": "Log in above to sync.",
+  "formatted": null
+ },
+ "never_synced": {
+  "xml": "Never synced on this device.",
+  "formatted": null
+ },
+ "syncing": {
+  "xml": "Syncing...",
+  "formatted": null
+ },
+ "synced": {
+  "xml": "Synced.",
+  "formatted": null
+ },
+ "verifying": {
+  "xml": "Verifying...",
+  "formatted": null
+ },
+ "enter_totp": {
+  "xml": "Also enter your authenticator code.",
+  "formatted": null
+ },
+ "logging_in": {
+  "xml": "Logging in...",
+  "formatted": null
+ },
+ "logged_out": {
+  "xml": "Logged out",
+  "formatted": null
+ },
+ "cant_open_browser": {
+  "xml": "Could not open browser",
+  "formatted": null
+ },
+ "bg_pause": {
+  "xml": "Background tabs will pause",
+  "formatted": null
+ },
+ "bg_live": {
+  "xml": "Background tabs stay live",
+  "formatted": null
+ },
+ "desktop_on": {
+  "xml": "New tabs request desktop sites",
+  "formatted": null
+ },
+ "desktop_off": {
+  "xml": "New tabs request mobile sites",
+  "formatted": null
+ },
+ "remember_on": {
+  "xml": "Tabs will be remembered",
+  "formatted": null
+ },
+ "remember_off": {
+  "xml": "Tabs are forgotten on exit",
+  "formatted": null
+ },
+ "loc_on": {
+  "xml": "Sites may request location",
+  "formatted": null
+ },
+ "loc_off": {
+  "xml": "Location requests are denied",
+  "formatted": null
+ },
+ "applies_now": {
+  "xml": "Applies immediately",
+  "formatted": null
+ },
+ "data_deleted": {
+  "xml": "Browsing data deleted",
+  "formatted": null
+ },
+ "settings_reset": {
+  "xml": "Settings reset",
+  "formatted": null
+ },
+ "update_avail": {
+  "xml": "Kastrava %1$s available.",
+  "formatted": null
+ },
+ "about_line": {
+  "xml": "Kastrava %1$s · private by default, zero telemetry.",
+  "formatted": null
+ },
+ "m_new_tab": {
+  "xml": "New tab",
+  "formatted": null
+ },
+ "m_saved": {
+  "xml": "Saved",
+  "formatted": null
+ },
+ "m_bookmark": {
+  "xml": "Bookmark",
+  "formatted": null
+ },
+ "m_downloads": {
+  "xml": "Downloads",
+  "formatted": null
+ },
+ "m_share": {
+  "xml": "Share",
+  "formatted": null
+ },
+ "m_settings": {
+  "xml": "Settings",
+  "formatted": null
+ },
+ "m_find": {
+  "xml": "Find on page",
+  "formatted": null
+ },
+ "m_desktop_on": {
+  "xml": "Desktop ✓",
+  "formatted": null
+ },
+ "m_desktop": {
+  "xml": "Desktop site",
+  "formatted": null
+ },
+ "m_textsize": {
+  "xml": "Text size",
+  "formatted": null
+ },
+ "m_shot": {
+  "xml": "Screenshot",
+  "formatted": null
+ },
+ "m_vault": {
+  "xml": "Vault",
+  "formatted": null
+ },
+ "m_premium": {
+  "xml": "Premium",
+  "formatted": null
+ },
+ "close_all": {
+  "xml": "Close all",
+  "formatted": null
+ },
+ "tab_closed": {
+  "xml": "Tab closed",
+  "formatted": null
+ },
+ "undo": {
+  "xml": "Undo",
+  "formatted": null
+ },
+ "close_tab": {
+  "xml": "Close tab",
+  "formatted": null
+ },
+ "close_all_tabs": {
+  "xml": "Close all tabs",
+  "formatted": null
+ },
+ "lm_open": {
+  "xml": "Open in new tab",
+  "formatted": null
+ },
+ "lm_open_img": {
+  "xml": "Open image in new tab",
+  "formatted": null
+ },
+ "lm_download_img": {
+  "xml": "Download image",
+  "formatted": null
+ },
+ "lm_share": {
+  "xml": "Share link",
+  "formatted": null
+ },
+ "lm_copy": {
+  "xml": "Copy link",
+  "formatted": null
+ },
+ "lm_bookmark": {
+  "xml": "Bookmark link",
+  "formatted": null
+ },
+ "lm_bookmarked": {
+  "xml": "Bookmarked",
+  "formatted": null
+ },
+ "lm_unbookmark": {
+  "xml": "Remove bookmark",
+  "formatted": null
+ },
+ "lm_unbookmarked": {
+  "xml": "Bookmark removed",
+  "formatted": null
+ },
+ "link_copied": {
+  "xml": "Link copied",
+  "formatted": null
+ },
+ "cancel": {
+  "xml": "Cancel",
+  "formatted": null
+ },
+ "nav_back": {
+  "xml": "Back",
+  "formatted": null
+ },
+ "nav_fwd": {
+  "xml": "Forward",
+  "formatted": null
+ },
+ "share_page": {
+  "xml": "Share page",
+  "formatted": null
+ },
+ "m_wipe": {
+  "xml": "Delete data",
+  "formatted": null
+ },
+ "m_default": {
+  "xml": "Default app",
+  "formatted": null
+ },
+ "m_about": {
+  "xml": "About",
+  "formatted": null
+ },
+ "bm_off": {
+  "xml": "Bookmarks are turned off in Settings",
+  "formatted": null
+ },
+ "data_wiped": {
+  "xml": "Browsing data deleted",
+  "formatted": null
+ },
+ "no_support_ver": {
+  "xml": "Not supported on this Android version",
+  "formatted": null
+ },
+ "no_support_dev": {
+  "xml": "Not supported on this device",
+  "formatted": null
+ },
+ "already_default": {
+  "xml": "Already the default browser",
+  "formatted": null
+ },
+ "no_sys_settings": {
+  "xml": "Could not open system settings",
+  "formatted": null
+ },
+ "done": {
+  "xml": "Done",
+  "formatted": null
+ },
+ "shot_none": {
+  "xml": "Nothing to capture",
+  "formatted": null
+ },
+ "shot_fail": {
+  "xml": "Screenshot failed",
+  "formatted": null
+ },
+ "prem_line_off": {
+  "xml": "Free core · Premium %1$s/mo · %2$s/day",
+  "formatted": null
+ },
+ "tab_recovered": {
+  "xml": "Tab recovered after a crash",
+  "formatted": null
+ },
+ "no_history": {
+  "xml": "No history",
+  "formatted": null
+ },
+ "new_tab": {
+  "xml": "New tab",
+  "formatted": null
+ },
+ "bookmarked_t": {
+  "xml": "Bookmarked",
+  "formatted": null
+ },
+ "unbookmarked_t": {
+  "xml": "Bookmark removed",
+  "formatted": null
+ },
+ "share_page_chooser": {
+  "xml": "Share page",
+  "formatted": null
+ },
+ "prem_active_until2": {
+  "xml": "Premium active · until %1$s",
+  "formatted": null
+ },
+ "cancel2": {
+  "xml": "Cancel",
+  "formatted": null
+ },
+ "close2": {
+  "xml": "Close",
+  "formatted": null
+ },
+ "vault_create_fail": {
+  "xml": "Could not create vault.",
+  "formatted": null
+ },
+ "decrypt_fail": {
+  "xml": "Could not decrypt server copy.",
+  "formatted": null
+ },
+ "no_installer": {
+  "xml": "Could not open installer",
+  "formatted": null
+ },
+ "cannot_save": {
+  "xml": "Could not save",
+  "formatted": null
+ },
+ "decline_cookies": {
+  "xml": "Decline cookies",
+  "formatted": null
+ },
+ "delete2": {
+  "xml": "Delete",
+  "formatted": null
+ },
+ "dl_update": {
+  "xml": "Downloading update",
+  "formatted": null
+ },
+ "edit_note": {
+  "xml": "Edit note",
+  "formatted": null
+ },
+ "empty_activate": {
+  "xml": "Empty activation response.",
+  "formatted": null
+ },
+ "enter_email_code": {
+  "xml": "Enter the code from your email.",
+  "formatted": null
+ },
+ "enter_vault_pw": {
+  "xml": "Enter your vault password.",
+  "formatted": null
+ },
+ "lic_check_fail": {
+  "xml": "License check failed on this device.",
+  "formatted": null
+ },
+ "lic_bound_other": {
+  "xml": "License is bound to a different device.",
+  "formatted": null
+ },
+ "relogin_sync": {
+  "xml": "Log in again to unlock sync.",
+  "formatted": null
+ },
+ "login_expired": {
+  "xml": "Login expired. Log in again.",
+  "formatted": null
+ },
+ "login_failed": {
+  "xml": "Login failed.",
+  "formatted": null
+ },
+ "new_note": {
+  "xml": "New note",
+  "formatted": null
+ },
+ "no_license_here": {
+  "xml": "No active license on this device.",
+  "formatted": null
+ },
+ "no_downloads": {
+  "xml": "No downloads this session.",
+  "formatted": null
+ },
+ "no_notes": {
+  "xml": "No notes yet.",
+  "formatted": null
+ },
+ "no_key_account": {
+  "xml": "No Premium key on this account yet.",
+  "formatted": null
+ },
+ "note": {
+  "xml": "Note",
+  "formatted": null
+ },
+ "not_logged_in": {
+  "xml": "Not logged in.",
+  "formatted": null
+ },
+ "open2": {
+  "xml": "Open",
+  "formatted": null
+ },
+ "vault_pw_short": {
+  "xml": "Password needs at least 4 characters.",
+  "formatted": null
+ },
+ "reject_all": {
+  "xml": "Reject all cookies",
+  "formatted": null
+ },
+ "reject_cookies": {
+  "xml": "Reject cookies",
+  "formatted": null
+ },
+ "save2": {
+  "xml": "Save",
+  "formatted": null
+ },
+ "saved_dl": {
+  "xml": "Saved to Downloads",
+  "formatted": null
+ },
+ "save_fail": {
+  "xml": "Save failed",
+  "formatted": null
+ },
+ "save_to_dl": {
+  "xml": "Save to Downloads",
+  "formatted": null
+ },
+ "share_bm": {
+  "xml": "Share bookmark",
+  "formatted": null
+ },
+ "sync_conflict": {
+  "xml": "Sync conflict.",
+  "formatted": null
+ },
+ "srv_unreachable": {
+  "xml": "Sync server unreachable.",
+  "formatted": null
+ },
+ "sync_upload_fail": {
+  "xml": "Sync upload failed.",
+  "formatted": null
+ },
+ "unlock": {
+  "xml": "Unlock",
+  "formatted": null
+ },
+ "wrong_pw": {
+  "xml": "Wrong password.",
+  "formatted": null
+ },
+ "vault_locked": {
+  "xml": "Vault locked",
+  "formatted": null
+ },
+ "title_hint": {
+  "xml": "Title",
+  "formatted": null
+ },
+ "dl_unavailable": {
+  "xml": "System downloader unavailable",
+  "formatted": null
+ },
+ "language": {
+  "xml": "Language",
+  "formatted": null
+ },
+ "lang_system": {
+  "xml": "System",
+  "formatted": null
+ },
+ "lang_english": {
+  "xml": "English",
+  "formatted": null
+ },
+ "lang_russian": {
+  "xml": "Русский",
+  "formatted": null
+ },
+ "quick_access": {
+  "xml": "Quick access",
+  "formatted": null
+ },
+ "find_in_page": {
+  "xml": "Find in page",
+  "formatted": null
+ },
+ "cd_logo": {
+  "xml": "Kastrava logo",
+  "formatted": null
+ },
+ "cd_close_find": {
+  "xml": "Close find",
+  "formatted": null
+ },
+ "cd_prev_match": {
+  "xml": "Previous match",
+  "formatted": null
+ },
+ "cd_next_match": {
+  "xml": "Next match",
+  "formatted": null
+ },
+ "cd_tabs": {
+  "xml": "Tabs",
+  "formatted": null
+ },
+ "cd_reload": {
+  "xml": "Reload",
+  "formatted": null
+ },
+ "cd_menu": {
+  "xml": "Menu",
+  "formatted": null
+ },
+ "prem_this_device": {
+  "xml": "This device",
+  "formatted": null
+ },
+ "prem_license_key": {
+  "xml": "License key",
+  "formatted": null
+ },
+ "prem_key_hint": {
+  "xml": "KAS-XXXX-…",
+  "formatted": null
+ },
+ "prem_activate": {
+  "xml": "Activate",
+  "formatted": null
+ },
+ "prem_get_key": {
+  "xml": "Get key — $7/mo",
+  "formatted": null
+ },
+ "prem_stop_btn": {
+  "xml": "Stop Premium (no refund)",
+  "formatted": null
+ },
+ "prem_devices": {
+  "xml": "One account, 10 devices. Manual or auto-renew — same key extends.",
+  "formatted": null
+ },
+ "store_search_hint": {
+  "xml": "Search the store",
+  "formatted": null
+ },
+ "bm_empty_desc": {
+  "xml": "Saved places. Bookmarks are yours — they stay on this device.",
+  "formatted": null
+ },
+ "dl_empty_desc": {
+  "xml": "Files stay in this session until you save them to Downloads.",
+  "formatted": null
+ },
+ "vault_desc": {
+  "xml": "Password-locked notes. AES-256 on this device only.",
+  "formatted": null
+ },
+ "vault_pw_hint": {
+  "xml": "Vault password",
+  "formatted": null
+ },
+ "vault_set_pw": {
+  "xml": "Set password (new vault)",
+  "formatted": null
+ },
+ "vault_new_note": {
+  "xml": "+ New note",
+  "formatted": null
+ },
+ "vault_lock": {
+  "xml": "Lock vault",
+  "formatted": null
+ },
+ "set_engine": {
+  "xml": "Search engine",
+  "formatted": null
+ },
+ "set_custom_engine_hint": {
+  "xml": "Custom search URL, %s = query",
+  "formatted": null
+ },
+ "set_appearance": {
+  "xml": "Appearance &amp; home",
+  "formatted": null
+ },
+ "set_light": {
+  "xml": "Light",
+  "formatted": null
+ },
+ "set_dark": {
+  "xml": "Dark",
+  "formatted": null
+ },
+ "set_show_quick": {
+  "xml": "Show quick access on home",
+  "formatted": null
+ },
+ "set_enable_bm": {
+  "xml": "Enable bookmarks",
+  "formatted": null
+ },
+ "set_tiles": {
+  "xml": "Quick-access tiles",
+  "formatted": null
+ },
+ "set_content": {
+  "xml": "Content",
+  "formatted": null
+ },
+ "set_blockers": {
+  "xml": "Tracker &amp; ad blocking",
+  "formatted": null
+ },
+ "set_js": {
+  "xml": "JavaScript (needed by most sites)",
+  "formatted": null
+ },
+ "set_images": {
+  "xml": "Load images (off saves data)",
+  "formatted": null
+ },
+ "set_desktop": {
+  "xml": "Desktop site by default",
+  "formatted": null
+ },
+ "set_privacy": {
+  "xml": "Privacy &amp; security",
+  "formatted": null
+ },
+ "set_cookies": {
+  "xml": "Cookies",
+  "formatted": null
+ },
+ "set_cookie_block": {
+  "xml": "Block all (default)",
+  "formatted": null
+ },
+ "set_cookie_third": {
+  "xml": "First-party only",
+  "formatted": null
+ },
+ "set_cookie_allow": {
+  "xml": "Allow",
+  "formatted": null
+ },
+ "set_safe": {
+  "xml": "Safe Browsing (warn on dangerous sites)",
+  "formatted": null
+ },
+ "set_insecure": {
+  "xml": "Block insecure content on secure pages",
+  "formatted": null
+ },
+ "set_location": {
+  "xml": "Allow sites to request location",
+  "formatted": null
+ },
+ "set_localfiles": {
+  "xml": "Allow pages to read local files (less safe)",
+  "formatted": null
+ },
+ "set_tabs_bar": {
+  "xml": "Tabs &amp; address bar",
+  "formatted": null
+ },
+ "set_restore": {
+  "xml": "Restore tabs on launch",
+  "formatted": null
+ },
+ "set_keep_session": {
+  "xml": "Keep session (off = forget tabs on exit)",
+  "formatted": null
+ },
+ "set_confirm_close": {
+  "xml": "Confirm before closing all tabs",
+  "formatted": null
+ },
+ "set_full_urls": {
+  "xml": "Always show full URLs",
+  "formatted": null
+ },
+ "set_tab_limit": {
+  "xml": "Tab limit",
+  "formatted": null
+ },
+ "set_no_limit": {
+  "xml": "No limit",
+  "formatted": null
+ },
+ "set_page_font": {
+  "xml": "Page font size",
+  "formatted": null
+ },
+ "set_battery": {
+  "xml": "Battery saver (pause background tabs)",
+  "formatted": null
+ },
+ "set_hwaccel": {
+  "xml": "Hardware-accelerated rendering",
+  "formatted": null
+ },
+ "set_browsing_data": {
+  "xml": "Browsing data",
+  "formatted": null
+ },
+ "set_delete_now": {
+  "xml": "Delete browsing data now",
+  "formatted": null
+ },
+ "set_reset": {
+  "xml": "Reset all settings",
+  "formatted": null
+ },
+ "set_updates": {
+  "xml": "Updates",
+  "formatted": null
+ },
+ "set_check_updates": {
+  "xml": "Check for updates",
+  "formatted": null
+ },
+ "set_account": {
+  "xml": "Account",
+  "formatted": null
+ },
+ "hint_email": {
+  "xml": "Email",
+  "formatted": null
+ },
+ "hint_password": {
+  "xml": "Password (8+ characters)",
+  "formatted": null
+ },
+ "hint_email_code": {
+  "xml": "Email code",
+  "formatted": null
+ },
+ "hint_2fa": {
+  "xml": "2FA code (if enabled)",
+  "formatted": null
+ },
+ "btn_login": {
+  "xml": "Log in",
+  "formatted": null
+ },
+ "btn_logout": {
+  "xml": "Log out",
+  "formatted": null
+ },
+ "btn_sync_now": {
+  "xml": "Sync now",
+  "formatted": null
+ },
+ "set_advanced": {
+  "xml": "Advanced settings (web)",
+  "formatted": null
+ },
+ "set_data_note": {
+  "xml": "Website data (cookies, cache, storage) lives in memory and is wiped when Kastrava exits. Settings and license stay on this device.",
+  "formatted": null
+ },
+ "update_toast_main": {
+  "xml": "Kastrava %1$s available — update in Settings",
+  "formatted": null
+ },
+ "tab_limit_reached": {
+  "xml": "Tab limit reached (%1$d) — close one first",
+  "formatted": null
+ },
+ "close_tabs_q": {
+  "xml": "Close %1$d tabs?",
+  "formatted": null
+ },
+ "downloading_toast": {
+  "xml": "Downloading: %1$s",
+  "formatted": null
+ },
+ "login_first_store": {
+  "xml": "Log in first (Settings → Account).",
+  "formatted": null
+ },
+ "applied_item": {
+  "xml": "Applied %1$s.",
+  "formatted": null
+ },
+ "accent_applied": {
+  "xml": "Accent %1$s applied.",
+  "formatted": null
+ },
+ "logo_desktop_only": {
+  "xml": "Logo packs apply on desktop; owned on your account.",
+  "formatted": null
+ },
+ "combo_unpacked": {
+  "xml": "Combo unpacked into its items — apply them below.",
+  "formatted": null
+ },
+ "allow_installs": {
+  "xml": "Allow installs, then tap the downloaded APK",
+  "formatted": null
+ },
+ "ok_btn": {
+  "xml": "OK",
+  "formatted": null
+ },
+ "dl_state": {
+  "xml": "State: %1$s\nSize: %2$s",
+  "formatted": null
+ }
+}

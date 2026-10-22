@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.view.View
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
@@ -77,17 +78,20 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         val langGroup: RadioGroup = findViewById(R.id.langGroup)
-        when (app.prefs.language) {
-            LocaleHelper.EN -> langGroup.check(R.id.langEn)
-            LocaleHelper.RU -> langGroup.check(R.id.langRu)
-            else -> langGroup.check(R.id.langSystem)
+        // All shipped languages, added dynamically (native names — language
+        // names are never translated). System stays the XML button above.
+        val langIds = mutableMapOf<Int, String>()
+        LocaleHelper.LANGS.forEach { (code, label) ->
+            val b = RadioButton(this)
+            b.id = View.generateViewId()
+            b.text = label
+            langGroup.addView(b)
+            langIds[b.id] = code
         }
+        val selectedId = langIds.entries.firstOrNull { it.value == app.prefs.language }?.key ?: R.id.langSystem
+        langGroup.check(selectedId)
         langGroup.setOnCheckedChangeListener { _, checkedId ->
-            val code = when (checkedId) {
-                R.id.langEn -> LocaleHelper.EN
-                R.id.langRu -> LocaleHelper.RU
-                else -> LocaleHelper.SYSTEM
-            }
+            val code = langIds[checkedId] ?: LocaleHelper.SYSTEM
             if (app.prefs.language != code) {
                 app.prefs.language = code
                 LocaleHelper.apply(code)
