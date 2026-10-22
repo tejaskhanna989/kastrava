@@ -293,6 +293,9 @@ class SettingsActivity : AppCompatActivity() {
         }
         btnOut.setOnClickListener {
             app.account.logout()
+            // Revoke account-bound Premium on this device (legacy machine keys
+            // are untouched; re-login re-activates).
+            app.license.clearAccountBound()
             etPass.text.clear()
             paintAccount()
             Toast.makeText(this, getString(R.string.logged_out), Toast.LENGTH_SHORT).show()

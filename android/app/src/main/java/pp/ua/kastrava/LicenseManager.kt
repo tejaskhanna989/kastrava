@@ -303,4 +303,27 @@ class LicenseManager(private val context: Context) {
     fun clear() {
         prefs.edit().clear().apply()
     }
+
+    /**
+     * On account logout: drop the license ONLY if it is account-bound
+     * (payload.acc present). A legacy manually-entered machine key (no acc)
+     * is not tied to the account and survives logout. Re-login re-fetches the
+     * account license via activateAccount(), so Premium returns on sign-in.
+     * Returns true if a license was cleared.
+     */
+    fun clearAccountBound(): Boolean {
+        val payloadRaw = prefs.getString("payload", null) ?: return false
+        return try {
+            val payload = JSONObject(payloadRaw)
+            val acc = payload.optString("acc", "")
+            if (acc.isNotBlank()) {
+                prefs.edit().clear().apply()
+                true
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            false
+        }
+    }
 }
