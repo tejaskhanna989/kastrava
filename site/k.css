@@ -56,7 +56,7 @@ h1,h2,h3,.sec-title,header h1{font-family:var(--display) !important;color:var(--
 nav{position:sticky;top:0;z-index:50;background:var(--navbg) !important;backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);box-shadow:var(--e1) !important;border-bottom:none !important}
 nav .wrap,nav .container{display:flex !important;align-items:center;gap:10px;padding-top:14px !important;padding-bottom:14px !important}
 nav img{width:34px;height:34px;border-radius:9px}
-nav .name{font-family:var(--display);font-size:17px;font-weight:500;letter-spacing:.2px;color:var(--ink) !important;text-decoration:none}
+nav .name{font-family:var(--display);font-size:21px;font-weight:500;letter-spacing:-.4px;color:var(--ink) !important;text-decoration:none;text-transform:lowercase}
 nav .beta{font-family:var(--mono);font-size:10px;color:var(--muted);border:1px solid var(--line2);border-radius:6px;padding:2px 7px}
 nav .links{display:flex;align-items:center;gap:6px;margin-left:auto}
 nav .links a{color:var(--muted) !important;text-decoration:none;font-size:14px;font-weight:500;padding:8px 12px;border-radius:100px;transition:background .15s,color .15s}
