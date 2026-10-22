@@ -3,7 +3,7 @@
    is untouched. Light-first (Google is light), Roboto body + Rubik display,
    Google blue, soft elevation shadows, pill buttons, generous whitespace.
    Every legacy variable/class is preserved so all pages keep working. */
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Rubik:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap');
 
 :root{
   /* Material elevation shadows */
@@ -22,7 +22,7 @@
   --r:28px; --mono:'JetBrains Mono',ui-monospace,'Noto Sans JP','Noto Sans KR','Noto Sans SC','Malgun Gothic','Microsoft YaHei',monospace;
   --navbg:rgba(255,255,255,.9);
   --sans:'Roboto',system-ui,-apple-system,'Segoe UI','Noto Sans JP','Noto Sans KR','Noto Sans SC','Hiragino Sans','Yu Gothic UI','Meiryo','Malgun Gothic','PingFang SC','Microsoft YaHei',sans-serif;
-  --display:'Rubik','Roboto','Noto Sans JP','Noto Sans KR','Noto Sans SC','Hiragino Sans','Yu Gothic UI','Meiryo','Malgun Gothic','PingFang SC','Microsoft YaHei',sans-serif;
+  --display:'Google Sans','Product Sans','DM Sans','Roboto','Noto Sans JP','Noto Sans KR','Noto Sans SC','Hiragino Sans','Yu Gothic UI','Meiryo','Malgun Gothic','PingFang SC','Microsoft YaHei',sans-serif;
   color-scheme:light;
 }
 html[data-theme="dark"]{
@@ -61,6 +61,9 @@ nav .beta{font-family:var(--mono);font-size:10px;color:var(--muted);border:1px s
 nav .links{display:flex;align-items:center;gap:6px;margin-left:auto}
 nav .links a{color:var(--muted) !important;text-decoration:none;font-size:14px;font-weight:500;padding:8px 12px;border-radius:100px;transition:background .15s,color .15s}
 nav .links a:hover{color:var(--ink) !important;background:var(--card2)}
+nav .links a.dl,nav .links a.btn{background:var(--blue) !important;color:var(--on-blue) !important;font-weight:500 !important;padding:9px 22px !important;border-radius:100px !important;text-decoration:none;font-size:14px;box-shadow:var(--e1) !important;transition:box-shadow .15s,background .15s}
+nav .links a.dl:hover,nav .links a.btn:hover{background:#1765cc !important;color:var(--on-blue) !important;box-shadow:var(--e2) !important}
+html[data-theme="dark"] nav .links a.dl:hover,html[data-theme="dark"] nav .links a.btn:hover{background:#9dc2fa !important}
 nav .dl,nav a.btn{background:var(--blue) !important;color:var(--on-blue) !important;font-weight:500 !important;padding:9px 22px !important;border-radius:100px !important;text-decoration:none;font-size:14px;box-shadow:var(--e1) !important;transition:box-shadow .15s,background .15s}
 nav .dl:hover,nav a.btn:hover{background:#1765cc !important;box-shadow:var(--e2) !important}
 html[data-theme="dark"] nav .dl:hover,html[data-theme="dark"] nav a.btn:hover{background:#9dc2fa !important}
@@ -122,6 +125,13 @@ section{padding:56px 0}
 .os-note,.fine{font-size:13px;color:var(--muted2) !important;line-height:1.5}
 .prem-keyout{background:var(--bg2) !important;border:1px dashed var(--line2) !important;border-radius:16px !important;padding:22px !important;margin-top:18px}
 .prem-keyout .k{font-family:var(--mono);font-size:15px;color:var(--blue);word-break:break-all;margin:8px 0}
+
+/* ---- .check rows: label badge + text (open-source section) ---- */
+.check{padding:14px 24px !important}
+.check .row{display:flex;align-items:baseline;gap:14px;padding:12px 0;border-top:1px solid var(--line);font-size:14.5px;color:var(--text);line-height:1.55}
+.check .row:first-child{border-top:none}
+.check .row .ok{flex:0 0 auto;font-family:var(--mono);font-size:10.5px;letter-spacing:1px;font-weight:500;color:var(--blue);background:var(--bg2);border:1px solid var(--line);border-radius:100px;padding:4px 11px;white-space:nowrap;transform:translateY(-1px)}
+.check .row b{color:var(--ink)}
 
 /* ---- steps / download / faq ---- */
 .prem-steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:28px}

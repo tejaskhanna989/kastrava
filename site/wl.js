@@ -27,7 +27,7 @@
     NI: 'es', CR: 'es', SA: 'ar', AE: 'ar', EG: 'ar', IQ: 'ar', MA: 'ar',
     DZ: 'ar', JO: 'ar', LB: 'ar', OM: 'ar', QA: 'ar', KW: 'ar', BH: 'ar',
     LY: 'ar', TN: 'ar', SY: 'ar', YE: 'ar', IL: 'ar', PS: 'ar', SD: 'ar',
-    MR: 'ar', SO: 'ar', DJ: 'ar', KM: 'ar', BD: 'bn', IN: 'hi'
+    MR: 'ar', SO: 'ar', DJ: 'ar', KM: 'ar', BD: 'bn', IN: 'en'
   };
 
   var WL_GEO_API = 'https://api.kastrava.in/api/geo';
