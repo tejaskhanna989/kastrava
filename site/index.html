@@ -76,6 +76,20 @@ html[data-theme="dark"] .btn-dl:hover{background:#9dc2fa !important}
 .sec-center{text-align:center}
 .sec-center .sec-sub{margin-left:auto;margin-right:auto}
 
+/* eyebrow label above section headings */
+.eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:2px;text-transform:uppercase;color:var(--blue);font-weight:500;margin-bottom:14px;display:block}
+
+/* sticky section-switcher pill bar (own implementation) */
+.secnav{position:sticky;top:64px;z-index:40;display:flex;justify-content:center;margin:8px 0 0;pointer-events:none}
+.secnav-inner{pointer-events:auto;display:flex;align-items:center;gap:2px;background:var(--card);border:1px solid var(--line);border-radius:100px;padding:5px;box-shadow:var(--e2);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);max-width:calc(100vw - 32px);overflow-x:auto;scrollbar-width:none}
+.secnav-inner::-webkit-scrollbar{display:none}
+.secnav a{flex:0 0 auto;font-size:13.5px;font-weight:500;color:var(--muted);text-decoration:none;padding:8px 16px;border-radius:100px;white-space:nowrap;transition:background .15s,color .15s}
+.secnav a:hover{color:var(--ink);background:var(--bg2)}
+.secnav a.on{background:var(--blue);color:var(--on-blue)}
+.secnav .sn-dl{margin-left:6px;background:var(--blue);color:var(--on-blue) !important;font-weight:500}
+.secnav .sn-dl:hover{background:#1765cc !important;color:var(--on-blue) !important}
+@media(max-width:760px){.secnav{top:56px}}
+
 /* feature grid with circular arrow buttons (Chrome cards) */
 .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
 .fgrid.three{grid-template-columns:repeat(3,1fr)}
@@ -164,7 +178,19 @@ html[data-theme="dark"] .btn-dl:hover{background:#9dc2fa !important}
   </div>
 </header>
 
-<!-- full-bleed tagline card (Chrome's "There's no place like Chrome") -->
+<!-- sticky in-page section switcher (own implementation, Kastrava sections) -->
+<nav class="secnav" id="secnav" aria-label="Sections">
+  <div class="secnav-inner">
+    <a href="#features" data-sn="features" class="on">Privacy</a>
+    <a href="#premium" data-sn="premium">Premium</a>
+    <a href="#download" data-sn="download">Download</a>
+    <a href="#opensource" data-sn="opensource">Open source</a>
+    <a href="#faq" data-sn="faq">FAQ</a>
+    <a href="#download" class="sn-dl">Download</a>
+  </div>
+</nav>
+
+<!-- full-bleed tagline card (own tagline) -->
 <div class="wrap"><div class="tagline-card">
   <h2 data-wl="tag_h">Nothing stays. Nothing tracks.</h2>
   <p data-wl="tag_p">Cache, cookies and site databases never touch your disk. Quit — or crash — and it's all gone.</p>
@@ -173,6 +199,7 @@ html[data-theme="dark"] .btn-dl:hover{background:#9dc2fa !important}
 <!-- "Private by construction." — centered heading + feature grid with circular arrow buttons -->
 <section id="features" style="padding-top:40px"><div class="wrap">
   <div class="sec-center">
+    <span class="eyebrow">Privacy by design</span>
     <h2 class="sec-title" data-wl="f_h">Private by <span class="hl">construction.</span></h2>
     <p class="sec-sub" data-wl="f_s">Not a mode you turn on. The architecture itself. Every claim below is verifiable in the public source.</p>
   </div>
@@ -218,6 +245,7 @@ html[data-theme="dark"] .btn-dl:hover{background:#9dc2fa !important}
 </div></section>
 
 <section id="premium"><div class="wrap">
+  <span class="eyebrow">Support development</span>
   <h2 class="sec-title" data-wl="p_h">Premium.</h2>
   <p class="sec-sub" data-wl="p_s">The core is free forever. Premium funds development — <b>$49 for 30 days or $4.99 for a day</b>, manual renewal, nothing ever auto-charges.</p>
   <div class="prem-card">
@@ -318,6 +346,7 @@ html[data-theme="dark"] .btn-dl:hover{background:#9dc2fa !important}
 
 <section id="download"><div class="wrap">
   <div class="sec-center">
+    <span class="eyebrow">Free forever</span>
     <h2 class="sec-title" data-wl="d_h">Get <span class="hl">Kastrava.</span></h2>
     <p class="sec-sub" data-wl="d_s">v101.5.25 — free core, forever. Premium unlocks inside the app after you log in.</p>
   </div>
@@ -347,6 +376,7 @@ html[data-theme="dark"] .btn-dl:hover{background:#9dc2fa !important}
 </div></section>
 
 <section id="opensource"><div class="wrap">
+  <span class="eyebrow">GPLv3 open source</span>
   <h2 class="sec-title" data-wl="o_h">Yours. Literally.</h2>
   <p class="sec-sub" data-wl="o_s">100% GPLv3 — Electron (Chromium + Node) with our own browser code on top. Audit it, fork it, build it yourself.</p>
   <a class="band" href="https://github.com/tejaskhanna989/kastrava" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;align-items:center;text-decoration:none">
@@ -360,7 +390,8 @@ html[data-theme="dark"] .btn-dl:hover{background:#9dc2fa !important}
   </div>
 </div></section>
 
-<section><div class="wrap">
+<section id="faq"><div class="wrap">
+  <span class="eyebrow">Answers</span>
   <h2 class="sec-title" data-wl="q_h">Straight answers.</h2>
   <div class="faq">
     <details><summary data-wl="q1_s">What disappears when I quit?</summary><p data-wl="q1_p">Everything sites stored: cache, cookies, site data. It lives in RAM and is wiped on exit. Downloads, settings, bookmarks and history stay — unless you switch those off too.</p></details>
@@ -887,6 +918,22 @@ $('prem-receipt').addEventListener('click',function(){
   btn.disabled=true;
   loadJsPdf(function(){btn.disabled=false;try{buildReceipt();}catch(e){alert('Could not build the receipt.');}});
 });
+})();
+</script>
+<script>
+/* section-switcher scroll spy (own) */
+(function(){
+  var bar=document.getElementById('secnav'); if(!bar) return;
+  var links=[].slice.call(bar.querySelectorAll('a[data-sn]'));
+  var ids=links.map(function(a){return a.getAttribute('data-sn');});
+  var secs=ids.map(function(id){return document.getElementById(id);});
+  function upd(){
+    var y=window.scrollY+140, cur=ids[0];
+    for(var i=0;i<secs.length;i++){ if(secs[i] && secs[i].offsetTop<=y) cur=ids[i]; }
+    links.forEach(function(a){ a.classList.toggle('on', a.getAttribute('data-sn')===cur); });
+  }
+  window.addEventListener('scroll',upd,{passive:true});
+  window.addEventListener('resize',upd); upd();
 })();
 </script>
 </body>
