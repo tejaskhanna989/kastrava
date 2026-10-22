@@ -36,7 +36,7 @@
     s?(s==='dark'?'dark':'light'):((window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'));
 }catch(e){}})();
 </script>
-<link rel="stylesheet" href="/k.css?v=7">
+<link rel="stylesheet" href="/k.css?v=8">
 <style>
 /* ---- Chrome-style landing: floating logo, colored pill highlights,
        circular arrow buttons, right-aligned divided list, blue CTA ---- */
@@ -46,10 +46,10 @@
 /* colored pill highlight on a word (Chrome's headline signature) — hugs the text */
 .hl{display:inline-block;background:#e8f0fe;color:#1967d2;border-radius:18px;padding:.08em .42em;line-height:1.08;vertical-align:baseline;box-decoration-break:clone;-webkit-box-decoration-break:clone}
 .hl.green{background:#e6f4ea;color:#137333}
-.hl.amber{background:#fef7e0;color:#b06000}
+.hl.amber{background:#e8f0fe;color:#1967d2}
 html[data-theme="dark"] .hl{background:rgba(138,180,248,.16);color:#8ab4f8}
 html[data-theme="dark"] .hl.green{background:rgba(129,201,149,.16);color:#81c995}
-html[data-theme="dark"] .hl.amber{background:rgba(253,214,99,.16);color:#fdd663}
+html[data-theme="dark"] .hl.amber{background:rgba(138,180,248,.16);color:#8ab4f8}
 
 /* anchor offset so sticky nav never covers section tops */
 section,.tagline-card,.cta-banner{scroll-margin-top:88px}
@@ -68,7 +68,7 @@ html[data-theme="dark"] .btn-dl:hover{background:#9dc2fa !important}
 .hero-shot-wrap{margin-top:48px}
 
 /* full-bleed tagline card */
-.tagline-card{border-radius:28px;padding:clamp(48px,7vw,96px) 32px;text-align:center;background:linear-gradient(135deg,#1a73e8,#0d47a1);color:#fff;box-shadow:var(--e3);margin-top:16px}
+.tagline-card{border-radius:28px;padding:clamp(48px,7vw,96px) 32px;text-align:center;background:#1a73e8;color:#fff;box-shadow:var(--e3);margin-top:16px}
 .tagline-card h2{color:#fff !important;font-size:clamp(30px,4.6vw,56px) !important;font-weight:500 !important;margin:0;letter-spacing:-.02em}
 .tagline-card p{color:rgba(255,255,255,.9);font-size:18px;margin-top:16px;max-width:52ch;margin-left:auto;margin-right:auto}
 
@@ -114,7 +114,7 @@ html[data-theme="dark"] .btn-dl:hover{background:#9dc2fa !important}
 .rlist .ri p{font-size:15px;color:var(--muted);margin:0}
 
 /* big blue CTA banner (Chrome closing) */
-.cta-banner{border-radius:28px;background:linear-gradient(135deg,#1a73e8,#0b57d0);color:#fff;text-align:center;padding:clamp(44px,6vw,80px) 32px;box-shadow:var(--e3);margin-top:24px;position:relative;overflow:hidden}
+.cta-banner{border-radius:28px;background:#1a73e8;color:#fff;text-align:center;padding:clamp(44px,6vw,80px) 32px;box-shadow:var(--e3);margin-top:24px;position:relative;overflow:hidden}
 .cta-banner h2{color:#fff !important;font-size:clamp(30px,4.4vw,52px) !important;font-weight:500 !important;margin:0 0 14px;letter-spacing:-.02em}
 .cta-banner p{color:rgba(255,255,255,.9);font-size:17px;max-width:50ch;margin:0 auto 30px}
 .cta-banner .btn-white{display:inline-flex;align-items:center;gap:10px;background:#fff;color:#0b57d0 !important;font-weight:500;font-size:16px;padding:15px 32px;border-radius:100px;box-shadow:0 2px 8px rgba(0,0,0,.14);transition:transform .2s,box-shadow .2s}
@@ -147,6 +147,7 @@ html[data-theme="dark"] .btn-dl:hover{background:#9dc2fa !important}
     <a href="#premium" data-wl="nav_prem">Premium</a>
     <a href="/account.html" data-wl="nav_acct">Account</a>
     <a href="https://store.kastrava.in/">Store</a>
+    <a href="https://search.kastrava.in/">Search</a>
     <a href="https://us.kastrava.in/">Team</a>
     <button id="theme-btn" class="theme-btn" title="Toggle theme" aria-label="Toggle theme">
       <svg class="ic-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>

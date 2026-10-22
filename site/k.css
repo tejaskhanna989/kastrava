@@ -191,4 +191,15 @@ footer a:hover{color:var(--ink) !important}
   .prem-card,.lic-card{padding:24px 20px !important}
   .lede{font-size:16px}
   section{padding:40px 0}
+  /* nav: let the link row scroll horizontally instead of overflowing */
+  nav .wrap,nav .container{gap:6px;padding-top:10px !important;padding-bottom:10px !important}
+  nav img{width:28px;height:28px}
+  nav .name{font-size:18px}
+  nav .links{gap:2px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;mask-image:linear-gradient(90deg,transparent 0,#000 12px,#000 calc(100% - 12px),transparent 100%)}
+  nav .links::-webkit-scrollbar{display:none}
+  nav .links a{font-size:13px;padding:7px 10px;white-space:nowrap}
+  nav .links a.dl,nav .links a.btn{padding:8px 16px !important;white-space:nowrap}
+  .wrap,.container{padding:0 16px}
+  .foot-grid{gap:20px}
+  footer{padding:36px 0 40px}
 }
