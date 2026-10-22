@@ -1001,7 +1001,7 @@ app.whenReady().then(async () => {
           const u = new URL(wc.getURL())
           if (u.protocol !== 'https:') return
           const h = (u.hostname || '').toLowerCase()
-          if (h !== 'kastrava.in' && h !== 'store.kastrava.in' && h !== 'account.kastrava.in' && h !== 'kastrava.pp.ua' && h !== 'store.kastrava.pp.ua' && h !== 'account.kastrava.pp.ua') return
+          if (h !== 'kastrava.in' && h !== 'store.kastrava.in' && h !== 'account.kastrava.in') return
           const t = settingsBackend && settingsBackend.get('syncToken')
           if (!t) return
           try { console.log('[bridge] injecting login for ' + h) } catch {}
@@ -1265,7 +1265,7 @@ function guestPreloadUrl() {
     // (The wc.executeJavaScript leg hangs on some guests; this replaces it.)
     const bridge = ';(function(){try{'
       + "var h=(location.hostname||'').toLowerCase();"
-      + "if(h!=='kastrava.in'&&h!=='store.kastrava.in'&&h!=='account.kastrava.in'&&h!=='kastrava.pp.ua'&&h!=='store.kastrava.pp.ua'&&h!=='account.kastrava.pp.ua')return;"
+      + "if(h!=='kastrava.in'&&h!=='store.kastrava.in'&&h!=='account.kastrava.in')return;"
       + 'var ipc=null;try{ipc=require(\'electron\').ipcRenderer;}catch(e){}'
       + 'if(!ipc||!ipc.invoke)return;'
       + "ipc.invoke('bridge-token',location.href).then(function(t){"
@@ -1305,7 +1305,7 @@ ipcMain.handle('ext-toggle', (_e, id) => {
 ipcMain.handle('bridge-token', async (_, href) => {
   try {
     const h = new URL(String(href || '')).hostname.toLowerCase()
-    if (h !== 'kastrava.in' && h !== 'store.kastrava.in' && h !== 'account.kastrava.in' && h !== 'kastrava.pp.ua' && h !== 'store.kastrava.pp.ua' && h !== 'account.kastrava.pp.ua') return null
+    if (h !== 'kastrava.in' && h !== 'store.kastrava.in' && h !== 'account.kastrava.in') return null
     return settingsBackend ? (settingsBackend.get('syncToken') || null) : null
   } catch { return null }
 });

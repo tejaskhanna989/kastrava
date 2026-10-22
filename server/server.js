@@ -73,6 +73,15 @@ const SITE_DIR = path.join(__dirname, '..', 'site')
 const keys = sign.ensureKeys()
 const store = new (require('./lib/store'))(path.join(DATA_DIR, 'db.json'))
 
+// Admin "Email Center" inbox: postfix pipes mail for email-center@kastrava.in
+// into a spool folder; we poll it, parse, and keep a bounded store. Single
+// writer (this process) so it never contends with db.json.
+const { Inbox } = require('./lib/inbox')
+const inbox = new Inbox(path.join(DATA_DIR, 'mail-spool'), path.join(DATA_DIR, 'inbox.json'))
+function drainInbox() { try { return inbox.drain() } catch (e) { console.error('[inbox] drain:', e && e.message); return 0 } }
+drainInbox()
+setInterval(drainInbox, 20000).unref()
+
 // Self-healing: re-grant paid store orders whose entitlements were lost to
 // the pre-fix restart wipe (load() used to drop the entitlements map).
 // Idempotent — owns() short-circuits already-granted items.
@@ -207,6 +216,32 @@ function makeReceipt(orderId, machineRaw) {
 function adminOk(req) {
   const t = (req.headers['x-admin-token'] || '').toString()
   return !!ADMIN_TOKEN && t.length === ADMIN_TOKEN.length && crypto.timingSafeEqual(Buffer.from(t), Buffer.from(ADMIN_TOKEN))
+}
+
+// Provision an account for an admin grant/issue so it never dead-ends on
+// "no account". Password is unusable until the customer claims it via
+// "Forgot password"; verified=true because the admin grants TO this address
+// by name. Returns true when a new account was created.
+function adminEnsureAccount(email) {
+  const e = String(email || '').trim().toLowerCase()
+  if (!e || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e)) return false
+  if (store.getAccountByEmail(e)) return false
+  const passSalt = crypto.randomBytes(16).toString('hex')
+  const authSalt = crypto.randomBytes(16).toString('hex')
+  const syncSalt = crypto.randomBytes(16).toString('hex')
+  const passHash = crypto.randomBytes(32).toString('hex')
+  const acc = store.createAccount(e, passHash, passSalt, authSalt, syncSalt)
+  if (!acc) return false
+  acc.verified = true
+  store.save()
+  store.audit(e, 'admin_account_create', 'created by admin')
+  mailer.sendAsync(e, 'Your Kastrava account is ready',
+    'Hello,\n\nThe Kastrava team set up an account for you at ' + e +
+    ' and attached a gift to it.\n\nTo get in:\n1. Open https://account.kastrava.in/\n' +
+    '2. Click "Forgot password?" and enter this email — the code arrives in minutes.\n' +
+    '3. Choose a password and everything we granted you is there.\n\n' +
+    'Just reply to this email if anything looks off.\n\n— Kastrava team', mailer.TEAM_FROM)
+  return true
 }
 
 function serveStatic(req, res, pathname) {
@@ -611,12 +646,14 @@ async function handlePost(req, res, pathname) {
     store.issueLicense(key, orderId, null, expires)
     if (machine) store.bindLicense(key, machine)
     const issueEmail = String(body.account_email || '').trim().toLowerCase()
+    const issueCreated = issueEmail ? adminEnsureAccount(issueEmail) : false
     if (issueEmail && store.getAccountByEmail(issueEmail)) {
       store.setAccountEmail(key, issueEmail)
       store.audit(issueEmail, 'admin_grant', key)
     }
     const rc = makeReceipt(orderId)
     return json(res, 200, { ok: true, key, order_id: orderId, expires_at: expires,
+      created_account: issueCreated,
       receipt: rc && rc.receipt, receipt_sig: rc && rc.receipt_sig })
   }
 
@@ -1274,7 +1311,17 @@ async function handlePost(req, res, pathname) {
     if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
     const email = String(body.email || '').trim().toLowerCase()
     const id = String(body.id || body.key || '')
-    if (!store.getAccountByEmail(email)) return json(res, 404, { error: 'no_account' })
+    if (!validEmail(email)) return json(res, 400, { error: 'bad_email' })
+    // Auto-provision the account so a grant never dead-ends (they claim the
+    // password later via "Forgot password").
+    const createdAcc = adminEnsureAccount(email)
+    // The all-items catalogue pass: not a store product, so grant it directly.
+    if (id === 'catalogue-pass' || id === 'pass' || id === 'premium') {
+      const days = Math.min(Math.max(Math.floor(Number(body.days) || 30), 1), 3650)
+      store.grantPass(email, 'admin', days)
+      store.audit(email, 'admin_grant', 'catalogue-pass ' + days + 'd')
+      return json(res, 200, { ok: true, granted: 'catalogue-pass', days, created_account: createdAcc })
+    }
     // Store item grant (free, direct to account).
     const prod = products.get(id)
     if (prod) {
@@ -1285,11 +1332,11 @@ async function handlePost(req, res, pathname) {
         const days = Math.min(Math.max(Math.floor(Number(body.days) || 30), 1), 3650)
         store.grantPass(email, 'admin', days)
         store.audit(email, 'admin_grant', id + ' ' + days + 'd')
-        return json(res, 200, { ok: true, granted: id, days })
+        return json(res, 200, { ok: true, granted: id, days, created_account: createdAcc })
       }
       store.grant(email, id, 'admin')
       store.audit(email, 'admin_grant', id)
-      return json(res, 200, { ok: true, granted: id })
+      return json(res, 200, { ok: true, granted: id, created_account: createdAcc })
     }
     // Otherwise treat as a license key grant.
     const lic = store.getLicense(id.toUpperCase())
@@ -1299,7 +1346,7 @@ async function handlePost(req, res, pathname) {
     }
     store.setAccountEmail(lic.key, email)
     store.audit(email, 'admin_grant', lic.key)
-    return json(res, 200, { ok: true, granted: lic.key })
+    return json(res, 200, { ok: true, granted: lic.key, created_account: createdAcc })
   }
   if (pathname === '/api/admin/email') {
     if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
@@ -1307,23 +1354,74 @@ async function handlePost(req, res, pathname) {
     const text = String(body.text || '').slice(0, 5000)
     if (!subject || !text) return json(res, 400, { error: 'bad_request' })
     let targets = []
+    const dump = store.all()
     if (body.to === 'all') {
-      targets = Object.keys(store.all().accounts || {})
+      targets = Object.keys(dump.accounts || {})
+    } else if (body.to === 'paid') {
+      // Customers with at least one paid order — the launch/announcement list.
+      const paid = new Set()
+      for (const o of Object.values(dump.orders || {})) {
+        if (o && o.status === 'paid' && o.account_email) paid.add(String(o.account_email).toLowerCase())
+      }
+      targets = [...paid]
     } else if (typeof body.to === 'string' && body.to.includes('@')) {
-      if (!store.getAccountByEmail(body.to.trim().toLowerCase())) return json(res, 404, { error: 'no_account' })
-      targets = [body.to.trim().toLowerCase()]
+      const one = body.to.trim().toLowerCase()
+      if (!validEmail(one)) return json(res, 400, { error: 'bad_email' })
+      targets = [one]
     } else {
       return json(res, 400, { error: 'bad_request' })
     }
+    if (targets.length === 0) return json(res, 200, { ok: true, sent: 0, total: 0 })
+    if (body.preview) return json(res, 200, { ok: true, preview: true, total: targets.length, sample: targets.slice(0, 5) })
     let sent = 0
     for (const em of targets.slice(0, 5000)) {
       try {
-        const ok = await mailer.sendAsync(em, subject, text + '\n\n— Kastrava')
+        const ok = await mailer.sendAsync(em, subject, text + '\n\n— Kastrava\nemail-center@kastrava.in', null, mailer.TEAM_FROM)
         if (ok) sent++
       } catch {}
       await new Promise((r) => setTimeout(r, 120))
     }
+    store.audit('admin', 'admin_email', subject + ' -> ' + targets.length + ' recipient(s), ' + sent + ' accepted')
     return json(res, 200, { ok: true, sent, total: targets.length })
+  }
+
+  // ---- Admin Email Center: the email-center@kastrava.in inbox ----
+  if (pathname === '/api/admin/inbox') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    drainInbox()
+    const msgs = inbox.list()
+    return json(res, 200, { ok: true, messages: msgs,
+      unread: msgs.filter((m) => !m.read).length, total: msgs.length })
+  }
+  if (pathname === '/api/admin/inbox/message') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const m = inbox.get(String(body.id || ''))
+    if (!m) return json(res, 404, { error: 'not_found' })
+    inbox.markRead(m.id)
+    return json(res, 200, { ok: true, message: m, reply_to: inbox.replyToAddress(m.id) })
+  }
+  if (pathname === '/api/admin/inbox/read') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    if (body.id === 'all') return json(res, 200, { ok: true, marked: inbox.markAllRead() ? inbox.list().length : 0 })
+    return json(res, 200, { ok: inbox.markRead(String(body.id || '')) })
+  }
+  if (pathname === '/api/admin/inbox/delete') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    return json(res, 200, { ok: inbox.remove(String(body.id || '')) })
+  }
+  // Reply from the centre: sends FROM email-center@ to the original sender.
+  if (pathname === '/api/admin/inbox/reply') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const m = inbox.get(String(body.id || ''))
+    if (!m) return json(res, 404, { error: 'not_found' })
+    const to = inbox.replyToAddress(m.id)
+    if (!validEmail(to)) return json(res, 400, { error: 'bad_sender' })
+    const text = String(body.text || '').slice(0, 5000)
+    if (!text) return json(res, 400, { error: 'bad_request' })
+    const subject = 'Re: ' + String(m.subject || '').replace(/^re:\s*/i, '').slice(0, 100)
+    const ok = await mailer.sendAsync(to, subject, text, null, mailer.TEAM_FROM)
+    store.audit('admin', 'admin_reply', to + ' :: ' + subject + (ok ? ' (sent)' : ' (FAILED)'))
+    return json(res, ok ? 200 : 502, { ok: !!ok, to, subject })
   }
   if (pathname === '/api/account/export') {
     const acc = store.getSessionAccount(bearer(req))

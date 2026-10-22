@@ -37,7 +37,7 @@
 .pane h2{font-size:19px;margin-bottom:4px}
 .pane .sub{font-size:13px;color:var(--muted);margin-bottom:14px}
 .pane label{display:block;font-size:12.5px;font-weight:600;color:var(--ink);margin:12px 0 6px}
-.pane input[type=text],.pane input[type=password],.pane input[type=email],.pane input[type=number],.pane textarea{width:100%;padding:10px 13px;border-radius:9px;border:1px solid var(--line2);background:var(--card2);color:var(--ink);font-size:13.5px;font-family:inherit}
+.pane input[type=text],.pane input[type=password],.pane input[type=email],.pane input[type=number],.pane input[type=select],.pane select,.pane textarea{width:100%;padding:10px 13px;border-radius:9px;border:1px solid var(--line2);background:var(--card2);color:var(--ink);font-size:13.5px;font-family:inherit}
 .pane textarea{font-family:var(--mono);font-size:11.5px;min-height:90px}
 .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px}
 .stat-grid .card{padding:16px 18px}
@@ -57,6 +57,23 @@
 .rowbtn.danger:hover{border-color:#e5484d;color:#e5484d}
 .adm-actions button{margin:0 8px 6px 0;cursor:pointer;font-size:12px;padding:6px 14px;border-radius:8px;border:1px solid var(--line2);background:transparent;color:var(--ink);font-family:inherit}
 .adm-actions button:hover{border-color:var(--blue)}
+/* Email Center sub-tabs (Compose / Inbox) */
+.subtabs{display:flex;gap:6px;margin:0 0 16px;border-bottom:1px solid var(--line);padding-bottom:0}
+.subtab{cursor:pointer;font-size:13px;padding:8px 16px;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--muted);font-family:inherit;border-radius:0}
+.subtab.on{color:var(--ink);border-bottom-color:var(--blue);font-weight:600}
+.subtab:hover{color:var(--ink)}
+.subtab .badge{display:inline-block;min-width:18px;margin-left:6px;padding:0 5px;font-size:10.5px;line-height:17px;border-radius:9px;background:var(--blue);color:#fff;text-align:center}
+/* inbox list */
+.ibrow{display:flex;gap:10px;align-items:flex-start;padding:11px 12px;border-bottom:1px solid var(--line);cursor:pointer}
+.ibrow:hover{background:var(--card2)}
+.ibrow.unread .ibfrom,.ibrow.unread .ibsubj{font-weight:700}
+.ibdot{width:7px;height:7px;border-radius:50%;background:var(--blue);margin-top:6px;flex-shrink:0}
+.ibrow.read .ibdot{background:transparent}
+.ibmain{flex:1;min-width:0}
+.ibfrom{font-size:13px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ibsubj{font-size:12.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ibprev{font-size:11.5px;color:var(--muted2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.ibmeta{font-size:11px;color:var(--muted2);white-space:nowrap;flex-shrink:0}
 .cmd{font-family:var(--mono);font-size:12px;border-radius:9px;padding:10px 13px;border:1px solid var(--line2);background:var(--card2);color:var(--ink);width:100%}
 .st-ok{color:#2f9e44;font-weight:700}.st-bad{color:#e5484d;font-weight:700}.st-warn{color:#e8890c;font-weight:700}
 .lock{max-width:460px;margin:60px auto}
@@ -74,7 +91,7 @@
     <button class="atab" data-t="list"><span class="dot"></span><span>Licenses</span></button>
     <button class="atab" data-t="accounts"><span class="dot"></span><span>Accounts</span></button>
     <button class="atab" data-t="grant"><span class="dot"></span><span>Grant</span></button>
-    <button class="atab" data-t="email"><span class="dot"></span><span>Email</span></button>
+    <button class="atab" data-t="email"><span class="dot"></span><span>Email Center</span></button>
   </nav>
   <div class="foot"><a href="https://kastrava.in/">← site</a> · <a href="/account.html">account</a></div>
 </aside>
@@ -139,13 +156,23 @@
     </div>
     <div class="apane pane" id="pane-grant" style="display:none">
       <h2>Grant free, direct to account</h2>
-      <p class="sub">Type their email, pick anything — it lands on their account instantly, no purchase.</p>
+      <p class="sub">Type their email, pick anything — it lands on their account instantly, no purchase. No account yet? One is created for them and they get an email on how to claim it (they choose their own password).</p>
       <label for="gr-email">Their email</label>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <input id="gr-email" type="email" placeholder="account@email" style="flex:1;min-width:200px">
         <button id="gr-find" class="btn btn-ghost" style="white-space:nowrap">Find</button>
       </div>
       <div id="gr-who" style="margin-top:8px;font-size:13px"></div>
+      <div style="margin-top:14px;padding:14px;border:1px solid var(--line2);border-radius:12px;background:var(--card2)">
+        <label style="margin-top:0">Quick grants — one click</label>
+        <div class="adm-actions">
+          <button data-quick="pass:36500" title="Catalogue pass, ~100 years — everything unlocked">★ Everything · Lifetime</button>
+          <button data-quick="pass:365" title="Catalogue pass, 1 year">Everything · 1 year</button>
+          <button data-quick="pass:90" title="Catalogue pass, 90 days">Everything · 90 days</button>
+          <button data-quick="pass:30" title="Catalogue pass, 30 days">Everything · 30 days</button>
+        </div>
+        <div class="sub" style="margin:8px 0 0">Or find them first to grant specific store items below.</div>
+      </div>
       <div id="gr-pick" style="display:none;margin-top:12px">
         <label for="gr-q">Pick a store item (search, then Grant)</label>
         <input id="gr-q" placeholder="Search 701 items — try \"ocean\" or \"cursor\"" style="margin-bottom:8px">
@@ -163,16 +190,50 @@
       <div id="gr-out" style="margin-top:12px;font-size:13px"></div>
     </div>
     <div class="apane pane" id="pane-email" style="display:none">
-      <h2>Send email</h2>
-      <p class="sub">One customer or the full user base. Broadcasts go out throttled.</p>
-      <label for="em-to">Recipient</label>
-      <input id="em-to" placeholder="customer@email or 'all'">
-      <label for="em-subject">Subject</label>
-      <input id="em-subject" placeholder="Subject">
-      <label for="em-text">Message (plain text)</label>
-      <textarea id="em-text" rows="6" placeholder="Plain-text message…"></textarea>
-      <button id="em-go" class="btn btn-primary" style="margin-top:12px">Send</button>
-      <div id="em-out" style="margin-top:12px;font-size:13px"></div>
+      <h2>Email Center</h2>
+      <p class="sub">All mail is sent from <b>email-center@kastrava.in</b>. Compose mass mail to customers, or read replies in the inbox.</p>
+      <div class="subtabs">
+        <button class="subtab on" data-etab="compose">Compose</button>
+        <button class="subtab" data-etab="inbox">Inbox <span class="badge" id="ib-badge" style="display:none">0</span></button>
+      </div>
+
+      <div id="ec-compose">
+        <label for="em-to">Recipients</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+          <button class="rowbtn" data-emto="one">One customer</button>
+          <button class="rowbtn" data-emto="paid">Paying customers</button>
+          <button class="rowbtn" data-emto="all">Everyone</button>
+        </div>
+        <input id="em-to" placeholder="customer@email (or all / paid)">
+        <label for="em-tpl">Template</label>
+        <select id="em-tpl">
+          <option value="">Blank</option>
+          <option value="welcome">Welcome + what's included</option>
+          <option value="key">License key delivery</option>
+          <option value="thanks">Thank-you after purchase</option>
+          <option value="update">Product update announcement</option>
+          <option value="winback">We miss you (win-back)</option>
+        </select>
+        <label for="em-subject">Subject</label>
+        <input id="em-subject" placeholder="Subject">
+        <label for="em-text">Message (plain text)</label>
+        <textarea id="em-text" rows="7" placeholder="Plain-text message…"></textarea>
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+          <button id="em-go" class="btn btn-primary">Send</button>
+          <button id="em-dry" class="btn btn-ghost">Preview recipients (dry run)</button>
+        </div>
+        <div id="em-out" style="margin-top:12px;font-size:13px"></div>
+      </div>
+
+      <div id="ec-inbox" style="display:none">
+        <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center;flex-wrap:wrap">
+          <button id="ib-refresh" class="btn btn-ghost" style="padding:6px 14px;font-size:12px">Refresh</button>
+          <button id="ib-readall" class="btn btn-ghost" style="padding:6px 14px;font-size:12px">Mark all read</button>
+          <span id="ib-count" class="mono" style="font-size:11.5px;color:var(--muted2)"></span>
+        </div>
+        <div id="ib-list" style="border:1px solid var(--line);border-radius:10px;overflow:hidden"></div>
+        <div id="ib-reader" style="display:none;margin-top:14px"></div>
+      </div>
     </div>
     <div class="apane pane" id="pane-list" style="display:none">
       <h2>Licenses <button id="lst-go" class="btn btn-ghost" style="padding:6px 14px;font-size:12px;margin-left:8px">Refresh</button></h2>
@@ -225,6 +286,7 @@ document.querySelectorAll('.atab').forEach(function(b){
     var p=$('pane-'+b.dataset.t);if(p)p.style.display='block';
     $('pane-title').textContent=b.textContent.trim();
     if(b.dataset.t==='list')loadList();
+    if(b.dataset.t==='email')loadInbox();
     if(b.dataset.t==='overview'&&ovCache)renderOverview(ovCache);
   });
 });
@@ -385,7 +447,8 @@ $('iss-go').addEventListener('click',function(){
     if(r.status===401){out.textContent='Wrong token.';return;}
     var j=r.json;
     if(!j||!j.ok){out.textContent='Failed: '+((j&&(j.error||j.msg))||r.status);return;}
-    out.innerHTML='Key minted: <span class="mono" style="font-size:16px;font-weight:700">'+esc(j.key)+'</span><br>Order: <span class="mono">'+esc(j.order_id)+'</span> — expires '+esc(j.expires_at||'?');
+    out.innerHTML='Key minted: <span class="mono" style="font-size:16px;font-weight:700">'+esc(j.key)+'</span><br>Order: <span class="mono">'+esc(j.order_id)+'</span> — expires '+esc(j.expires_at||'?')
+      +(j.created_account?'<br><span style="color:var(--muted)">New account created — claim instructions emailed.</span>':'');
     loadList();
   }).catch(function(){out.textContent='Network error.';});
 });
@@ -415,13 +478,66 @@ function paintAccounts(){
     +'<p class="sub" style="margin-top:8px">Showing '+list.length+' of '+(window.__accCache||[]).length+' accounts.</p>';
   out.querySelectorAll('button[data-acc]').forEach(function(b){
     b.addEventListener('click',function(){
+      var d=$('acc-detail');d.textContent='Loading…';
       api('/api/admin/account',{email:b.dataset.acc}).then(function(r2){
-        var d=$('acc-detail');
         if(!r2.json||!r2.json.ok){d.textContent='Failed.';return;}
         var a=r2.json.account;
-        d.innerHTML='<b>'+esc(a.email)+'</b> · verified:'+a.verified+' · 2FA:'+a.totp+' · approvals:'+(a.require_approval?'on':'off')
-          +'<br>Keys: '+(a.keys||[]).map(function(k){return esc(k.key)+'('+esc(k.status)+')';}).join(', ')
-          +'<br>Sessions: '+(a.sessions!=null?a.sessions:'?');
+        var keys=(a.keys||[]).map(function(k){
+          var col=k.status==='activated'?'st-ok':(k.status==='revoked'||k.status==='cancelled'?'st-bad':'');
+          return '<tr><td class="mono">'+esc(k.key)+'</td><td class="'+col+'"><b>'+esc(k.status)+'</b></td>'
+            +'<td>'+esc((k.expires_at||'-').slice(0,10))+'</td><td>'+k.devices+'</td>'
+            +'<td class="adm-actions"><button data-dx="'+esc(k.key)+'" title="Extend 1 year">+1y</button>'
+            +'<button data-dmail="'+esc(k.key)+'" title="Email this key to them">Mail</button></td></tr>';
+        }).join('')||'<tr><td colspan="5" class="sub">No keys yet.</td></tr>';
+        var items=(a.items||[]).map(esc).join(', ')||'—';
+        var audit=(a.audit||[]).slice(0,8).map(function(e){
+          return '<tr><td>'+esc(((e.t||'')+'').slice(0,16).replace('T',' '))+'</td><td class="mono">'+esc(e.type||'')+'</td><td>'+esc(e.detail||'')+'</td></tr>';
+        }).join('');
+        d.innerHTML='<div class="pane" style="margin-top:12px">'
+          +'<h2 class="mono" style="font-size:16px">'+esc(a.email)+'</h2>'
+          +'<p class="sub">Since '+esc((a.created_at||'').slice(0,10))+' · verified:'+(a.verified?'✓':'✗')+' · 2FA:'+(a.totp?'on':'off')
+          +' · approvals:'+(a.require_approval?'on':'off')+' · sessions:'+(a.sessions!=null?a.sessions:'?')+'</p>'
+          +'<div class="adm-actions" style="margin-bottom:12px">'
+          +'<button data-adq="pass:36500">★ Lifetime everything</button>'
+          +'<button data-adq="pass:365">Everything 1y</button>'
+          +'<button data-ademail="1">Email customer</button>'
+          +'<button data-adrefresh="1">Refresh</button></div>'
+          +'<div id="acc-act-out" style="font-size:12.5px;margin:-4px 0 10px"></div>'
+          +'<label style="margin-top:0">License keys</label>'
+          +'<div class="tbl-wrap"><table class="adm-table"><tr><th>Key</th><th>Status</th><th>Expires</th><th>Devices</th><th></th></tr>'+keys+'</table></div>'
+          +'<label>Store items owned</label><div class="mono" style="font-size:12px">'+items+'</div>'
+          +(audit?'<label>Recent activity</label><div class="tbl-wrap"><table class="adm-table"><tr><th>When</th><th>Event</th><th>Detail</th></tr>'+audit+'</table></div>':'')
+          +'</div>';
+        d.querySelectorAll('[data-adq]').forEach(function(x){
+          x.addEventListener('click',function(){
+            var p=x.dataset.adq.split(':');
+            grDoGrant(p[0],Number(p[1]),null,'acc-act-out',a.email);
+          });
+        });
+        d.querySelectorAll('[data-dx]').forEach(function(x){
+          x.addEventListener('click',function(){
+            api('/api/admin/extend',{key:x.dataset.dx,days:365}).then(function(r3){
+              if(r3.json&&r3.json.ok){alert('Extended to '+(r3.json.expires_at||'?'));b.click();loadList();}
+              else alert('Extend failed.');
+            }).catch(function(){alert('Extend failed.');});
+          });
+        });
+        d.querySelectorAll('[data-dmail]').forEach(function(x){
+          x.addEventListener('click',function(){
+            document.querySelector('.atab[data-t="email"]').click();
+            $('em-to').value=a.email;$('em-tpl').value='key';applyEmTpl();
+            $('em-text').value=$('em-text').value.replace('{KEY}',x.dataset.dmail);
+            window.scrollTo({top:0,behavior:'smooth'});
+          });
+        });
+        var ae=d.querySelector('[data-ademail]');
+        if(ae)ae.addEventListener('click',function(){
+          document.querySelector('.atab[data-t="email"]').click();
+          $('em-to').value=a.email;$('em-tpl').value='thanks';applyEmTpl();
+          window.scrollTo({top:0,behavior:'smooth'});
+        });
+        var ar=d.querySelector('[data-adrefresh]');
+        if(ar)ar.addEventListener('click',function(){b.click();});
       }).catch(function(){$('acc-detail').textContent='Failed.';});
     });
   });
@@ -437,23 +553,63 @@ $('acc-q').addEventListener('input',function(){if(window.__accCache)paintAccount
 
 /* ---------- grant ---------- */
 var GR_CATALOG=[];
-function grDoGrant(id,days,done){
-  var out=$('gr-out');out.textContent='Granting '+id+'…';
-  api('/api/admin/grant',{email:$('gr-email').value.trim(),id:id,days:days}).then(function(r){
+function grGrantMsg(j){
+  var m='Granted <b>'+esc(j.granted)+'</b>'+(j.days?(' · '+j.days+' days'):'');
+  if(j.created_account)m+='<br><span style="color:var(--muted)">New account created for <b>'+esc($('gr-email').value.trim())+'</b> — claim instructions emailed to them.</span>';
+  if(/^KAS-/.test(j.granted))m+=' <button id="gr-pdf" style="padding:4px 14px;font-size:12px">Key PDF</button>';
+  m+=' <button id="gr-mail" style="padding:4px 14px;font-size:12px">Email them</button>';
+  return m;
+}
+function grAfterBind(j){
+  var pb=$('gr-pdf');
+  if(pb)pb.addEventListener('click',function(){keyPdf(j.granted);});
+  var mb=$('gr-mail');
+  if(mb)mb.addEventListener('click',function(){
+    document.querySelector('.atab[data-t="email"]').click();
+    $('em-to').value=$('gr-email').value.trim();
+    $('em-tpl').value='key';
+    applyEmTpl();
+    $('em-text').value=$('em-text').value.replace('{KEY}',j.granted);
+    window.scrollTo({top:0,behavior:'smooth'});
+  });
+}
+function grDoGrant(id,days,done,outId,email){
+  var to=String(email||$('gr-email').value||'').trim();
+  var out=document.getElementById(outId||'gr-out');out.textContent='Granting '+id+'…';
+  api('/api/admin/grant',{email:to,id:id,days:days}).then(function(r){
     if(!r.json||!r.json.ok){out.textContent='Failed: '+((r.json&&(r.json.error||r.json.msg))||'error');return;}
-    out.innerHTML='Granted <b>'+esc(r.json.granted)+'</b> to <b>'+esc($('gr-email').value.trim())+'</b>'+(r.json.days?(' · '+r.json.days+' days'):'')
-      +(/^KAS-/.test(r.json.granted)?' <button id="gr-pdf" style="padding:4px 14px;font-size:12px">Key PDF</button>':'');
-    var pb=$('gr-pdf');
-    if(pb)pb.addEventListener('click',function(){keyPdf(r.json.granted);});
-    if(done)done();
+    if(outId){
+      out.innerHTML=(r.json.created_account?'Account created + ':'')+'Granted <b>'+esc(r.json.granted)+'</b>'
+        +(r.json.days?(' · '+r.json.days+' days'):'')+' → '+esc(to);
+    }else{
+      out.innerHTML=grGrantMsg(r.json);
+      grAfterBind(r.json);
+    }
+    if(done)done(r.json);
   }).catch(function(){out.textContent='Failed.';});
 }
+document.querySelectorAll('[data-quick]').forEach(function(b){
+  b.addEventListener('click',function(){
+    var em=$('gr-email').value.trim();
+    if(!em||em.indexOf('@')<0){$('gr-out').innerHTML='<span class="st-bad">Type their email first.</span>';return;}
+    var parts=b.dataset.quick.split(':');
+    grDoGrant(parts[0],Math.floor(Number(parts[1])||30));
+  });
+});
 $('gr-find').addEventListener('click',function(){
   var em=$('gr-email').value.trim().toLowerCase(),who=$('gr-who');
   if(!em||em.indexOf('@')<0){who.textContent='Type a valid email first.';return;}
   who.textContent='Looking up…';$('gr-pick').style.display='none';
   api('/api/admin/account',{email:em}).then(function(r){
-    if(!r.json||!r.json.ok){who.textContent='No account with that email.';return;}
+    if(!r.json||!r.json.ok){
+      who.innerHTML='<span class="st-warn">No account yet</span> — granting will create one and email them claim instructions. Quick grants above work right away.';
+      $('gr-pick').style.display='block';
+      if(!GR_CATALOG.length){
+        fetch(KAS_API+'/api/store/catalog',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})
+        .then(function(x){return x.json();}).then(function(j){GR_CATALOG=(j&&j.items)||[];grPaintList([]);}).catch(function(){});
+      }else{grPaintList([]);}
+      return;
+    }
     var a=r.json.account;
     who.innerHTML='<b>'+esc(a.email)+'</b> · '+(a.keys||[]).length+' keys · '+(a.items||[]).length+' store items owned';
     $('gr-pick').style.display='block';
@@ -508,14 +664,176 @@ $('gr-go').addEventListener('click',function(){
 });
 
 /* ---------- broadcast email ---------- */
+var EM_TPLS={
+  welcome:{s:'Welcome to Kastrava Premium',t:'Hello,\n\nYour Kastrava Premium is ready. Here is what you have:\n\n• Private-by-default browsing, no telemetry\n• Tracking Radar + KastravaSearch\n• The full store catalog (themes, accents, wallpapers)\n\nSign in at https://account.kastrava.in/ to manage everything. If you did not expect this email, no action is needed.\n\nHappy browsing,\n— Kastrava team'},
+  key:{s:'Your Kastrava license key',t:'Hello,\n\nHere is your Kastrava Premium license key:\n\n{KEY}\n\nActivate it in the app: Settings → Premium → Enter key. Manage your keys anytime at https://account.kastrava.in/. This key works on up to 10 of your devices.\n\nLost it? Just reply — we will re-send it.\n\n— Kastrava team'},
+  thanks:{s:'Thank you for your Kastrava purchase',t:'Hello,\n\nThank you for supporting Kastrava! Your purchase is complete and your account already has everything unlocked.\n\nTwo things worth knowing:\n\n• Your keys live at https://account.kastrava.in/ — no email to dig up later\n• Reply to this email any time; a human on the team answers\n\nEnjoy the browser,\n— Kastrava team'},
+  update:{s:'Kastrava update — what is new',t:'Hello,\n\nA new Kastrava release is out. Highlights:\n\n• \n• \n• \n\nUpdate in the app (Help → About → Check for updates) or download from https://kastrava.in/. Full notes: https://kastrava.in/#changelog\n\n— Kastrava team'},
+  winback:{s:'Still private out there?',t:'Hello,\n\nIt has been a while since your last visit — your Premium and everything we granted you is still here, untouched.\n\nSign in at https://account.kastrava.in/ and pick up where you left off. If something drove you away, hit reply and tell us — we read every message.\n\n— Kastrava team'}
+};
+function applyEmTpl(){
+  var t=EM_TPLS[$('em-tpl').value];
+  if(!t)return;
+  $('em-subject').value=t.s;
+  $('em-text').value=t.t;
+}
+$('em-tpl').addEventListener('change',applyEmTpl);
+document.querySelectorAll('[data-emto]').forEach(function(b){
+  b.addEventListener('click',function(){
+    var m=b.dataset.emto;
+    $('em-to').value=m==='one'?'':m;
+    if(m==='one')$('em-to').focus();
+    if(!EM_TPLS[$('em-tpl').value])$('em-tpl').value=m==='all'?'update':'welcome';
+    applyEmTpl();
+  });
+});
+function emBody(){
+  return {to:$('em-to').value.trim(),subject:$('em-subject').value,text:$('em-text').value};
+}
+$('em-dry').addEventListener('click',function(){
+  var out=$('em-out'),b=emBody();
+  if(!b.to){out.textContent='Pick recipients first.';return;}
+  out.textContent='Counting…';
+  api('/api/admin/email',{to:b.to,subject:b.subject||'preview',text:b.text||'preview',preview:true}).then(function(r){
+    if(r.status===401){out.textContent='Wrong token.';return;}
+    var j=r.json||{};
+    if(!j.ok){out.textContent='Failed: '+(j.error||r.status);return;}
+    out.innerHTML='Would reach <b>'+j.total+'</b> recipient(s).'+(j.sample&&j.sample.length?'<br><span class="mono" style="font-size:11px;color:var(--muted2)">e.g. '+j.sample.map(esc).join(', ')+'</span>':'');
+  }).catch(function(){out.textContent='Network error.';});
+});
 $('em-go').addEventListener('click',function(){
-  var out=$('em-out'),dest=$('em-to').value.trim();
-  if(dest.toLowerCase()==='all'&&!confirm('Email the FULL user base?'))return;
+  var out=$('em-out'),b=emBody();
+  if(!b.to){out.textContent='Pick recipients first.';return;}
+  if(!b.subject||!b.text){out.textContent='Subject and message are both required.';return;}
+  var isBroad=b.to==='all'||b.to==='paid';
+  if(isBroad&&!confirm('Email '+(b.to==='all'?'EVERYONE':'all paying customers')+'? This goes out for real.'))return;
   out.textContent='Sending…';
-  api('/api/admin/email',{to:dest,subject:$('em-subject').value,text:$('em-text').value}).then(function(r){
+  api('/api/admin/email',b).then(function(r){
     if(!r.json||!r.json.ok){out.textContent='Failed.';return;}
-    out.textContent='Sent '+r.json.sent+'/'+r.json.total+'.';
+    out.innerHTML='Sent <b>'+r.json.sent+'</b>/'+r.json.total+' — from email-center@kastrava.in.';
   }).catch(function(){out.textContent='Failed.';});
+});
+
+/* ---------- email center: inbox ---------- */
+var IB_CACHE=[];
+document.querySelectorAll('.subtab').forEach(function(b){
+  b.addEventListener('click',function(){
+    document.querySelectorAll('.subtab').forEach(function(x){x.classList.remove('on');});
+    b.classList.add('on');
+    var inbox=b.dataset.etab==='inbox';
+    $('ec-compose').style.display=inbox?'none':'block';
+    $('ec-inbox').style.display=inbox?'block':'none';
+    if(inbox)loadInbox();
+  });
+});
+function ibFmtDate(s){
+  try{var d=new Date(s);if(isNaN(d))return '';
+    var now=new Date(),sameDay=d.toDateString()===now.toDateString();
+    return sameDay?d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})
+      :d.toLocaleDateString([], {month:'short',day:'numeric'})+' '+d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  }catch(e){return '';}
+}
+function ibBadge(n){
+  var el=$('ib-badge');
+  if(!el)return;
+  if(n>0){el.textContent=n;el.style.display='inline-block';}else{el.style.display='none';}
+}
+function loadInbox(){
+  var box=$('ib-list'),cnt=$('ib-count');
+  if(!box)return;
+  box.innerHTML='<div style="padding:14px;color:var(--muted);font-size:13px">Loading…</div>';
+  api('/api/admin/inbox',{}).then(function(r){
+    if(!r.json||!r.json.ok){
+      box.innerHTML='<div style="padding:14px;color:var(--muted);font-size:13px">Inbox unavailable'+((r.status===401)?' — wrong token.':'.')+'</div>';
+      return;
+    }
+    IB_CACHE=r.json.messages||[];
+    ibBadge(r.json.unread||0);
+    if(cnt)cnt.textContent=IB_CACHE.length+' message(s)'+((r.json.unread)?' · '+r.json.unread+' unread':'');
+    if(!IB_CACHE.length){
+      box.innerHTML='<div style="padding:16px;color:var(--muted);font-size:13px">No mail yet. Replies to <b>email-center@kastrava.in</b> appear here.</div>';
+      $('ib-reader').style.display='none';
+      return;
+    }
+    box.innerHTML=IB_CACHE.map(function(m){
+      return '<div class="ibrow '+(m.read?'read':'unread')+'" data-ib="'+esc(m.id)+'">'
+        +'<div class="ibdot"></div>'
+        +'<div class="ibmain">'
+        +'<div class="ibfrom">'+esc(m.from||'(unknown)')+'</div>'
+        +'<div class="ibsubj">'+esc(m.subject||'(no subject)')+(m.hasAttachments?' 📎':'')+'</div>'
+        +'<div class="ibprev">'+esc(m.preview||'')+'</div>'
+        +'</div>'
+        +'<div class="ibmeta">'+esc(ibFmtDate(m.date||m.received_at))+'</div>'
+        +'</div>';
+    }).join('');
+    box.querySelectorAll('[data-ib]').forEach(function(row){
+      row.addEventListener('click',function(){openMessage(row.dataset.ib);});
+    });
+  }).catch(function(){
+    box.innerHTML='<div style="padding:14px;color:var(--muted);font-size:13px">Network error.</div>';
+  });
+}
+function openMessage(id){
+  var rd=$('ib-reader');
+  rd.style.display='block';
+  rd.innerHTML='<div class="pane" style="margin-top:12px">Loading…</div>';
+  api('/api/admin/inbox/message',{id:id}).then(function(r){
+    if(!r.json||!r.json.ok){rd.innerHTML='<div class="pane" style="margin-top:12px">Message not found.</div>';return;}
+    var m=r.json.message,replyTo=r.json.reply_to||'';
+    var atts=(m.attachments||[]).map(function(a){
+      return '<div class="mono" style="font-size:11.5px">📎 '+esc(a.name)+' ('+a.size+' bytes'+(a.tooLarge?', not stored':'')+')</div>';
+    }).join('');
+    rd.innerHTML='<div class="pane" style="margin-top:12px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">'
+      +'<div style="min-width:0"><h2 style="font-size:17px;margin:0 0 4px">'+esc(m.subject||'(no subject)')+'</h2>'
+      +'<div class="sub" style="margin:0">From <b>'+esc(m.from||'')+'</b> · to '+esc(m.to||'')+' · '+esc(ibFmtDate(m.date||m.received_at))+'</div></div>'
+      +'<div class="adm-actions" style="margin:0">'
+      +'<button id="ib-reply-btn">Reply</button>'
+      +'<button id="ib-del-btn" class="danger">Delete</button>'
+      +'<button id="ib-back-btn">Back to list</button>'
+      +'</div></div>'
+      +(atts?'<div style="margin:10px 0">'+atts+'</div>':'')
+      +'<div style="margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--card2);white-space:pre-wrap;font-size:13.5px;line-height:1.6">'+esc(m.text||'(no plain-text body)')+'</div>'
+      +'<div id="ib-reply-box" style="display:none;margin-top:14px">'
+      +'<label for="ib-reply-text">Your reply (from email-center@kastrava.in)</label>'
+      +'<textarea id="ib-reply-text" rows="6" placeholder="Write a reply…"></textarea>'
+      +'<div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+      +'<button id="ib-reply-send" class="btn btn-primary">Send reply</button>'
+      +'<span id="ib-reply-out" style="font-size:12.5px"></span></div></div>'
+      +'</div>';
+    var row=window.document.querySelector('[data-ib="'+id+'"]');
+    if(row){row.classList.remove('unread');row.classList.add('read');}
+    ibBadge(Math.max(0,(parseInt($('ib-badge').textContent||'0',10)||0)-(row&&row.classList.contains('read')?1:0)));
+    $('ib-back-btn').addEventListener('click',function(){rd.style.display='none';loadInbox();});
+    $('ib-del-btn').addEventListener('click',function(){
+      if(!confirm('Delete this message?'))return;
+      api('/api/admin/inbox/delete',{id:id}).then(function(){rd.style.display='none';loadInbox();}).catch(function(){});
+    });
+    $('ib-reply-btn').addEventListener('click',function(){
+      var box=$('ib-reply-box');
+      box.style.display=box.style.display==='none'?'block':'none';
+      if(box.style.display==='block'){
+        if(!$('ib-reply-text').value)$('ib-reply-text').value='';
+        $('ib-reply-text').focus();
+      }
+    });
+    $('ib-reply-send').addEventListener('click',function(){
+      var out=$('ib-reply-out'),txt=$('ib-reply-text').value.trim();
+      if(!txt){out.textContent='Write a reply first.';return;}
+      out.textContent='Sending…';
+      api('/api/admin/inbox/reply',{id:id,text:txt}).then(function(r2){
+        if(!r2.json||!r2.json.ok){out.textContent='Failed'+((r2.json&&r2.json.error)?': '+r2.json.error:'')+'.';return;}
+        out.textContent='Sent to '+r2.json.to+'.';
+        $('ib-reply-text').value='';
+      }).catch(function(){out.textContent='Network error.';});
+    });
+  }).catch(function(){
+    rd.innerHTML='<div class="pane" style="margin-top:12px">Network error.</div>';
+  });
+}
+$('ib-refresh').addEventListener('click',function(){$('ib-reader').style.display='none';loadInbox();});
+$('ib-readall').addEventListener('click',function(){
+  api('/api/admin/inbox/read',{id:'all'}).then(function(){$('ib-reader').style.display='none';loadInbox();}).catch(function(){});
 });
 
 /* ---------- licenses ---------- */
