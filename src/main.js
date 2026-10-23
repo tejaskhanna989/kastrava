@@ -587,6 +587,8 @@ function wipeLegacyWebData() {
 // Unsigned builds need win.verifyUpdateCodeSignature=false, otherwise the
 // electron-updater leg rejects every payload on the signature check.
 let updater = null
+let mandatoryPending = null   // {tag, reason, downloaded} — admin-forced update
+let mandTimer = null
 function initAutoUpdate() {
   if (!app.isPackaged) return
   if (process.platform === 'win32') {
@@ -614,7 +616,15 @@ function initElectronUpdater() {
       try { console.error('[update] error', String((e && e.message) || e)) } catch {}
     })
     updater.on('update-downloaded', (event, info) => {
-      try { stopUpdSearch(); updReady = info || {}; updPrompts = 0; promptWinUpdate() } catch {}
+      try {
+        stopUpdSearch(); updReady = info || {}; updPrompts = 0
+        if (mandatoryPending && mandatoryPending.tag && updReady && updReady.version
+            && cmpVer(updReady.version, mandatoryPending.tag) >= 0) {
+          notifyMandatoryDownloaded(updReady)
+        } else {
+          promptWinUpdate()
+        }
+      } catch {}
     })
     const UPD_MS = 30 * 60 * 1000
     let updTimer = null, updReady = null, updPrompts = 0, updReminder = null
@@ -879,6 +889,15 @@ async function linuxUpdateCheck(manual) {
     stopLinSearch()
     linPending = { tag, asset, type, notes }
     linPrompts = 0
+    // Mandatory: download quietly, show badge; install on quit or badge click.
+    if (mandatoryPending && mandatoryPending.tag === tag) {
+      mandatoryPending.downloaded = true
+      mandatoryPending.asset = asset
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        try { mainWindow.webContents.send('mandatory-ready', mandatoryPending) } catch {}
+      }
+      return true
+    }
     const { response } = await linAskUpdate()
     if (response !== 0) { await deferLinux(); return true }
     linPending = null
@@ -890,6 +909,81 @@ async function linuxUpdateCheck(manual) {
   } finally {
     linuxUpdateBusy = false
   }
+}
+
+// ---- Mandatory (admin-forced) updates ----
+// Admin flags a release as mandatory via /api/admin/releases/set-mandatory.
+// Clients poll /api/release/mandatory; when found, download quietly in the
+// background and show a non-intrusive badge. Applies on next quit if the user
+// does not restart manually.
+function notifyMandatoryDownloaded(assetInfo) {
+  if (!mandatoryPending) return
+  mandatoryPending.downloaded = true
+  mandatoryPending.asset = assetInfo
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    try { mainWindow.webContents.send('mandatory-ready', mandatoryPending) } catch {}
+  }
+}
+async function checkMandatory() {
+  try {
+    const ver = app.getVersion()
+    const res = await fetch('https://api.kastrava.in/api/release/mandatory', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({client_version: ver}),
+      signal: AbortSignal.timeout(15000)
+    })
+    const j = await res.json()
+    if (!j || !j.ok || !j.mandatory) return
+    const m = j.release
+    if (!m || !m.tag) return
+    if (cmpVer(m.tag, ver) <= 0) return
+    if (mandatoryPending && mandatoryPending.tag === m.tag) return
+    mandatoryPending = { tag: m.tag, reason: m.mandatory_reason || '', downloaded: false }
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      try { mainWindow.webContents.send('mandatory-ready', mandatoryPending) } catch {}
+    }
+    // Begin download: Windows uses electron-updater autoDownload; Linux uses
+    // the sys-package path. Both surface via notifyMandatoryDownloaded.
+    if (process.platform === 'win32' && updater) {
+      try { updater.checkForUpdates() } catch {}
+    } else if (process.platform === 'linux' && !process.env.APPIMAGE) {
+      linuxUpdateCheck(false).catch(() => {})
+    }
+  } catch {}
+}
+function stopMandSearch() { if (mandTimer) { clearInterval(mandTimer); mandTimer = null } }
+function startMandSearch() { stopMandSearch(); mandTimer = setInterval(checkMandatory, 60 * 60 * 1000) }
+async function applyMandatoryUpdate() {
+  const p = mandatoryPending
+  if (!p) return false
+  if (process.platform === 'win32' && updater && updReady) {
+    try { updater.quitAndInstall(false, true); return true } catch {}
+  }
+  if (process.platform === 'linux' && !process.env.APPIMAGE && p.asset && p.type) {
+    try {
+      const data = Buffer.from(await (await fetch(p.asset.browser_download_url, {
+        headers: { 'User-Agent': 'Kastrava' },
+        signal: AbortSignal.timeout(300000)
+      })).arrayBuffer())
+      const file = path.join(os.tmpdir(), 'kastrava-mandatory-' + Date.now() + sysPkgExt(p.type))
+      fs.writeFileSync(file, data, { mode: 0o600 })
+      const args = p.type === 'pacman' ? ['pacman', '-U', '--noconfirm', file]
+        : p.type === 'deb' ? ['dpkg', '-i', file]
+        : ['rpm', '-Uvh', file]
+      await new Promise((resolve) => {
+        try {
+          const child = spawn('pkexec', args, { stdio: 'ignore' })
+          child.on('error', () => resolve(-1))
+          child.on('close', (c) => resolve(c))
+        } catch { resolve(-1) }
+      })
+      try { fs.rmSync(file, { force: true }) } catch {}
+      try { app.relaunch() } catch {}
+      try { app.quit() } catch {}
+      return true
+    } catch {}
+  }
+  return false
 }
 function initLinuxSysUpdate() {
   setTimeout(() => { linuxUpdateCheck(false) }, 5000)
@@ -1115,6 +1209,9 @@ app.whenReady().then(async () => {
 
   createWindow()
 
+  // Mandatory update check (admin-forced): poll on startup, then hourly.
+  try { checkMandatory(); startMandSearch() } catch {}
+
   // Pick up subscription renewals: silently re-activate to fetch the
   // freshly-signed license with the extended expiry.
   license.refreshIfLicensed().catch(() => {})
@@ -1137,7 +1234,18 @@ function pruneHistory() {
     }
   } catch {}
 }
-app.on('before-quit', () => {
+app.on('before-quit', async (event) => {
+  // Mandatory update downloaded: apply it now instead of a plain quit.
+  if (mandatoryPending && mandatoryPending.downloaded && !quitSaved) {
+    event.preventDefault()
+    quitSaved = true
+    const ok = await applyMandatoryUpdate()
+    if (!ok) {
+      // Install path unavailable; fall through to normal quit.
+      app.quit()
+    }
+    return
+  }
   if (quitSaved) return
   quitSaved = true
   try { if (saveTimer) { clearTimeout(saveTimer); saveTimer = null } saveDb() } catch {}
@@ -1783,6 +1891,18 @@ ipcMain.handle('adblock-stats', () => adblock.getStats())
 ipcMain.handle('adblock-toggle', (_, enabled) => {
   try { adblock.setEnabled(!!enabled) } catch {}
   return { ok: true, enabled: adblock.isEnabled() }
+})
+
+// Mandatory update IPC
+ipcMain.handle('mandatory-check', () => {
+  const p = mandatoryPending
+  if (!p) return { ok: true, mandatory: false }
+  return { ok: true, mandatory: true, release: { tag: p.tag, reason: p.reason, downloaded: p.downloaded } }
+})
+ipcMain.handle('mandatory-restart', async () => {
+  quitSaved = true
+  const ok = await applyMandatoryUpdate()
+  return { ok }
 })
 
 // Screenshots

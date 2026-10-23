@@ -1572,6 +1572,27 @@ async function handlePost(req, res, pathname) {
     return json(res, 200, { ok: true, key: r.key, renewed: r.renewed })
   }
 
+  // ---- Release management (mandatory updates) ----
+  if (pathname === '/api/admin/releases/set-mandatory') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const tag = String(body.tag || '').replace(/^v/, '')
+    const mandatory = body.mandatory === true || body.mandatory === 'true'
+    const reason = String(body.reason || '').slice(0, 500)
+    const setBy = req.headers['x-admin-email'] || String(body.set_by || 'admin').slice(0, 120)
+    const r = store.setMandatory(tag, mandatory, reason, setBy)
+    if (!r) return json(res, 400, { error: 'bad_tag' })
+    store.audit('admin', 'release_mandatory', tag + ' mandatory=' + mandatory + ' reason=' + reason)
+    return json(res, 200, { ok: true, release: r })
+  }
+
+  // Public: client checks if a mandatory update exists for its version.
+  if (pathname === '/api/release/mandatory') {
+    const clientVersion = String(body.client_version || app.getVersion() || '').replace(/^v/, '')
+    const m = store.mandatoryUpdate(clientVersion)
+    if (!m) return json(res, 200, { ok: true, mandatory: false })
+    return json(res, 200, { ok: true, mandatory: true, release: m })
+  }
+
   return json(res, 404, { error: 'not_found' })
 }
 
@@ -1607,6 +1628,10 @@ const server = http.createServer((req, res) => {
       const dump = store.all()
       dump.server_version = APP_VERSION
       return json(res, 200, dump)
+    }
+    if (pathname === '/api/admin/releases') {
+      if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+      return json(res, 200, { ok: true, releases: store.getReleases() })
     }
     return serveStatic(req, res, pathname)
   }

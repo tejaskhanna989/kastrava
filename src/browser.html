@@ -64,6 +64,13 @@ body.no-fav .tab-favicon{display:none!important}
 .tb-btn:disabled:hover{background:none}
 .tb-btn.on{color:var(--accent);background:rgba(138,180,248,.14)}
 .tb-btn.on:hover{color:var(--accent);background:rgba(138,180,248,.2)}
+.tb-update{width:auto;padding:0 10px;background:#d93025;color:#fff;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px}
+.tb-update:hover{background:#b00020;color:#fff}
+.tb-update.warn{background:#f9ab00;color:#000}
+.tb-update.warn:hover{background:#e69500;color:#000}
+.tb-update .u-dot{width:8px;height:8px;border-radius:50%;background:#fff;display:inline-block;margin-right:6px;flex-shrink:0;animation:u-pulse 1.5s infinite}
+.tb-update.warn .u-dot{background:#000}
+@keyframes u-pulse{0%,100%{opacity:1}50%{opacity:.45}}
 #btn-home,#btn-split,#btn-radar{display:none}
 .more-menu{position:fixed;z-index:950;display:none;flex-direction:column;background:var(--c-bg);border:1px solid var(--c-border);border-radius:10px;box-shadow:0 16px 48px rgba(0,0,0,.45);padding:6px;min-width:210px}
 .more-menu.visible{display:flex}
@@ -563,6 +570,7 @@ body.vtabs-collapsed .vtabs-new{border-style:solid}
   </div>
   <div class="tb-right"><button class="tb-btn" id="btn-devtools" title="Toggle DevTools (F12)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></button>
     <button class="tb-btn" id="btn-more" title="More"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></button>
+    <button class="tb-update" id="btn-update" title="Critical update ready" style="display:none">Update</button>
     <div class="tb-sep"></div>
     <button class="tb-btn" id="btn-menu" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
   <div class="tb-sep win-mini-sep" style="display:none"></div><div class="win-ctrls mini"><button class="win-btn" data-act="min"><svg viewBox="0 0 12 12"><rect x="1" y="5.5" width="10" height="1" fill="currentColor"/></svg></button><button class="win-btn" data-act="max"><svg viewBox="0 0 12 12"><rect x="1.5" y="1.5" width="9" height="9" rx="1" fill="none" stroke="currentColor" stroke-width="1"/></svg></button><button class="win-btn wc-close" data-act="close"><svg viewBox="0 0 12 12"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.2"/></svg></button></div></div>
@@ -5570,6 +5578,33 @@ function toggleWorkspaces(){
   if(el.classList.contains('visible'))renderWorkspaces();
 }
 window.toggleWorkspaces=toggleWorkspaces;
+
+// ===== Mandatory update badge (Chrome-style) =====
+(function(){
+  var btn=$('btn-update');if(!btn)return;
+  var showing=false;
+  function setContent(p){
+    btn.innerHTML='';
+    var dot=document.createElement('span');dot.className='u-dot';btn.appendChild(dot);
+    var t=document.createTextNode('Update');btn.appendChild(t);
+    var crit=(p&&p.reason&&/critical|security|urgent/i.test(p.reason));
+    btn.className='tb-update'+(crit?'':' warn');
+    btn.title=(p&&p.reason?p.reason:'Critical update')+' — click to restart';
+  }
+  function refresh(){
+    if(!api||!api.mandatoryInfo)return;
+    api.mandatoryInfo().then(function(r){
+      var show=!!(r&&r.mandatory&&r.release&&r.release.downloaded);
+      if(show&&!showing){btn.style.display='';showing=true;setContent(r.release);}
+      else if(!show&&showing){btn.style.display='none';showing=false;}
+    }).catch(function(){});
+  }
+  btn.addEventListener('click',function(){
+    if(api&&api.mandatoryRestart){api.mandatoryRestart().then(function(r){if(r&&r.ok){window.location.reload();}});}
+  });
+  refresh();
+  setInterval(refresh, 5*60*1000);
+})();
 
 // ===== INITIALIZE =====
 if(!W.isPremium||W.isPremium())renderWorkspaces();

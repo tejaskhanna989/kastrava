@@ -77,6 +77,11 @@ contextBridge.exposeInMainWorld('api', {
   // Ad blocker (EasyList + EasyPrivacy + YouTube ad hosts)
   adblockStats: () => ipcRenderer.invoke('adblock-stats'),
   adblockToggle: (enabled) => ipcRenderer.invoke('adblock-toggle', !!enabled),
+
+  // Mandatory (admin-forced) updates
+  mandatoryInfo: () => ipcRenderer.invoke('mandatory-check'),
+  onMandatoryReady: (cb) => ipcRenderer.on('mandatory-ready', (_, p) => cb(p)),
+  mandatoryRestart: () => ipcRenderer.invoke('mandatory-restart'),
   licMachine: () => ipcRenderer.invoke('lic-machine'),
   licStatus: () => ipcRenderer.invoke('lic-status'),
   licActivate: (key) => ipcRenderer.invoke('lic-activate', key),

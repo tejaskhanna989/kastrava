@@ -6,7 +6,7 @@ const path = require('path')
 class Store {
   constructor(file) {
     this.file = file
-    this.data = { orders: {}, subscriptions: {}, licenses: {}, accounts: {}, sessions: {}, sync: {} }
+    this.data = { orders: {}, subscriptions: {}, licenses: {}, accounts: {}, sessions: {}, sync: {}, releases: {} }
     this.load()
   }
 
@@ -778,6 +778,62 @@ class Store {
     this.save()
     return { ok: true, rev: next.rev }
   }
+
+  // ---- release management (admin flags mandatory updates) ----
+  getReleases() {
+    if (!this.data.releases) this.data.releases = {}
+    return this.data.releases
+  }
+
+  setRelease(tag, fields) {
+    if (!this.data.releases) this.data.releases = {}
+    const t = String(tag || '').replace(/^v/, '')
+    if (!t) return null
+    const cur = this.data.releases[t] || {}
+    this.data.releases[t] = { ...cur, ...fields, tag: t, updated_at: new Date().toISOString() }
+    this.save()
+    return this.data.releases[t]
+  }
+
+  setMandatory(tag, mandatory, reason, setBy) {
+    if (!this.data.releases) this.data.releases = {}
+    const t = String(tag || '').replace(/^v/, '')
+    if (!t) return null
+    const cur = this.data.releases[t] || {}
+    this.data.releases[t] = {
+      ...cur, tag: t,
+      mandatory: !!mandatory,
+      mandatory_reason: mandatory ? String(reason || '').slice(0, 500) : null,
+      mandatory_set_at: mandatory ? new Date().toISOString() : null,
+      mandatory_set_by: mandatory ? String(setBy || '').slice(0, 120) : null,
+      updated_at: new Date().toISOString()
+    }
+    this.save()
+    return this.data.releases[t]
+  }
+
+  // Returns the newest mandatory release newer than clientVersion, or null.
+  mandatoryUpdate(clientVersion) {
+    if (!this.data.releases) return null
+    let best = null
+    for (const t in this.data.releases) {
+      const r = this.data.releases[t]
+      if (!r || !r.mandatory) continue
+      if (clientVersion && cmpVerSimple(t, clientVersion) <= 0) continue
+      if (!best || cmpVerSimple(t, best.tag) > 0) best = r
+    }
+    return best
+  }
+}
+
+function cmpVerSimple(a, b) {
+  const pa = String(a || '0').split('.').map((x) => parseInt(x, 10) || 0)
+  const pb = String(b || '0').split('.').map((x) => parseInt(x, 10) || 0)
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const d = (pa[i] || 0) - (pb[i] || 0)
+    if (d) return d > 0 ? 1 : -1
+  }
+  return 0
 }
 
 module.exports = Store
