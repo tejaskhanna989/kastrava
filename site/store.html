@@ -243,11 +243,12 @@ function needLogin(){
 $('login-x').addEventListener('click',function(){$('store-login').style.display='none';});
 
 /* ---------- data ---------- */
-function load(){
+function load(attempt){
+  attempt=attempt||0;
   window.__storeLoaded=true;
   var cur=(GEO&&GEO.currency)||'';
   fetch(KAS_API+'/api/store/catalog',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cur?{currency:cur}:{})})
-  .then(function(r){return r.json();}).then(function(j){
+  .then(function(r){if(!r.ok)throw new Error('catalog '+r.status);return r.json();}).then(function(j){
     var items=(j&&j.items)||[];
     if(!tok()){window.__isPremium=false;paint(items);
       var m=$('store-login');if(m)m.style.display='flex';return;}
@@ -263,7 +264,11 @@ function load(){
         return (k.status==='activated'||k.status==='issued')&&(!k.expires_at||new Date(k.expires_at).getTime()>now);});
       paint(items);
     }).catch(function(){paint(items);});
-  }).catch(function(){$('store-grid').textContent='Store unreachable.';});
+  }).catch(function(e){
+    console.log('[store] catalog fetch failed (attempt '+(attempt+1)+'):',e&&e.message);
+    if(attempt<1){setTimeout(function(){load(attempt+1);},800);return;}
+    $('store-grid').textContent='Store unreachable.';
+  });
 }
 function claimFail(j){
   var e=j&&j.error;

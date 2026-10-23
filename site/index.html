@@ -136,27 +136,45 @@ html[data-theme="dark"] .btn-dl:hover{background:#9dc2fa !important}
   position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:0
 }
 .hero-clouds::before,.hero-clouds::after{
-  content:'';position:absolute;width:520px;height:220px;
-  background:radial-gradient(circle at 50% 40%,rgba(255,255,255,.14),transparent 65%);
-  filter:blur(56px);opacity:.55
+  content:'';position:absolute;width:640px;height:260px;
+  background:radial-gradient(circle at 50% 40%,rgba(255,255,255,.18),transparent 65%);
+  filter:blur(64px);opacity:.65
 }
 .hero-clouds::before{
-  top:10%;left:-25%;transform:rotate(-18deg);
-  animation:cloud1 22s infinite linear;transform-origin:0% 0%
+  top:8%;left:-30%;transform:rotate(-20deg);
+  animation:cloud1 24s infinite linear;transform-origin:0% 0%
 }
 .hero-clouds::after{
-  bottom:20%;right:-35%;transform:rotate(24deg);
-  animation:cloud2 28s infinite linear;transform-origin:100% 100%
+  bottom:18%;right:-40%;transform:rotate(26deg);
+  animation:cloud2 30s infinite linear;transform-origin:100% 100%
 }
 @keyframes cloud1{
-  0%{transform:translateX(-30%) rotate(-18deg)}
-  50%{transform:translateX(8%) rotate(-12deg)}
-  100%{transform:translateX(-30%) rotate(-18deg)}
+  0%{transform:translateX(-35%) rotate(-20deg)}
+  50%{transform:translateX(12%) rotate(-14deg)}
+  100%{transform:translateX(-35%) rotate(-20deg)}
 }
 @keyframes cloud2{
-  0%{transform:translateX(30%) rotate(24deg)}
-  50%{transform:translateX(-12%) rotate(30deg)}
-  100%{transform:translateX(30%) rotate(24deg)}
+  0%{transform:translateX(35%) rotate(26deg)}
+  50%{transform:translateX(-14%) rotate(32deg)}
+  100%{transform:translateX(35%) rotate(26deg)}
+}
+ 
+/* floating hero logo (Chrome-style soft motion) */
+.hero-logo{
+  animation:logoFloat 6s ease-in-out infinite
+}
+@keyframes logoFloat{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-14px)}
+}
+
+/* subtle download pill pulse (box-shadow only, no gradient) */
+.btn-dl{
+  animation:dlPulse 4s ease-in-out infinite
+}
+@keyframes dlPulse{
+  0%,100%{box-shadow:var(--e2)}
+  50%{box-shadow:var(--e3)}
 }
 @media(max-width:900px){.fgrid,.fgrid.three,.plat-grid{grid-template-columns:1fr}.rlist{text-align:left}}
 

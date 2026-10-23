@@ -1001,10 +1001,15 @@ app.whenReady().then(async () => {
 
   // Ad blocker: download EasyList/EasyPrivacy/CookieMonster once, then
   // install the network filter on every session the app uses. YouTube ad
-  // hosts are blocked in addition to the filter lists.
+  // hosts are blocked in addition to the filter lists. Respects the
+  // persisted settings.adblock preference (default: on).
   try {
     adblock.loadFilters().catch(() => {})
     const { session } = require('electron')
+    try {
+      var adblockOn = settingsBackend && settingsBackend.get('adblock')
+      adblock.setEnabled(adblockOn === undefined || adblockOn === 'on' || adblockOn === true)
+    } catch {}
     for (const part of ['kastrava', 'kastrava-shell']) {
       try { adblock.install(session.fromPartition(part)) } catch {}
     }

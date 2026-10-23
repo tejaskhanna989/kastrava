@@ -73,6 +73,10 @@ contextBridge.exposeInMainWorld('api', {
   radarStats: (wcId) => ipcRenderer.invoke('radar-stats', wcId),
   onRadarUpdate: (cb) => ipcRenderer.on('radar-update', (_, wcId, ev) => cb(wcId, ev)),
   onCaptchaFound: (cb) => ipcRenderer.on('captcha-found', (_, host) => cb(host)),
+
+  // Ad blocker (EasyList + EasyPrivacy + YouTube ad hosts)
+  adblockStats: () => ipcRenderer.invoke('adblock-stats'),
+  adblockToggle: (enabled) => ipcRenderer.invoke('adblock-toggle', !!enabled),
   licMachine: () => ipcRenderer.invoke('lic-machine'),
   licStatus: () => ipcRenderer.invoke('lic-status'),
   licActivate: (key) => ipcRenderer.invoke('lic-activate', key),
