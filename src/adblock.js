@@ -12,6 +12,7 @@ const REFRESH_INTERVAL = 24 * 60 * 60 * 1000
 
 let filterRules = []
 let filterRegex = []
+let enabled = true
 // Host fast-path: base domains pulled from ||-anchored rules. shouldBlock
 // first walks the URL's host parents against this set (microseconds); only
 // hosts with a candidate rule pay for the full regex scan. Same verdicts,
@@ -216,11 +217,37 @@ const NEVER_BLOCK = new Set([
   'kastrava.in', 'store.kastrava.in', 'api.kastrava.in',
   'search.kastrava.in', 'account.kastrava.in'
 ])
+
+// Known ad-serving hosts that are always blocked (supplements EasyList).
+// YouTube ads often come from these; googlevideo.com is deliberately NOT
+// listed here because it also serves the actual video stream.
+const BLOCK_HOSTS = new Set([
+  'googleadservices.com',
+  'doubleclick.net',
+  'pubads.g.doubleclick.net',
+  'securepubads.g.doubleclick.net',
+  'googleads.g.doubleclick.net',
+  'pagead2.googlesyndication.com',
+  'tpc.googlesyndication.com',
+  'adservice.google.com',
+  'ad.doubleclick.net',
+  'google-analytics.com',
+  'googletagmanager.com',
+  'googletagservices.com'
+])
 function shouldBlock(url) {
-  if (!isLoaded || !filterRegex.length) return false
+  if (!enabled || !isLoaded || !filterRegex.length) return false
   try {
     const h = new URL(url).hostname.toLowerCase()
     if (NEVER_BLOCK.has(h)) return false
+    // Host fast-path: known ad domains are blocked immediately.
+    let hh = h
+    while (true) {
+      if (BLOCK_HOSTS.has(hh)) { stats.blocked++; return true }
+      const i = hh.indexOf('.')
+      if (i < 0) break
+      hh = hh.slice(i + 1)
+    }
   } catch {}
   if (!hostHit(hostOf(url))) { stats.allowed++; return false }
   // ~99% of requests die here: host has no candidate rule, no scan.
@@ -236,8 +263,10 @@ function shouldBlock(url) {
 }
 
 function getStats() {
-  return { ...stats, rules: filterRegex.length, loaded: isLoaded }
+  return { ...stats, rules: filterRegex.length, loaded: isLoaded, enabled }
 }
+function setEnabled(v) { enabled = !!v }
+function isEnabled() { return enabled }
 
 function install(sessionObj) {
   if (!sessionObj) return
@@ -254,4 +283,4 @@ function install(sessionObj) {
   })
 }
 
-module.exports = { loadFilters, shouldBlock, getStats, install, ensureFilterDir }
+module.exports = { loadFilters, shouldBlock, getStats, install, ensureFilterDir, setEnabled, isEnabled }

@@ -6,6 +6,7 @@ const { execFileSync, spawn } = require('child_process')
 const backend = require('./backend')
 const license = require('./license')
 const privacy = require('./privacy')
+const adblock = require('./adblock')
 const extManager = require('./extensions/manager')
 
 // Serve the browser UI over kastrava:// instead of file:// so no
@@ -998,6 +999,18 @@ app.whenReady().then(async () => {
     applyProxyAll(session)
   } catch {}
 
+  // Ad blocker: download EasyList/EasyPrivacy/CookieMonster once, then
+  // install the network filter on every session the app uses. YouTube ad
+  // hosts are blocked in addition to the filter lists.
+  try {
+    adblock.loadFilters().catch(() => {})
+    const { session } = require('electron')
+    for (const part of ['kastrava', 'kastrava-shell']) {
+      try { adblock.install(session.fromPartition(part)) } catch {}
+    }
+    try { adblock.install(session.defaultSession) } catch {}
+  } catch {}
+
   // Human mode: per-site shields-down suspends fingerprint spoofing there
   // (CAPTCHAs, banking) while cookies/js shields keep their own rules.
   try {
@@ -1761,6 +1774,11 @@ ipcMain.handle('devtools-self', async () => {
 ipcMain.handle('radar-get', (_, wcId) => radar ? radar.get(wcId) : [])
 ipcMain.handle('radar-clear', (_, wcId) => { if (radar) radar.clear(wcId); return true })
 ipcMain.handle('radar-stats', (_, wcId) => radar ? radar.stats(wcId) : { reqs: 0, cookies: 0, third: 0, doms: {}, score: 100 })
+ipcMain.handle('adblock-stats', () => adblock.getStats())
+ipcMain.handle('adblock-toggle', (_, enabled) => {
+  try { adblock.setEnabled(!!enabled) } catch {}
+  return { ok: true, enabled: adblock.isEnabled() }
+})
 
 // Screenshots
 ipcMain.handle('save-screenshot', async (_, { pngDataUrl }) => {
