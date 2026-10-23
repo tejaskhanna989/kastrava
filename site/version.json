@@ -1,12 +1,12 @@
 {
-  "version": "101.9.0",
+  "version": "101.9.1",
   "codename": "Triangular Galaxy",
   "channel": "rc",
-  "url": "https://kastrava.in/dl/kastrava_101.9.0_amd64.deb",
-  "notes": "Kastrava 101 RC 'Starship Wonders' — the most private browser. Hard reload (Ctrl+Shift+R), fixed reader mode, Windows-style setup, KastravaSearch improvements.",
+  "url": "https://kastrava.in/dl/kastrava_101.9.1_amd64.deb",
+  "notes": "Kastrava 101.9.1 'Triangular Galaxy' — Android package is now in.kastrava.browser (a fresh install; existing pp.ua.kastrava installs must be reinstalled). Site: white headings on blue cards, refreshed team page. Includes hard reload (Ctrl+Shift+R), reader-mode fix and the Windows-style setup.",
   "date": "2026-10-23",
   "minimum": "26.0.0",
-  "version_code": 1019000,
-  "apk_url": "https://kastrava.in/dl/Kastrava-101.9.0.apk",
-  "apk_size": 8635052
+  "version_code": 1019001,
+  "apk_url": "https://kastrava.in/dl/Kastrava-101.9.1.apk",
+  "apk_size": 8635068
 }

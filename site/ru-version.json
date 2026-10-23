@@ -1,12 +1,12 @@
 {
-  "version": "101.9.0",
+  "version": "101.9.1",
   "codename": "Triangular Galaxy",
   "channel": "rc",
-  "url": "https://kastrava.in/dl/kastrava_101.9.0_amd64.deb",
-  "notes": "Kastrava 101 RC «Звёздные чудеса» — приватный браузер без телеметрии. Жёсткая перезагрузка (Ctrl+Shift+R), исправлен режим чтения, новое окно настройки, улучшения KastravaSearch.",
+  "url": "https://kastrava.in/dl/kastrava_101.9.1_amd64.deb",
+  "notes": "Kastrava 101.9.1 «Triangular Galaxy» — пакет Android теперь in.kastrava.browser (чистая установка; прежние pp.ua.kastrava нужно переустановить). Сайт: белые заголовки на синих карточках, обновлённая страница команды. Включены жёсткая перезагрузка (Ctrl+Shift+R), исправление режима чтения и окно настройки в стиле Windows.",
   "date": "2026-10-23",
   "minimum": "26.0.0",
-  "version_code": 1019000,
-  "apk_url": "https://kastrava.in/dl/Kastrava-ru-101.9.0.apk",
-  "apk_size": 8634952
+  "version_code": 1019001,
+  "apk_url": "https://kastrava.in/dl/Kastrava-ru-101.9.1.apk",
+  "apk_size": 8635000
 }
