@@ -200,7 +200,16 @@ function createWindow() {
     // stay blocked so sites can't probe the disk.
     try {
       if (new URL(details.url).protocol === 'file:') {
-        if (details.resourceType !== 'mainFrame') return callback({ cancel: true })
+        // A local document the user opened may load its own assets (the PDF
+        // viewer streams the file, local HTML pulls its images/CSS). Allow
+        // those only when the top document is itself file:// — an http(s)
+        // page still can never probe the disk.
+        let topIsFile = false
+        try {
+          const top = details.frame && details.frame.top
+          topIsFile = !!(top && /^file:/i.test(top.url || ''))
+        } catch {}
+        if (details.resourceType !== 'mainFrame' && !topIsFile) return callback({ cancel: true })
       }
     } catch {}
     // Content switches: F2 per-site shields first (a per-site "off" always
@@ -933,9 +942,24 @@ if (!gotSingleInstanceLock) {
       try { mainWindow.webContents.send('open-new-tab', u) } catch {}
     }
   }
-  const argvUrls = process.argv.filter(a => /^https?:\/\//i.test(a))
+  // The OS can hand us an http(s) URL, a file:// URL, or (on Linux/Windows
+  // "Open with Kastrava") a raw path. Previously only http(s) survived, so
+  // double-clicking a local PDF or HTML file launched the app and did
+  // nothing at all.
+  function handedArg(a) {
+    if (typeof a !== 'string' || !a || a.startsWith('-')) return null
+    if (/^(https?|file):\/\//i.test(a)) return a
+    try {
+      if (path.isAbsolute(a) && fs.existsSync(a) && fs.statSync(a).isFile()) {
+        return require('url').pathToFileURL(a).href
+      }
+    } catch {}
+    return null
+  }
+  // argv[0] is the executable itself (or the app path in dev) — never a URL.
+  const argvUrls = process.argv.slice(1).map(handedArg).filter(Boolean)
   app.on('second-instance', (_e, argv) => {
-    openHandedUrls((argv || []).filter(a => /^https?:\/\//i.test(a)))
+    openHandedUrls((argv || []).slice(1).map(handedArg).filter(Boolean))
   })
   // Cold start (we are the OS default browser, another app opened a link):
   // stash them and flush once the shell has bound its IPC listener.

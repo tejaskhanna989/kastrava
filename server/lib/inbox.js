@@ -120,6 +120,10 @@ function parseEml(raw) {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
     from: decodeWords(h.from || '').slice(0, 300),
     to: decodeWords(h.to || '').slice(0, 300),
+    // Envelope recipient added by the Postfix pipe. This is what actually
+    // got delivered, so a BCC copy (visible To: names someone else) is still
+    // recognised as mail for the centre.
+    envelopeTo: decodeWords(h['x-kastrava-envelope-to'] || '').slice(0, 300),
     subject: decodeWords(h.subject || '(no subject)').slice(0, 300),
     date: h.date || new Date().toISOString(),
     messageId: (h['message-id'] || '').slice(0, 200),
@@ -174,9 +178,11 @@ class Inbox {
       } catch { continue }
       try {
         const msg = parseEml(raw)
-        // Only keep mail addressed to the centre (defence in depth).
-        const to = extractEmail(msg.to)
-        if (to.indexOf('email-center@kastrava.in') !== -1 || to.indexOf('kastrava.in') !== -1) {
+        // Only keep mail addressed to the centre (defence in depth). Prefer
+        // the envelope recipient so a BCC / list copy isn't dropped just
+        // because the visible To: header names someone else.
+        const dest = extractEmail(msg.envelopeTo) || extractEmail(msg.to)
+        if (dest.indexOf('email-center@kastrava.in') !== -1 || dest.indexOf('kastrava.in') !== -1) {
           this.messages.unshift(msg)
           n++
         }
