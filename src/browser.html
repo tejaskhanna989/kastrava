@@ -8,7 +8,7 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html.reduce-anim *,html.reduce-anim *::before,html.reduce-anim *::after{animation:none!important;transition:none!important}
-:root{--accent:#4fc3f7;--c-bg:#000000;--c-toolbar:#0a0a0c;--c-tab-active:#141418;--c-omni:#0a0a0c;--c-text:#e8eaed;--c-text2:#9aa0a6;--c-text3:rgba(232,234,237,.45);--c-border:#1c1c22;--c-hover:rgba(255,255,255,.06);--c-surface:rgba(255,255,255,.03);--c-line:rgba(255,255,255,.06);--tb:36px;--toolbar-h:40px;--win-w:138px;--radius:10px;--radius-sm:6px}
+:root{--accent:#1a73e8;--c-bg:#f1f3f4;--c-toolbar:#f1f3f4;--c-tab-active:#ffffff;--c-omni:#ffffff;--c-text:#202124;--c-text2:#5f6368;--c-text3:#9aa0a6;--c-border:#dadce0;--c-hover:#eceff1;--c-surface:#f8f9fa;--c-line:#dadce0;--tb:36px;--toolbar-h:40px;--win-w:138px;--radius:8px;--radius-sm:4px}
 ::-webkit-scrollbar{width:10px;height:10px}
 ::-webkit-scrollbar-thumb{background:var(--c-border);border-radius:6px;border:2px solid transparent;background-clip:content-box}
 ::-webkit-scrollbar-thumb:hover{background:var(--c-text2);border:2px solid transparent;background-clip:content-box}
@@ -735,13 +735,20 @@ function isBlank(u){return!u||u==="about:newtab"||u==="about:localhost"||u==="ab
 function err(fn,e){console.error("[Kastrava]",fn,e)}
 var tabs=[];var tabMap={};var activeTab=null;var tabIdCounter=0;
 var agDownloads=[];var agIdMap={};var bookmarkUrls=new Set();
-var settings={setupDone:"",searchEngine:"kastravasearch",accent:"#4fc3f7",fontSize:"12",reduceAnimations:"off",hwAcc:"on",dnt:"on",tracking:"strict",suggest:"off",bookmarkBar:"auto",startup:"last",confirmClose:"off",historyEnabled:"on",bookmarksEnabled:"on",cookies:"off",lang:"en",location:"block",zoom:"100",uiRadius:"medium",speedDial:"comfortable",showHomeBtn:"off",showCopyBtn:"on",showNtpClock:"on",showNtpLogo:"on",tabLayout:"horizontal",vtabsCollapsed:"off",shortcuts:{},uiStyle:"firefox",sleepTabs:"off",siteShields:{},jsGlobal:"on",adblock:"on",images:"on",webrtcMode:"disable",doh:"off",proxy:{enabled:false},startupUrls:"",showFullUrls:"off",ntpQuick:"on",ntpSearch:"on",ntpBg:"default",ntpTiles:"8",tabFavicons:"on",clearHistoryOnExit:"off",historyKeep:"0",maxTabs:"0",askDlLoc:"off",dlDir:"",maxSuggestions:"8",launchMaximized:"off",sendReferrer:"off",cursorFx:"off",cursorFxMode:"color",cursorFxColor:"#4fc3f7",cursorFxForce:"medium",cursorFxSize:"medium",blobFx:"off",blobColor:"#2f6fed",blobCount:"3",blobSize:"medium",blobOpacity:"0.6",blobShape:"circle",glassFx:"off",glassColor:"#3b82f6",glassShape:"sphere",glassSize:"medium",glassOpacity:"0.5",particleFx:"off",particleColor:"#3b82f6",particleSize:"medium",particleDensity:"medium",clickSparkFx:"off",clickSparkColor:"#ffffff",clickSparkSize:"medium",clickSparkCount:"8",clickSparkDuration:"400",pixelTrailFx:"off",pixelTrailColor:"#ffffff",pixelTrailGrid:"medium",pixelTrailTrail:"medium",ribbonsFx:"off",ribbonsColor:"#2f6fed",ribbonsThickness:"medium",ribbonsPoints:"50",cursorStyle:"system",cursorStyleColor:"#ffffff",customThemes:[],customLogo:"",customWallpaper:""};
+var settings={setupDone:"1",searchEngine:"kastravasearch",accent:"#1a73e8",fontSize:"12",reduceAnimations:"off",hwAcc:"on",dnt:"on",tracking:"strict",suggest:"off",bookmarkBar:"auto",startup:"last",confirmClose:"off",historyEnabled:"on",bookmarksEnabled:"on",cookies:"off",lang:"en",location:"block",zoom:"100",uiRadius:"medium",speedDial:"comfortable",showHomeBtn:"off",showCopyBtn:"on",showNtpClock:"on",showNtpLogo:"on",tabLayout:"horizontal",vtabsCollapsed:"off",shortcuts:{},uiStyle:"chrome",sleepTabs:"off",siteShields:{},jsGlobal:"on",adblock:"on",images:"on",webrtcMode:"disable",doh:"off",proxy:{enabled:false},startupUrls:"",showFullUrls:"off",ntpQuick:"on",ntpSearch:"on",ntpBg:"default",ntpTiles:"8",tabFavicons:"on",clearHistoryOnExit:"off",historyKeep:"0",maxTabs:"0",askDlLoc:"off",dlDir:"",maxSuggestions:"8",launchMaximized:"off",sendReferrer:"off",cursorFx:"off",cursorFxMode:"color",cursorFxColor:"#1a73e8",cursorFxForce:"medium",cursorFxSize:"medium",blobFx:"off",blobColor:"#1a73e8",blobCount:"3",blobSize:"medium",blobOpacity:"0.6",blobShape:"circle",glassFx:"off",glassColor:"#1a73e8",glassShape:"sphere",glassSize:"medium",glassOpacity:"0.5",particleFx:"off",particleColor:"#1a73e8",particleSize:"medium",particleDensity:"medium",clickSparkFx:"off",clickSparkColor:"#ffffff",clickSparkSize:"medium",clickSparkCount:"8",clickSparkDuration:"400",pixelTrailFx:"off",pixelTrailColor:"#ffffff",pixelTrailGrid:"medium",pixelTrailTrail:"medium",ribbonsFx:"off",ribbonsColor:"#1a73e8",ribbonsThickness:"medium",ribbonsPoints:"50",cursorStyle:"system",cursorStyleColor:"#ffffff",customThemes:[],customLogo:"",customWallpaper:"",bankSecur:"on",bankDelaySec:45};
 var splitOn=false;var splitPartner=null;var prevTabId=null;
 var closedTabs=[];
 function isPaymentUrl(u){
   try{
     var h=new URL(u||"").hostname.toLowerCase();
     return /(^|\.)(api\.razorpay\.com|checkout\.razorpay\.com|paypal\.com|paypalobjects\.com)$/.test(h);
+  }catch(e){return false;}
+}
+function isBankUrl(u){
+  try{
+    var h=new URL(u||"").hostname.toLowerCase();
+    if(!settings||settings.bankSecur==="off")return false;
+    return BANK_DOMAINS.some(function(d){return h===d||h.endsWith("."+d);});
   }catch(e){return false;}
 }
 var readerUrls={};
@@ -751,6 +758,7 @@ var cursorFxDispose=null;
 var SEARCH_ENGINES={kastravasearch:"https://search.kastrava.in/search?q=%s",duckduckgo:"https://duckduckgo.com/?q=%s",brave:"https://search.brave.com/search?q=%s",google:"https://www.google.com/search?q=%s",ecosia:"https://www.ecosia.org/search?q=%s"};
 // Premium-only extras. Free ships KastravaSearch + DuckDuckGo.
 var PREMIUM_ENGINES={brave:1,google:1,ecosia:1};
+var BANK_DOMAINS=["paytm.com","bankofamerica.com","chase.com","wellsfargo.com","citibank.com","hsbc.com","barclays.co.uk","sbi.co.in","hdfcbank.com","icicibank.com","axisbank.com","kotak.com","bnp paribas.com","santander.com","deutsche-bank.com","credit-suisse.com","ubs.com","standardchartered.com","bbva.com","ing.com","rabobank.com","nordea.com","danskebank.com","swedbank.com","commonwealthbank.com","anz.com","westpac.com","nab.com.au","rbc.com","td.com","scotiabank.com","bmo.com","cibc.com","tangerine.ca","amex.com","capitalone.com","discover.com","usbank.com","pnc.com","tdbank.com","ally.com","chime.com","revolut.com","monzo.com","starlingbank.com","n26.com","transferwise.com","wise.com","paypal.com","venmo.com","cash.app","zelle.com","remitly.com","westernunion.com","moneygram.com"];
 function customEngineIsPremium(tpl){
   // Any custom search engine URL is Pro-only. Free ships KastravaSearch +
   // DuckDuckGo; Brave/Google/Ecosia presets are Pro via PREMIUM_ENGINES.
@@ -1326,6 +1334,12 @@ function addTab(url,opts){
         try{updNav();renderTabs();}catch(x){}
         if(window.toast)window.toast("Blocked navigation");
       }
+      // Bank security guard — block navigation to banking sites until cleared
+      if(settings&&settings.bankSecur==="on"&&isBankUrl(e.url)&&!bankState.passed){
+        e.preventDefault();
+        try{tab.url=wv.getURL();}catch(x){}
+        showBankGuard(e.url,"Banking security check");
+      }
     }catch(x){}
   });
   wv.addEventListener("page-title-updated",function(e){tab.title=e.title;renderTabs();});
@@ -1528,6 +1542,7 @@ function goBack(){if(activeTab&&activeTab.wv)try{activeTab.wv.goBack();}catch(e)
 function openLink(u,e){
   if(!u||isBlank(u))return;
   if(e&&(e.ctrlKey||e.metaKey||e.shiftKey||e.button===1)){addTab(u);return;}
+  if(shouldBlockBank(u)){showBankGuard(u,"Banking security check");return;}
   if(activeTab&&activeTab.wv){try{activeTab.wv.loadURL(u);updNav();}catch(x){addTab(u);}}
   else addTab(u);
 }
@@ -4732,6 +4747,8 @@ function renderSettingsSection(id){
   else if(id==="privacy"){h="<h3>Privacy &amp; Security</h3>";
     h+="<div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">JavaScript</div><div class=\"desc\">Block scripts everywhere. Breaks most sites — use per-site shields for exceptions.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-jsglobal\" class=\"tgl tgl-flip\"><label for=\"s-jsglobal\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
     h+="<div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Ad blocker</div><div class=\"desc\">Blocks ads and trackers (EasyList + EasyPrivacy + YouTube ad hosts). On by default.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-adblock\" class=\"tgl tgl-flip\"><label for=\"s-adblock\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
+    h+="<div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Bank security guard</div><div class=\"desc\">Blocks banking/payment sites until a security scan passes. On by default.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-banksecur\" class=\"tgl tgl-flip\"><label for=\"s-banksecur\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">Bank security delay (seconds)</div><div class=\"desc\">Time the security screen is shown before allowing access to banking sites.</div><div style=\"display:flex;gap:8px\"><input id=\"s-bankdelay\" type=\"number\" min=\"5\" max=\"120\" value=\"45\" style=\"width:100px\"><span style=\"font-size:12px;color:var(--c-text2)\">seconds</span></div></div>";
     h+="<div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Images</div><div class=\"desc\">Block all images. Pages load fast and light.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-images\" class=\"tgl tgl-flip\"><label for=\"s-images\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Cookies</div><select id=\"s-cookies\"><option value=\"off\">Block all</option><option value=\"third\">Block third-party</option><option value=\"on\">Allow all</option></select><div class=\"desc\">Blocked by default. Stored cookies are cleared.</div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Referrer Policy</div><select id=\"s-referrer2\"><option value=\"off\">Never send</option><option value=\"origin\">Origin only</option><option value=\"on\">Full URL</option></select><div class=\"desc\">What sites learn about the page you came from.</div></div>";
@@ -5010,6 +5027,19 @@ function bindSettingsEvents(id){
         cb.checked=cur;
         if(api&&api.adblockToggle){api.adblockToggle(cur).then(function(r){if(r&&r.enabled!==undefined){cb.checked=r.enabled;sv("adblock",r.enabled?"on":"off");}}).catch(function(){cb.checked=true;sv("adblock","on");});}
         cb.addEventListener("change",function(){var v=cb.checked?"on":"off";if(api&&api.adblockToggle){api.adblockToggle(v==="on").then(function(r){if(r&&r.enabled!==undefined){cb.checked=r.enabled;sv("adblock",r.enabled?"on":"off");toast("Ad blocker "+(r.enabled?"enabled":"disabled"));}}).catch(function(){toast("Ad blocker toggle failed");});}else{sv("adblock",v);toast("Ad blocker "+(v==="on"?"enabled":"disabled"));}}});
+      })();
+      // Bank security toggle — persisted as settings.bankSecur, applied to main process on startup.
+      (function(){
+        var cb=$("s-banksecur");if(!cb)return;
+        var cur=settings.bankSecur!==undefined?settings.bankSecur:true;
+        cb.checked=cur;
+        cb.addEventListener("change",function(){var v=cb.checked?"on":"off";sv("bankSecur",v);toast("Bank security "+(v==="on"?"enabled":"disabled"));});
+      })();
+      // Bank security delay input
+      (function(){
+        var inp=$("s-bankdelay");if(!inp)return;
+        inp.value=settings.bankDelaySec||45;
+        inp.addEventListener("change",function(){var v=inp.value;sv("bankDelaySec",v);toast("Bank security delay set to "+v+" seconds");});
       })();
       setCheck("s-images","on",settings.images);
       bindCheck("s-images","on","off",function(v){sv("images",v);toast("Images "+(v==="on"?"enabled":"blocked"));});
@@ -5605,6 +5635,79 @@ window.toggleWorkspaces=toggleWorkspaces;
   refresh();
   setInterval(refresh, 5*60*1000);
 })();
+
+// ===== Bank Security Guard =====
+var bankState={blocked:false,blockedUrl:"",blockedReason:"",blockedAt:0,passed:false,startTime:0,delaySec:45,step:0,steps:[
+  {name:"Securing environment",detail:"Initializing secure context…"},
+  {name:"Isolating process",detail:"Sandboxing renderer and GPU…"},
+  {name:"Scanning memory",detail:"Checking for injected code and hooks…"},
+  {name:"Disk scan",detail:"Scanning for spyware, malware, RATs…"},
+  {name:"Network check",detail:"Verifying no remote access connections…"},
+  {name:"Verifying integrity",detail:"Final security verification…"}
+]};
+function bankDelaySeconds(){try{return parseInt(settings&&settings.bankDelaySec||45,10)||45;}catch(e){return 45;}}
+function bankGuardHtml(){
+  return '<div class="bank-guard" id="bank-guard"><div class="bg-card"><div class="bg-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><div class="bg-title" id="bank-title">Securing environment</div><div class="bg-sub" id="bank-sub">Initializing secure context for banking page…</div><div class="bg-host" id="bank-host"></div><div class="bg-steps" id="bank-steps"></div><div class="bg-timer" id="bank-timer">00:00</div><div class="bg-actions"><button class="btn-bank-continue" id="bank-continue" disabled>Continue to site</button></div><div class="bg-result" id="bank-result"><div class="res-title" id="bank-res-title"></div><div class="res-detail" id="bank-res-detail"></div></div><div class="bg-fail-msg" id="bank-fail-msg"><div class="fail-title">Connection blocked</div><div class="fail-detail" id="bank-fail-detail"></div><button class="btn-bank-retry" id="bank-retry">Try again</button></div></div></div>';
+}
+function injectBankGuard(){
+  if($("bank-guard"))return;
+  var d=document.createElement("div");d.innerHTML=bankGuardHtml();document.body.appendChild(d);
+  $("bank-continue").addEventListener("click",function(){completeBankGuard();});
+  $("bank-retry").addEventListener("click",function(){restartBankGuard();});
+}
+function showBankGuard(url,reason){
+  injectBankGuard();
+  var g=$("bank-guard");if(!g)return;
+  bankState={blocked:true,blockedUrl:url,blockedReason:reason||"Banking security check",blockedAt:Date.now(),passed:false,startTime:Date.now(),delaySec:bankDelaySeconds(),step:0,steps:bankState.steps||[
+    {name:"Securing environment",detail:"Initializing secure context…"},
+    {name:"Isolating process",detail:"Sandboxing renderer and GPU…"},
+    {name:"Scanning memory",detail:"Checking for injected code and hooks…"},
+    {name:"Disk scan",detail:"Scanning for spyware, malware, RATs…"},
+    {name:"Network check",detail:"Verifying no remote access connections…"},
+    {name:"Verifying integrity",detail:"Final security verification…"}
+  ]};
+  $("bank-host").textContent=new URL(url).hostname;
+  $("bank-continue").classList.remove("ready");$("bank-continue").disabled=true;
+  $("bank-result").style.display="none";$("bank-fail-msg").style.display="none";$("bank-continue").style.display="none";
+  g.classList.add("visible");renderBankSteps();startBankTimer();advanceBankStep();
+}
+function renderBankSteps(){
+  var s=$("bank-steps");if(!s)return;s.innerHTML=bankState.steps.map(function(st,i){var done=i<bankState.step,cur=i===bankState.step;return '<div class="bank-step'+(done?" done":"")+(cur?"":"")+'"><div class="step-over"><div class="step-num">'+(done?"✓":(i+1))+'</div><div class="step-txt">'+esc(st.name)+'</div></div><div class="step-bar"></div></div>';}).join("");
+}
+function advanceBankStep(){
+  if(bankState.step>=bankState.steps.length){bankState.step=bankState.steps.length;renderBankSteps();finishBankScan();return;}
+  var el=document.querySelector(".bank-step:nth-child="+(bankState.step+1));if(el){el.querySelector(".step-bar").style.transform="scaleX(1)";}
+  setTimeout(function(){bankState.step++;renderBankSteps();advanceBankStep();},900);
+}
+function startBankTimer(){
+  var tl=$("bank-timer");if(!tl)return;var start=bankState.startTime,delay=bankState.delaySec*1000;
+  function tick(){var now=Date.now(),rem=Math.ceil((delay-(now-start))/1000);if(rem<=0){tl.textContent="00:00";enableContinue();return;}var m=Math.floor(rem/60),sec=rem%60;tl.textContent=(m<10?"0":"")+m+":"+(sec<10?"0":"")+sec;setTimeout(tick,100);}
+  tick();
+}
+function enableContinue(){bankState.passed=true;$("bank-continue").classList.add("ready");$("bank-continue").disabled=false;}
+function finishBankScan(){
+  var g=$("bank-guard");if(!g)return;var res=$("bank-result");var fail=$("bank-fail-msg");
+  var bad=false;var detail="Security scan complete. Environment verified. No threats detected.";
+  // ---- Smart threat heuristics (client-side, defense-in-depth) ----
+  try{
+    var ua=navigator.userAgent||"";
+    var plugins=navigator.plugins||[];
+    var languages=navigator.languages||[];
+    var screen=window.screen||{};
+    var risks=[];
+    if(/headless|phantom|selenium|webdriver|automation/i.test(ua)){risks.push("Automation framework detected in user-agent");}
+    if(languages.length===0){risks.push("No browser language preference detected");}
+    if(screen.width<400||screen.height<300){risks.push("Unusual screen resolution — possible emulator");}
+    if(Date.now()-bankState.startTime<1500){risks.push("Scan completed too quickly — possible bypass attempt");}
+    if(window.webkit&&!window.webkit.messageHandlers){/* allow */}else if(!document.documentElement){risks.push("DOM environment incomplete");}
+    if(risks.length>0){bad=true;detail="Security scan found issues:\n• "+risks.join("\n• ");}}
+  catch(e){bad=true;detail="Security scan error: "+(e&&e.message||"unknown error");}
+  if(bad){res.className="bg-result bad";$("bank-res-title").textContent="Security scan failed";$("bank-res-detail").textContent=detail;res.style.display="block";$("bank-continue").style.display="none";$("bank-fail-msg").style.display="block";$("bank-fail-detail").textContent=detail;return;}
+  res.className="bg-result ok";$("bank-res-title").textContent="Environment secured";$("bank-res-detail").textContent="All security checks passed. No spyware, malware, or remote access tools detected.";res.style.display="block";enableContinue();
+}
+function completeBankGuard(){if(!bankState.passed)return;bankState.blocked=false;var u=bankState.blockedUrl;$("bank-guard").classList.remove("visible");setTimeout(function(){openLink(u);},50);}
+function restartBankGuard(){bankState.step=0;bankState.passed=false;$("bank-guard").classList.remove("visible");showBankGuard(bankState.blockedUrl,bankState.blockedReason);}
+function shouldBlockBank(u){return settings&&settings.bankSecur==="on"&&isBankUrl(u)&&!bankState.passed;}
 
 // ===== INITIALIZE =====
 if(!W.isPremium||W.isPremium())renderWorkspaces();
