@@ -872,6 +872,9 @@ async function runLinuxInstall(p) {
 }
 async function linuxUpdateCheck(manual) {
   if (linuxUpdateBusy) return
+  // If a mandatory update is pending, the mandatory path handles download +
+  // install; don't show the normal update dialog too.
+  if (mandatoryPending && mandatoryPending.tag) return false
   linuxUpdateBusy = true
   try {
     const type = detectSysPkg()
@@ -942,12 +945,33 @@ async function checkMandatory() {
     if (mainWindow && !mainWindow.isDestroyed()) {
       try { mainWindow.webContents.send('mandatory-ready', mandatoryPending) } catch {}
     }
-    // Begin download: Windows uses electron-updater autoDownload; Linux uses
-    // the sys-package path. Both surface via notifyMandatoryDownloaded.
+    // Begin download: Windows uses electron-updater autoDownload; Linux
+    // downloads the package directly, marks it ready, then installs on
+    // badge click or next quit.
     if (process.platform === 'win32' && updater) {
       try { updater.checkForUpdates() } catch {}
     } else if (process.platform === 'linux' && !process.env.APPIMAGE) {
-      linuxUpdateCheck(false).catch(() => {})
+      downloadMandatoryAsset(m).catch(function(){})
+    }
+  } catch {}
+}
+async function downloadMandatoryAsset(rel){
+  try {
+    const type = detectSysPkg()
+    if (!type) return
+    const asset = sysPkgAsset(type, [rel.asset || {}]) || rel.asset
+    if (!asset || !asset.browser_download_url) return
+    const data = Buffer.from(await (await fetch(asset.browser_download_url, {
+      headers: { 'User-Agent': 'Kastrava' },
+      signal: AbortSignal.timeout(300000)
+    })).arrayBuffer())
+    const file = path.join(os.tmpdir(), 'kastrava-mandatory-' + Date.now() + sysPkgExt(type))
+    fs.writeFileSync(file, data, { mode: 0o600 })
+    mandatoryPending.downloaded = true
+    mandatoryPending.asset = asset
+    mandatoryPending.type = type
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      try { mainWindow.webContents.send('mandatory-ready', mandatoryPending) } catch {}
     }
   } catch {}
 }

@@ -206,6 +206,7 @@ html[data-theme="dark"] .snav button.on svg{stroke:#a8c7fa}
     <button class="atab" data-t="accounts"><svg viewBox="0 0 24 24"><path d="M16 21v-1.8a4.2 4.2 0 0 0-4.2-4.2H6.2A4.2 4.2 0 0 0 2 19.2V21"/><circle cx="9" cy="7.5" r="4"/><path d="M22 21v-1.8a4.2 4.2 0 0 0-3.2-4.08M16.5 3.7a4 4 0 0 1 0 7.6"/></svg><span>Accounts</span></button>
     <button class="atab" data-t="grant"><svg viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8v13M3 12h18M7.8 8a2.4 2.4 0 0 1 0-4.8C11 3.2 12 8 12 8s1-4.8 4.2-4.8a2.4 2.4 0 0 1 0 4.8"/></svg><span>Grant</span></button>
     <button class="atab" data-t="email"><svg viewBox="0 0 24 24"><rect x="2.5" y="4.5" width="19" height="15" rx="2"/><path d="m3 7 8.2 5.4a1.6 1.6 0 0 0 1.6 0L21 7"/></svg><span>Email Center</span></button>
+    <button class="atab" data-t="releases"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg><span>Releases</span></button>
   </div>
   <div class="foot">
     <a href="https://kastrava.in/">← Back to site</a>
@@ -368,6 +369,25 @@ html[data-theme="dark"] .snav button.on svg{stroke:#a8c7fa}
       <div class="tbl-tools"><input id="lst-q" placeholder="Filter by key, machine, order…"></div>
       <div id="lst-out" class="tbl-wrap" style="margin-top:8px;font-size:13px"></div>
     </div>
+    <div class="apane pane" id="pane-releases" style="display:none">
+      <h2>Releases <button id="rel-go" class="btn btn-ghost" style="padding:6px 14px;font-size:12px;margin-left:8px">Refresh</button></h2>
+      <div class="tbl-wrap" style="margin-top:14px">
+        <table class="adm-table">
+          <tr><th>Version</th><th>Mandatory</th><th>Reason</th><th>Set by</th><th>Set at</th><th></th></tr>
+          <tbody id="rel-out"></tbody>
+        </table>
+      </div>
+      <div style="margin-top:16px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--card2)">
+        <h3 style="margin:0 0 10px">Flag a release</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+          <input id="rel-tag" placeholder="e.g. 101.9.3" style="min-width:150px">
+          <input id="rel-reason" placeholder="Reason (e.g. critical security fix)" style="flex:1;min-width:260px">
+          <button id="rel-set" class="btn btn-primary">Set mandatory</button>
+          <button id="rel-unset" class="btn btn-ghost">Unset</button>
+        </div>
+        <div id="rel-out-msg" style="margin-top:8px;font-size:13px"></div>
+      </div>
+    </div>
   </div>
 </main>
 </div>
@@ -384,6 +404,9 @@ function esc(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'
 function api(path,body){
   return fetch(KAS_API+path,{method:'POST',headers:headers(),body:JSON.stringify(body||{})})
     .then(function(r){return r.json().then(function(j){return {status:r.status,json:j};});});
+}
+function toast(msg){
+  var t=document.getElementById('adm-toast');if(!t){t=document.createElement('div');t.id='adm-toast';t.style.cssText='position:fixed;bottom:16px;right:16px;padding:10px 14px;border-radius:8px;background:var(--ink);color:#fff;z-index:500;font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,.4)';document.body.appendChild(t);}t.textContent=msg;t.style.opacity=1;setTimeout(function(){t.style.opacity=0;},2500);
 }
 $('theme-btn').addEventListener('click',function(){
   var r=document.documentElement,n=r.getAttribute('data-theme')==='dark'?'light':'dark';
@@ -415,6 +438,7 @@ document.querySelectorAll('.atab').forEach(function(b){
     $('pane-title').textContent=b.textContent.trim();
     if(b.dataset.t==='list')loadList();
     if(b.dataset.t==='email')loadInbox();
+    if(b.dataset.t==='releases')loadReleases();
     if(b.dataset.t==='overview'&&ovCache)renderOverview(ovCache);
   });
 });
@@ -1149,6 +1173,44 @@ function keyPdf(key){
       }).catch(function(){build(null,null);});
     }else{build(null,null);}
   });
+}
+/* ---------- releases ---------- */
+function loadReleases(){
+  api('/api/admin/releases',{}).then(function(r){
+    var out=$('rel-out');if(!out)return;
+    if(r.status!==200){out.innerHTML='<tr><td colspan="6">Failed to load releases.</td></tr>';return;}
+    var rels=(r.json&&r.json.releases)||{};
+    var keys=Object.keys(rels).sort(function(a,b){return cmpVerSimple(b,a);});
+    if(!keys.length){out.innerHTML='<tr><td colspan="6">No releases.</td></tr>';return;}
+    out.innerHTML=keys.map(function(tag){
+      var rel=rels[tag],mand=!!rel.mandatory;
+      return '<tr>'+
+        '<td class="mono">'+esc(tag)+'</td>'+
+        '<td><span class="'+(mand?'st-ok':'')+'">'+(mand?'ON':'off')+'</span></td>'+
+        '<td>'+esc(rel.mandatory_reason||'—')+'</td>'+
+        '<td>'+esc(rel.mandatory_set_by||'—')+'</td>'+
+        '<td>'+esc((rel.mandatory_set_at||'').slice(0,16))+'</td>'+
+        '<td><button class="rowbtn '+ (mand?'danger':'')+'" data-act="'+(mand?'unset':'set')+'" data-tag="'+esc(tag)+'">'+(mand?'Unset':'Set mandatory')+'</button></td>'+
+        '</tr>';
+    }).join('');
+    out.querySelectorAll('button[data-act]').forEach(function(b){
+      b.addEventListener('click',function(){
+        var tag=b.dataset.tag, act=b.dataset.act;
+        var reason=prompt('Reason for mandatory update (shown to users):');
+        if(reason===null)return;
+        api('/api/admin/releases/set-mandatory',{tag:tag,mandatory:act==='set',reason:reason}).then(function(r){
+          if(r.status===200&&r.json&&r.json.ok){toast('Release '+tag+' '+ (act==='set'?'set':'unset')+' as mandatory.');loadReleases();}
+          else toast('Failed: '+(r.json&&r.json.error||'unknown'));
+        }).catch(function(){toast('Request failed.');});
+      });
+    });
+  }).catch(function(){var out=$('rel-out');if(out)out.innerHTML='<tr><td colspan="6">Request failed.</td></tr>';});
+}
+function cmpVerSimple(a,b){
+  var pa=String(a||'0').split('.').map(function(x){return parseInt(x,10)||0;});
+  var pb=String(b||'0').split('.').map(function(x){return parseInt(x,10)||0;});
+  for(var i=0;i<Math.max(pa.length,pb.length);i++){var d=(pa[i]||0)-(pb[i]||0);if(d)return d>0?1:-1;}
+  return 0;
 }
 refreshLock();
 })();
