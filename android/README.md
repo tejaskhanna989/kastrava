@@ -38,7 +38,7 @@ gradle :app:assembleDebug
 
 ## Play Store (you publish, like the MSIX)
 
-1. Create the app in Play Console (`pp.ua.kastrava`).
+1. Create the app in Play Console (`in.kastrava.browser`).
 2. The upload keystore already exists (RSA-2048, 30y, alias `kastrava`,
    held by the maintainer — never committed). Its base64 + password live in
    the `ANDROID_KS_B64` / `ANDROID_KS_PASS` GitHub secrets; **back them up

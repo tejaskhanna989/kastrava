@@ -8,7 +8,7 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "pp.ua.kastrava"
+        applicationId = "in.kastrava.browser"
         minSdk = 26
         targetSdk = 34
         // Mirrors the desktop release: 101.5.16.
@@ -23,7 +23,7 @@ android {
         // dies with "Multiple entries with same key: main".
         create("std") {
             dimension = "market"
-            applicationId = "pp.ua.kastrava"
+            applicationId = "in.kastrava.browser"
             // International: follow the device language, sideload self-update
             // on, and let KastravaSearch auto-detect the result language.
             buildConfigField("String", "DEFAULT_LANG", "\"system\"")
@@ -40,7 +40,7 @@ android {
             // RU builds can never pull a std APK — if this app ever ships
             // through RuStore again, flip SELF_UPDATE off (the store owns
             // the update channel there).
-            applicationId = "pp.ua.kastrava.ru"
+            applicationId = "in.kastrava.browser.ru"
             buildConfigField("String", "DEFAULT_LANG", "\"ru\"")
             buildConfigField("boolean", "SELF_UPDATE", "true")
             buildConfigField("String", "SEARCH_LANG", "\"ru\"")
