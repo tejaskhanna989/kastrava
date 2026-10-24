@@ -766,7 +766,7 @@ function customEngineIsPremium(tpl){
   return true;
 }
 function loadSettings(){
-  if(!api||!api.getSettings)return Promise.resolve({});
+  if(!api||!api.getSettings)return Promise.resolve(JSON.parse(JSON.stringify(settings)));
   return api.getSettings().then(function(saved){
     if(saved&&typeof saved==="object"){for(var k in saved){if(saved[k]!==undefined&&saved[k]!==null&&k!="session")settings[k]=saved[k];}}
     try{if(api&&api.setShortcuts)api.setShortcuts(settings.shortcuts||{});}catch(e){}
