@@ -166,7 +166,7 @@ function createWindow() {
       shSes.protocol.registerFileProtocol('kastrava', handleKastravaProto);
     } catch (e) { console.error('shell protocol error:', e); }
   }
-  const ses = require('electron').session.fromPartition('kastrava')
+  const ses = require('electron').session.fromPartition('persist:kastrava')
 
   if (!globalThis.__kastravaAgRegistered) {
     globalThis.__kastravaAgRegistered = true
@@ -177,7 +177,7 @@ function createWindow() {
     // reported "nothing downloads").
     try { fs.rmSync(agVolatileDir(), { recursive: true, force: true }) } catch {}
     const { session } = require('electron')
-    for (const part of ['kastrava', 'kastrava-shell']) {
+    for (const part of ['persist:kastrava', 'kastrava-shell']) {
       try { registerAgDownloadHandler(session.fromPartition(part)) } catch {}
     }
     try { registerAgDownloadHandler(session.defaultSession) } catch {}
@@ -720,7 +720,7 @@ function applyProxyAll(session) {
   const cfg = rules
     ? { proxyRules: rules, proxyBypassRules: 'localhost,127.0.0.1' }
     : { proxyRules: 'direct://', proxyBypassRules: 'localhost,127.0.0.1' }
-  for (const part of ['kastrava', 'kastrava-shell']) {
+  for (const part of ['persist:kastrava', 'kastrava-shell']) {
     try { session.fromPartition(part).setProxy(cfg) } catch {}
   }
   try { session.defaultSession.setProxy(cfg) } catch {}
@@ -1111,7 +1111,7 @@ app.whenReady().then(async () => {
     const { session } = require('electron')
     let appVer = null
     try { appVer = require('electron').app.getVersion() } catch {}
-    privacy.applyUserAgent(session.fromPartition('kastrava'), appVer)
+    privacy.applyUserAgent(session.fromPartition('persist:kastrava'), appVer)
     privacy.applyUserAgent(session.fromPartition('kastrava-shell'), appVer)
     privacy.applyUserAgent(session.defaultSession, appVer)
     applyProxyAll(session)
@@ -1128,7 +1128,7 @@ app.whenReady().then(async () => {
       var adblockOn = settingsBackend && settingsBackend.get('adblock')
       adblock.setEnabled(adblockOn === undefined || adblockOn === 'on' || adblockOn === true)
     } catch {}
-    for (const part of ['kastrava', 'kastrava-shell']) {
+    for (const part of ['persist:kastrava', 'kastrava-shell']) {
       try { adblock.install(session.fromPartition(part)) } catch {}
     }
     try { adblock.install(session.defaultSession) } catch {}
@@ -1282,7 +1282,7 @@ app.on('before-quit', async (event) => {
   // IndexedDB, DOM storage). The OS frees the rest on exit.
   try {
     const { session } = require('electron')
-    for (const part of ['kastrava', 'kastrava-shell']) {
+    for (const part of ['persist:kastrava', 'kastrava-shell']) {
       try { session.fromPartition(part).clearStorageData().catch(() => {}) } catch {}
       try { session.fromPartition(part).clearCache().catch(() => {}) } catch {}
     }
@@ -1325,7 +1325,7 @@ ipcMain.handle('set-setting', (_, key, value) => {
   if (key === 'theme') applyNativeTheme(value)
   if (key === 'cookies' && value === 'off') {
     try {
-      const ses = require('electron').session.fromPartition('kastrava')
+      const ses = require('electron').session.fromPartition('persist:kastrava')
       ses.cookies.remove(undefined, undefined).catch(() => {})
     } catch {}
   }
@@ -1857,7 +1857,7 @@ ipcMain.handle('web-inspect', async (_, { tabId, x, y }) => {
     let wc = null
     try { wc = webContents.fromId(tabId) } catch {}
     if (wc && !wc.isDestroyed()) { try { wc.inspectElement(x||0, y||0); if(!wc.isDevToolsOpened()) wc.openDevTools({mode:'detach'}); } catch {} return }
-    const ses = require('electron').session.fromPartition('kastrava')
+    const ses = require('electron').session.fromPartition('persist:kastrava')
     const wcs = ses.getAllRunningWebContents()
     for (const c of wcs) { if (c.id === tabId) { try { c.inspectElement(x||0, y||0); if(!c.isDevToolsOpened()) c.openDevTools({mode:'detach'}); } catch {} break } }
   } catch {}
@@ -1868,7 +1868,7 @@ ipcMain.handle('devtools-toggle', async (_, tabId) => {
     let wc = null
     try { wc = webContents.fromId(tabId) } catch {}
     if (!wc || wc.isDestroyed()) {
-      const ses = require('electron').session.fromPartition('kastrava')
+      const ses = require('electron').session.fromPartition('persist:kastrava')
       const wcs = ses.getAllRunningWebContents()
       for (const c of wcs) if (c.id === tabId) { wc = c; break }
     }

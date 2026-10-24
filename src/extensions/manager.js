@@ -8,7 +8,10 @@ const ExtensionRegistry = require('./registry')
 
 let registry
 let mainWindow
-const SESSION_PARTITION = 'kastrava'
+// Extensions require a persistent partition — Chromium refuses to load them
+// into in-memory (off-the-record) sessions. main.js wipes this partition's
+// storage/cache on every quit, so sessions are still forgotten on exit.
+const SESSION_PARTITION = 'persist:kastrava'
 
 function init(win) {
   mainWindow = win

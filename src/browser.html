@@ -1295,7 +1295,7 @@ function addTab(url,opts){
   var wv=document.createElement("webview");
   try{if(window.__guestPreload)wv.setAttribute("preload",window.__guestPreload);}catch(e){}
   wv.setAttribute("autosize","on");
-  wv.setAttribute("partition","kastrava");
+  wv.setAttribute("partition","persist:kastrava");
   // Without allowpopups, window.open() from any page returns null and is
   // dropped before the main process ever sees it — so target="_blank" links
   // and payment/bank popup redirects did nothing at all. The main-process
@@ -5026,7 +5026,7 @@ function bindSettingsEvents(id){
         var cur=settings.adblock!==undefined?settings.adblock:true;
         cb.checked=cur;
         if(api&&api.adblockToggle){api.adblockToggle(cur).then(function(r){if(r&&r.enabled!==undefined){cb.checked=r.enabled;sv("adblock",r.enabled?"on":"off");}}).catch(function(){cb.checked=true;sv("adblock","on");});}
-        cb.addEventListener("change",function(){var v=cb.checked?"on":"off";if(api&&api.adblockToggle){api.adblockToggle(v==="on").then(function(r){if(r&&r.enabled!==undefined){cb.checked=r.enabled;sv("adblock",r.enabled?"on":"off");toast("Ad blocker "+(r.enabled?"enabled":"disabled"));}}).catch(function(){toast("Ad blocker toggle failed");});}else{sv("adblock",v);toast("Ad blocker "+(v==="on"?"enabled":"disabled"));}}});
+        cb.addEventListener("change",function(){var v=cb.checked?"on":"off";if(api&&api.adblockToggle){api.adblockToggle(v==="on").then(function(r){if(r&&r.enabled!==undefined){cb.checked=r.enabled;sv("adblock",r.enabled?"on":"off");toast("Ad blocker "+(r.enabled?"enabled":"disabled"));}}).catch(function(){toast("Ad blocker toggle failed");});}else{sv("adblock",v);toast("Ad blocker "+(v==="on"?"enabled":"disabled"));}});
       })();
       // Bank security toggle — persisted as settings.bankSecur, applied to main process on startup.
       (function(){
@@ -5437,7 +5437,7 @@ function init(){
 }
 if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",init);}else{init();}
 window.addTab=addTab; window.selectTab=selectTab; window.closeTab=closeTab; window.tabs=tabs; window.tabMap=tabMap;
-window.esc=esc; window.reloadPage=reloadPage; window.goBack=goBack; window.goForward=goForward; window.openFindBar=openFindBar; window.takeScreenshot=takeScreenshot; window.togglePip=togglePip; window.toggleReader=toggleReader; window.toggleSplit=toggleSplit; window.toggleRadar=toggleRadar; window.viewSource=viewSource; window.openSideTab=openSideTab; window.openSettings=openSettings; window.goHome=goHome; window.openAgPanel=openAgPanel;window.syncNowAction=syncNowAction;window.shotFullPage=shotFullPage;window.openShotEditor=openShotEditor;window.sleepTab=sleepTab;window.wakeTab=wakeTab;window.toggleMute=toggleMute;window.focusOmnibox=focusOmnibox;window.toggleBookmark=toggleBookmark;window.toggleBookmarkBar=toggleBookmarkBar;window.duplicateTab=duplicateTab;window.closeTabsRight=closeTabsRight;window.closeOtherTabs=closeOtherTabs;window.reopenTab=reopenTab; window.cycleTab=cycleTab; window.showPage=showPage; window.applyThemeKey=applyThemeKey; window.saveSetting=saveSetting; window.toast=toast; window.toggleTabLayout=toggleTabLayout; window.applyTabLayout=applyTabLayout; window.applyVtabsCollapsed=applyVtabsCollapsed; window.EDITION=EDITION; window.isPremium=isPremium; window.requirePremium=requirePremium; window.activatePremium=activatePremium; window.loadLicense=loadLicense; window.KAS_API=KAS_API; window.KAS_STORE=KAS_STORE; window.LIC=LIC; window.clickCheckout=null; window.openPremiumStore=openPremiumStore; window.copyText=copyText;
+window.esc=esc; window.reloadPage=reloadPage; window.goBack=goBack; window.goForward=goForward; window.openFindBar=openFindBar; window.takeScreenshot=takeScreenshot; window.togglePip=togglePip; window.toggleReader=toggleReader; window.toggleSplit=toggleSplit; window.toggleRadar=toggleRadar; window.viewSource=viewSource; window.openSideTab=openSideTab; window.openSettings=openSettings; window.goHome=goHome; window.openAgPanel=openAgPanel;window.syncNowAction=syncNowAction;window.shotFullPage=shotFullPage;window.openShotEditor=openShotEditor;window.sleepTab=sleepTab;window.wakeTab=wakeTab;window.toggleMute=toggleMute;window.focusOmnibox=focusOmnibox;window.toggleBookmark=toggleBookmark;window.toggleBookmarkBar=toggleBookmarkBar;window.duplicateTab=duplicateTab;window.closeTabsRight=closeTabsRight;window.closeOtherTabs=closeOtherTabs;window.reopenTab=reopenTab; window.cycleTab=cycleTab; window.showPage=showPage; window.applyThemeKey=applyThemeKey; window.saveSetting=saveSetting; window.toast=toast; window.toggleTabLayout=toggleTabLayout; window.applyTabLayout=applyTabLayout; window.applyVtabsCollapsed=applyVtabsCollapsed; window.EDITION=EDITION; window.isPremium=isPremium; window.requirePremium=requirePremium; window.activatePremium=activatePremium; window.loadLicense=loadLicense; window.KAS_API=KAS_API; window.KAS_STORE=KAS_STORE; window.LIC=LIC; window.clickCheckout=null; window.openPremiumStore=openPremiumStore; window.copyText=copyText; window.favOk=favOk; window.favFb=favFb; window.$=$; window.qa=qa; window.isBankUrl=isBankUrl;
 Object.defineProperty(window,'activeTab',{configurable:true,get:function(){return activeTab;}});
 Object.defineProperty(window,'settings',{configurable:true,get:function(){return settings;}});
 })();
@@ -5611,7 +5611,7 @@ window.toggleWorkspaces=toggleWorkspaces;
 
 // ===== Mandatory update badge (Chrome-style) =====
 (function(){
-  var btn=$('btn-update');if(!btn)return;
+  var btn=document.getElementById('btn-update');if(!btn)return;
   var showing=false;
   function setContent(p){
     btn.innerHTML='';
@@ -5710,6 +5710,10 @@ function restartBankGuard(){bankState.step=0;bankState.passed=false;$("bank-guar
 function shouldBlockBank(u){return settings&&settings.bankSecur==="on"&&isBankUrl(u)&&!bankState.passed;}
 
 // ===== INITIALIZE =====
+// The bank guard lives in this block but is called from block 0's navigation
+// handlers (will-navigate / openLink). Export to window so those resolve —
+// otherwise every navigation throws ReferenceError and never completes.
+window.bankState=bankState; window.showBankGuard=showBankGuard; window.shouldBlockBank=shouldBlockBank;
 if(!W.isPremium||W.isPremium())renderWorkspaces();
 })();
 
