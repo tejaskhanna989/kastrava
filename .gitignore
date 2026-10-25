@@ -28,3 +28,9 @@ scripts/make-store-catalog.py
 site/store-assets/wp/
 site/store-assets/preview/
 i18n-src/batch-cache.jsonl
+.keystore/
+
+# android local build output (CI/build machines only)
+android/.gradle/
+android/Kastrava-*.apk
+android/Kastrava-*.aab

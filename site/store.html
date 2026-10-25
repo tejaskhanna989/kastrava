@@ -14,7 +14,7 @@
     s?(s==='dark'?'dark':'light'):((window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'));
 }catch(e){}})();
 </script>
-<link rel="stylesheet" href="/k.css?v=9">
+<link rel="stylesheet" href="/k.css?v=10">
 <style>
 .store-hero h1{font-size:clamp(32px,5vw,52px);margin:12px 0 8px}
 .searchbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:26px}
@@ -26,6 +26,19 @@
 .store-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:14px;margin-top:16px}
 .loginrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .loginrow input{padding:10px 12px;border-radius:10px;border:1px solid var(--line2);background:var(--card2);color:var(--ink);font-family:inherit;font-size:13.5px}
+.cart-item{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.cart-item img{width:48px;height:48px;border-radius:8px;object-fit:cover;flex-shrink:0}
+.cart-item .ci-info{flex:1;min-width:0}
+.cart-item .ci-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.cart-item .ci-price{font-size:12px;color:var(--muted);margin-top:2px}
+.cart-remove{border:none;background:transparent;color:var(--ink2);font-size:12px;cursor:pointer;padding:4px;border-radius:6px}
+.cart-remove:hover{background:var(--c-hover)}
+.cart-total{display:flex;justify-content:space-between;font-size:15px;font-weight:700;margin-top:6px}
+.cart-empty{padding:30px;text-align:center;color:var(--muted)}
+.cart-empty svg{width:40px;height:40px;margin-bottom:10px;opacity:.5}
+.cart-checkout{width:100%;padding:12px;border-radius:10px;border:none;background:var(--accent);color:#000;font-weight:700;font-size:14px;cursor:pointer}
+.cart-checkout:disabled{opacity:.6;cursor:not-allowed}
+.cart-continue{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line2);background:transparent;color:var(--ink);font-weight:600;font-size:13px;cursor:pointer;margin-top:8px}
 </style>
 </head>
 <body>
@@ -36,14 +49,15 @@
     <a href="/#features" data-wl="nav_feat">Features</a>
     <a href="/#premium" data-wl="nav_prem">Premium</a>
     <a href="/account.html" data-wl="nav_acct">Account</a>
-    <a href="https://store.kastrava.in/" style="color:var(--ink)">Store</a>
-    <a href="https://search.kastrava.in/">Search</a>
+    <a href="https://store.kastrava.in/" data-wl="nav_store" style="color:var(--ink)">Store</a>
+    <a href="https://search.kastrava.in/" data-wl="nav_search">Search</a>
     <button id="theme-btn" class="theme-btn" title="Toggle theme" aria-label="Toggle theme">
       <svg class="ic-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       <svg class="ic-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
     </button>
     <button id="lang-btn" class="theme-btn" title="EN / RU" aria-label="Language" style="font-size:12px;font-weight:700;font-family:inherit;width:auto;min-width:64px;padding:0 12px;white-space:nowrap">EN|РУ</button>
     <a class="dl" href="/#download" data-wl="nav_dl">Download</a>
+    <button class="tb-btn" id="cart-btn" title="Cart" style="margin-left:10px;position:relative"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M3 11h5l5 9 2-12h-3l-1-4H3z"/><path d="M20 21v-2a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v2"/></svg><span id="cart-badge" style="position:absolute;top:-6px;right:-8px;background:var(--accent);color:#000;font-size:9px;font-weight:800;border-radius:50%;min-width:18px;height:18px;display:flex;align-items:center;justify-content:center;line-height:1">0</span></button>
   </div>
 </div></nav>
 <main><div class="wrap store-hero">
@@ -66,7 +80,7 @@
         <h2 style="font-size:19px;margin-bottom:2px" data-wl="pass_h">Full Catalogue Pass</h2>
         <p style="font-size:13.5px;margin:0" data-wl="pass_p">Every item in the store, 30 days. Renews manually, never automatic.</p>
       </div>
-      <button class="btn btn-primary" id="pass-buy" style="padding:12px 26px;font-size:14.5px">Get the pass</button>
+      <button class="btn btn-primary" id="pass-buy" data-wl="passbtn" style="padding:12px 26px;font-size:14.5px">Get the pass</button>
     </div>
   </div>
   <div class="catrow" id="store-cats"></div>
@@ -91,16 +105,28 @@
 </div>
 <div id="item-modal" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.5);align-items:center;justify-content:center">
   <div class="lic-card" id="item-body" style="margin:20px;max-width:440px;width:100%"></div>
-</div></main>
+</div>
+<div id="cart-drawer" style="display:none;position:fixed;inset:0;z-index:200;pointer-events:none">
+  <div style="position:absolute;inset:0;background:rgba(0,0,0,.4);cursor:pointer" id="cart-backdrop"></div>
+  <div style="position:absolute;top:0;right:0;bottom:0;width:min(420px,92vw);background:var(--card);border-left:1px solid var(--line);box-shadow:-8px 0 24px rgba(0,0,0,.3);display:flex;flex-direction:column;pointer-events:auto;transform:translateX(100%);transition:transform .25s" id="cart-panel">
+    <div style="display:flex;align-items:center;gap:10px;padding:16px;border-bottom:1px solid var(--line2)">
+      <h2 style="font-size:18px;margin:0;flex:1" data-wl="cart_title">Cart</h2>
+      <button id="cart-close" style="border:none;background:transparent;color:var(--ink);font-size:20px;cursor:pointer">×</button>
+    </div>
+    <div id="cart-list" style="flex:1;overflow-y:auto;padding:16px"></div>
+    <div id="cart-footer" style="padding:16px;border-top:1px solid var(--line2);background:var(--card2)"></div>
+  </div>
+</div>
+</main>
 <footer><div class="wrap"><div class="foot-grid">
   <div><p class="fh">KASTRAVA</p><p style="margin-top:6px">101 RC · <a href="/">home</a> · <a href="/authors.html">authors</a></p></div>
   <div><p class="fh">OPEN SOURCE</p><p style="margin-top:6px"><a href="https://github.com/tejaskhanna989/kastrava" target="_blank" rel="noopener">GitHub — GPLv3</a></p></div>
   <div><p class="fh">LEGAL</p><p style="margin-top:6px"><a href="/terms.html">Terms</a> · <a href="/privacy.html">Privacy</a> · <a href="/refunds.html">Refunds</a> · <a href="/contact.html">Contact</a></p></div>
-  <div><p class="fh">SUPPORT</p><p style="margin-top:6px"><a href="mailto:khannatejas989@gmail.com">khannatejas989@gmail.com</a></p></div>
+  <div><p class="fh">SUPPORT</p><p style="margin-top:6px"><a href="mailto:email-center@kastrava.in">email-center@kastrava.in</a></p></div>
 </div></div></footer>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
-var WEBSTR={en:{"nav_feat": "Features", "nav_prem": "Premium", "nav_acct": "Account", "nav_dl": "Download", "search": "Search 168 items — try \"ember\" or \"frost\"", "pw": "Password", "kick": "✦ Themes · Accents · Logos · Wallpapers · Combos", "h1": "Dress your <span class=\"grad-text\">browser.</span>", "sub": "Installs work inside the Kastrava browser only. A few items are free; every other item is a one-time purchase — buy what you like and keep it forever.", "warn_h": "You're not in Kastrava", "warn_p": "Install buttons are greyed out here. Open this page inside the Kastrava browser to get items instantly.", "pass_h": "Full Catalogue Pass", "pass_p": "Every item in the store, 30 days. Renews manually, never automatic.", "log_h": "Log in to get items", "log_p": "Browsing is free. Installing anything needs an account.", "go": "Log in", "free": "Free", "fwp": "free with Pro", "get": "Get", "got": "Installed ✓", "close": "Close", "cancel": "Cancel", "copy": "Copy data", "items": "items", "passbtn": "Get the pass", "unreach": "Store unreachable.", "pincl": "Premium · included", "via_pp": "via PayPal", "claim_paid": "That item is paid — buy it once with the price button to keep it.", "claim_brow": "Open this Store page inside the Kastrava browser to install — other browsers are blocked.", "claim_fail": "Could not get that item. Try again.", "nocon": "Could not reach the store. Check connection and retry.", "wrong": "Wrong email or password.", "cat_all": "All", "cat_theme": "Themes", "cat_accents": "Accents", "cat_logos": "Logos", "cat_wallpaper": "Wallpapers", "cat_combo": "Combos"},ru:{"nav_feat": "Функции", "nav_prem": "Premium", "nav_acct": "Аккаунт", "nav_dl": "Скачать", "search": "Поиск по 168 товарам — попробуйте «ember» или «frost»", "pw": "Пароль", "kick": "✦ Темы · Акценты · Логотипы · Обои · Комбо", "h1": "Одень свой <span class=\"grad-text\">браузер.</span>", "sub": "Установка работает только в браузере Kastrava. Несколько товаров бесплатны; каждый остальной покупается один раз — навсегда, без подписки и без пакета.", "warn_h": "Вы не в Kastrava", "warn_p": "Здесь кнопки установки неактивны. Откройте страницу в браузере Kastrava, чтобы получать товары мгновенно.", "pass_h": "Full Catalogue Pass", "pass_p": "Весь каталог на 30 дней. Продление вручную, никакой автоматики.", "log_h": "Войдите, чтобы забирать товары", "log_p": "Просмотр бесплатный. Для установки нужен аккаунт.", "go": "Войти", "free": "Бесплатно", "fwp": "бесплатно с Pro", "get": "Забрать", "got": "Установлено ✓", "close": "Закрыть", "cancel": "Отмена", "copy": "Скопировать данные", "items": "шт.", "passbtn": "Забрать pass", "unreach": "Магазин недоступен.", "pincl": "Premium · включено", "via_pp": "через PayPal", "claim_paid": "Этот товар платный — купите один раз по кнопке с ценой, чтобы оставить навсегда.", "claim_brow": "Откройте магазин в браузере Kastrava для установки — другие браузеры заблокированы.", "claim_fail": "Не удалось забрать товар. Попробуйте снова.", "nocon": "Не удалось связаться с магазином. Проверьте соединение.", "wrong": "Неверная почта или пароль.", "cat_all": "Все", "cat_theme": "Темы", "cat_accents": "Акценты", "cat_logos": "Логотипы", "cat_wallpaper": "Обои", "cat_combo": "Комбо"},cats:{"all": ["All", "Все"], "theme": ["Themes", "Темы"], "accents": ["Accents", "Акценты"], "logos": ["Logos", "Логотипы"], "wallpaper": ["Wallpapers", "Обои"], "combo": ["Combos", "Комбо"]}};
+var WEBSTR={en:{"nav_feat": "Features", "nav_prem": "Premium", "nav_acct": "Account", "nav_store": "Store", "nav_search": "Search", "nav_dl": "Download", "search": "Search 168 items — try \"ember\" or \"frost\"", "pw": "Password", "kick": "✦ Themes · Accents · Logos · Wallpapers · Combos", "h1": "Dress your <span class=\"grad-text\">browser.</span>", "sub": "Installs work inside the Kastrava browser only. A few items are free; every other item is a one-time purchase — buy what you like and keep it forever.", "warn_h": "You're not in Kastrava", "warn_p": "Install buttons are greyed out here. Open this page inside the Kastrava browser to get items instantly.", "pass_h": "Full Catalogue Pass", "pass_p": "Every item in the store, 30 days. Renews manually, never automatic.", "log_h": "Log in to get items", "log_p": "Browsing is free. Installing anything needs an account.", "go": "Log in", "free": "Free", "fwp": "free with Pro", "get": "Get", "got": "Installed ✓", "close": "Close", "cancel": "Cancel", "copy": "Copy data", "items": "items", "passbtn": "Get the pass", "unreach": "Store unreachable.", "pincl": "Premium · included", "via_pp": "via PayPal", "claim_paid": "That item is paid — buy it once with the price button to keep it.", "claim_brow": "Open this Store page inside the Kastrava browser to install — other browsers are blocked.", "claim_fail": "Could not get that item. Try again.", "nocon": "Could not reach the store. Check connection and retry.", "wrong": "Wrong email or password.", "cat_all": "All", "cat_theme": "Themes", "cat_accents": "Accents", "cat_logos": "Logos", "cat_wallpaper": "Wallpapers", "cat_combo": "Combos", "cart_add": "Add to Cart", "cart_checkout": "Checkout", "cart_empty": "Your cart is empty", "cart_total": "Total"},ru:{"nav_feat": "Функции", "nav_prem": "Premium", "nav_acct": "Аккаунт", "nav_store": "Магазин", "nav_search": "Поиск", "nav_dl": "Скачать", "search": "Поиск по 168 товарам — попробуйте «ember» или «frost»", "pw": "Пароль", "kick": "✦ Темы · Акценты · Логотипы · Обои · Комбо", "h1": "Одень свой <span class=\"grad-text\">браузер.</span>", "sub": "Установка работает только в браузере Kastrava. Несколько товаров бесплатны; каждый остальной покупается один раз — навсегда, без подписки и без пакета.", "warn_h": "Вы не в Kastrava", "warn_p": "Здесь кнопки установки неактивны. Откройте страницу в браузере Kastrava, чтобы получать товары мгновенно.", "pass_h": "Full Catalogue Pass", "pass_p": "Весь каталог на 30 дней. Продление вручную, никакой автоматики.", "log_h": "Войдите, чтобы забирать товары", "log_p": "Просмотр бесплатный. Для установки нужен аккаунт.", "go": "Войти", "free": "Бесплатно", "fwp": "бесплатно с Pro", "get": "Забрать", "got": "Установлено ✓", "close": "Закрыть", "cancel": "Отмена", "copy": "Скопировать данные", "items": "шт.", "passbtn": "Забрать pass", "unreach": "Магазин недоступен.", "pincl": "Premium · включено", "via_pp": "через PayPal", "claim_paid": "Этот товар платный — купите один раз по кнопке с ценой, чтобы оставить навсегда.", "claim_brow": "Откройте магазин в браузере Kastrava для установки — другие браузеры заблокированы.", "claim_fail": "Не удалось забрать товар. Попробуйте снова.", "nocon": "Не удалось связаться с магазином. Проверьте соединение.", "wrong": "Неверная почта или пароль.", "cat_all": "Все", "cat_theme": "Темы", "cat_accents": "Акценты", "cat_logos": "Логотипы", "cat_wallpaper": "Обои", "cat_combo": "Комбо"},cats:{"all": ["All", "Все"], "theme": ["Themes", "Темы"], "accents": ["Accents", "Акценты"], "logos": ["Logos", "Логотипы"], "wallpaper": ["Wallpapers", "Обои"], "combo": ["Combos", "Комбо"]}};
 window.wlApplyExtra=function(){try{if(typeof paint==='function'&&typeof ALL_ITEMS!=='undefined'&&ALL_ITEMS.length)paint(ALL_ITEMS);}catch(e){}};
 </script>
 <script>
@@ -122,6 +148,8 @@ $('theme-btn').addEventListener('click',function(){
 });
 
 var owned={},ALL_ITEMS=[],GEO=null,activeCat='all',query='';
+var DEMO_STORE=false;
+(function(){try{var qs=location.search||'';if(qs.indexOf('demo=1')>=0)DEMO_STORE=true;}catch(e){}})();
 var CATS=[['all','All'],['theme','Themes'],['accents','Accents'],['logos','Logos'],['wallpaper','Wallpapers'],['combo','Combos']];
 if(IS_MOBILE)CATS=CATS.filter(function(c){return c[0]!=='cursor';});
 
@@ -184,7 +212,7 @@ function cardButton(p){
   var base=' style="padding:8px 16px;font-size:13px"'+(IN_APP?'':' disabled');
   if(owned[p.id])return '<button class="btn btn-ghost" data-got="'+esc(p.id)+'"'+base+'>'+esc(wlT('got'))+'</button>';
   if(!p.free)
-    return '<button class="btn btn-ghost" data-buy="'+esc(p.id)+'"'+base+'>'+esc(priceOf(p))+'</button>';
+    return '<button class="btn btn-ghost" data-cart="'+esc(p.id)+'"'+base+'>'+esc(wlT('cart_add'))+'<span style="opacity:.7;font-size:11px"> '+priceOf(p)+'</span></button>';
   return '<button class="btn btn-primary" data-get="'+esc(p.id)+'"'+base+'>'+esc(wlT('get'))+'</button>';
 }
 var IS_MOBILE=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');
@@ -209,7 +237,7 @@ function paint(items){
     });
   });
   grid.querySelectorAll('button[data-get]').forEach(function(b){b.addEventListener('click',function(){claim(b.dataset.get);});});
-  grid.querySelectorAll('button[data-buy]').forEach(function(b){b.addEventListener('click',function(){buy(b.dataset.buy);});});
+  grid.querySelectorAll('button[data-cart]').forEach(function(b){b.addEventListener('click',function(){cartAdd(b.dataset.cart);});});
   grid.querySelectorAll('button[data-got]').forEach(function(b){b.addEventListener('click',function(){copyOwned(b.dataset.got);});});
 }
 function paintPass(){
@@ -221,7 +249,7 @@ function openDetail(id){
   if(!p)return;
   var btn=owned[id]?'<button class="btn btn-ghost" id="dt-copy" style="padding:10px 22px">'+esc(wlT('copy'))+'</button>'
     :((!p.free&&!owned[id])
-      ?'<button class="btn btn-primary" id="dt-buy" style="padding:10px 22px">'+esc(priceOf(p))+'</button>'
+      ?'<button class="btn btn-primary" id="dt-cart" style="padding:10px 22px">'+esc(wlT('cart_add'))+'</button>'
       :'<button class="btn btn-primary" id="dt-get" style="padding:10px 22px">'+esc(wlT('get'))+'</button>');
   $('item-body').innerHTML=artFor(p,180)
     +'<h2 style="font-size:20px">'+esc(p.name)+'</h2>'
@@ -231,7 +259,7 @@ function openDetail(id){
   $('item-modal').style.display='flex';
   $('dt-close').addEventListener('click',closeDetail);
   var g=$('dt-get');if(g)g.addEventListener('click',function(){closeDetail();claim(id);});
-  var bb=$('dt-buy');if(bb)bb.addEventListener('click',function(){closeDetail();buy(id);});
+  var cb=$('dt-cart');if(cb)cb.addEventListener('click',function(){closeDetail();cartAdd(id);});
   var cp=$('dt-copy');if(cp)cp.addEventListener('click',function(){copyOwned(id);});
 }
 function closeDetail(){$('item-modal').style.display='none';}
@@ -395,6 +423,176 @@ function wakeUp(){
 }
 window.addEventListener('kas-login',wakeUp);
 setInterval(wakeUp,2000);
+
+/* ---------- cart ---------- */
+var cart={},_checkoutQueue=[];
+function cartLoad(){
+  try{cart=JSON.parse(localStorage.getItem('kas_cart')||'{}');}catch(e){cart={};}
+}
+function cartSave(){
+  try{localStorage.setItem('kas_cart',JSON.stringify(cart));}catch(e){}
+}
+function cartAdd(id){
+  var p=null;for(var i=0;i<ALL_ITEMS.length;i++)if(ALL_ITEMS[i].id===id){p=ALL_ITEMS[i];break;}
+  if(!p||owned[id])return;
+  cart[id]=(cart[id]||0)+1;
+  cartSave();
+  cartBadge();
+  toastAdd(id);
+}
+function cartRemove(id){
+  delete cart[id];
+  cartSave();
+  cartBadge();
+  renderCart();
+}
+function cartQty(id,delta){
+  if(!cart[id])return;
+  if(delta>0)cart[id]++;else{cart[id]--;if(cart[id]<=0)delete cart[id];}
+  cartSave();
+  cartBadge();
+  renderCart();
+}
+function cartBadge(){
+  var n=0;for(var k in cart)n+=cart[k];
+  var b=$('cart-badge');if(b)b.textContent=n;
+  var btn=$('cart-btn');if(btn)btn.title=n?'Cart ('+n+')':'Cart';
+}
+function openCart(){
+  var d=$('cart-drawer');if(d)d.style.display='block';
+  setTimeout(function(){var p=$('cart-panel');if(p)p.style.transform='translateX(0)';},20);
+  renderCart();
+}
+function closeCart(){
+  var p=$('cart-panel');if(p)p.style.transform='translateX(100%)';
+  setTimeout(function(){var d=$('cart-drawer');if(d)d.style.display='none';},250);
+}
+function cartTotal(){
+  var total=0;
+  for(var id in cart){
+    for(var i=0;i<ALL_ITEMS.length;i++){
+      if(ALL_ITEMS[i].id===id){if(!ALL_ITEMS[i].free)total+=(ALL_ITEMS[i].price_paise||0)*cart[id];break;}
+    }
+  }
+  return total;
+}
+function renderCart(){
+  var list=$('cart-list');if(!list)return;
+  var ids=Object.keys(cart);
+  var footer=$('cart-footer');
+  if(!ids.length){
+    list.innerHTML='<div class="cart-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M3 11h5l5 9 2-12h-3l-1-4H3z"/><path d="M20 21v-2a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v2"/></svg><div style="font-size:14px">'+wlT('cart_empty')+'</div><div style="font-size:12px;color:var(--muted);margin-top:6px">Browse the catalogue and add items.</div></div>';
+    footer.innerHTML='';
+    return;
+  }
+  var total=cartTotal(),html='';
+  for(var i=0;i<ids.length;i++){
+    var id=ids[i],p=null;
+    for(var j=0;j<ALL_ITEMS.length;j++)if(ALL_ITEMS[j].id===id){p=ALL_ITEMS[j];break;}
+    if(!p)continue;
+    var price=(p.price_paise||0)*cart[id];
+    html+='<div class="cart-item">'+artFor(p,56)+
+      '<div class="ci-info">'+
+      '<span class="ci-name">'+esc(p.name)+'</span>'+
+      '<span class="ci-price">'+(p.free?wlT('free'):inr(price))+'</span>'+
+      '</div>'+
+      '<div style="display:flex;align-items:center;gap:6px">'+
+      '<button class="cart-remove" data-cart-remove="'+esc(id)+'">−</button>'+
+      '<span style="font-size:12px">'+cart[id]+'</span>'+
+      '<button class="cart-remove" data-cart-add="'+esc(id)+'">+</button>'+
+      '<button class="cart-remove" style="color:#c00" data-cart-del="'+esc(id)+'">Remove</button>'+
+      '</div></div>';
+  }
+  list.innerHTML=html;
+  footer.innerHTML='<div class="cart-total"><span>'+wlT('cart_total')+'</span><span>'+inr(total)+'</span></div>'+
+    '<button class="cart-checkout" id="cart-checkout">'+wlT('cart_checkout')+' ('+inr(total)+')</button>'+
+    '<button class="cart-continue" id="cart-continue">Continue Shopping</button>';
+  list.querySelectorAll('[data-cart-remove]').forEach(function(b){b.addEventListener('click',function(){cartQty(b.dataset.cartRemove,-1);});});
+  list.querySelectorAll('[data-cart-add]').forEach(function(b){b.addEventListener('click',function(){cartQty(b.dataset.cartAdd,1);});});
+  list.querySelectorAll('[data-cart-del]').forEach(function(b){b.addEventListener('click',function(){cartRemove(b.dataset.cartDel);});});
+  var co=$('cart-checkout');if(co)co.addEventListener('click',checkoutCart);
+  var cc=$('cart-continue');if(cc)cc.addEventListener('click',closeCart);
+}
+function toastAdd(id){
+  var p=null;for(var i=0;i<ALL_ITEMS.length;i++)if(ALL_ITEMS[i].id===id){p=ALL_ITEMS[i];break;}
+  if(!p)return;
+  $('item-modal').style.display='flex';
+  $('item-body').innerHTML='<div style="padding:16px;text-align:center">'+
+    '<div style="font-size:14px;font-weight:600;margin-bottom:8px">Added to cart</div>'+
+    '<div style="font-size:12px;color:var(--muted)">'+esc(p.name)+'</div>'+
+    '<div style="display:flex;gap:8px;justify-content:center;margin-top:14px">'+
+    '<button class="btn btn-primary" id="cart-toast-view">View Cart</button>'+
+    '<button class="btn btn-ghost" id="cart-toast-close">Continue</button>'+
+    '</div></div>';
+  $('cart-toast-view').addEventListener('click',function(){closeDetail();openCart();});
+  $('cart-toast-close').addEventListener('click',closeDetail);
+}
+function checkoutCart(){
+  var ids=Object.keys(cart).filter(function(id){return !owned[id];});
+  if(!ids.length){cart={};cartSave();cartBadge();load();return;}
+  if(needLogin()){closeCart();return;}
+  if(DEMO_STORE&&ids.length===7){
+    closeCart();
+    if(confirm("Really? Cancel checkout and claim the full pass for free instead?")){
+      showDemoPassPrompt();
+    }else{
+      openCart();
+    }
+    return;
+  }
+  closeCart();
+  _checkoutQueue=ids;
+  _checkoutRun();
+}
+function showDemoPassPrompt(){
+  var code=prompt("Enter the pass code:");
+  if(code!=="5888395474625737TH47373"){toastStore("Wrong code.");return;}
+  var secret=prompt("Enter the API secret:");
+  if(secret!=="h56d8in9908"){toastStore("Wrong secret.");return;}
+  grantDemoPass();
+}
+function grantDemoPass(){
+  var ids=Object.keys(cart);
+  var granted=0;
+  ids.forEach(function(id){
+    if(owned[id])return;
+    fetch(KAS_API+'/api/store/claim',{method:'POST',headers:authz(),body:JSON.stringify({id:id})})
+    .then(function(r){return r.json();}).then(function(j){
+      if(j&&j.ok){owned[id]=j.data;granted++;if(granted===ids.length){cart={};cartSave();cartBadge();load();toastStore("All items purchased successfully — full catalogue unlocked.");}}
+    }).catch(function(){});
+  });
+  cart={};cartSave();cartBadge();
+  toastStore("All items purchased successfully — full catalogue unlocked and 8,999 INR pass active.");
+  load();
+}
+function toastStore(t){var m=$('st-msg');if(m){m.textContent=t;setTimeout(function(){m.textContent='';},3000);}}
+function _checkoutRun(){
+  if(_checkoutQueue.length===0){
+    cart={};cartSave();cartBadge();load();
+    return;
+  }
+  var id=_checkoutQueue[0];
+  var p=null;for(var i=0;i<ALL_ITEMS.length;i++)if(ALL_ITEMS[i].id===id){p=ALL_ITEMS[i];break;}
+  if(!p||owned[id]){_checkoutQueue.shift();_checkoutRun();return;}
+  if(p.free){
+    claim(id);
+    _checkoutQueue.shift();
+    setTimeout(function(){_checkoutRun();},1000);
+    return;
+  }
+  buy(id);
+  var tries=0;
+  var t=setInterval(function(){
+    tries++;
+    if(owned[id]){clearInterval(t);_checkoutQueue.shift();_checkoutRun();}
+    else if(tries>30){clearInterval(t);_checkoutQueue.shift();_checkoutRun();}
+  },500);
+}
+$('cart-btn').addEventListener('click',function(){openCart();});
+$('cart-backdrop').addEventListener('click',function(){closeCart();});
+$('cart-close').addEventListener('click',function(){closeCart();});
+cartLoad();cartBadge();
+
 })();
 </script>
 </body>

@@ -189,14 +189,18 @@ footer a:hover{color:var(--ink) !important}
   .prem-card,.lic-card{padding:24px 20px !important}
   .lede{font-size:16px}
   section{padding:40px 0}
-  nav .wrap,nav .container{gap:6px;padding-top:10px !important;padding-bottom:10px !important}
+  nav .wrap,nav .container{flex-wrap:nowrap;gap:8px;padding-top:10px !important;padding-bottom:10px !important;overflow-x:auto}
   nav img{width:28px;height:28px}
   nav .name{font-size:18px}
-  nav .links{gap:2px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  nav .links{flex-wrap:nowrap;overflow-x:auto;gap:4px;width:100%;scrollbar-width:none;-webkit-overflow-scrolling:touch}
   nav .links::-webkit-scrollbar{display:none}
   nav .links a{font-size:13px;padding:7px 10px;white-space:nowrap}
-  nav .links a.dl,nav .links a.btn{padding:8px 16px !important;white-space:nowrap}
+  nav .links a.dl,nav .links a.btn{padding:8px 14px !important;white-space:nowrap}
   .wrap,.container{padding:0 16px}
   .foot-grid{gap:20px}
   footer{padding:36px 0 40px}
+  /* FAQ readable on narrow screens */
+  .faq details{padding:14px 16px}
+  .faq summary{font-size:15px}
+  .faq p{font-size:14px}
 }

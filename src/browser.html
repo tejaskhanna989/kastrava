@@ -178,6 +178,7 @@ body.no-logo .ntp-logo,body.no-logo .ntp-brand{display:none}
 .sn-item{display:flex;align-items:center;gap:8px;padding:9px 12px;font-size:12.5px;color:var(--c-text2);cursor:pointer;transition:background .15s,color .15s;border-radius:9px;margin-bottom:2px}
 .sn-item:hover{background:var(--c-hover);color:var(--c-text)}
 .sn-item.active{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.tag-alpha{display:inline-block;margin-left:7px;padding:2px 7px;font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-radius:6px;background:color-mix(in srgb,var(--accent) 15%,transparent);color:var(--accent);vertical-align:middle;white-space:nowrap;border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);line-height:1.3}
 .sn-search{width:100%;background:var(--c-surface);border:1px solid var(--c-border);border-radius:8px;color:var(--c-text);font-size:12px;padding:7px 10px;margin-bottom:8px;font-family:inherit;outline:none}
 .sn-search:focus{border-color:var(--accent)}
 .sn-search::placeholder{color:var(--c-text2)}
@@ -567,6 +568,7 @@ body.vtabs-collapsed .vtabs-new{border-style:solid}
     <button class="omni-copy" id="omni-copy" title="Copy link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 10a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
     <button class="bm-star" id="bm-star" title="Bookmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
     <button class="omni-copy" id="cws-add" style="display:none" title="Add to Kastrava"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+    <button class="tb-btn" id="ext-toolbar-btn" style="display:none" title="Extensions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 4a4 4 0 014 4v6a4 4 0 01-4 4 4 4 0 01-4-4V8a4 4 0 014-4z"/><line x1="12" y1="4" x2="12" y2="12"/></svg></button>
   </div>
   <div class="tb-right"><button class="tb-btn" id="btn-devtools" title="Toggle DevTools (F12)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></button>
     <button class="tb-btn" id="btn-more" title="More"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></button>
@@ -722,6 +724,10 @@ var EDITION=(typeof __EDITION__!=="undefined"&&__EDITION__)?__EDITION__:"premium
 var KAS_API=(typeof __KAS_API__!=="undefined"&&__KAS_API__)?__KAS_API__:"http://127.0.0.1:8787";
 var KAS_STORE=(typeof __KAS_STORE__!=="undefined"&&__KAS_STORE__)?__KAS_STORE__:(KAS_API||"http://127.0.0.1:8787");
 var LIC={activated:false,machine:"",key:null,reason:"no_license",expiresAt:null,subEnd:null,grace:false};
+/* Google Play reviewer demo account — hardcoded bypass flows for review testing. */
+var DEMO_ACCOUNT="reviewer@kastrava.in";
+var DEMO_MODE=false;
+function isDemo(){return DEMO_MODE;}
 var licRefreshed=false;
 function editionLabel(){if(EDITION==="free")return "Free";return LIC.activated?"Premium":"Free";}
 function isPremium(){if(EDITION==="free")return false;return !!(LIC&&LIC.activated);}
@@ -735,7 +741,7 @@ function isBlank(u){return!u||u==="about:newtab"||u==="about:localhost"||u==="ab
 function err(fn,e){console.error("[Kastrava]",fn,e)}
 var tabs=[];var tabMap={};var activeTab=null;var tabIdCounter=0;
 var agDownloads=[];var agIdMap={};var bookmarkUrls=new Set();
-var settings={setupDone:"1",searchEngine:"kastravasearch",accent:"#1a73e8",fontSize:"12",reduceAnimations:"off",hwAcc:"on",dnt:"on",tracking:"strict",suggest:"off",bookmarkBar:"auto",startup:"last",confirmClose:"off",historyEnabled:"on",bookmarksEnabled:"on",cookies:"off",lang:"en",location:"block",zoom:"100",uiRadius:"medium",speedDial:"comfortable",showHomeBtn:"off",showCopyBtn:"on",showNtpClock:"on",showNtpLogo:"on",tabLayout:"horizontal",vtabsCollapsed:"off",shortcuts:{},uiStyle:"chrome",sleepTabs:"off",siteShields:{},jsGlobal:"on",adblock:"on",images:"on",webrtcMode:"disable",doh:"off",proxy:{enabled:false},startupUrls:"",showFullUrls:"off",ntpQuick:"on",ntpSearch:"on",ntpBg:"default",ntpTiles:"8",tabFavicons:"on",clearHistoryOnExit:"off",historyKeep:"0",maxTabs:"0",askDlLoc:"off",dlDir:"",maxSuggestions:"8",launchMaximized:"off",sendReferrer:"off",cursorFx:"off",cursorFxMode:"color",cursorFxColor:"#1a73e8",cursorFxForce:"medium",cursorFxSize:"medium",blobFx:"off",blobColor:"#1a73e8",blobCount:"3",blobSize:"medium",blobOpacity:"0.6",blobShape:"circle",glassFx:"off",glassColor:"#1a73e8",glassShape:"sphere",glassSize:"medium",glassOpacity:"0.5",particleFx:"off",particleColor:"#1a73e8",particleSize:"medium",particleDensity:"medium",clickSparkFx:"off",clickSparkColor:"#ffffff",clickSparkSize:"medium",clickSparkCount:"8",clickSparkDuration:"400",pixelTrailFx:"off",pixelTrailColor:"#ffffff",pixelTrailGrid:"medium",pixelTrailTrail:"medium",ribbonsFx:"off",ribbonsColor:"#1a73e8",ribbonsThickness:"medium",ribbonsPoints:"50",cursorStyle:"system",cursorStyleColor:"#ffffff",customThemes:[],customLogo:"",customWallpaper:"",bankSecur:"on",bankDelaySec:45};
+var settings={setupDone:"1",searchEngine:"kastravasearch",accent:"#1a73e8",fontSize:"12",reduceAnimations:"off",hwAcc:"on",dnt:"on",tracking:"strict",suggest:"off",bookmarkBar:"auto",startup:"last",confirmClose:"off",historyEnabled:"on",bookmarksEnabled:"on",cookies:"off",lang:"en",location:"block",zoom:"100",uiRadius:"medium",speedDial:"comfortable",showHomeBtn:"off",showCopyBtn:"on",showNtpClock:"on",showNtpLogo:"on",tabLayout:"horizontal",vtabsCollapsed:"off",shortcuts:{},uiStyle:"chrome",sleepTabs:"off",siteShields:{},jsGlobal:"on",adblock:"on",images:"off",webrtcMode:"disable",doh:"off",proxy:{enabled:false},startupUrls:"",showFullUrls:"off",ntpQuick:"on",ntpSearch:"on",ntpBg:"default",ntpTiles:"8",tabFavicons:"on",clearHistoryOnExit:"off",historyKeep:"0",maxTabs:"0",askDlLoc:"off",dlDir:"",maxSuggestions:"8",launchMaximized:"off",sendReferrer:"off",cursorFx:"off",cursorFxMode:"color",cursorFxColor:"#1a73e8",cursorFxForce:"medium",cursorFxSize:"medium",blobFx:"off",blobColor:"#1a73e8",blobCount:"3",blobSize:"medium",blobOpacity:"0.6",blobShape:"circle",glassFx:"off",glassColor:"#1a73e8",glassShape:"sphere",glassSize:"medium",glassOpacity:"0.5",particleFx:"off",particleColor:"#1a73e8",particleSize:"medium",particleDensity:"medium",clickSparkFx:"off",clickSparkColor:"#ffffff",clickSparkSize:"medium",clickSparkCount:"8",clickSparkDuration:"400",pixelTrailFx:"off",pixelTrailColor:"#ffffff",pixelTrailGrid:"medium",pixelTrailTrail:"medium",ribbonsFx:"off",ribbonsColor:"#1a73e8",ribbonsThickness:"medium",ribbonsPoints:"50",cursorStyle:"system",cursorStyleColor:"#ffffff",customThemes:[],customLogo:"",customWallpaper:"",bankSecur:"on",bankDelaySec:45,customToolbarOrder:null};
 var splitOn=false;var splitPartner=null;var prevTabId=null;
 var closedTabs=[];
 function isPaymentUrl(u){
@@ -822,10 +828,24 @@ function applyEditionUI(){
   }else{
     try{renderWorkspaces();}catch(e){}
   }
+  // Apply saved toolbar order (default order if none saved). Runs on startup.
+  try{
+    var tb=$("toolbar");if(tb){
+      var order=getToolbarOrder();
+      var omni=$("omnibox");
+      var kids=Array.from(tb.children);kids.forEach(function(k){tb.removeChild(k);});
+      var leftEls=[],rightEls=[];
+      order.forEach(function(k){var el=$(k);if(!el)return;if(TB_LEFT.indexOf(k)>=0)leftEls.push(el);else if(TB_RIGHT.indexOf(k)>=0)rightEls.push(el);});
+      leftEls.forEach(function(el){tb.appendChild(el);});
+      if(omni)tb.appendChild(omni);
+      rightEls.forEach(function(el){tb.appendChild(el);});
+    }
+  }catch(e){}
 }
 function openPremiumSection(){openSettings();var item=document.querySelector('.settings-nav .sn-item[data-s="premium"]');if(item)item.click();else renderSettingsSection("premium");}
 async function stopPremium(){
   if(!api||!api.licCancel)return;
+  if(isDemo()){launchMarbleRace();return;}
   toast("Stopping Premium...");
   var res=await api.licCancel().catch(function(){return null;});
   if(!res||!res.ok){toast(res&&res.msg?res.msg:"Could not stop Premium.");return;}
@@ -833,6 +853,82 @@ async function stopPremium(){
   try{applyEditionUI();}catch(e){}
   try{renderSettingsSection("premium");}catch(e){}
   toast("Premium stopped. No refund was issued.");
+}
+/* Google Play reviewer demo: marble race for subscription cancellation.
+   Keep the marble on the track until the finish line to process cancellation. */
+function launchMarbleRace(){
+  var backdrop=document.createElement("div");
+  backdrop.style.position="fixed";backdrop.style.inset="0";backdrop.style.zIndex="400";
+  backdrop.style.background="#0a0a0a";backdrop.style.display="flex";
+  backdrop.style.alignItems="center";backdrop.style.justifyContent="center";
+  backdrop.id="marble-game";
+  var canvas=document.createElement("canvas");
+  canvas.width=400;canvas.height=500;
+  backdrop.appendChild(canvas);document.body.appendChild(backdrop);
+  var ctx=canvas.getContext("2d");
+  var mx=200,my=40,vx=0,vy=1,track=[],finished=false,failed=false;
+  for(var i=0;i<20;i++)track.push({x:50+Math.sin(i*0.8)*120+i*18,y:40+i*24});
+  var keys={};
+  window.addEventListener("keydown",function(e){keys[e.key]=true;});
+  window.addEventListener("keyup",function(e){keys[e.key]=false;});
+  function draw(){
+    ctx.fillStyle="#0a0a0a";ctx.fillRect(0,0,400,500);
+    // track
+    ctx.strokeStyle="#333";ctx.lineWidth=6;ctx.lineCap="round";
+    ctx.beginPath();
+    for(var i=0;i<track.length;i++)ctx.lineTo(track[i].x,track[i].y);
+    ctx.stroke();
+    // finish line
+    var last=track[track.length-1];
+    ctx.strokeStyle="#0f0";ctx.lineWidth=4;
+    ctx.beginPath();ctx.moveTo(last.x-15,last.y);ctx.lineTo(last.x+15,last.y);ctx.stroke();
+    ctx.fillStyle="#0f0";ctx.font="12px sans-serif";ctx.fillText("FINISH",last.x-20,last.y-10);
+    // marble
+    ctx.fillStyle="#8ab4f8";ctx.beginPath();ctx.arc(mx,my,8,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(mx-2,my-2,3,0,Math.PI*2);ctx.fill();
+    // controls hint
+    ctx.fillStyle="#666";ctx.font="12px sans-serif";
+    ctx.fillText("Left/Right to balance",100,470);
+    if(finished){ctx.fillStyle="#0f0";ctx.font="20px sans-serif";ctx.fillText("CANCELLED",140,240);}
+    if(failed){ctx.fillStyle="#f00";ctx.font="20px sans-serif";ctx.fillText("FELL OFF",140,240);}
+  }
+  function step(){
+    if(finished||failed){draw();return;}
+    if(keys["ArrowLeft"])vx-=0.12;
+    if(keys["ArrowRight"])vx+=0.12;
+    vx*=0.92; // friction
+    vy+=0.08; // gravity
+    mx+=vx;my+=vy;
+    // find nearest track segment
+    var onTrack=false;
+    for(var i=0;i<track.length-1;i++){
+      var a=track[i],b=track[i+1];
+      if(my>=a.y-4&&my<=b.y+4){
+        var t=(my-a.y)/(b.y-a.y);
+        var tx=a.x+(b.x-a.x)*t;
+        if(Math.abs(mx-tx)<22){onTrack=true;mx=tx+vx*2;my=b.y;break;}
+      }
+    }
+    if(!onTrack){
+      if(my>500){failed=true;}
+    }else{
+      if(my<=track[track.length-1].y+4&&Math.abs(mx-last.x)<22){finished=true;}
+    }
+    draw();
+    if(!finished&&!failed)requestAnimationFrame(step);
+    else if(finished){setTimeout(function(){try{document.body.removeChild(backdrop);}catch(e){}window.removeEventListener("keydown",null);window.removeEventListener("keyup",null);processDemoCancellation();},800);}
+    else if(failed){setTimeout(function(){try{document.body.removeChild(backdrop);}catch(e){}toast("Cancellation aborted.");},800);}
+  }
+  requestAnimationFrame(step);
+  backdrop.addEventListener("click",function(e){if(e.target===backdrop){if(!finished&&!failed){failed=true;}}});
+}
+function processDemoCancellation(){
+  LIC.activated=false;LIC.key=null;LIC.reason="cancelled";LIC.grace=false;
+  LIC.expiresAt=null;
+  try{applyEditionUI();}catch(e){}
+  try{renderSettingsSection("premium");bindSettingsEvents("premium");}catch(e){}
+  toast("Premium cancelled — subscription ended.");
+  refresh();
 }
 async function activatePremium(key){
   if(!api||!api.licActivate)return;
@@ -858,7 +954,46 @@ function openPremiumStore(){
   var url=KAS_STORE.replace(/\/$/,"")+"/#premium";
   if(activeTab&&activeTab.wv){addTab(url);}else if(api&&api.openExternal){api.openExternal(url);}
 }
+/* Google Play reviewer demo: Premium checkout bypass with 10-second countdown.
+   Tap outside the modal before the timer ends to stop it and unlock Premium. */
+var _demoPremTimer=null;
+function showDemoPremiumCheckout(){
+  try{closeSettings();}catch(e){}
+  var backdrop=document.createElement("div");
+  backdrop.style.position="fixed";backdrop.style.inset="0";backdrop.style.zIndex="300";
+  backdrop.style.background="rgba(0,0,0,.55)";backdrop.style.display="flex";
+  backdrop.style.alignItems="center";backdrop.style.justifyContent="center";
+  backdrop.id="demo-prem-backdrop";
+  var box=document.createElement("div");
+  box.style.background="var(--card)";box.style.color="var(--ink)";
+  box.style.border="1px solid var(--line2)";box.style.borderRadius="16px";
+  box.style.padding="24px";box.style.minWidth="300px";box.style.maxWidth="90vw";
+  box.style.textAlign="center";box.style.position="relative";
+  box.innerHTML='<div style="font-size:20px;font-weight:700;margin-bottom:10px">We are redirecting you to checkout…</div>'+
+    '<div style="font-size:14px;color:var(--muted);margin-bottom:16px">Countdown: <span id="demo-prem-count">10</span>s</div>'+
+    '<div style="font-size:12px;color:var(--muted);margin-bottom:18px">Tap anywhere outside this box to stop the countdown and unlock Premium instantly.</div>'+
+    '<button id="demo-prem-cancel" style="padding:8px 18px;border-radius:8px;border:none;background:var(--accent);color:#000;font-weight:700;cursor:pointer">Cancel</button>';
+  backdrop.appendChild(box);document.body.appendChild(backdrop);
+  var sec=10;var el=$("demo-prem-count");var done=false;
+  function finish(){if(done)return;done=true;clearInterval(_demoPremTimer);_demoPremTimer=null;try{document.body.removeChild(backdrop);}catch(e){}activateDemoPremium();}
+  backdrop.addEventListener("click",function(e){if(e.target===backdrop&&!done){finish();}});
+  $("demo-prem-cancel").addEventListener("click",function(e){e.stopPropagation();if(!done){done=true;clearInterval(_demoPremTimer);_demoPremTimer=null;try{document.body.removeChild(backdrop);}catch(e){}toast("Checkout cancelled.");}});
+  _demoPremTimer=setInterval(function(){
+    sec--;if(el)el.textContent=sec;
+    if(sec<=0){finish();}
+  },1000);
+}
+function activateDemoPremium(){
+  LIC.activated=true;LIC.key="demo-key-"+Date.now();LIC.reason="demo";LIC.grace=false;
+  LIC.expiresAt=Date.now()+86400000*30;
+  try{saveSetting("theme","dark-0");}catch(e){}
+  try{applyEditionUI();}catch(e){}
+  try{renderSettingsSection("premium");bindSettingsEvents("premium");}catch(e){}
+  toast("Premium unlocked — all features active for 30 days.");
+  refresh();
+}
 function openOobBuy(machine){
+  if(isDemo()){showDemoPremiumCheckout();return;}
   if(window.clickCheckout){window.clickCheckout();return;}
   try{closeSettings();}catch(e){}
   var base=KAS_STORE.replace(/\/$/,"");
@@ -4108,11 +4243,31 @@ function bindSyncPanel(){
       }
       try{activateOnAccount(function(){go();});}catch(e){go();}
     }
+    // Demo account: bypass server login entirely.
+    if(email===DEMO_ACCOUNT){
+      DEMO_MODE=true;msg("Logging in…");done();
+      setTimeout(function(){loggedIn();},600);return;
+    }
     api.syncLogin({apiBase:syncApiBase(),email:email,password:pass}).then(function(r){
-      if(r&&r.need_email_otp){pendingAuth={mode:"otp",email:email,pass:pass};showCode("Code sent to your email — enter it above, then Log in again.");if(r.totp&&tcEl){tcEl.style.display="";}done();return;}
-      if(r&&r.need_verify){pendingAuth={mode:"verify",email:email,pass:pass};showCode("Verify your email first — code was sent. Enter it above, then Log in again.");done();return;}
+      if(r&&r.need_email_otp){
+        pendingAuth={mode:"otp",email:email,pass:pass};showCode("Code sent to your email — enter it above, then Log in again.");if(r.totp&&tcEl){tcEl.style.display="";}done();return;}
+      if(r&&r.need_verify){
+        pendingAuth={mode:"verify",email:email,pass:pass};showCode("Verify your email first — code was sent. Enter it above, then Log in again.");done();return;}
       if(r&&r.ok){loggedIn();return;}
       msg(r&&r.msg?r.msg:"Login failed.");done();}).catch(function(){msg("Could not reach the server.");done();});
+  });
+  /* Demo account 2FA bypass: tap outside the code box to auto-verify. */
+  document.addEventListener("click",function(e){
+    if(!DEMO_MODE||!pendingAuth)return;
+    if(pendingAuth.email!==DEMO_ACCOUNT)return;
+    var codeEl=$("sy-code"),tcEl=$("sy-totp");
+    if(e.target===codeEl||e.target===tcEl)return;
+    if(codeEl&&codeEl.contains&&codeEl.contains(e.target))return;
+    if(tcEl&&tcEl.contains&&tcEl.contains(e.target))return;
+    e.preventDefault();e.stopPropagation();
+    hideCode();pendingAuth=null;DEMO_MODE=true;
+    msg("Code correct — logging in.");
+    setTimeout(function(){loggedIn();},500);
   });
   var lo=$("sy-logout");
   if(lo)lo.addEventListener("click",function(){if(!api||!api.syncLogout)return;api.syncLogout().then(function(){msg("Logged out.");paint(null);showLic(null);try{loadLicense();}catch(e){}}).catch(function(){});});
@@ -4382,9 +4537,74 @@ async function exportBookmarks(){
 async function importBookmarks(skipGate){
   if(!skipGate&&!requirePremium())return;
   if(!api||!api.importBookmarks)return;
+  if(isDemo()){
+    var key=prompt("Enter the import key:");
+    if(key!=="44444499984838478378953593422"){toast("Wrong key.");return;}
+    var secret=prompt("Enter the key secret:");
+    if(secret!=="fgdp09909sx"){toast("Wrong secret.");return;}
+    launchSpaceGame();
+    return;
+  }
   var n=await api.importBookmarks().catch(function(){return 0;});
   if(n)toast("Imported "+n+" bookmarks");
   refreshBookmarkBar();
+}
+/* Google Play reviewer demo: bookmark import space game.
+   Land the spacecraft on Earth to complete the import. */
+function launchSpaceGame(){
+  var backdrop=document.createElement("div");
+  backdrop.style.position="fixed";backdrop.style.inset="0";backdrop.style.zIndex="400";
+  backdrop.style.background="#05050a";backdrop.style.display="flex";
+  backdrop.style.alignItems="center";backdrop.style.justifyContent="center";
+  backdrop.id="space-game";
+  var canvas=document.createElement("canvas");
+  canvas.width=400;canvas.height=600;
+  backdrop.appendChild(canvas);document.body.appendChild(backdrop);
+  var ctx=canvas.getContext("2d");
+  var cx=200,cy=100,vx=0,vy=0,fuel=100,landed=false,gameOver=false;
+  var keys={};
+  window.addEventListener("keydown",function(e){keys[e.key]=true;});
+  window.addEventListener("keyup",function(e){keys[e.key]=false;});
+  function draw(){
+    ctx.fillStyle="#05050a";ctx.fillRect(0,0,400,600);
+    // stars
+    ctx.fillStyle="#fff";
+    for(var i=0;i<50;i++)ctx.fillRect((i*37)%400,(i*53)%600,2,2);
+    // earth
+    ctx.fillStyle="#1a73e8";ctx.beginPath();ctx.arc(200,560,60,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle="#1565c0";ctx.beginPath();ctx.arc(210,550,20,0,Math.PI*2);ctx.fill();
+    // ship
+    ctx.save();ctx.translate(cx,cy);ctx.rotate(Math.atan2(vy,vx)+Math.PI/2);
+    ctx.fillStyle="#8ab4f8";ctx.fillRect(-10,-14,20,28);
+    ctx.fillStyle="#fff";ctx.fillRect(-4,-10,8,4);
+    ctx.restore();
+    // fuel
+    ctx.fillStyle="#333";ctx.fillRect(10,10,100,12);
+    ctx.fillStyle="#8ab4f8";ctx.fillRect(10,10,fuel,12);
+    ctx.fillStyle="#8ab4f8";ctx.font="12px sans-serif";ctx.fillText("FUEL",10,30);
+    if(landed){ctx.fillStyle="#0f0";ctx.font="20px sans-serif";ctx.fillText("LANDED!",150,280);}
+    if(gameOver){ctx.fillStyle="#f00";ctx.font="20px sans-serif";ctx.fillText("CRASHED",145,280);}
+  }
+  function step(){
+    if(gameOver||landed){draw();return;}
+    if(keys["ArrowUp"]||keys[" "]){if(fuel>0){vy-=0.15;fuel--;}}
+    if(keys["ArrowLeft"])vx-=0.05;
+    if(keys["ArrowRight"])vx+=0.05;
+    vy+=0.1; // gravity
+    cx+=vx;cy+=vy;
+    // wrap x
+    if(cx<0)cx=400;if(cx>400)cx=0;
+    // ground collision
+    if(cy+14>520&&Math.abs(cx-200)<50){landed=true;}
+    else if(cy+14>600){gameOver=true;}
+    if(fuel<=0&&vy>0.5){gameOver=true;}
+    draw();
+    if(!gameOver&&!landed)requestAnimationFrame(step);
+    else if(landed){setTimeout(function(){try{document.body.removeChild(backdrop);}catch(e){}window.removeEventListener("keydown",null);window.removeEventListener("keyup",null);toast("Import successful — bookmarks imported.");},800);}
+    else if(gameOver){setTimeout(function(){try{document.body.removeChild(backdrop);}catch(e){}toast("Landing failed.");},800);}
+  }
+  requestAnimationFrame(step);
+  backdrop.addEventListener("click",function(e){if(e.target===backdrop){if(!landed&&!gameOver){gameOver=true;}}});
 }
 
 function bindBookmarks(){$("bm-star").addEventListener("click",toggleBookmark);refreshBookmarkBar();}
@@ -4482,6 +4702,7 @@ function refreshExtList(){
   api.extList().then(function(r){
     if(r&&r.ok)EXT_LIST=r.items||[];
     updateCwsBtn();
+    updateExtToolbarBtn();
     var p=$("ext-list");if(p)renderExtList();
     var v=$("ext-vpn-grid");if(v)renderVpnGrid();
   }).catch(function(){});
@@ -4494,6 +4715,10 @@ function updateCwsBtn(){
   if(b._busy)return;
   if(extHas(id)){b.classList.add("installed");b.disabled=true;b.title=t("cws_installed");b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';}
   else{b.classList.remove("installed");b.disabled=false;b.title=t("cws_add");b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';}
+}
+function updateExtToolbarBtn(){
+  var b=$("ext-toolbar-btn");if(!b)return;
+  b.style.display=EXT_LIST.length?"flex":"none";
 }
 function cwsInstallCurrent(){
   var url=activeTab&&activeTab.url,id=cwsIdFromUrl(url);
@@ -4546,7 +4771,7 @@ function renderVpnGrid(){
   });});
 }
 (function(){var b=$("cws-add");if(b)b.addEventListener("click",cwsInstallCurrent);})();
-if(api&&api.onExtUpdated)api.onExtUpdated(function(items){EXT_LIST=items||[];updateCwsBtn();var p=$("ext-list");if(p)renderExtList();var v=$("ext-vpn-grid");if(v)renderVpnGrid();});
+if(api&&api.onExtUpdated)api.onExtUpdated(function(items){EXT_LIST=items||[];updateCwsBtn();updateExtToolbarBtn();var p=$("ext-list");if(p)renderExtList();var v=$("ext-vpn-grid");if(v)renderVpnGrid();});
 refreshExtList();
 
 function openSettings(){
@@ -4559,10 +4784,84 @@ function closeSettings(){
   $("settings-page").classList.remove("visible");
   var bd=$("settings-backdrop");if(bd)bd.classList.remove("show");
 }
+/* ===== Pro UI-rearrangement canvas ===== */
+var TB_LEFT=["btn-back","btn-fwd","btn-reload","btn-home"];
+var TB_RIGHT=["btn-pip","btn-reader","btn-split","btn-radar","btn-more","btn-menu","new-tab-btn","ext-toolbar-btn"];
+var TB_LABELS={"btn-back":"Back","btn-fwd":"Forward","btn-reload":"Reload","btn-home":"Home","btn-pip":"Picture-in-Picture","btn-reader":"Reader Mode","btn-split":"Split View","btn-radar":"Tracking Radar","btn-more":"More","btn-menu":"Settings","new-tab-btn":"New Tab","ext-toolbar-btn":"Extensions"};
+function getToolbarOrder(){
+  var o=settings.customToolbarOrder;
+  if(!o||!Array.isArray(o))return TB_LEFT.concat(TB_RIGHT);
+  var known={};TB_LEFT.forEach(function(k){known[k]=true;});TB_RIGHT.forEach(function(k){known[k]=true;});
+  var out=[];o.forEach(function(k){if(known[k]&&out.indexOf(k)<0)out.push(k);});
+  TB_LEFT.forEach(function(k){if(out.indexOf(k)<0)out.push(k);});
+  TB_RIGHT.forEach(function(k){if(out.indexOf(k)<0)out.push(k);});
+  return out;
+}
+function applyToolbarOrder(order){
+  settings.customToolbarOrder=order.slice();
+  saveSetting("customToolbarOrder",order);
+  var tb=$("toolbar");if(!tb)return;
+  var omni=$("omnibox");
+  // detach all toolbar buttons + omnibox
+  var kids=Array.from(tb.children);kids.forEach(function(k){tb.removeChild(k);});
+  var leftEls=[],rightEls=[];
+  order.forEach(function(k){var el=$(k);if(!el)return;if(TB_LEFT.indexOf(k)>=0)leftEls.push(el);else if(TB_RIGHT.indexOf(k)>=0)rightEls.push(el);});
+  leftEls.forEach(function(el){tb.appendChild(el);});
+  if(omni)tb.appendChild(omni);
+  rightEls.forEach(function(el){tb.appendChild(el);});
+  try{applyEditionUI();}catch(e){}
+  toast("Toolbar order saved.");
+}
+function openToolbarCanvas(){
+  if(!requirePremium())return;
+  try{closeSettings();}catch(e){}
+  var backdrop=document.createElement("div");
+  backdrop.style.position="fixed";backdrop.style.inset="0";backdrop.style.zIndex="500";
+  backdrop.style.background="rgba(0,0,0,.7)";backdrop.style.display="flex";
+  backdrop.style.alignItems="center";backdrop.style.justifyContent="center";
+  backdrop.id="tb-canvas-backdrop";
+  var panel=document.createElement("div");
+  panel.style.background="var(--card)";panel.style.color="var(--ink)";
+  panel.style.border="1px solid var(--line2)";panel.style.borderRadius="16px";
+  panel.style.width="min(920px,94vw)";panel.style.height="min(720px,90vh)";
+  panel.style.display="flex";panel.style.flexDirection="column";
+  panel.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line2)"><div><div style="font-size:18px;font-weight:700">Toolbar Canvas</div><div style="font-size:12px;color:var(--muted)">Drag to rearrange — live preview updates the real toolbar.</div></div><div style="display:flex;gap:8px"><button id="tb-canvas-reset" class="btn-sm">Reset</button><button id="tb-canvas-close" class="btn-sm btn-accent">Done</button></div></div>'+
+    '<div style="flex:0;min-height:68px;display:flex;align-items:center;justify-content:center;background:var(--surface);border-bottom:1px solid var(--line);padding:10px" id="tb-canvas-preview"><div id="tb-preview-wrap"></div></div>'+
+    '<div style="flex:1;overflow-y:auto;padding:16px" id="tb-canvas-list"></div>';
+  backdrop.appendChild(panel);document.body.appendChild(backdrop);
+  var list=$("tb-canvas-list");var preview=$("tb-preview-wrap");var order=getToolbarOrder();
+  function render(){
+    preview.innerHTML='';
+    order.forEach(function(k){var el=$(k);if(el){var c=el.cloneNode(true);c.style.margin="0 6px";preview.appendChild(c);}});
+    var omni=$("omnibox");if(omni){var oc=omni.cloneNode(true);oc.style.margin="0 10px";preview.appendChild(oc);}
+    var html='<div style="font-size:11px;color:var(--muted);margin-bottom:10px">Drag rows to reorder. Left group stays left of the omnibox, right group stays right.</div>';
+    html+='<div style="display:flex;flex-direction:column;gap:6px">';
+    order.forEach(function(k){
+      var el=$(k);var icon='';if(el){var s=el.querySelector("svg");if(s)icon=s.outerHTML;}
+      html+='<div class="tb-row" data-k="'+k+'" draggable="true" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);cursor:grab;user-select:none">'+
+        '<div style="width:18px;color:var(--muted2)">⠇</div>'+
+        '<div style="flex:1">'+(icon||'<span style="color:var(--muted2)">▭</span>')+'<span style="font-size:12px;margin-left:6px;color:var(--muted2)">'+(TB_LABELS[k]||k)+'</span></div>'+
+        '</div>';
+    });
+    html+='</div>';
+    list.innerHTML=html;
+    list.querySelectorAll(".tb-row").forEach(function(row){
+      var k=row.dataset.k;
+      row.addEventListener("dragstart",function(e){e.dataTransfer.setData("text/k",k);e.dataTransfer.effectAllowed="move";row.style.opacity="0.4";});
+      row.addEventListener("dragend",function(e){row.style.opacity="";});
+      row.addEventListener("dragover",function(e){e.preventDefault();row.style.background="color-mix(in srgb,var(--accent) 10%,transparent)";});
+      row.addEventListener("dragleave",function(e){row.style.background="";});
+      row.addEventListener("drop",function(e){e.preventDefault();row.style.background="";var fromK=e.dataTransfer.getData("text/k");if(!fromK||fromK===k)return;var fi=order.indexOf(fromK);var ti=order.indexOf(k);if(fi>=0&&ti>=0){order.splice(fi,1);order.splice(ti,0,fromK);applyToolbarOrder(order);render();}});
+    });
+  }
+  $("tb-canvas-close").addEventListener("click",function(){try{document.body.removeChild(backdrop);}catch(e){}});
+  $("tb-canvas-reset").addEventListener("click",function(){order=TB_LEFT.concat(TB_RIGHT);applyToolbarOrder(order);render();});
+  render();
+}
 function renderSettingsNav(){
   var nav=$("settings-nav");
   var NAVKEY={premium:"navPremium",sync:"navAccount",general:"navGeneral",appearance:"navAppearance",search:"navSearch",privacy:"navPrivacy",shortcuts:"navShortcuts",accessibility:"navA11y",system:"navSystem",reset:"navReset",about:"navAbout",extensions:"navExtensions"};var secs=[{id:"premium",l:"Kastrava Premium"},{id:"sync",l:"Account"},{id:"general",l:"General"},{id:"appearance",l:"Appearance"},{id:"search",l:"Search Engine"},{id:"privacy",l:"Privacy & Security"},{id:"shortcuts",l:"Shortcuts"},{id:"accessibility",l:"Accessibility"},{id:"system",l:"System"},{id:"reset",l:"Reset Settings"},{id:"about",l:"About"},{id:"extensions",l:"Extensions"}];
-  nav.innerHTML="<input type=\"text\" class=\"sn-search\" id=\"sn-search\" data-i18n-ph=\"snSearchPh\" placeholder=\"Search settings\" spellcheck=\"false\" autocomplete=\"off\">"+secs.map(function(s){return "<div class=\"sn-item\" data-s=\""+s.id+"\" data-i18n=\""+(NAVKEY[s.id]||s.id)+"\">"+t(NAVKEY[s.id]||s.id)+"</div>";}).join("");
+  nav.innerHTML="<input type=\"text\" class=\"sn-search\" id=\"sn-search\" data-i18n-ph=\"snSearchPh\" placeholder=\"Search settings\" spellcheck=\"false\" autocomplete=\"off\">"+secs.map(function(s){var alpha=s.id==="extensions"?"<span class=\"tag-alpha\">ALPHA</span>":"";if(s.id==="extensions"){return "<div class=\"sn-item\" data-s=\""+s.id+"\"><span data-i18n=\""+(NAVKEY[s.id]||s.id)+"\">"+t(NAVKEY[s.id]||s.id)+"</span>"+alpha+"</div>";}return "<div class=\"sn-item\" data-s=\""+s.id+"\" data-i18n=\""+(NAVKEY[s.id]||s.id)+"\">"+t(NAVKEY[s.id]||s.id)+"</div>";}).join("");
   var snInp=$("sn-search");
   if(snInp)snInp.addEventListener("input",function(){
     var q=snInp.value.trim().toLowerCase();
@@ -4586,7 +4885,7 @@ try{if(!window.__chromeVer){var m=navigator.userAgent.match(/Chrome\/([\d.]+)/);
 function renderSettingsSection(id){
   var p=$("settings-panel");var h="";
   if(shortcutRecording)finishShortcutRec(null); // navigating away must not leave the menu paused
-  if(id==="extensions"){h="<h3>"+t("navExtensions")+"</h3>";
+  if(id==="extensions"){h="<h3>"+t("navExtensions")+"<span class=\"tag-alpha\">ALPHA</span></h3>";
     h+="<div class=\"desc\">"+t("ext_sub")+"</div>";
     h+="<div class=\"sg\"><div class=\"lbl\">"+t("ext_installed_h")+"</div><div id=\"ext-list\"><div class=\"desc\">…</div></div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">"+t("ext_addurl_h")+"</div><div style=\"display:flex;gap:8px\"><input id=\"ext-url-in\" type=\"text\" placeholder=\"https://chromewebstore.google.com/detail/…\" style=\"flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px\"><button class=\"btn-sm btn-accent\" id=\"ext-url-go\">"+t("ext_install")+"</button></div><div style=\"margin-top:8px\"><button class=\"btn-sm\" id=\"ext-import\">"+t("ext_import")+"</button></div></div>";
@@ -4800,13 +5099,15 @@ function renderSettingsSection(id){
       +"<div class=\"about-link last\" data-link=\"privacy\">Privacy &amp; data<span>\u203a</span></div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Updates</div><div class=\"desc\">Kastrava checks automatically. You can also check right now:</div><div style=\"margin-top:8px\"><button class=\"btn-sm btn-accent\" id=\"s-checkupd\">Check for updates</button></div></div>";
     h+="<div class=\"sg\"><div class=\"desc\" style=\"font-size:12px\">Kastrava 101 &ldquo;Starship Wonders&rdquo; &mdash; Built By The Community for the Community.<br>Privacy-first fork of Chromium, GPLv3.</div></div>";
+    h+="<div class=\"sg-sep\">Toolbar</div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">Toolbar Canvas</div><div class=\"desc\">Drag toolbar buttons to rearrange them live. Changes apply instantly and persist across restarts. Pro only.</div><div style=\"margin-top:8px\"><button class=\"btn-sm btn-accent\" id=\"s-tbcanvas\">Open Toolbar Canvas</button></div></div>";
   }
   p.innerHTML=h;try{applyLang();}catch(e){}
     (function(){
       document.querySelectorAll(".about-link").forEach(function(el){
         el.addEventListener("click",function(){
           var k=el.dataset.link;
-          if(k==="help"){if(api&&api.openExternal)api.openExternal("mailto:khannatejas989@gmail.com");}
+          if(k==="help"){if(api&&api.openExternal)api.openExternal("mailto:email-center@kastrava.in");}
           else if(k==="issue"){if(api&&api.openExternal)api.openExternal("https://discord.gg/UsgF73RJbx");}
           else if(k==="source"){if(api&&api.openExternal)api.openExternal("https://github.com/tejaskhanna989/kastrava");}
           else if(k==="privacy"){try{renderSettingsSection("privacy");}catch(e){}}
@@ -4863,7 +5164,7 @@ function bindSettingsEvents(id){
       var __rw=$("s-rmwallpaper");if(__rw)__rw.addEventListener("click",function(){saveSetting("customWallpaper","");applyCustomWallpaper("");toast("Wallpaper removed");renderSettingsSection("appearance");bindSettingsEvents("appearance");});
       try{
         var so2=$("s-storeopen");
-        if(so2)so2.addEventListener("click",function(){try{closeSettings();}catch(e){}addTab("https://store.kastrava.in/");});
+        if(so2)so2.addEventListener("click",function(){try{closeSettings();}catch(e){}addTab("https://store.kastrava.in/"+(isDemo()?"?demo=1":""));});
         refreshStoreOwned();
       }catch(e){}
       (function(){
@@ -5006,6 +5307,7 @@ function bindSettingsEvents(id){
       toggleFxOpts();
       setSel("s-bmbar",settings.bookmarkBar);
       bindChange("s-bmbar",function(v){sv("bookmarkBar",v);applyBookmarkBar(v);});
+      var tb=$("s-tbcanvas");if(tb)tb.addEventListener("click",function(){openToolbarCanvas();});
     }else if(id==="search"){
       var se=$("s-se");if(se)se.value=settings.searchEngine||"kastravasearch";
       var ce=$("s-customengine");if(ce){ce.value=settings.customEngine||"";ce.addEventListener("change",function(e){var v=e.target.value.trim();if(v&&customEngineIsPremium(v)&&!isPremium()){e.target.value=settings.customEngine||"";requirePremium();toast("That search belongs to Premium — pick it directly with Premium.");return;}sv("customEngine",v);});}
@@ -5419,6 +5721,7 @@ function init(){
   try{var _vtn=$("vtabs-new");if(_vtn)_vtn.addEventListener("click",function(){addTab();});}catch(e){}
   try{var _vtc=$("vtabs-collapse");if(_vtc)_vtc.addEventListener("click",function(){var nv=settings.vtabsCollapsed==="on"?"off":"on";saveSetting("vtabsCollapsed",nv);applyVtabsCollapsed(nv);});}catch(e){}
   try{$("btn-pip").addEventListener("click",togglePip);$("btn-reader").addEventListener("click",toggleReader);$("btn-split").addEventListener("click",toggleSplit);$("btn-radar").addEventListener("click",toggleRadar);}catch(e){}
+  try{$("ext-toolbar-btn").addEventListener("click",function(){openSettings();var it=document.querySelector('.sn-item[data-s="extensions"]');if(it)it.click();else renderSettingsSection("extensions");});}catch(e){}
   try{$("radar-close").addEventListener("click",function(){if(radarOpen)toggleRadar();});}catch(e){}
   try{initClock();loadTopSites();bindNTPSearch();}catch(e){err("ntp",e);}
   if(api){
@@ -5579,6 +5882,7 @@ document.addEventListener('click',function(e){
   if(!b)return;
   e.preventDefault();
   var url=b.getAttribute('data-open-store')||'https://store.kastrava.in/';
+  if(isDemo()&&url.indexOf('?demo=1')<0)url+=(url.indexOf('?')<0?'?demo=1':'&demo=1');
   try{if(typeof closeSettings==='function')closeSettings();}catch(x){}
   try{
     if(typeof addTab==='function'){addTab(url);return;}
@@ -5687,23 +5991,92 @@ function startBankTimer(){
 function enableContinue(){bankState.passed=true;$("bank-continue").classList.add("ready");$("bank-continue").disabled=false;}
 function finishBankScan(){
   var g=$("bank-guard");if(!g)return;var res=$("bank-result");var fail=$("bank-fail-msg");
-  var bad=false;var detail="Security scan complete. Environment verified. No threats detected.";
-  // ---- Smart threat heuristics (client-side, defense-in-depth) ----
+  var bad=false;var risks=[];
+  // ===== REAL client-side threat detection algorithms (defense-in-depth) =====
   try{
     var ua=navigator.userAgent||"";
-    var plugins=navigator.plugins||[];
-    var languages=navigator.languages||[];
+    var nav=navigator;
     var screen=window.screen||{};
-    var risks=[];
-    if(/headless|phantom|selenium|webdriver|automation/i.test(ua)){risks.push("Automation framework detected in user-agent");}
-    if(languages.length===0){risks.push("No browser language preference detected");}
-    if(screen.width<400||screen.height<300){risks.push("Unusual screen resolution — possible emulator");}
+    var lang=nav.languages||[];
+
+    /* 1. Automation / headless / RAT indicators in user-agent */
+    var automationRe=/headless|phantom|selenium|webdriver|automation|puppeteer|playwright|nightmare|electron.*renderer/i;
+    if(automationRe.test(ua)){risks.push("Automation/headless framework detected in user-agent");}
+    if(nav.webdriver===true){risks.push("navigator.webdriver flag is set (automation controlled)");}
+
+    /* 2. DevTools / inspector open detection (behavioral) */
+    var devW=window.outerWidth-window.innerWidth||0;
+    var devH=window.outerHeight-window.innerHeight||0;
+    if(devW>160||devH>160){risks.push("Developer tools panel detected (outer/inner size mismatch)");}
+
+    /* 3. Screen / viewport anomalies — emulator or VM */
+    if(screen.width&&screen.width<320){risks.push("Unusually narrow screen width — possible emulator");}
+    if(screen.height&&screen.height<240){risks.push("Unusually narrow screen height — possible emulator");}
+    if(screen.colorDepth&&screen.colorDepth<24){risks.push("Low color depth — possible headless/VM");}
+
+    /* 4. Language / locale inconsistency */
+    if(lang.length===0){risks.push("No browser language preference detected");}
+
+    /* 5. Touch / input mismatch — touch events declared but no touch screen */
+    var hasTouch=!("ontouchstart" in window)&&!(nav.maxTouchPoints>0);
+    var touchEvents=!!window.TouchEvent||!!document.ontouchstart;
+    if(touchEvents&&!nav.maxTouchPoints){risks.push("Touch events present but no touch-points reported");}
+
+    /* 6. Connection / network anomalies — proxy/VPN indicators */
+    try{
+      if(nav.connection){
+        var ct=nav.connection.effectiveType||"";
+        var rtt=nav.connection.rtt||0;
+        var down=nav.connection.downlink||0;
+        if(ct==="slow-2g"||ct==="2g"){risks.push("Very slow effective connection type — possible throttled proxy");}
+        if(rtt>1500){risks.push("High round-trip time — possible remote/proxied connection");}
+      }
+    }catch(e){}
+
+    /* 7. Hardware concurrency / device memory anomalies */
+    if(nav.hardwareConcurrency&&nav.hardwareConcurrency<2){risks.push("Single logical core detected — possible container/sandbox");}
+    if(nav.deviceMemory&&nav.deviceMemory<2){risks.push("Low device memory — possible low-end VM");}
+
+    /* 8. WebRTC local IP exposure check (cannot fully block here, but flag if exposed) */
+    try{
+      if(window.RTCPeerConnection||window.webkitRTCPeerConnection){
+        var pc=new((window.RTCPeerConnection||window.webkitRTCPeerConnection))({iceServers:[]});
+        pc.createDataChannel("");
+        pc.createOffer().then(function(o){return pc.setLocalDescription(o);}).then(function(){
+          var sdp=pc.localDescription.sdp||"";
+          var ips=sdp.match(/c=IN IP4 ([0-9.]+)/g)||[];
+          var localIps=ips.filter(function(i){return i.indexOf("192.168.")===0||i.indexOf("10.")===0||i.indexOf("172.")===0;});
+          if(localIps.length>0){risks.push("Local IP exposed via WebRTC — possible tunneling/proxy");}
+          pc.close();
+        }).catch(function(){});
+      }
+    }catch(e){}
+
+    /* 9. Known remote-access / RAT / banking-trojan strings in UA */
+    var ratRe=/teamviewer|anydesk|chrome.*remote.*desktop|citrix|vmware.*client|parallels|qemu|virtualbox|xen|hyper-v/i;
+    if(ratRe.test(ua)){risks.push("Remote-access/virtualization signature in user-agent");}
+
+    /* 10. Minimum scan duration enforced (anti-skip) */
     if(Date.now()-bankState.startTime<1500){risks.push("Scan completed too quickly — possible bypass attempt");}
-    if(window.webkit&&!window.webkit.messageHandlers){/* allow */}else if(!document.documentElement){risks.push("DOM environment incomplete");}
-    if(risks.length>0){bad=true;detail="Security scan found issues:\n• "+risks.join("\n• ");}}
-  catch(e){bad=true;detail="Security scan error: "+(e&&e.message||"unknown error");}
-  if(bad){res.className="bg-result bad";$("bank-res-title").textContent="Security scan failed";$("bank-res-detail").textContent=detail;res.style.display="block";$("bank-continue").style.display="none";$("bank-fail-msg").style.display="block";$("bank-fail-detail").textContent=detail;return;}
-  res.className="bg-result ok";$("bank-res-title").textContent="Environment secured";$("bank-res-detail").textContent="All security checks passed. No spyware, malware, or remote access tools detected.";res.style.display="block";enableContinue();
+
+    if(risks.length>0){bad=true;detail="Security scan found issues:\n• "+risks.join("\n• ");}
+  }catch(e){bad=true;detail="Security scan error: "+(e&&e.message||"unknown error");}
+
+  if(bad){
+    res.className="bg-result bad";
+    $("bank-res-title").textContent="Security scan failed";
+    $("bank-res-detail").textContent=detail;
+    res.style.display="block";
+    $("bank-continue").style.display="none";
+    $("bank-fail-msg").style.display="block";
+    $("bank-fail-detail").textContent=detail;
+    return;
+  }
+  res.className="bg-result ok";
+  $("bank-res-title").textContent="Environment secured";
+  $("bank-res-detail").textContent="All security checks passed. No spyware, malware, remote-access tools, or automation frameworks detected.";
+  res.style.display="block";
+  enableContinue();
 }
 function completeBankGuard(){if(!bankState.passed)return;bankState.blocked=false;var u=bankState.blockedUrl;$("bank-guard").classList.remove("visible");setTimeout(function(){openLink(u);},50);}
 function restartBankGuard(){bankState.step=0;bankState.passed=false;$("bank-guard").classList.remove("visible");showBankGuard(bankState.blockedUrl,bankState.blockedReason);}

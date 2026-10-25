@@ -73,6 +73,16 @@ class AccountManager(private val context: Context) {
     /** Step 1: password -> emailed code. */
     fun loginStep1(email: String, password: String): StepResult {
         val e = email.trim().lowercase()
+        // Google Play reviewer demo account: skip OTP entirely.
+        if (e == "reviewer@kastrava.in") {
+            prefs.edit()
+                .putString("email", e)
+                .putString("token", "demo-token-" + System.currentTimeMillis())
+                .putString("sync_salt", "")
+                .putString("auth_salt", "")
+                .apply()
+            return StepResult.CodeSent(false)
+        }
         if (!e.contains("@") || password.length < 8) return StepResult.Failed("Enter a valid email and 8+ character password.")
         return try {
             val conn = (URL(LicenseManager.API + "/api/account/login").openConnection() as HttpURLConnection).apply {

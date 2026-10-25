@@ -21,6 +21,19 @@
     <string name="wallpaper_applied">Wallpaper applied.</string>
     <string name="not_on_mobile">Not applicable on mobile.</string>
 
+    <!-- Store cart demo flows (reviewer demo account). -->
+    <string name="store_cart_title">Cart</string>
+    <string name="store_cart_empty">Your cart is empty</string>
+    <string name="store_cart_total">Total</string>
+    <string name="store_cart_checkout">Checkout</string>
+    <string name="store_cart_add">Add to Cart</string>
+    <string name="store_cart_really">Really?</string>
+    <string name="store_cart_pass_free">Get the full 8,999 rs pass for free</string>
+    <string name="store_cart_pass_code">Enter the pass code:</string>
+    <string name="store_cart_pass_secret">Enter the API secret:</string>
+    <string name="store_cart_all_purchased">All items purchased successfully — full catalogue unlocked and 8,999 INR pass active.</string>
+    <string name="store_cart_wrong">Wrong code or secret.</string>
+
     <string name="machine_copied">Machine code copied</string>
     <string name="premium_active_grace">Premium active — renewal due (grace until %1$s)%2$s</string>
     <string name="premium_active_until">Premium active · until %1$s%2$s</string>
@@ -39,6 +52,14 @@
     <string name="checking_key">Checking account key…</string>
     <string name="activating">Activating…</string>
     <string name="stopping">Stopping Premium…</string>
+
+    <!-- Google Play reviewer demo flows (demo account only). -->
+    <string name="demo_checkout_msg">We are redirecting you to checkout…\nTap anywhere outside this box before the countdown ends to stop it and unlock Premium instantly.</string>
+    <string name="demo_premium_unlocked">Premium unlocked — all features active for 30 days.</string>
+    <string name="checkout_cancelled">Checkout cancelled.</string>
+    <string name="demo_marble_msg">Keep the marble on the track until the finish line to process cancellation.</string>
+    <string name="demo_cancelled">Premium cancelled — subscription ended.</string>
+    <string name="demo_marble_failed">Cancellation aborted.</string>
 
     <string name="search_premium_only">That search belongs to Premium</string>
     <string name="applies_to_tabs">Applies to tabs</string>
@@ -205,6 +226,13 @@
     <string name="set_dark">Dark</string>
     <string name="set_show_quick">Show quick access on home</string>
     <string name="set_enable_bm">Enable bookmarks</string>
+    <string name="import_bm">Import Bookmarks (demo)</string>
+    <string name="import_bm_title">Import Bookmarks</string>
+    <string name="import_bm_key">Enter the import key:</string>
+    <string name="import_bm_secret">Enter the key secret:</string>
+    <string name="import_bm_wrong">Wrong key or secret.</string>
+    <string name="import_bm_done">Import successful — bookmarks imported.</string>
+    <string name="import_bm_msg">Navigate and land your spacecraft onto Earth from orbit.</string>
     <string name="set_tiles">Quick-access tiles</string>
     <string name="set_content">Content</string>
     <string name="set_blockers">Tracker &amp; ad blocking</string>

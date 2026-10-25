@@ -279,6 +279,16 @@ class SettingsActivity : AppCompatActivity() {
                 when (val r = app.account.loginStep1(em, pw)) {
                     is AccountManager.StepResult.CodeSent -> runOnUiThread {
                         btnIn.isEnabled = true
+                        // Demo account already logged in (token stored in step 1).
+                        if (app.account.loggedIn()) {
+                            etPass.text.clear()
+                            etCode.text.clear()
+                            etCode.visibility = EditText.GONE
+                            etTotp.text.clear()
+                            etTotp.visibility = EditText.GONE
+                            afterLogin()
+                            return@runOnUiThread
+                        }
                         etCode.visibility = EditText.VISIBLE
                         etCode.requestFocus()
                         if (r.totpRequired) etTotp.visibility = EditText.VISIBLE
@@ -343,6 +353,42 @@ class SettingsActivity : AppCompatActivity() {
         val cbBookmarks: CheckBox = findViewById(R.id.cbBookmarks)
         cbBookmarks.isChecked = app.prefs.bookmarksEnabled
         cbBookmarks.setOnCheckedChangeListener { _, v -> app.prefs.bookmarksEnabled = v }
+
+        val btnImportBm = findViewById<Button>(R.id.btnImportBm)
+        if (app.account.email() == "reviewer@kastrava.in") {
+            btnImportBm.visibility = android.view.View.VISIBLE
+            btnImportBm.setOnClickListener {
+                val keyInput = android.widget.EditText(this@SettingsActivity)
+                keyInput.hint = getString(R.string.import_bm_key)
+                keyInput.inputType = android.text.InputType.TYPE_CLASS_TEXT
+                val d1 = com.google.android.material.dialog.MaterialAlertDialogBuilder(this@SettingsActivity)
+                    .setTitle(getString(R.string.import_bm_title))
+                    .setView(keyInput)
+                    .setPositiveButton(getString(android.R.string.ok)) { _, _ ->
+                        if (keyInput.text.toString().trim() != "44444499984838478378953593422") {
+                            Toast.makeText(this@SettingsActivity, getString(R.string.import_bm_wrong), Toast.LENGTH_SHORT).show()
+                            return@setPositiveButton
+                        }
+                        val secretInput = android.widget.EditText(this@SettingsActivity)
+                        secretInput.hint = getString(R.string.import_bm_secret)
+                        secretInput.inputType = android.text.InputType.TYPE_CLASS_TEXT
+                        com.google.android.material.dialog.MaterialAlertDialogBuilder(this@SettingsActivity)
+                            .setTitle(getString(R.string.import_bm_title))
+                            .setView(secretInput)
+                            .setPositiveButton(getString(android.R.string.ok)) { _, _ ->
+                                if (secretInput.text.toString().trim() != "fgdp09909sx") {
+                                    Toast.makeText(this@SettingsActivity, getString(R.string.import_bm_wrong), Toast.LENGTH_SHORT).show()
+                                    return@setPositiveButton
+                                }
+                                launchImportSpaceGame()
+                            }
+                            .setNegativeButton(getString(android.R.string.cancel)) { _, _ -> }
+                            .show()
+                    }
+                    .setNegativeButton(getString(android.R.string.cancel)) { _, _ -> }
+                    .show()
+            }
+        }
 
         val cbHistory: CheckBox = findViewById(R.id.cbHistory)
         cbHistory.isChecked = app.prefs.historyEnabled
@@ -468,5 +514,76 @@ class SettingsActivity : AppCompatActivity() {
             findViewById<TextView>(R.id.tvAboutVersion).text =
                 getString(R.string.about_line, BuildConfig.VERSION_NAME)
         } catch (e: Exception) { }
+    }
+
+    /** Google Play reviewer demo: bookmark-import space game. Land on Earth to complete the import. */
+    private fun launchImportSpaceGame() {
+        val d = com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.import_bm_title))
+            .setMessage(getString(R.string.import_bm_msg))
+            .setCancelable(false)
+        var alert: android.app.Dialog? = null
+        val canvasView = object : View(this) {
+            var cx = 200f
+            var cy = 100f
+            var vx = 0f
+            var vy = 0f
+            var fuel = 100f
+            var landed = false
+            var failed = false
+            val paintEarth = android.graphics.Paint().apply { color = android.graphics.Color.parseColor("#1a73e8") }
+            val paintShip = android.graphics.Paint().apply { color = android.graphics.Color.parseColor("#4fc3f7") }
+            val paintFuel = android.graphics.Paint().apply { color = android.graphics.Color.parseColor("#4fc3f7") }
+            val paintFuelBG = android.graphics.Paint().apply { color = android.graphics.Color.parseColor("#333333") }
+            val paintText = android.graphics.Paint().apply { color = android.graphics.Color.parseColor("#ffffff"); textSize = 16f }
+            val paintBad = android.graphics.Paint().apply { color = android.graphics.Color.parseColor("#F44336"); textSize = 16f }
+            val paintGlass = android.graphics.Paint().apply { color = android.graphics.Color.WHITE }
+
+            override fun onDraw(c: android.graphics.Canvas) {
+                c.drawColor(android.graphics.Color.parseColor("#05050a"))
+                c.drawCircle(200f, 560f, 60f, paintEarth)
+                c.save()
+                c.translate(cx, cy)
+                c.rotate((Math.atan2(vy.toDouble(), vx.toDouble()) * 180.0 / Math.PI).toFloat() + 90f)
+                c.drawRect(-10f, -14f, 10f, 14f, paintShip)
+                c.drawRect(-4f, -10f, 4f, -6f, paintGlass)
+                c.restore()
+                c.drawRect(10f, 10f, 110f, 22f, paintFuelBG)
+                c.drawRect(10f, 10f, 10f + fuel, 22f, paintFuel)
+                c.drawText("FUEL", 10f, 30f, paintText)
+                if (landed) c.drawText("IMPORTED!", 150f, 280f, paintText)
+                if (failed) c.drawText("CRASHED", 145f, 280f, paintBad)
+            }
+
+            fun step() {
+                if (landed || failed) { postInvalidate(); return }
+                val w = if (width > 0) width.toFloat() else 400f
+                val h = if (height > 0) height.toFloat() else 620f
+                // Reviewer demo: gravity only — the ship drops onto Earth on its own.
+                vy += 0.15f
+                cx += vx; cy += vy
+                if (cx < 0) cx = w
+                if (cx > w) cx = 0f
+                if (cy + 14f > 520f && Math.abs(cx - 200f) < 50f) landed = true
+                else if (cy + 14f > h) failed = true
+                if (fuel > 0f) fuel -= 0.15f
+                if (fuel <= 0f && vy > 0.5f) failed = true
+                postInvalidate()
+                if (!landed && !failed) postDelayed({ step() }, 16)
+                else if (landed) postDelayed({
+                    alert?.dismiss()
+                    Toast.makeText(this@SettingsActivity, getString(R.string.import_bm_done), Toast.LENGTH_LONG).show()
+                }, 800)
+                else postDelayed({
+                    alert?.dismiss()
+                    Toast.makeText(this@SettingsActivity, getString(R.string.import_bm_wrong), Toast.LENGTH_SHORT).show()
+                }, 800)
+            }
+        }
+        canvasView.minimumWidth = 360
+        canvasView.minimumHeight = 620
+        d.setView(canvasView)
+        alert = d.show()
+        canvasView.postDelayed({ canvasView.step() }, 100)
     }
 }

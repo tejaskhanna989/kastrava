@@ -88,6 +88,13 @@
             android:layout_height="wrap_content"
             android:text="@string/set_enable_bm" />
 
+        <Button
+            android:id="@+id/btnImportBm"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/import_bm"
+            android:visibility="gone" />
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

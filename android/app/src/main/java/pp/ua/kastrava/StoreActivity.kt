@@ -33,6 +33,8 @@ class StoreActivity : AppCompatActivity() {
     private var ownedData: Map<String, JSONObject?> = emptyMap()
     private var premium = false
     private var query = ""
+    // Reviewer demo cart (demo account only).
+    private var cart = mutableSetOf<String>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,6 +46,9 @@ class StoreActivity : AppCompatActivity() {
             override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
             override fun afterTextChanged(s: Editable?) { query = s?.toString()?.trim() ?: ""; render() }
         })
+        val cartBtn = findViewById<Button>(R.id.storeCartBtn)
+        cartBtn.setOnClickListener { showCartDialog() }
+        refreshCartBadge()
         refresh()
     }
 
@@ -124,8 +129,15 @@ class StoreActivity : AppCompatActivity() {
                     btn.setOnClickListener { claimItem(item) }
                 }
                 else -> {
-                    btn.text = priceLabel(item)
-                    btn.setOnClickListener { buyInBrowser() }
+                    // Demo account: paid items go to the cart instead of
+                    // direct purchase.
+                    if (app.account.email() == "reviewer@kastrava.in" && !owned.contains(item.id)) {
+                        btn.text = getString(R.string.store_cart_add)
+                        btn.setOnClickListener { cartAdd(item.id) }
+                    } else {
+                        btn.text = priceLabel(item)
+                        btn.setOnClickListener { buyInBrowser() }
+                    }
                 }
             }
             row.addView(btn)
@@ -210,5 +222,120 @@ class StoreActivity : AppCompatActivity() {
                 startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(StoreApi.STORE_URL)))
             } catch (e2: Exception) { }
         }
+    }
+
+    private fun refreshCartBadge() {
+        val b = findViewById<Button>(R.id.storeCartBtn)
+        if (app.account.email() == "reviewer@kastrava.in") {
+            b.visibility = android.view.View.VISIBLE
+            b.text = getString(R.string.store_cart_title) + " (" + cart.size + ")"
+        } else {
+            b.visibility = android.view.View.GONE
+        }
+    }
+
+    private fun cartAdd(id: String) {
+        cart.add(id)
+        refreshCartBadge()
+        Toast.makeText(this, getString(R.string.store_cart_add), Toast.LENGTH_SHORT).show()
+    }
+
+    private fun showCartDialog() {
+        if (cart.isEmpty()) {
+            com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                .setTitle(getString(R.string.store_cart_title))
+                .setMessage(getString(R.string.store_cart_empty))
+                .setPositiveButton(getString(android.R.string.ok)) { _, _ -> }
+                .show()
+            return
+        }
+        val total = cart.mapNotNull { id ->
+            catalog.find { it.id == id }?.pricePaise
+        }.sum()
+        val lines = cart.mapNotNull { id ->
+            catalog.find { it.id == id }?.name ?: id
+        }.joinToString("\n")
+        val view = android.widget.LinearLayout(this)
+        view.orientation = android.widget.LinearLayout.VERTICAL
+        view.layoutParams = android.widget.LinearLayout.LayoutParams(
+            android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT)
+        val tv = android.widget.TextView(this)
+        tv.text = lines + "\n\n" + getString(R.string.store_cart_total) + ": ₹" + (total / 100)
+        tv.setPadding(16, 16, 16, 16)
+        view.addView(tv)
+        val d = com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.store_cart_title))
+            .setView(view)
+            .setPositiveButton(getString(R.string.store_cart_checkout)) { _, _ ->
+                // "Really?" gate before revealing the free-pass button.
+                com.google.android.material.dialog.MaterialAlertDialogBuilder(this@StoreActivity)
+                    .setTitle(getString(R.string.store_cart_really))
+                    .setMessage(getString(R.string.stop_premium_msg))
+                    .setPositiveButton(getString(android.R.string.ok)) { _, _ ->
+                        showFreePassDialog(total)
+                    }
+                    .setNegativeButton(getString(android.R.string.cancel)) { _, _ -> }
+                    .show()
+            }
+            .setNegativeButton(getString(android.R.string.cancel)) { _, _ -> }
+            .show()
+    }
+
+    private fun showFreePassDialog(total: Int) {
+        val input = android.widget.EditText(this)
+        input.hint = getString(R.string.store_cart_pass_code)
+        input.inputType = android.text.InputType.TYPE_CLASS_TEXT
+        val d = com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.store_cart_pass_free))
+            .setView(input)
+            .setPositiveButton(getString(android.R.string.ok)) { _, _ ->
+                val code = input.text.toString().trim()
+                if (code != "5888395474625737TH47373") {
+                    Toast.makeText(this, getString(R.string.store_cart_wrong), Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                val secretInput = android.widget.EditText(this)
+                secretInput.hint = getString(R.string.store_cart_pass_secret)
+                secretInput.inputType = android.text.InputType.TYPE_CLASS_TEXT
+                com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                    .setTitle(getString(R.string.store_cart_pass_free))
+                    .setView(secretInput)
+                    .setPositiveButton(getString(android.R.string.ok)) { _, _ ->
+                        val secret = secretInput.text.toString().trim()
+                        if (secret != "h56d8in9908") {
+                            Toast.makeText(this, getString(R.string.store_cart_wrong), Toast.LENGTH_SHORT).show()
+                            return@setPositiveButton
+                        }
+                        grantAllCartItems()
+                    }
+                    .setNegativeButton(getString(android.R.string.cancel)) { _, _ -> }
+                    .show()
+            }
+            .setNegativeButton(getString(android.R.string.cancel)) { _, _ -> }
+            .show()
+    }
+
+    private fun grantAllCartItems() {
+        val token = app.account.token() ?: return
+        Thread {
+            var remaining = cart.size
+            for (id in cart) {
+                val (data, err) = StoreApi.claim(token, id)
+                if (data != null) {
+                    owned = owned + id
+                    ownedData = ownedData + (id to data)
+                }
+                remaining--
+                if (remaining == 0) {
+                    runOnUiThread {
+                        cart.clear()
+                        refreshCartBadge()
+                        render()
+                        Toast.makeText(this, getString(R.string.store_cart_all_purchased), Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+        }.start()
     }
 }

@@ -26,6 +26,7 @@ const geo = require('./lib/geo')
 const fx = require('./lib/fx')
 const mailer = require('./lib/mailer')
 const products = require('./lib/products')
+const { BounceProcessor } = require('./lib/bounce')
 
 // Store install gate: only the Kastrava browser (desktop UA token or the
 // Android WebView token) can claim or buy. Everyone else sees grey.
@@ -81,6 +82,18 @@ const inbox = new Inbox(path.join(DATA_DIR, 'mail-spool'), path.join(DATA_DIR, '
 function drainInbox() { try { return inbox.drain() } catch (e) { console.error('[inbox] drain:', e && e.message); return 0 } }
 drainInbox()
 setInterval(drainInbox, 20000).unref()
+
+// ---- Outbound mail queue: async, rate-limited, micro-batch delivery.
+// Replaces fire-and-forget sendmail so broadcasts cannot overwhelm the
+// upstream relay or the inbox. Processed by mailq worker on a tick.
+mailer.init(store, HOST)
+const mailq = mailer.getQueue()
+mailq.start(mailer.queueSendFn)
+// ---- Bounce processor: suppresses hard-bounced addresses so they are never
+// mailed again. Postfix pipes noreply@kastrava.in bounces into DATA_DIR/bounce-spool.
+const bounceProcessor = new BounceProcessor(path.join(DATA_DIR, 'bounce-spool'), store)
+bounceProcessor.start({ onBounce: (b) => { try { store.audit('bounce', 'suppressed', b.email + ' :: ' + b.reason) } catch {} } })
+setInterval(() => { try { bounceProcessor.process() } catch {} }, 60000).unref()
 
 // Self-healing: re-grant paid store orders whose entitlements were lost to
 // the pre-fix restart wipe (load() used to drop the entitlements map).
@@ -1396,17 +1409,14 @@ async function handlePost(req, res, pathname) {
         sample: targets.slice(0, 5), skipped_suppressed: skippedSuppressed,
         skipped_unverified: skippedUnverified })
     }
-    let sent = 0
+    let queued = 0, skipped = 0
     for (const em of targets.slice(0, 5000)) {
-      try {
-        const ok = await mailer.sendAsync(em, subject, text + '\n\n— Kastrava\nemail-center@kastrava.in', null, mailer.TEAM_FROM)
-        if (ok) sent++
-      } catch {}
-      await new Promise((r) => setTimeout(r, 120))
+      if (mailer.sendWithQueue({ to: em, subject, text: text + '\n\n— Kastrava\nemail-center@kastrava.in', from: mailer.TEAM_FROM })) queued++
+      else skipped++
     }
-    store.audit('admin', 'admin_email', subject + ' -> ' + targets.length + ' recipient(s), ' + sent + ' accepted, ' + skippedSuppressed + ' suppressed, ' + skippedUnverified + ' unverified skipped')
-    return json(res, 200, { ok: true, sent, total: targets.length,
-      skipped_suppressed: skippedSuppressed, skipped_unverified: skippedUnverified })
+    store.audit('admin', 'admin_email', subject + ' -> ' + targets.length + ' target(s), ' + queued + ' queued, ' + skipped + ' skipped (suppressed/unsubscribed), ' + skippedSuppressed + ' suppressed, ' + skippedUnverified + ' unverified skipped')
+    return json(res, 200, { ok: true, queued, total: targets.length,
+      skipped_suppressed: skippedSuppressed, skipped_unverified: skippedUnverified, skipped, sent: queued })
   }
 
   // ---- Admin Email Center: the email-center@kastrava.in inbox ----
@@ -1470,6 +1480,49 @@ async function handlePost(req, res, pathname) {
     const ok = store.unsuppress(em)
     if (ok) store.audit('admin', 'suppress_remove', em)
     return json(res, 200, { ok, email: em })
+  }
+  // ---- One-click unsubscribe confirm (POST): token + email ----
+  if (pathname === '/api/mail/unsubscribe') {
+    const email = String(body.email || '').trim().toLowerCase()
+    const token = String(body.token || '')
+    if (!validEmail(email)) return json(res, 400, { error: 'bad_email' })
+    if (!token) return json(res, 400, { error: 'bad_request' })
+    const e = mailer.consumeUnsubscribeToken(token)
+    if (!e || e !== email) return json(res, 400, { error: 'bad_token' })
+    return json(res, 200, { ok: true, email })
+  }
+  // ---- Admin: queue stats / retry / failed jobs ----
+  if (pathname === '/api/admin/mail/queue/stats') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    return json(res, 200, { ok: true, ...mailer.getQueue().stats() })
+  }
+  if (pathname === '/api/admin/mail/queue/jobs/failed') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const q = mailer.getQueue()
+    const jobs = []
+    const dir = path.join(q.dir, 'failed')
+    try {
+      const files = fs.readdirSync(dir).filter(f => f.endsWith('.json')).slice(0, 50)
+      for (const f of files) {
+        try {
+          const j = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'))
+          jobs.push({ id: j.id, to: j.to, error: j.error || '', attempts: j.attempts || 0 })
+        } catch {}
+      }
+    } catch {}
+    return json(res, 200, { ok: true, jobs })
+  }
+  if (pathname === '/api/admin/mail/queue/retry') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const n = mailer.getQueue().retryFailed()
+    store.audit('admin', 'mail_queue_retry', n + ' failed job(s) re-queued')
+    return json(res, 200, { ok: true, retried: n })
+  }
+  // ---- Admin: process bounce spool now ----
+  if (pathname === '/api/admin/mail/bounce/process') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const r = bounceProcessor.process()
+    return json(res, 200, { ok: true, ...r })
   }
   if (pathname === '/api/account/export') {
     const acc = store.getSessionAccount(bearer(req))
@@ -1632,6 +1685,24 @@ const server = http.createServer((req, res) => {
     if (pathname === '/api/admin/releases') {
       if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
       return json(res, 200, { ok: true, releases: store.getReleases() })
+    }
+    // ---- One-click unsubscribe (GET): click the link in any Kastrava email ----
+    if (pathname === '/api/mail/unsubscribe') {
+      const token = u.searchParams.get('token')
+      const email = u.searchParams.get('email')
+      if (!token || !email) return json(res, 400, { error: 'bad_request' })
+      const e = mailer.consumeUnsubscribeToken(token)
+      if (!e || e !== email.toLowerCase()) return json(res, 400, { error: 'bad_token' })
+      return res.end('<!doctype html><html><head><meta charset="utf-8"><title>Unsubscribed</title></head>' +
+        '<body style="font-family:Arial,sans-serif;text-align:center;padding-top:70px;color:#14110b;">' +
+        '<h2 style="font-size:22px;font-weight:600;">Unsubscribed</h2>' +
+        '<p style="font-size:14px;color:#5f6368;">You will no longer receive Kastrava marketing email.</p>' +
+        '<p style="font-size:13px;color:#8a8474;margin-top:14px;"><a href="https://account.kastrava.in/" style="color:#1a73e8">Go to your account</a></p>' +
+        '</body></html>')
+    }
+    if (pathname === '/api/admin/mail/unsubscribed') {
+      if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+      return json(res, 200, { ok: true, list: store.listUnsubscribed() })
     }
     return serveStatic(req, res, pathname)
   }

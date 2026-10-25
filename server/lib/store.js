@@ -492,6 +492,74 @@ class Store {
     return true
   }
 
+  // ---- email status (active / bounced / unsubscribed) ----
+  ensureAccountEmailStatus() {
+    if (!this.data.email_status) this.data.email_status = {}
+    if (!this.data.unsubscribe_tokens) this.data.unsubscribe_tokens = {}
+  }
+
+  getAccountEmailStatus(email) {
+    this.ensureAccountEmailStatus()
+    const e = String(email || '').trim().toLowerCase()
+    if (!e) return null
+    return (this.data.email_status[e] && this.data.email_status[e].status) || 'active'
+  }
+
+  setAccountEmailStatus(email, status, reason) {
+    this.ensureAccountEmailStatus()
+    const e = String(email || '').trim().toLowerCase()
+    if (!e) return false
+    if (!this.data.email_status[e]) this.data.email_status[e] = {}
+    this.data.email_status[e].status = String(status || 'active')
+    if (reason) this.data.email_status[e].reason = String(reason).slice(0, 120)
+    this.data.email_status[e].at = new Date().toISOString()
+    this.save()
+    return true
+  }
+
+  isEmailMailable(email) {
+    this.ensureAccountEmailStatus()
+    const e = String(email || '').trim().toLowerCase()
+    if (!e) return false
+    if (this.isSuppressed(e)) return false
+    const st = (this.data.email_status[e] || {}).status
+    return st === 'active' || st === undefined
+  }
+
+  createUnsubscribeToken(email) {
+    this.ensureAccountEmailStatus()
+    const e = String(email || '').trim().toLowerCase()
+    if (!e) return null
+    const token = require('crypto').randomBytes(16).toString('hex')
+    this.data.unsubscribe_tokens[token] = { email: e, at: new Date().toISOString(), used: false }
+    this.save()
+    return token
+  }
+
+  consumeUnsubscribeToken(token) {
+    this.ensureAccountEmailStatus()
+    const t = String(token || '')
+    const rec = this.data.unsubscribe_tokens && this.data.unsubscribe_tokens[t]
+    if (!rec || rec.used) return null
+    const e = rec.email
+    rec.used = true
+    rec.used_at = new Date().toISOString()
+    this.setAccountEmailStatus(e, 'unsubscribed', 'user_one_click')
+    this.suppress(e, 'user_unsubscribe', 'user')
+    this.save()
+    return e
+  }
+
+  listUnsubscribed() {
+    this.ensureAccountEmailStatus()
+    const out = []
+    for (const e in (this.data.email_status || {})) {
+      const s = this.data.email_status[e]
+      if (s && s.status === 'unsubscribed') out.push({ email: e, reason: s.reason, at: s.at })
+    }
+    return out
+  }
+
   // Password-verified, waiting on the email code (10 minutes).
   stageLogin(email, label, ip) {
     this._codeMaps()

@@ -115,7 +115,7 @@ The finished packages are generated in the release/ directory. (`npm start` runs
 Kastrava is entirely free and open source. The project is funded by Premium subscriptions ($49/month or $4.99/day at https://kastrava.in/#premium):
 
 * Premium buyers get license keys, encrypted sync, and direct email support.
-* Contact khannatejas989@gmail.com for priority handling, consultation, or enterprise sponsorship.
+* Contact email-center@kastrava.in for priority handling, consultation, or enterprise sponsorship.
 
 ---
 

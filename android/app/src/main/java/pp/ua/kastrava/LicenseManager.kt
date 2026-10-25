@@ -71,6 +71,10 @@ class LicenseManager(private val context: Context) {
     fun machineCode(): String = MachineCode.current(androidId())
 
     fun status(): Status {
+        // Reviewer demo account: Premium active without a real license.
+        if (isDemo()) {
+            return Status(true, null, System.currentTimeMillis() + 86400000 * 30, null, false, "demo-key", null)
+        }
         val key = prefs.getString("key", null)
         val payloadRaw = prefs.getString("payload", null)
         val sig = prefs.getString("sig", null)
@@ -146,6 +150,11 @@ class LicenseManager(private val context: Context) {
 
     /** Stop Premium without refund. Returns null on success. Must run off the main thread. */
     fun cancel(): String? {
+        // Reviewer demo account: local cancel only, no server call.
+        if (isDemo()) {
+            prefs.edit().clear().apply()
+            return null
+        }
         val prefsKey = prefs.getString("key", null)
             ?: return "No active license on this device."
         val machine = machineCode()
@@ -303,6 +312,13 @@ class LicenseManager(private val context: Context) {
     fun clear() {
         prefs.edit().clear().apply()
     }
+
+    /** Reviewer demo: flip the local demo flag so Premium reads active. */
+    fun activateDemo() {
+        prefs.edit().putBoolean("demo_premium", true).apply()
+    }
+
+    fun isDemo(): Boolean = prefs.getBoolean("demo_premium", false)
 
     /**
      * On account logout: drop the license ONLY if it is account-bound
