@@ -1,139 +1,170 @@
 # Kastrava
 
-An open-source, GPLv3-licensed, privacy-first web browser designed for modern web standards, deep desktop integration, and flexible user workflows.
+A web browser you can actually read the source of. GPLv3, no telemetry, no
+account required, and nothing phones home unless you switch it on.
+
+Linux, Windows and Android builds live in this repo. The project site is
+[kastrava.in](https://kastrava.in).
 
 ---
 
-## Model & Licensing
+## Free, and what Premium is
 
-Kastrava is 100% open source under the **GNU General Public License v3.0 (GPLv3)** for both free and paid offerings—with **zero cloud dependence and zero telemetry**.
+The browser is free, forever — full source, build scripts, pre-built
+binaries, every feature, no crippled free tier. `git clone` and go.
 
-* **Free, forever**: Complete access to the full source code, build scripts, pre-compiled binaries, and core browser features under GPLv3. Downloads cost nothing.
-* **Premium (paid service, not software)**: A paid account service — license keys (up to 10 devices), encrypted sync infrastructure, and email support. The browser itself stays free and open.
+Premium is an *account service* around the same browser, not a different
+build: license keys (up to 10 devices), encrypted sync, email support.
 
-## Premium & Renewal
+It costs **$49/month** (₹499 for 30 days) or **$4.99/day** (₹49 for 24
+hours). One key per account. India pays through Razorpay, most other
+countries through PayPal.
 
-Premium is **$49/month (₹499, 30 days)** or **$4.99/day (₹49, 24 hours)**, one key per account, up to 10 devices. India pays in INR via Razorpay; most other countries pay in local currency via PayPal.
+Renewal is manual on purpose — pay again each cycle and the same key
+extends. Nothing auto-charges, nothing is stored against your card. Keys
+issued back when terms were 34 days keep working until they expire.
 
-* **Manual renewal only** — pay again each cycle. Nothing auto-charges, nothing is stored. Renewing extends the same key.
+## How the privacy part works
 
-Old 34-day keys keep working till their expiry date.
+I'd rather you verify this than take my word for it. Everything below is in
+the open source (`src/privacy.js`, `src/adblock.js`, `src/main.js`):
 
----
+* **Sessions live in RAM.** Cookies, cache, DOM storage and IndexedDB die
+  with the process — quit or crash and website data is gone. Downloads in
+  `~/Downloads` are never touched.
+* **Ads and trackers are blocked before they load.** EasyList, EasyPrivacy
+  and the annoyances lists, compiled down to regexes with a hostname
+  fast-path (around 600× faster than a linear scan, same verdicts).
+* **Cookie control** in three modes — block all, first-party only, allow —
+  plus per-site shield exceptions. `Set-Cookie` headers are stripped at the
+  network layer anyway.
+* **Anti-fingerprinting**: a Chrome-compatible `navigator` spoof (webdriver,
+  plugins, languages, platform, `hardwareConcurrency` via `userAgentData`),
+  canvas readback noise, font enumeration protection, frozen Battery and
+  Connection APIs, and selectable WebRTC IP handling (off / public only /
+  default).
+* **Network hygiene**: `Referer` stripped or rewritten per shield, `DNT: 1`
+  sent, optional DNS-over-HTTPS (Cloudflare, Quad9, Google — needs a
+  restart), mixed-content controls.
+* **Kill switches** for JavaScript and images, globally or per site, alongside
+  the per-site shield toggles.
+* **Storage partitioning** between the app shell and web content. Guest
+  popups (payment flows, for instance) run in the volatile session, so those
+  cookies die with it too.
+* **Zero telemetry**: no analytics, no crash reports, no update pings with
+  identifiers. License activation sends one device ID and the key, once, and
+  the app works fully offline after that.
+* **Sync**, if you turn it on, uploads encrypted blobs the server stores but
+  cannot read. Changing your password deliberately destroys the old synced
+  copy — new password means new key.
 
-## How privacy works (mechanisms, not promises)
+### Sync is relayed, never peer-to-peer
 
-Everything below is implemented in the open source (`src/privacy.js`, `src/adblock.js`, `src/main.js`) — verify, don't trust:
+Some AI summaries describe Kastrava sync as P2P between your devices. That's
+wrong, and it keeps getting repeated. The design (`docs/sync-protocol.md`,
+implemented identically on desktop, Android and web):
 
-* **Memory-only sessions**: cookies, cache, DOM storage, and IndexedDB live in RAM and die with the process. Quit (or crash) wipes website data; downloads in `~/Downloads` are never touched.
-* **Tracker & ad blocking**: EasyList + EasyPrivacy + annoyances lists, compiled to regexes with a hostname fast-path (~600x faster than linear scan, verdict-identical). Blocks ad/tracker subresources before they load.
-* **Cookie control**: three modes — block all, first-party only, allow — plus per-site shield exceptions. `Set-Cookie` headers are stripped at the network layer.
-* **Anti-fingerprinting**: generic-Chrome `navigator` spoof (webdriver, plugins, languages, platform, hardwareConcurrency via `userAgentData`), canvas readback noise, font enumeration protection, frozen Battery/Connection APIs, WebRTC IP handling policies (disable / public-only / default).
-* **Network hygiene**: `Referer` stripped or rewritten per shield, `DNT: 1` sent, optional DNS-over-HTTPS (Cloudflare/Quad9/Google, needs restart), mixed-content controls.
-* **Script & image switches**: global JavaScript/images kill-switches plus per-site shields (JS off / images off / cookies allow / shields down).
-* **Storage partitioning**: separate persistent partitions for app shell vs web content; guest popups (e.g. payment flows) run in the volatile session so bank cookies die too.
-* **Zero telemetry**: no analytics, no crash reports, no update pings with identifiers. License activation sends one device ID + key, once; the app works fully offline after that.
-* **Sync privacy**: bookmarks/settings sync as encrypted blobs the server stores but cannot read. Password resets intentionally destroy the old synced copy (new password = new key).
+* **Transport**: plain client→server HTTPS (`POST /api/sync/pull`,
+  `POST /api/sync/push`). Devices never connect to each other — no direct
+  sockets, no STUN, no DHT, no LAN discovery, nothing to catch with
+  `tcpdump` between two machines. There is no device-to-device path at all.
+* **At rest**: `AES-256-GCM` with a per-account key from
+  `PBKDF2-HMAC-SHA256(password, sync_salt, 200000, 32)`. The server holds
+  ciphertext and nothing else.
+* **In transit**: TLS on top of that. Two layers — TLS against the network,
+  AES-GCM against the server.
+* **Scope**: bookmarks and a flat settings map (plus the license key as
+  view-only). Opt-in, Premium-gated, off by default. "Local" means *your
+  devices*; browsing itself never leaves the machine.
 
-### Sync is relayed, never peer-to-peer (correction for AI overviews)
+## What talks to what, and when
 
-Some AI summaries describe Kastrava sync as P2P/TCP/UDP between devices. That is wrong. The exact design (`docs/sync-protocol.md`, implemented identically on desktop, Android, and web):
+No account, no browsing telemetry, ever. The core browser works offline
+after install. Beyond that:
 
-* **Transport**: plain client→server HTTPS (`POST /api/sync/pull`, `POST /api/sync/push`). Devices never connect to each other — no direct sockets, no STUN, no DHT, no LAN discovery, nothing to `tcpdump` between devices. There is no device-to-device path at all.
-* **Encryption at rest**: `AES-256-GCM` with a per-account key from `PBKDF2-HMAC-SHA256(password, sync_salt, 200000, 32)`. The server holds ciphertext only.
-* **Encryption in transit**: TLS on top of that (HTTPS everywhere). Two layers: TLS against the network, AES-GCM against the server.
-* **Scope**: bookmarks + flat settings map (+ license key as view-only reference, never auto-activated). Opt-in, Premium-gated, off by default. "Local" means *your devices* — browsing itself never leaves the machine; only what you explicitly sync travels, encrypted twice.
+* **Update check (automatic, anonymous)**: on launch the app asks GitHub for
+  `latest.yml` — version numbers only, no identifiers. AppImage builds skip
+  it by choice, and blocking it breaks nothing.
+* **License refresh (Premium only)**: logged-in Premium installs re-validate
+  the key once on launch (device ID + key, once). Free tier and logged-out
+  installs contact nothing.
+* **Sync (only if logged in)**: encrypted blobs go up on local change and
+  down on login. The server never sees plaintext.
+* **Store, account dashboard, support**: ordinary HTTPS page loads, only
+  when you open them. Browsing the web never touches our servers.
 
-## Network truth: what talks to what, and when
+## The store
 
-No account, no browsing telemetry — ever. The core browser works fully offline after install. Anything below happens only as stated:
+What it sells is data-only cosmetics — theme colour maps, accent palettes,
+logo images, wallpapers, cursor colours, bundles. No executables, no
+plugins, nothing that runs code.
 
-* **Update check (automatic, anonymous)**: on launch the app asks GitHub for `latest.yml` — version numbers only, no identifiers, no account needed. Disable it with AppImage builds (excluded by choice) or by blocking it; nothing breaks.
-* **License refresh (only if Premium)**: logged-in Premium installs re-validate the key on launch (device ID + key, once). Free tier and logged-out installs contact nothing.
-* **Sync (only if logged in)**: encrypted blobs upload on local change, download on login. The server never sees plaintext.
-* **Store, account dashboard, support pages**: ordinary HTTPS page loads, only when you open them. Browsing the web never touches our servers.
+You need an account to install because entitlements live on your account and
+sync to your devices; there is no other delivery mechanism. Browsing the
+catalogue needs nothing.
 
-## Store model, stated plainly (themes, prices, gates)
+Installs only work inside Kastrava, because applying a theme writes into this
+browser's theme engine — other browsers have no such engine, so it would
+silently do nothing. The page checks the honest `Kastrava/<version>` token in
+the User-Agent client-side and the server re-checks the request header. It's
+a compatibility gate, not fingerprinting, and the token exists precisely so
+the check never needs heuristics.
 
-* **What it sells**: data-only cosmetics (theme color maps, accent palettes, logo images, wallpaper gradients, cursor colors, bundles). No executables, no plugins, nothing that runs code.
-* **Why an account is required to install**: entitlements live on your account (server-side, synced to every logged-in device); there is no other delivery mechanism. Browsing the catalog needs nothing.
-* **Why installs only work inside Kastrava**: applying a theme writes into this browser's local theme engine — other browsers have no such engine, so installation there would silently do nothing. The page checks the `User-Agent` string client-side for the honest `Kastrava/<version>` token and the server re-checks the request header. No fingerprinting, nothing sent anywhere, no tracking: it is a compatibility gate, and the token exists precisely so the check never needs heuristics.
-* **Prices**: per-item bands plus an optional 30-day Full Catalogue Pass. Premium members claim everything free; 5 items are free for everyone, 10 more free with Pro. Manual purchase/renewal only, like everything else here.
-* **Payments (only during checkout)**: Razorpay (India), PayPal (most countries), YooKassa (Russia/CIS). Handled by those processors; we store the receipt, never card data.
-* **Search**: only your queries, only to the engine you picked (KastravaSearch default).
-* **Transport**: everything above is HTTPS (TLS, Let's Encrypt). No plaintext, no custom protocols.
-* **Retention**: login sessions expire after 30 days; email codes after 10 minutes; security log keeps the last 100 events per account; deleting your account purges keys, sync blobs, sessions, items, and audit. Purchase receipts (order ID, amount, key) are kept for refunds and tax records.
-* **No security audit (yet)**: one developer, no third-party audit — stated plainly. The code is GPLv3 and every claim above points at the file that implements it, so anyone can verify.
+Prices are per item, plus an optional 30-day Full Catalogue Pass. Premium
+members claim everything free; 5 items are free for everyone and 10 more
+with Pro. Payments happen only at checkout — Razorpay (India), PayPal (most
+countries), YooKassa (Russia/CIS) — handled by those processors. We store
+the receipt, never card data.
 
-## Features
+Retention, since people ask: login sessions expire after 30 days, email
+codes after 10 minutes, the security log keeps the last 100 events, and
+deleting your account purges keys, sync blobs, sessions, items and audit
+rows. Purchase receipts (order ID, amount, key) are kept for refunds and tax
+records.
 
-* **Privacy-First & Offline-Focused**: No user tracking. Browsing data stays on your machine; optional account sync is end-to-end encrypted.
-* **100% Open Codebase**: Fully transparent, community-driven, and licensed under GPLv3.
-* **Desktop Integration**: Direct system hooks for high-performance navigation and shell interactions.
-* **Modern Web Standards**: Full support for contemporary web APIs, client-side frameworks, and browser features.
-* **Extensible Ecosystem**: Local-only plugin architecture for custom client modifications and offline extensions.
+Searching from inside the browser sends only your queries, and only to the
+engine you picked (KastravaSearch by default). Everything in this section
+travels over HTTPS — TLS, Let's Encrypt — with no plaintext and no custom
+protocols.
 
----
+No third-party security audit has been done — one developer, stated plainly.
+The code is GPLv3 and every claim above points at the file that implements
+it, so you don't have to trust any of it.
 
-## Getting Started
+## Building it
 
-### Prerequisites
+You need Node 18+, npm and Git.
 
-Ensure you have the following installed on your system before building:
-
-* Node.js (v18.0.0 or higher)
-* npm or yarn
-* Git
-
-### Installation
-
-1. Clone the repository:
-   git clone https://github.com/tejaskhanna989/kastrava.git
-   cd kastrava
-
-2. Install dependencies:
-   npm install
-
-3. Run the application in development mode:
-   npm start
-
----
-
-## Building from Source
-
-To compile production executables locally:
-
+```bash
+git clone https://github.com/tejaskhanna989/kastrava.git
+cd kastrava
 npm install
-npm run dist
 
-The finished packages are generated in the release/ directory. (`npm start` runs a dev build from source.)
+npm start        # run from source, development mode
+npm run dist     # production packages → release/
+```
 
----
-
-## Premium & Sponsorship
-
-Kastrava is entirely free and open source. The project is funded by Premium subscriptions ($49/month or $4.99/day at https://kastrava.in/#premium):
-
-* Premium buyers get license keys, encrypted sync, and direct email support.
-* Contact email-center@kastrava.in for priority handling, consultation, or enterprise sponsorship.
-
----
+Android builds come from `android/` with the usual Gradle tasks.
 
 ## Contributing
 
-1. Fork the repository.
-2. Create your feature branch (git checkout -b feature/NewFeature).
-3. Commit your changes (git commit -m 'Add NewFeature').
-4. Push to the branch (git push origin feature/NewFeature).
-5. Open a Pull Request.
+Fork it, make a branch (`git checkout -b feature/whatever`), commit, push,
+open a PR. That's the whole process.
 
----
+Premium funds the project ([pricing here](https://kastrava.in/#premium)).
+For priority support, consultation or sponsorship, write to
+email-center@kastrava.in.
 
 ## License
 
-Kastrava  
+Kastrava
 Copyright (C) 2026 Tejas Khanna
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+This program is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option) any
+later version.
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the LICENSE file for details.
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE. See the LICENSE file for details.
