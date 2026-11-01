@@ -7,6 +7,7 @@ Kastrava is created and maintained by Tejas Khanna.
 
 ## Contributors
 * Aryan <Aryan447> - Vertical tabs implementation, core optimizations
+* iwant no multiple chats - Single conversation / no multiple chats feature request
 
 ## Bug Testers
 * LEMON - Live QA: caught the vertical-tabs gating bypass and the missing app-grid icon

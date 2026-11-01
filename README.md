@@ -16,13 +16,28 @@ binaries, every feature, no crippled free tier. `git clone` and go.
 Premium is an *account service* around the same browser, not a different
 build: license keys (up to 10 devices), encrypted sync, email support.
 
-It costs **$49/month** (₹499 for 30 days) or **$4.99/day** (₹49 for 24
+It costs **$19/month** (₹199 for 30 days) or **$4.99/day** (₹49 for 24
 hours). One key per account. India pays through Razorpay, most other
 countries through PayPal.
 
 Renewal is manual on purpose — pay again each cycle and the same key
-extends. Nothing auto-charges, nothing is stored against your card. Keys
-issued back when terms were 34 days keep working until they expire.
+extends. Nothing auto-charges, nothing is stored against your card.
+
+## Free 2-Hour Trial on Signup
+
+Every new account gets a **2-hour Premium trial** automatically. The timer
+only starts when you first activate it on a device — sign up today, use it
+whenever you're ready. No payment info required.
+
+## Referral Program
+
+Share your referral link. When someone signs up and makes their first
+purchase:
+- **They get** 30 days Premium free
+- **You earn** 20% cashback (in paise, added to your account)
+
+Both rewards are fully automated and applied on the referee's first
+purchase.
 
 ## How the privacy part works
 
@@ -111,10 +126,10 @@ a compatibility gate, not fingerprinting, and the token exists precisely so
 the check never needs heuristics.
 
 Prices are per item, plus an optional 30-day Full Catalogue Pass. Premium
-members claim everything free; 5 items are free for everyone and 10 more
-with Pro. Payments happen only at checkout — Razorpay (India), PayPal (most
-countries), YooKassa (Russia/CIS) — handled by those processors. We store
-the receipt, never card data.
+members claim everything free; stock themes are free for everyone; paid
+items are one-time purchases. Payments happen only at checkout — Razorpay
+(India), PayPal (most countries), YooKassa (Russia/CIS) — handled by those
+processors. We store the receipt, never card data.
 
 Retention, since people ask: login sessions expire after 30 days, email
 codes after 10 minutes, the security log keeps the last 100 events, and

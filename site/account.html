@@ -14,157 +14,131 @@
     s?(s==='dark'?'dark':'light'):((window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'));
 }catch(e){}})();
 </script>
-<link rel="stylesheet" href="/k.css?v=10">
-<style>
-.auth{max-width:520px;margin:56px auto 80px}
-.auth .tabs{display:flex;gap:8px;margin:20px 0}
-.auth .tabs button{flex:1;padding:11px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
-.auth .tabs button.on{background:var(--vio);color:#fff;border-color:transparent}
-.auth label{display:block;font-size:13px;font-weight:600;color:var(--ink);margin:14px 0 6px}
-.auth input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--line2);background:var(--card2);color:var(--ink);font-size:14px;font-family:inherit}
-.auth .go{width:100%;margin-top:18px;padding:14px}
-</style>
+<link rel="stylesheet" href="/k.css?v=21">
 </head>
 <body>
-<nav><div class="wrap">
-  <img src="logo.png" alt="Kastrava">
-  <a class="name" href="/">KASTRAVA</a>
-  <div class="links">
-    <a href="/#features">Features</a>
-    <a href="/#premium">Premium</a>
-    <a href="https://store.kastrava.in/">Store</a>
-    <a href="https://search.kastrava.in/">Search</a>
-    <a href="/#premium">Premium</a>
-    <a href="/#download">Download</a>
-    <button id="theme-btn" class="theme-btn" title="Toggle theme" aria-label="Toggle theme">
-      <svg class="ic-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-      <svg class="ic-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-    </button>
-    <a class="dl" href="/#download">Download</a>
-  </div>
-</div></nav>
-<main><div class="wrap"><div class="auth">
-<div class="lic-card" style="margin-top:0">
-  <div id="auth-box">
-    <span class="tag">ACCOUNT</span>
-    <h2 style="font-size:24px">One login, every device.</h2>
-    <p style="font-size:14px;color:var(--muted)">Syncs bookmarks and settings, holds your Premium key. Encrypted end to end — stored here, readable only by you.</p>
-    <div class="tabs"><button id="tab-login" class="on">Log in</button><button id="tab-signup">Sign up</button></div>
-    <label for="ac-email">Email</label>
-    <input id="ac-email" type="email" autocomplete="email" placeholder="you@example.com">
-    <label for="ac-pass">Password</label>
-    <input id="ac-pass" type="password" autocomplete="current-password" placeholder="8+ characters">
-    <input id="ac-code" inputmode="numeric" maxlength="6" placeholder="Email code" autocomplete="one-time-code" style="display:none;margin-top:10px">
-    <input id="ac-totp" inputmode="numeric" maxlength="6" placeholder="2FA code (if enabled)" autocomplete="one-time-code" style="display:none;margin-top:10px">
-    <div class="msg" id="ac-verify" style="display:none">Check your inbox, then <a href="#" id="ac-resend">resend code</a></div>
-    <button class="btn btn-primary go" id="ac-go">Log in</button>
-    <div class="msg" id="ac-msg"></div>
-    <p class="fine">Verification email only — no newsletters, ever. Lose your password and synced data stays locked; email <a href="mailto:email-center@kastrava.in">support</a> to reset the account itself.</p>
-  </div>
-  <div id="me-box" style="display:none">
-    <span class="tag">SIGNED IN</span>
-    <h2 style="font-size:24px" id="me-email"></h2>
-    <p class="fine" id="me-since"></p>
-    <p class="fine">Use the same login inside the apps — Premium covers 10 devices. <a href="/account-advanced.html">Advanced settings →</a></p>
-    <button class="btn btn-ghost go" id="ac-out" style="width:100%;margin-top:18px">Log out</button>
-  </div>
+<nav class="navbar" role="navigation" aria-label="Main navigation">
+<div class="container navbar-inner">
+<a class="navbar-brand" href="https://kastrava.in/" aria-label="Kastrava home">
+<img class="navbar-logo" src="favicon.png" alt="">
+<span class="navbar-name">kastrava</span>
+</a>
+<div class="navbar-menu" id="navbar-menu">
+<a class="navbar-link" href="https://kastrava.in/#features">Features</a>
+<a class="navbar-link" href="https://kastrava.in/#premium">Premium</a>
+<a class="navbar-link" href="https://store.kastrava.in/">Store</a>
+<a class="navbar-link" href="https://search.kastrava.in/">Search</a>
+<div class="navbar-divider"></div>
+<button id="theme-btn" class="btn btn-icon btn-ghost navbar-link" title="Toggle theme" aria-label="Toggle theme">
+<svg class="ic-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+<svg class="ic-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/></svg>
+</button>
+<a class="btn btn-primary navbar-cta" href="https://kastrava.in/#download">Download</a>
 </div>
-</div></div></main>
-<footer><div class="wrap"><div class="foot-grid">
-  <div><p class="fh">KASTRAVA</p><p style="margin-top:6px">101 RC · <a href="/">home</a> · <a href="/authors.html">authors</a></p></div>
-  <div><p class="fh">OPEN SOURCE</p><p style="margin-top:6px"><a href="https://github.com/tejaskhanna989/kastrava" target="_blank" rel="noopener">GitHub — GPLv3</a></p></div>
-  <div><p class="fh">LEGAL</p><p style="margin-top:6px"><a href="/terms.html">Terms</a> · <a href="/privacy.html">Privacy</a> · <a href="/refunds.html">Refunds</a> · <a href="/contact.html">Contact</a></p></div>
-  <div><p class="fh">SUPPORT</p><p style="margin-top:6px"><a href="mailto:email-center@kastrava.in">email-center@kastrava.in</a></p></div>
-</div></div></footer>
-<script>
-'use strict';
-/* Account auth: login / signup / email-code / TOTP. Token -> kas_sync_token. */
-(function(){
-var KAS_API=((window.KAS_API)||(location.search.match(/[?&]api=([^&]+)/)||[])[1]||'https://api.kastrava.in').replace(/\/$/,'');
-function $(id){return document.getElementById(id);}
-function tok(){try{return localStorage.getItem('kas_sync_token')||'';}catch(e){return '';}}
-function post(path,body,auth){
-  var h={'Content-Type':'application/json'};
-  if(auth)h['Authorization']='Bearer '+auth;
-  return fetch(KAS_API+path,{method:'POST',headers:h,body:JSON.stringify(body||{})}).then(function(r){return r.json();});
-}
-var mode='login';
-function setMode(m){
-  mode=m;
-  $('tab-login').className=m==='login'?'on':'';
-  $('tab-signup').className=m==='signup'?'on':'';
-  $('ac-go').textContent=m==='login'?'Log in':'Create account';
-  $('ac-msg').textContent='';$('ac-msg').className='msg';
-}
-$('tab-login').addEventListener('click',function(){setMode('login');});
-$('tab-signup').addEventListener('click',function(){setMode('signup');});
-$('theme-btn').addEventListener('click',function(){
-  var r=document.documentElement,n=r.getAttribute('data-theme')==='dark'?'light':'dark';
-  r.setAttribute('data-theme',n);try{localStorage.setItem('kas-theme',n);}catch(e){}
-});
-function showMe(email,since){
-  $('auth-box').style.display='none';$('me-box').style.display='block';
-  $('me-email').textContent=email;
-  $('me-since').textContent=since?('Account since '+since.slice(0,10)):'';
-}
-function refresh(){
-  var t=tok();if(!t)return;
-  post('/api/account/me',{},t).then(function(j){
-    if(j&&j.ok)showMe(j.email,j.created_at);
-    else if(j&&j.error==='unauthorized'){try{localStorage.removeItem('kas_sync_token');}catch(e){}}
-  }).catch(function(){});
-}
-$('ac-resend').addEventListener('click',function(e){
-  e.preventDefault();
-  post('/api/account/verify/resend',{email:$('ac-email').value.trim()}).catch(function(){});
-});
-var ERRORS={exists:'That email already has an account — log in instead.',too_many:'Too many tries — wait a minute.',
-  bad_login:'Wrong email or password.',bad_email:'Enter a valid email.',weak_password:'Password needs 8+ characters.'};
-function fail(msg){var m=$('ac-msg');m.className='msg err';m.textContent=msg;}
-$('ac-go').addEventListener('click',function(){
-  var email=$('ac-email').value.trim(),pw=$('ac-pass').value||'';
-  var code=$('ac-code'),totp=$('ac-totp'),go=this,msg=$('ac-msg');
-  if(!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email))return fail('Enter a valid email.');
-  if(code.style.display!=='none'&&code.value.trim()){
-    go.disabled=true;
-    var isVerify=code.dataset.mode==='verify';
-    var payload=isVerify?{email:email,code:code.value.trim()}
-      :{email:email,code:code.value.trim(),totp:totp.style.display!=='none'?(totp.value.trim()||undefined):undefined};
-    post(isVerify?'/api/account/verify':'/api/account/login/otp',payload).then(function(j){
-      go.disabled=false;
-      if(j&&j.ok&&j.token){try{localStorage.setItem('kas_sync_token',j.token);}catch(e){}$('ac-pass').value='';showMe(j.email,null);refresh();return;}
-      if(j&&j.error==='need_totp'){totp.style.display='';totp.focus();msg.className='msg';msg.textContent='Enter your authenticator code too.';return;}
-      fail((j&&(j.msg||ERRORS[j.error]))||'Wrong code.');
-    }).catch(function(){go.disabled=false;fail('Could not reach the server.');});
-    return;
-  }
-  if(pw.length<8)return fail('Password needs 8+ characters.');
-  go.disabled=true;msg.className='msg';msg.textContent=(mode==='login'?'Logging in…':'Creating account…');
-  post('/api/account/'+mode,{email:email,password:pw}).then(function(j){
-    go.disabled=false;
-    if(j.ok&&j.token){try{localStorage.setItem('kas_sync_token',j.token);}catch(e){}$('ac-pass').value='';showMe(j.email,null);refresh();return;}
-    if(j.ok&&(j.verify_required||j.otp_required)){
-      code.dataset.mode=j.verify_required?'verify':'login';
-      code.style.display='';$('ac-verify').style.display='';code.value='';code.focus();
-      if(j.totp)totp.style.display='';
-      msg.className='msg';msg.textContent='Code sent to your email — enter it above.';return;}
-    fail((j&&(j.msg||ERRORS[j.error]))||'Something went wrong.');
-  }).catch(function(){go.disabled=false;fail('Could not reach the server.');});
-});
-$('ac-out').addEventListener('click',function(){
-  post('/api/account/logout',{},tok()).catch(function(){});
-  try{localStorage.removeItem('kas_sync_token');}catch(e){}
-  location.reload();
-});
-window.addEventListener('kas-login',function(){refresh();});
-setInterval(function(){
-  try{
-    var box=document.getElementById('auth-box');
-    if(box&&box.style.display!=='none'&&tok())refresh();
-  }catch(e){}
-},2000);
-refresh();
-})();
-</script>
+<button class="navbar-toggle btn btn-icon btn-ghost" id="navbar-toggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="navbar-menu">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+</button>
+</div>
+</nav>
+
+<main class="section" style="padding: var(--space-16) 0 var(--space-20);">
+<div class="container">
+<div class="card" style="max-width: 480px; margin: 0 auto;">
+<div class="card-body" style="padding: var(--space-10);">
+<div class="text-center mb-6">
+<div class="badge badge-primary mb-3" data-wl="auth_tag">ACCOUNT</div>
+<h2 class="text-3xl" style="margin-bottom: var(--space-2);" data-wl="auth_h2">One login, every device.</h2>
+<p class="text-muted" data-wl="auth_p">Syncs bookmarks and settings, holds your Premium key. Encrypted end to end — stored here, readable only by you.</p>
+</div>
+
+<div class="tabs" role="tablist" style="margin-bottom: var(--space-6);">
+<button class="tab active" id="tab-login" role="tab" aria-selected="true" data-wl="tab_login">Log in</button>
+<button class="tab" id="tab-signup" role="tab" aria-selected="false" data-wl="tab_signup">Sign up</button>
+</div>
+
+<div id="auth-box">
+<div class="field">
+<label class="label" for="ac-email" data-wl="auth_email">Email</label>
+<input id="ac-email" type="email" autocomplete="email" placeholder="you@example.com" class="input">
+</div>
+<div class="field">
+<label class="label" for="ac-pass" data-wl="auth_pass">Password</label>
+<input id="ac-pass" type="password" autocomplete="current-password" placeholder="8+ characters" class="input">
+</div>
+<div class="field" style="display: none;" id="ac-code-field">
+<label class="label" for="ac-code" data-wl="auth_code">Email code</label>
+<input id="ac-code" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" class="input">
+</div>
+<div class="field" style="display: none;" id="ac-totp-field">
+<label class="label" for="ac-totp" data-wl="auth_totp">2FA code (if enabled)</label>
+<input id="ac-totp" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" class="input">
+</div>
+<div class="text-center text-sm" style="display: none; margin-bottom: var(--space-3);" id="ac-verify" data-wl="ac_verify">Check your inbox, then <a href="#" id="ac-resend">resend code</a></div>
+<button class="btn btn-primary btn-block btn-lg" id="ac-go" data-wl="ac_go">Log in</button>
+<div class="text-center text-sm mt-4" id="ac-msg"></div>
+<p class="fine text-center mt-6" data-wl="auth_fine">Verification email only — no newsletters, ever. Lose your password and synced data stays locked; email <a href="mailto:email-center@kastrava.in">support</a> to reset the account itself.</p>
+</div>
+
+<div id="me-box" style="display: none; text-align: center;">
+<div class="badge badge-success mb-3" data-wl="me_tag">SIGNED IN</div>
+<h2 class="text-2xl mb-2" id="me-email"></h2>
+<p class="fine" id="me-since"></p>
+<p class="fine mt-4" data-wl="me_desc">Use the same login inside the apps — Premium covers 10 devices. <a href="https://account.kastrava.in/" target="_blank">Advanced settings →</a></p>
+<button class="btn btn-ghost btn-block btn-lg mt-6" id="ac-out" data-wl="ac_out">Log out</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+
+<footer class="footer" role="contentinfo">
+<div class="container">
+<div class="footer-grid">
+<div class="footer-brand">
+<img src="favicon.png" alt="" width="28" height="28" style="border-radius: var(--radius);">
+<span class="name" style="font-family: var(--font-display); font-size: var(--text-lg); font-weight: 500; color: var(--text-primary);">kastrava</span>
+<p class="footer-description">The browser that forgets you.</p>
+</div>
+<div>
+<p class="footer-title">KASTRAVA</p>
+<ul class="footer-links">
+<li><a href="https://kastrava.in/">Home</a></li>
+<li><a href="https://github.com/tejaskhanna989/kastrava" target="_blank" rel="noopener">GitHub — GPLv3</a></li>
+</ul>
+</div>
+<div>
+<p class="footer-title">OPEN SOURCE</p>
+<ul class="footer-links">
+<li><a href="https://kastrava.in/products.html">All products</a></li>
+<li><a href="https://github.com/tejaskhanna989/kastrava" target="_blank" rel="noopener">GitHub — GPLv3</a></li>
+<li><a href="https://kastrava.in/license.html" class="mono text-xs">Full license text</a></li>
+</ul>
+</div>
+<div>
+<p class="footer-title">LEGAL</p>
+<ul class="footer-links">
+<li><a href="https://kastrava.in/terms.html">Terms</a></li>
+<li><a href="https://kastrava.in/privacy.html">Privacy</a></li>
+<li><a href="https://kastrava.in/refunds.html">Refunds</a></li>
+<li><a href="https://kastrava.in/contact.html">Contact</a></li>
+</ul>
+</div>
+<div>
+<p class="footer-title">SUPPORT</p>
+<ul class="footer-links">
+<li><a href="mailto:email-center@kastrava.in">email-center@kastrava.in</a></li>
+</ul>
+</div>
+</div>
+<div class="footer-bottom">
+<p class="footer-copyright">101 RC "Triangular Galaxy" · Built by the community, for the community</p>
+<div class="footer-social">
+<a href="https://github.com/tejaskhanna989/kastrava" target="_blank" rel="noopener" aria-label="GitHub"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.536-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg></a>
+</div>
+</div>
+</footer>
+
+<script src="https://kastrava.in/wl.js?v=2"></script>
+<script src="/account.js?v=20"></script>
 </body>
 </html>

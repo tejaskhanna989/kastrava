@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Viewer — Kastrava</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<meta name="description" content="Kastrava admin viewer — read-only view of licenses, accounts, and system status.">
+<script>
+(function(){try{
+  var s=null;try{s=localStorage.getItem('kas-theme');}catch(e){}
+  document.documentElement.setAttribute('data-theme',
+    s?(s==='dark'?'dark':'light'):((window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'));
+}catch(e){}})();
+</script>
+<link rel="stylesheet" href="/k.css?v=18">
+<style>
+/* Kastrava Admin Viewer — read-only viewer panel */
+:root{
+  --blue-container:#d3e3fd;
+  --on-blue-container:#041e49;
+  --blue-outline:rgba(26,115,232,.28);
+}
+html[data-theme="dark"]{
+  --blue-container:#0842a0;
+  --on-blue-container:#d3e3fd;
+  --blue-outline:rgba(138,180,248,.30);
+}
+.shell{display:flex;min-height:calc(100vh - 63px);align-items:flex-start}
+.side{width:258px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--line);padding:22px 12px 32px;position:sticky;top:63px;height:calc(100vh - 63px);overflow-y:auto;display:flex;flex-direction:column}
+.side .brand{display:flex;align-items:center;gap:10px;padding:2px 14px 18px}
+.side .brand img{width:28px;height:28px;border-radius:8px}
+.side .brand .name{font-size:15px;font-weight:500;letter-spacing:-.2px;color:var(--ink);font-family:var(--display)}
+.side .brand .role{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;color:var(--blue);background:var(--blue-container);color:var(--on-blue-container);border-radius:100px;padding:2px 9px;text-transform:uppercase}
+.side .sec{font-size:11px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--muted2);padding:6px 14px 8px}
+.snav{display:flex;flex-direction:column;gap:2px}
+.snav button{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:none;border:none;color:var(--text);font-size:14.5px;font-weight:500;padding:0 16px;height:44px;border-radius:100px;cursor:pointer;font-family:inherit;transition:background .15s,color .15s}
+.snav button svg{width:20px;height:20px;flex-shrink:0;stroke:var(--muted);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:stroke .15s}
+.snav button:hover{background:var(--card2);color:var(--ink)}
+.snav button:hover svg{stroke:var(--ink)}
+.snav button.on{background:var(--blue-container);color:var(--on-blue-container)}
+.snav button.on svg{stroke:var(--blue)}
+html[data-theme="dark"] .snav button.on svg{stroke:#a8c7fa}
+.side .foot{margin-top:auto;padding:18px 14px 0;border-top:1px solid var(--line);font-size:13px;color:var(--muted2)}
+.side .foot a{color:var(--muted);text-decoration:none;padding:4px 0;display:block}
+.side .foot a:hover{color:var(--blue)}
+.main{flex:1;min-width:0;padding:34px 40px 90px;max-width:1160px;margin:0 auto}
+.pagehead{margin-bottom:24px}
+.pagehead h1{font-size:34px;font-weight:500;letter-spacing:-.8px;margin:0 0 6px;line-height:1.2}
+.pagehead .pagehead-sub{margin:0;font-size:15px;color:var(--muted);line-height:1.55}
+.pane{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:28px 30px;margin-bottom:20px;box-shadow:var(--e1)}
+.pane h2{font-size:21px;font-weight:500;letter-spacing:-.3px;margin:0 0 6px;display:flex;align-items:center;gap:10px}
+.pane .sub{font-size:14px;color:var(--muted);margin:0 0 22px;line-height:1.6;max-width:76ch}
+.pane label{display:block;font-size:13.5px;font-weight:500;color:var(--text);margin:22px 0 8px;letter-spacing:.1px}
+.result-card{background:var(--k-surface);border:1px solid var(--k-line);border-radius:12px;padding:18px 20px;margin-top:10px}
+.pair{display:flex;justify-content:space-between;gap:16px;padding:8px 0;border-bottom:1px solid var(--k-line)}
+.pair:last-child{border-bottom:none}
+.pair .k{color:var(--k-muted);font-size:13px}
+.pair .v{color:var(--k-ink);font-weight:500;font-family:'Roboto Mono',monospace;font-size:13px}
+.tbl-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th{color:var(--k-muted);font-size:12px;font-weight:600;letter-spacing:.3px;text-align:left;padding:12px 12px;border-bottom:1px solid var(--k-line)}
+td{color:var(--k-text);font-size:14px;padding:10px 12px;border-bottom:1px solid var(--k-line)}
+tr:hover{background:var(--k-surface)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 24px;border-radius:100px;border:1px solid transparent;font-size:14.5px;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap;transition:background .15s,color .15s,border-color .15s}
+.btn-outline{border:1px solid var(--k-line);color:var(--k-ink);background:var(--k-card)}
+.btn-outline:hover{border-color:var(--k-blue);color:var(--k-blue);background:var(--k-surface)}
+.error{color:var(--k-ink);background:color-mix(in srgb, var(--k-blue) 8%, var(--k-card));border:1px solid var(--k-line);border-radius:10px;padding:16px 20px;margin-top:16px;font-size:14px}
+.empty{text-align:center;color:var(--k-muted);padding:48px 24px}
+.spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--k-line);border-top-color:var(--k-blue);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Disable write actions visually */
+.readonly-hint{font-size:12px;color:var(--k-muted);font-style:italic;margin-top:6px}
+
+/* Home link */
+.home-link{display:inline-flex;align-items:center;gap:8px;color:var(--k-blue);text-decoration:none;font-weight:500;font-size:14px;margin-bottom:20px;display:inline-block}
+.home-link:hover{text-decoration:underline}
+.home-link svg{width:16px;height:16px}
+</style>
+</head>
+<body>
+<nav><div class="wrap">
+  <a href="/" style="display:flex;align-items:center;gap:10px;text-decoration:none"><img src="/favicon.png" alt="Kastrava"><span class="name">Kastrava</span></a>
+  <div class="links">
+    <a href="/#features" data-wl="nav_feat">Features</a>
+    <a href="/#premium" data-wl="nav_prem">Premium</a>
+    <a href="https://store.kastrava.in/" data-wl="nav_store">Store</a>
+    <a href="https://search.kastrava.in/" data-wl="nav_search">Search</a>
+    <a href="https://us.kastrava.in/" data-wl="nav_company">Company</a>
+    <a class="dl" href="/#download" data-wl="nav_dl">Download</a>
+  </div>
+</div></nav>
+<main class="shell">
+  <div class="side">
+    <div class="brand">
+      <img src="/logo.png" alt="Kastrava">
+      <div>
+        <div class="name">Kastrava</div>
+        <div class="rc">RC</div>
+      </div>
+    </div>
+    <div class="sec">Admin Viewer</div>
+    <div class="snav">
+      <button class="on" onclick="loadSection('dashboard')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19 4v1a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h6z"/></svg>Dashboard</button>
+      <button onclick="loadSection('licenses')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="18" rx="2" ry="7"/><line x1="7" y1="11" x2="7" y2="11"/><line x1="7" y1="17" x2="7" y2="17"/></svg>Licenses</button>
+      <button onclick="loadSection('accounts')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Accounts</button>
+      <button onclick="loadSection('releases')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M19 5l-7 7 7 7"/></svg>Releases</button>
+      <button onclick="loadSection('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 012.83-2.83l.06-.06A1.65 1.65 0 0019.4 15a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Settings</button>
+      <button onclick="loadSection('referral')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Referral</button>
+    </div>
+    <div class="foot">
+      <a href="/">Home</a>
+    </div>
+  </div>
+  <div class="main">
+    <div class="pagehead">
+      <h1 id="page-title">Dashboard</h1>
+      <p class="pagehead-sub" id="page-sub">Overview of licenses, accounts, and system status.</p>
+    </div>
+    <div id="dashboard-view" style="display:block">
+      <div class="result-card">
+        <div class="pair"><span class="k">Version</span><span class="v" id="v-version">-</span></div>
+        <div class="pair"><span class="k">Channel</span><span class="v" id="v-channel">-</span></div>
+        <div class="pair"><span class="k">Live Users</span><span class="v" id="v-live-users">-</span></div>
+        <div class="pair"><span class="k">Active Licenses</span><span class="v" id="v-active-licenses">-</span></div>
+        <div class="pair"><span class="k">Total Emails</span><span class="v" id="v-total-emails">-</span></div>
+        <div class="pair"><span class="k">Blocked (Today)</span><span class="v" id="v-blocked">-</span></div>
+      </div>
+    </div>
+    <div id="licenses-view" style="display:none">
+      <div class="pagehead"><h1>License Inventory</h1><p class="pagehead-sub">All license keys and their status.</p></div>
+      <div id="licenses-table-wrap"><div class="empty">Loading licenses...</div></div>
+    </div>
+    <div id="accounts-view" style="display:none">
+      <div class="pagehead"><h1>Accounts</h1><p class="pagehead-sub">Registered email accounts and their status.</p></div>
+      <div id="accounts-table-wrap"><div class="empty">Loading accounts...</div></div>
+    </div>
+    <div id="releases-view" style="display:none">
+      <div class="pagehead"><h1>Releases</h1><p class="pagehead-sub">Release history and changelogs.</p></div>
+      <div id="releases-table-wrap"><div class="empty">Loading releases...</div></div>
+    </div>
+    <div id="referral-view" style="display:none">
+      <div class="pagehead"><h1>Referral & Trial Program</h1><p class="pagehead-sub">Global referral statistics and configuration. Trial settings control the free trial on signup.</p></div>
+      
+      <div class="pane">
+        <h2>Referral Configuration</h2>
+        <p class="sub">Adjust the referral rewards. Changes apply to future purchases.</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:16px">
+          <label>Referee reward days <input type="number" id="ref-referee-days" min="1" max="365" value="30" style="margin-left:8px;width:80px"></label>
+          <label>Referrer reward days <input type="number" id="ref-referrer-reward-days" min="1" max="365" value="30" style="margin-left:8px;width:80px"></label>
+          <label>Referrer cashback % <input type="number" id="ref-referrer-pct" min="0" max="100" value="20" style="margin-left:8px;width:80px"></label>
+          <label>Min purchase (paise) <input type="number" id="ref-min-purchase" min="0" value="0" style="margin-left:8px;width:80px"></label>
+          <label>Max cashback (paise, 0=unlimited) <input type="number" id="ref-max-cashback" min="0" value="0" style="margin-left:8px;width:80px"></label>
+          <label>Referral cap per user <input type="number" id="ref-referral-cap" min="0" value="0" style="margin-left:8px;width:80px"></label>
+          <label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="ref-enabled" checked> Referral Enabled</label>
+        </div>
+        <div style="margin-top:16px"><button class="btn btn-primary" id="ref-save">Save config</button><span class="msg" id="ref-msg"></span></div>
+      </div>
+      
+      <div class="pane" style="margin-top:16px">
+        <h2>Referee Trial Configuration</h2>
+        <p class="sub">Settings for the free trial granted to referees on signup. Timer starts on first device activation. One-time per email.</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:16px">
+          <label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="ref-referee-trial-enabled" checked> Referee Trial Enabled</label>
+          <label>Trial duration (hours) <input type="number" id="ref-referee-trial-hours" min="1" max="168" value="4" style="margin-left:8px;width:80px"></label>
+          <label>Grace period (days) <input type="number" id="ref-referee-trial-grace" min="0" max="30" value="3" style="margin-left:8px;width:80px"></label>
+        </div>
+        <div style="margin-top:16px"><button class="btn btn-primary" id="ref-referee-trial-save">Save trial config</button><span class="msg" id="ref-referee-trial-msg"></span></div>
+      </div>
+
+      <div class="pane" style="margin-top:16px">
+        <h2>Trial Configuration (Default Signup)</h2>
+        <p class="sub">Settings for the free trial license granted on regular signup. Timer starts on first device activation.</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:16px">
+          <label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="ref-trial-enabled" checked> Trial Enabled</label>
+          <label>Trial duration (hours) <input type="number" id="ref-trial-hours" min="1" max="168" value="2" style="margin-left:8px;width:80px"></label>
+          <label>Grace period (days) <input type="number" id="ref-trial-grace" min="0" max="30" value="3" style="margin-left:8px;width:80px"></label>
+        </div>
+        <div style="margin-top:16px"><button class="btn btn-primary" id="ref-trial-save">Save trial config</button><span class="msg" id="ref-trial-msg"></span></div>
+      </div>
+
+      <div class="pane" style="margin-top:16px">
+        <h2>Referral Cap Configuration</h2>
+        <p class="sub">Set maximum referrals per user. 0 = unlimited.</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:16px">
+          <label>Max referrals per user <input type="number" id="ref-referral-cap" min="0" value="0" style="margin-left:8px;width:80px"></label>
+        </div>
+        <div style="margin-top:16px"><button class="btn btn-primary" id="ref-cap-save">Save cap config</button><span class="msg" id="ref-cap-msg"></span></div>
+      </div>
+
+      <div class="pane" style="margin-top:16px">
+        <h2>Global Stats</h2>
+        <div id="ref-stats" class="empty">Loading...</div>
+      </div>
+    <div id="settings-view" style="display:none">
+      <div class="pagehead"><h1>Viewer Settings</h1><p class="pagehead-sub">Read-only viewer configuration.</p></div>
+      <div class="pane">
+        <h2>Privacy &amp; Data</div>
+        <p class="sub">You are viewing as a read-only administrator. You can view all data but cannot modify anything.</p>
+      </div>
+    </div>
+    <div id="error-view" style="display:none">
+      <div class="error">
+        <div style="font-size:16px;font-weight:600;margin-bottom:8px">Error</div>
+        <div id="error-message" style="color:var(--k-text)"></div>
+      </div>
+    </div>
+  </div>
+</main>
+<script>
+(function(){
+  var base = '';
+  var headers = {};
+  var tok = localStorage.getItem('kastra_ai_token');
+  if(tok){headers['Authorization']='Bearer '+tok;}
+  async function api(path){
+    var r=await fetch(base+'/api/admin/'+path,{headers:headers});
+    if(r.status===401){showError('Not authorized. Please log in.');return null;}
+    return r.json();
+  }
+  function show(view){
+    document.querySelectorAll('[id$="-view"]').forEach(function(el){el.style.display='none';});
+    document.getElementById(view+'-view').style.display='block';
+  }
+  function showError(m){
+    document.getElementById('error-view').style.display='block';
+    document.getElementById('error-message').textContent=m;
+  }
+  function renderTable(containerId, cols, rows){
+    var container=document.getElementById(containerId);
+    if(!rows||rows.length===0){container.innerHTML='<div class="empty">No data.</div>';return;}
+    var th=cols.map(function(c){return '<th>'+esc(c)+'</th>';}).join('');
+    var rowsHtml=rows.map(function(r){
+      return '<tr>'+cols.map(function(c){var v=r[c]; return '<td>'+(v==null?'—':esc(String(v)))+'</td>';}).join('');
+    });
+    container.innerHTML='<table><thead><tr>'+th+'</tr></thead><tbody>'+rowsHtml.join('')+'</tbody></table>';
+  }
+  function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function loadDashboard(){
+    api('admin').then(function(d){
+      if(!d)return;
+      document.getElementById('v-version').textContent=d.version||'—';
+      document.getElementById('v-channel').textContent=d.channel||'—';
+      document.getElementById('v-active-licenses').textContent=d.licenses?licenses.length:'—';
+      document.getElementById('v-total-emails').textContent=d.emails?d.emails.length:'—';
+      document.getElementById('v-blocked').textContent='—';
+    }).catch(function(){showError('Failed to load dashboard');});
+  }
+  function loadLicenses(){
+    api('licenses').then(function(d){
+      if(!d)return;
+      var cols=['id','title','role','updated','status'];
+      var rows=d.map(function(l){return {id:l.id||'—',title:l.title||'—',role:l.role||'—',updated:l.updated||'—',status:l.status||'—'};});
+      renderTable('licenses-table-wrap',cols,rows);
+    }).catch(function(){showError('Failed to load licenses');});
+  }
+  function loadAccounts(){
+    api('accounts').then(function(d){
+      if(!d)return;
+      var cols=['email','name','updated','status'];
+      var rows=d.map(function(a){return {email:a.email||'—',name:a.name||'—',updated:a.updated||'—',status:a.status||'—'};});
+      renderTable('accounts-table-wrap',cols,rows);
+    }).catch(function(){showError('Failed to load accounts');});
+  }
+  function loadReleases(){
+    api('releases').then(function(d){
+      if(!d)return;
+      var cols=['version','codename','date','version_code'];
+      var rows=d.map(function(r){return {version:r.version||'—',codename:r.codename||'—',date:r.date||'—',version_code:r.version_code||'—'};});
+      renderTable('releases-table-wrap',cols,rows);
+    }).catch(function(){showError('Failed to load releases');});
+  }
+  function loadReferral(){
+    api('referral/config').then(function(d){
+      if(!d||!d.ok)return;
+      var c=d.config;
+      // Referral config
+      document.getElementById('ref-referee-days').value=c.referee_days;
+      document.getElementById('ref-referrer-reward-days').value=c.referrer_reward_days;
+      document.getElementById('ref-referrer-pct').value=c.referrer_percent;
+      document.getElementById('ref-min-purchase').value=c.min_purchase_paise;
+      document.getElementById('ref-max-cashback').value=c.max_cashback_paise;
+      document.getElementById('ref-enabled').checked=c.enabled;
+      document.getElementById('ref-referral-cap').value=c.referral_cap;
+      // Referee trial config
+      document.getElementById('ref-referee-trial-enabled').checked=c.trial_enabled;
+      document.getElementById('ref-referee-trial-hours').value=c.referee_trial_hours;
+      document.getElementById('ref-referee-trial-grace').value=c.referee_trial_grace_days;
+      // Default trial config
+      document.getElementById('ref-trial-enabled').checked=c.trial_enabled;
+      document.getElementById('ref-trial-hours').value=c.trial_duration_hours;
+      document.getElementById('ref-trial-grace').value=c.trial_grace_days;
+      // Referral cap
+      document.getElementById('ref-referral-cap').value=c.referral_cap;
+    }).catch(function(){});
+    api('referral/stats').then(function(d){
+      if(!d||!d.ok){document.getElementById('ref-stats').innerHTML='<div class="error">Failed to load stats</div>';return;}
+      var c=document.getElementById('ref-stats');
+      c.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">'
+        + '<div class="stat" style="padding:16px"><div class="k">Total referral codes</div><div class="v">'+d.total_codes+'</div></div>'
+        + '<div class="stat" style="padding:16px"><div class="k">Total referrals</div><div class="v">'+d.total_referrals+'</div></div>'
+        + '<div class="stat" style="padding:16px"><div class="k">First purchases rewarded</div><div class="v">'+d.total_purchase_rewarded+'</div></div>'
+        + '<div class="stat" style="padding:16px"><div class="k">Total cashback paid</div><div class="v">₹'+(d.total_cashback_paise/100).toFixed(2)+'</div></div>'
+        + '</div>';
+    }).catch(function(){document.getElementById('ref-stats').innerHTML='<div class="error">Failed to load stats</div>';});
+  }
+  document.getElementById('ref-save').addEventListener('click',function(){
+    var b=this,b.disabled=true;var m=document.getElementById('ref-msg');m.className='msg';m.textContent='Saving...';
+    var cfg={
+      referee_days:parseInt(document.getElementById('ref-referee-days').value)||30,
+      referrer_reward_days:parseInt(document.getElementById('ref-referrer-reward-days').value)||30,
+      referrer_percent:parseInt(document.getElementById('ref-referrer-pct').value)||20,
+      min_purchase_paise:parseInt(document.getElementById('ref-min-purchase').value)||0,
+      max_cashback_paise:parseInt(document.getElementById('ref-max-cashback').value)||0,
+      enabled:document.getElementById('ref-enabled').checked,
+      referral_cap:parseInt(document.getElementById('ref-referral-cap').value)||0
+    };
+    api('referral/config').then(function(d){
+      if(d&&d.ok){
+        m.textContent='Saved';m.className='msg ok';
+      }else{m.textContent='Failed';m.className='msg err';}
+      b.disabled=false;
+    }).catch(function(){m.textContent='Error';m.className='msg err';b.disabled=false;});
+  });
+  document.getElementById('ref-referee-trial-save').addEventListener('click',function(){
+    var b=this,b.disabled=true;var m=document.getElementById('ref-referee-trial-msg');m.className='msg';m.textContent='Saving...';
+    var cfg={
+      trial_enabled:document.getElementById('ref-referee-trial-enabled').checked,
+      referee_trial_hours:parseInt(document.getElementById('ref-referee-trial-hours').value)||4,
+      referee_trial_grace_days:parseInt(document.getElementById('ref-referee-trial-grace').value)||3
+    };
+    api('referral/config').then(function(d){
+      if(d&&d.ok){
+        m.textContent='Saved';m.className='msg ok';
+      }else{m.textContent='Failed';m.className='msg err';}
+      b.disabled=false;
+    }).catch(function(){m.textContent='Error';m.className='msg err';b.disabled=false;});
+  });
+  document.getElementById('ref-trial-save').addEventListener('click',function(){
+    var b=this,b.disabled=true;var m=document.getElementById('ref-trial-msg');m.className='msg';m.textContent='Saving...';
+    var cfg={
+      trial_enabled:document.getElementById('ref-trial-enabled').checked,
+      trial_duration_hours:parseInt(document.getElementById('ref-trial-hours').value)||2,
+      trial_grace_days:parseInt(document.getElementById('ref-trial-grace').value)||3
+    };
+    api('referral/config').then(function(d){
+      if(d&&d.ok){
+        m.textContent='Saved';m.className='msg ok';
+      }else{m.textContent='Failed';m.className='msg err';}
+      b.disabled=false;
+    }).catch(function(){m.textContent='Error';m.className='msg err';b.disabled=false;});
+  });
+  document.getElementById('ref-cap-save').addEventListener('click',function(){
+    var b=this,b.disabled=true;var m=document.getElementById('ref-cap-msg');m.className='msg';m.textContent='Saving...';
+    var cfg={
+      referral_cap:parseInt(document.getElementById('ref-referral-cap').value)||0
+    };
+    api('referral/config').then(function(d){
+      if(d&&d.ok){
+        m.textContent='Saved';m.className='msg ok';
+      }else{m.textContent='Failed';m.className='msg err';}
+      b.disabled=false;
+    }).catch(function(){m.textContent='Error';m.className='msg err';b.disabled=false;});
+  });
+  function showSection(id){
+    document.querySelectorAll('[id$="-view"]').forEach(function(el){el.style.display='none';});
+    document.getElementById(id+'-view').style.display='block';
+  }
+  document.querySelectorAll('.snav button').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      document.querySelectorAll('.snav button').forEach(function(b){b.classList.remove('on');});
+      btn.classList.add('on');
+      var target=btn.textContent.trim().toLowerCase();
+      if(target==='dashboard')showSection('dashboard');
+      else if(target==='licenses'){showSection('licenses');loadLicenses();}
+      else if(target==='accounts'){showSection('accounts');loadAccounts();}
+      else if(target==='releases'){showSection('releases');loadReleases();}
+      else if(target==='referral'){showSection('referral');loadReferral();}
+      else if(target==='settings'){showSection('settings');}
+    });
+  });
+  showSection('dashboard');
+  loadDashboard();
+})();
+</script>
+</body>
+</html>

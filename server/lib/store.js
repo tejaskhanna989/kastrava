@@ -137,6 +137,45 @@ class Store {
     return this.data.licenses[key]
   }
 
+  // Issue a trial license that starts its timer on first device activation
+  issueTrialLicense(key, accountEmail, trialDurationHours) {
+    const now = new Date().toISOString()
+    const hours = Math.floor(Number(trialDurationHours) || 2)
+    this.data.licenses[key] = {
+      key,
+      order_id: 'trial_' + Date.now().toString(36),
+      subscription_id: null,
+      status: 'issued',
+      machine_id: null,
+      expires_at: null, // Will be set on first activation (trial_activated_at + hours)
+      issued_at: now,
+      trial: true,
+      trial_activated_at: null,
+      trial_duration_hours: hours
+    }
+    this.save()
+    // Assign to account immediately
+    if (accountEmail) this.setAccountEmail(key, accountEmail)
+    return this.data.licenses[key]
+  }
+
+  bindLicense(key, machineId) {
+    const l = this.getLicense(key)
+    if (!l) return null
+    l.machine_id = machineId
+    l.status = 'activated'
+    const now = new Date().toISOString()
+    l.activated_at = now
+    // If this is a trial license and hasn't been activated yet, start the 2-hour timer
+    if (l.trial && !l.trial_activated_at) {
+      l.trial_activated_at = now
+      const expires = new Date(Date.now() + (l.trial_duration_hours || 2) * 3600000).toISOString()
+      l.expires_at = expires
+    }
+    this.save()
+    return l
+  }
+
   // Renewal: point a paid order back at the license it extended, so
   // re-verification stays idempotent.
   setLicenseOrder(key, orderId) {
@@ -165,16 +204,6 @@ class Store {
     l.expires_at = expiresAt
     l.renewed_at = new Date().toISOString()
     if (l.status === 'expired') l.status = 'activated'
-    this.save()
-    return l
-  }
-
-  bindLicense(key, machineId) {
-    const l = this.getLicense(key)
-    if (!l) return null
-    l.machine_id = machineId
-    l.status = 'activated'
-    l.activated_at = new Date().toISOString()
     this.save()
     return l
   }
@@ -247,17 +276,217 @@ class Store {
     return this.data.accounts[e] || null
   }
 
-  createAccount(email, passHash, passSalt, authSalt, syncSalt) {
+  createAccount(email, passHash, passSalt, authSalt, syncSalt, referralCode) {
     this.ensureAccountMaps()
     const e = String(email || '').trim().toLowerCase()
     if (this.data.accounts[e]) return null
+    const refCode = referralCode || this._genReferralCode()
     this.data.accounts[e] = {
       email: e, pass_hash: passHash, pass_salt: passSalt,
       auth_salt: authSalt, sync_salt: syncSalt,
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      referral_code: refCode,
+      referred_by: null,
+      referral_rewards: 0,
+      referral_count: 0,
+      referral_purchase_rewarded: false
     }
     this.save()
     return this.data.accounts[e]
+  }
+
+  _genReferralCode() {
+    // Generate 8-char alphanumeric code (e.g., KAST-7X9M)
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+    let code = 'KAST-'
+    for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)]
+    // Ensure uniqueness
+    for (const acc of Object.values(this.data.accounts)) {
+      if (acc.referral_code === code) return this._genReferralCode()
+    }
+    return code
+  }
+
+  getAccountByReferralCode(code) {
+    this.ensureAccountMaps()
+    const c = String(code || '').trim().toUpperCase()
+    for (const acc of Object.values(this.data.accounts)) {
+      if (acc.referral_code === c) return acc
+    }
+    return null
+  }
+
+  // Check if an email has already used a referral trial
+  hasUsedReferralTrial(email) {
+    this.ensureAccountMaps()
+    const e = String(email || '').trim().toLowerCase()
+    if (!this.data.referral_trial_used) this.data.referral_trial_used = {}
+    return !!this.data.referral_trial_used[e]
+  }
+
+  // Mark an email as having used a referral trial
+  markReferralTrialUsed(email) {
+    this.ensureAccountMaps()
+    const e = String(email || '').trim().toLowerCase()
+    if (!this.data.referral_trial_used) this.data.referral_trial_used = {}
+    this.data.referral_trial_used[e] = { at: new Date().toISOString() }
+    this.save()
+    return true
+  }
+
+  // Check if referrer has reached their referral cap
+  hasReachedReferralCap(referrerEmail) {
+    const cfg = this.getReferralConfig()
+    const cap = cfg.referral_cap || 0
+    if (cap <= 0) return false // No cap
+    const referrer = this.getAccountByEmail(referrerEmail)
+    if (!referrer) return false
+    const count = referrer.referral_count || 0
+    return count >= cap
+  }
+
+  applyReferral(newEmail, referrerCode) {
+    const cfg = this.getReferralConfig()
+    if (!cfg.enabled) return { ok: false, error: 'disabled' }
+    
+    const referrer = this.getAccountByReferralCode(referrerCode)
+    if (!referrer) return { ok: false, error: 'invalid_code' }
+    if (referrer.email === newEmail) return { ok: false, error: 'self_referral' }
+    if (this.hasReachedReferralCap(referrer.email)) return { ok: false, error: 'referral_cap_reached' }
+    
+    const newAcc = this.getAccountByEmail(newEmail)
+    if (!newAcc) return { ok: false, error: 'account_not_found' }
+    if (newAcc.referred_by) return { ok: false, error: 'already_referred' }
+    
+    newAcc.referred_by = referrer.referral_code
+    referrer.referral_count = (referrer.referral_count || 0) + 1
+    this.save()
+    return { ok: true, referrer_email: referrer.email }
+  }
+
+  grantReferralReward(email, rewardDays) {
+    const acc = this.getAccountByEmail(email)
+    if (!acc) return false
+    acc.referral_rewards = (acc.referral_rewards || 0) + rewardDays
+    this.save()
+    return true
+  }
+
+  grantReferralCashback(email, amountPaise) {
+    const acc = this.getAccountByEmail(email)
+    if (!acc) return false
+    acc.referral_cashback_paise = (acc.referral_cashback_paise || 0) + amountPaise
+    this.save()
+    return true
+  }
+
+  getReferralStats(email) {
+    const acc = this.getAccountByEmail(email)
+    if (!acc) return null
+    const referrals = Object.values(this.data.accounts).filter(a => a.referred_by === acc.referral_code)
+    const rewarded = referrals.filter(r => r.referral_purchase_rewarded)
+    const pending = referrals.filter(r => !r.referral_purchase_rewarded)
+    return {
+      code: acc.referral_code,
+      count: referrals.length,
+      purchase_rewarded: rewarded.length,
+      purchase_pending: pending.length,
+      total_reward_days: acc.referral_rewards || 0,
+      total_cashback_paise: acc.referral_cashback_paise || 0,
+      referrals: referrals.map(r => ({
+        email: r.email,
+        joined_at: r.created_at,
+        purchase_rewarded: !!r.referral_purchase_rewarded,
+        first_purchase_at: r.referral_first_purchase_at || null
+      }))
+    }
+  }
+
+  markReferralPurchaseRewarded(referrerEmail, refereeEmail, purchaseAmountPaise) {
+    const referrer = this.getAccountByEmail(referrerEmail)
+    const referee = this.getAccountByEmail(refereeEmail)
+    if (!referrer || !referee) return false
+    if (referee.referred_by !== referrer.referral_code) return false
+    if (referee.referral_purchase_rewarded) return false
+    
+    const cfg = this.getReferralConfig()
+    
+    referee.referral_purchase_rewarded = true
+    referee.referral_first_purchase_at = new Date().toISOString()
+    
+    // Grant referrer reward days to referee
+    const refereeRewardDays = cfg.referee_days || 30
+    this.grantReferralReward(refereeEmail, refereeRewardDays)
+    
+    // Grant referrer reward days and cashback to referrer
+    const referrerRewardDays = cfg.referrer_reward_days || 30
+    const referrerPercent = cfg.referrer_reward_percent || 20
+    const cashback = Math.floor(purchaseAmountPaise * (referrerPercent / 100))
+    
+    // Apply max cashback cap
+    if (cfg.max_cashback_paise > 0 && cashback > cfg.max_cashback_paise) {
+      cashback = cfg.max_cashback_paise
+    }
+    
+    this.grantReferralReward(referrerEmail, referrerRewardDays)
+    this.grantReferralCashback(referrerEmail, cashback)
+    
+    this.audit(referrerEmail, 'referral_purchase_reward', 
+      referrerRewardDays + 'd Premium + ' + referrerPercent + '% cashback (' + cashback + ' paise) for ' + refereeEmail + ' first purchase')
+    this.audit(refereeEmail, 'referral_purchase_reward', 
+      refereeRewardDays + ' days Premium for first purchase via ' + referrerEmail)
+    this.save()
+    return true
+  }
+
+  // Admin: get/set referral config
+  getReferralConfig() {
+    this.ensureAccountMaps()
+    if (!this.data.referral_config) {
+      this.data.referral_config = {
+        // Referral rewards
+        referee_days: 30,           // Days referrer gets on referee's first purchase
+        referrer_percent: 20,       // Cashback % for referrer
+        min_purchase_paise: 0,      // Minimum purchase to trigger reward
+        max_cashback_paise: 0,      // Cap on cashback (0 = unlimited)
+        enabled: true,              // Master toggle
+        referral_cap: 0,            // Max referrals per referrer (0 = unlimited)
+        // Referee trial settings
+        referee_trial_hours: 4,     // Trial hours for referees (one-time per email)
+        referee_trial_grace_days: 3, // Grace period for referee trial
+        // Referrer reward settings
+        referrer_reward_days: 30,   // Days referrer gets on referee's first purchase
+        referrer_reward_percent: 20 // Cashback % for referrer
+      }
+      this.save()
+    }
+    return this.data.referral_config
+  }
+
+  setReferralConfig(cfg) {
+    this.ensureAccountMaps()
+    const existing = this.data.referral_config || {}
+    this.data.referral_config = {
+      // Referral rewards
+      referee_days: Math.floor(Number(cfg.referee_days) || existing.referee_days || 30),
+      referrer_percent: Math.floor(Number(cfg.referrer_percent) || existing.referrer_percent || 20),
+      min_purchase_paise: Math.floor(Number(cfg.min_purchase_paise) || existing.min_purchase_paise || 0),
+      max_cashback_paise: Math.floor(Number(cfg.max_cashback_paise) || existing.max_cashback_paise || 0),
+      enabled: cfg.enabled !== undefined ? cfg.enabled : existing.enabled !== false,
+      referral_cap: Math.floor(Number(cfg.referral_cap) || existing.referral_cap || 0),
+      // Referee trial settings
+      referee_trial_hours: Math.floor(Number(cfg.referee_trial_hours) || existing.referee_trial_hours || 4),
+      referee_trial_grace_days: Math.floor(Number(cfg.referee_trial_grace_days) || existing.referee_trial_grace_days || 3),
+      // Referrer reward settings
+      referrer_reward_days: Math.floor(Number(cfg.referrer_reward_days) || existing.referrer_reward_days || 30),
+      referrer_reward_percent: Math.floor(Number(cfg.referrer_reward_percent) || existing.referrer_reward_percent || 20),
+      // Default trial settings (for non-referral signups)
+      trial_enabled: cfg.trial_enabled !== undefined ? cfg.trial_enabled : (existing.trial_enabled !== false),
+      trial_duration_hours: Math.floor(Number(cfg.trial_duration_hours) || existing.trial_duration_hours || 2),
+      trial_grace_days: Math.floor(Number(cfg.trial_grace_days) || existing.trial_grace_days || 3)
+    }
+    this.save()
+    return this.data.referral_config
   }
 
   createSession(email, ttlMs, meta) {

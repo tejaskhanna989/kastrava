@@ -59,7 +59,7 @@ const DEVICE_LIMIT = 10
 // builds working: no plan sent -> 34 days for INR 248, exactly as before.
 const PLANS = {
   legacy: { usd: 2.8, inr: 248, days: 34, label: 'Legacy 34-day' },
-  monthly: { usd: 49, inr: 499, rub: 4490, days: 30, label: 'Monthly', interval: 'monthly' },
+  monthly: { usd: 19, inr: 199, rub: 880, days: 30, label: 'Monthly', interval: 'monthly' },
   daily: { usd: 4.99, inr: 49, rub: 449, days: 1, label: 'Daily', interval: 'daily' }
 }
 function planOf(name) {
@@ -170,6 +170,14 @@ function licenseExpirySeconds(lic) {
     const sub = store.getSubscription(lic.subscription_id)
     if (sub && sub.current_end) end = Math.floor(new Date(sub.current_end).getTime() / 1000)
   }
+  // Trial licenses: if activated, use the trial expiry
+  if (!end && lic && lic.trial && lic.trial_activated_at) {
+    end = Math.floor(new Date(lic.trial_activated_at).getTime() / 1000) + (lic.trial_duration_hours || 2) * 3600
+    // Use trial-specific grace days from config
+    const refCfg = store.getReferralConfig()
+    const trialGrace = refCfg.trial_grace_days || GRACE_DAYS
+    return end + trialGrace * 86400
+  }
   if (!end) return null
   return end + GRACE_DAYS * 86400
 }
@@ -229,6 +237,11 @@ function makeReceipt(orderId, machineRaw) {
 function adminOk(req) {
   const t = (req.headers['x-admin-token'] || '').toString()
   return !!ADMIN_TOKEN && t.length === ADMIN_TOKEN.length && crypto.timingSafeEqual(Buffer.from(t), Buffer.from(ADMIN_TOKEN))
+}
+// Viewer-only admin access for co-founder - read-only, no mutations
+function adminViewOk(req) {
+  const t = (req.headers['x-admin-view-token'] || '').toString()
+  return (!!ADMIN_VIEWER_TOKEN && t.length === ADMIN_VIEWER_TOKEN.length && crypto.timingSafeEqual(Buffer.from(t), Buffer.from(ADMIN_VIEWER_TOKEN))) || adminOk(req)
 }
 
 // Provision an account for an admin grant/issue so it never dead-ends on
@@ -334,6 +347,22 @@ function finalizePayment(orderId, paymentId, machineIdRaw, accountEmailRaw) {
       'License key: ' + key + '\nValid until: ' + exp + '\nDevices: up to 10 on your account.\n\n' +
       'Manage everything at https://account.kastrava.in/\n\nIf you did not make this purchase, reply to this email at once.')
     try { store.audit(account, 'purchase', 'key ' + (renewed ? 'renewed' : 'issued')) } catch {}
+    // Referral reward on FIRST purchase (not renewals)
+    if (!renewed && account) {
+      const refereeAcc = store.getAccountByEmail(account)
+      if (refereeAcc && refereeAcc.referred_by && !refereeAcc.referral_purchase_rewarded) {
+        const referrer = store.getAccountByReferralCode(refereeAcc.referred_by)
+        if (referrer) {
+          const cfg = store.getReferralConfig()
+          if (cfg.enabled) {
+            const amountPaise = (order && order.amount_paise) || plan.inr * 100
+            if (amountPaise >= cfg.min_purchase_paise) {
+              store.markReferralPurchaseRewarded(referrer.email, account, amountPaise)
+            }
+          }
+        }
+      }
+    }
   }
   return { key, renewed, plan: (order && order.plan) || 'legacy' }
 }
@@ -923,16 +952,50 @@ async function handlePost(req, res, pathname) {
       const authSalt = crypto.randomBytes(16).toString('hex')
       const syncSalt = crypto.randomBytes(16).toString('hex')
       const passHash = crypto.scryptSync(password, passSalt, 32).toString('hex')
-      const created = store.createAccount(email, passHash, passSalt, authSalt, syncSalt)
-      if (created) created.verified = false
-      store.save()
+      // Optional referral code from invite link
+      const refCode = String(body.referral_code || '').trim().toUpperCase()
+      const created = store.createAccount(email, passHash, passSalt, authSalt, syncSalt, null)
+      if (created) {
+        created.verified = false
+      }
+      
+      const refCfg = store.getReferralConfig()
+      let trialKey = null
+      let trialHours = refCfg.trial_duration_hours
+      let isReferralTrial = false
+      
+      // If user signed up with a referral code, apply the referral and give referee trial
+      if (refCode) {
+        const referralResult = store.applyReferral(email, refCode)
+        if (referralResult.ok) {
+          // Check if this email has already used a referral trial
+          if (!store.hasUsedReferralTrial(email) && refCfg.referee_trial_hours > 0) {
+            isReferralTrial = true
+            trialHours = refCfg.referee_trial_hours
+            store.markReferralTrialUsed(email)
+          }
+        }
+      }
+      
+      // Create a trial license for the new account (timer starts on first device activation)
+      if (refCfg.trial_enabled && trialHours > 0) {
+        trialKey = sign.makeLicenseKey()
+        store.issueTrialLicense(trialKey, email, trialHours)
+        const trialType = isReferralTrial ? 'referral_trial' : 'trial'
+        store.audit(email, 'trial_license_created', trialHours + '-hour ' + trialType + ' key ' + trialKey)
+        store.save()
+      }
+      
       const code = store.issueEmailCode(email, 'verify')
       if (code) {
+        const trialMsg = (refCfg.trial_enabled && trialHours > 0)
+          ? '\n\nYou also have a ' + trialHours + '-hour free Pro trial waiting — it starts when you first use it in the app.'
+          : ''
         mailer.sendAsync(email, 'Verify your Kastrava account',
-          'Welcome to Kastrava.\n\nYour verification code (valid 10 minutes):\n\n' + code + '\n\nIf you did not sign up, ignore this email.')
+          'Welcome to Kastrava.\n\nYour verification code (valid 10 minutes):\n\n' + code + trialMsg + '\n\nIf you did not sign up, ignore this email.')
       }
-      store.audit(email, 'signup', 'account created')
-      return json(res, 200, { ok: true, email, verify_required: true, auth_salt: authSalt, sync_salt: syncSalt })
+      store.audit(email, 'signup', 'account created' + (refCode ? ' (referred by ' + refCode + ')' : '') + (trialKey ? ' + ' + trialHours + 'h trial' : ''))
+      return json(res, 200, { ok: true, email, verify_required: true, auth_salt: authSalt, sync_salt: syncSalt, referral_code: refCode || null, trial_key: trialKey, trial_hours: trialHours, is_referral_trial: isReferralTrial })
     }
 
     const acc = store.getAccountByEmail(email)
@@ -1124,6 +1187,35 @@ async function handlePost(req, res, pathname) {
     store.audit(acc.email, 'totp_off', '2FA disabled')
     return json(res, 200, { ok: true })
   }
+  // ---- Referral system ----
+  if (pathname === '/api/account/referral') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    const stats = store.getReferralStats(acc.email)
+    if (!stats) return json(res, 404, { error: 'not_found' })
+    // Build referral link
+    const link = (process.env.KAS_HOST || 'https://kastrava.in') + '/account.html?ref=' + stats.code
+    return json(res, 200, { ok: true, ...stats, link })
+  }
+  if (pathname === '/api/account/referral/apply') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    const code = String(body.code || '').trim().toUpperCase()
+    if (!code) return json(res, 400, { error: 'bad_request' })
+    const result = store.applyReferral(acc.email, code)
+    if (!result.ok) return json(res, 400, { error: result.error })
+    return json(res, 200, { ok: true, ...result })
+  }
+  if (pathname === '/api/account/referral/reward') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    const refereeEmail = String(body.email || '').trim().toLowerCase()
+    if (!refereeEmail) return json(res, 400, { error: 'bad_request' })
+    const ok = store.markReferralRewarded(acc.email, refereeEmail)
+    if (!ok) return json(res, 400, { error: 'cannot_reward' })
+    return json(res, 200, { ok: true })
+  }
+
   // Storefront: public catalog (paid item data stays gated), claim free
   // or Premium items, buy the rest one-time. Installs only work inside the
   // Kastrava browser; old builds simply never call these routes.
@@ -1481,6 +1573,31 @@ async function handlePost(req, res, pathname) {
     if (ok) store.audit('admin', 'suppress_remove', em)
     return json(res, 200, { ok, email: em })
   }
+
+  // ---- Admin: referral config ----
+  if (pathname === '/api/admin/referral/config') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    if (req.method === 'POST') {
+      const cfg = store.setReferralConfig(body || {})
+      store.audit('admin', 'referral_config_update', JSON.stringify(cfg))
+      return json(res, 200, { ok: true, config: cfg })
+    }
+    return json(res, 200, { ok: true, config: store.getReferralConfig() })
+  }
+  if (pathname === '/api/admin/referral/stats') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    // Global referral stats
+    const allAccs = Object.values(store.all().accounts || {})
+    let totalCodes = 0, totalReferrals = 0, totalRewarded = 0, totalCashback = 0
+    for (const acc of allAccs) {
+      if (acc.referral_code) totalCodes++
+      totalReferrals += (acc.referral_count || 0)
+      totalRewarded += (acc.referral_purchase_rewarded ? 1 : 0)
+      totalCashback += (acc.referral_cashback_paise || 0)
+    }
+    return json(res, 200, { ok: true, total_codes: totalCodes, total_referrals: totalReferrals, total_purchase_rewarded: totalRewarded, total_cashback_paise: totalCashback })
+  }
+
   // ---- One-click unsubscribe confirm (POST): token + email ----
   if (pathname === '/api/mail/unsubscribe') {
     const email = String(body.email || '').trim().toLowerCase()
@@ -1672,6 +1789,11 @@ const server = http.createServer((req, res) => {
     if (pathname === '/register' || pathname === '/register/' || pathname === '/login' || pathname === '/login/') {
       pathname = '/account.html'
     }
+    // Co-founder viewer admin panel (read-only)
+    if (pathname === '/admin') {
+      if (!adminViewOk(req)) return json(res, 401, { error: 'unauthorized' })
+      return serveStatic(req, res, '/admin-viewer.html')
+    }
     if (pathname === '/api/health') {
       return json(res, 200, { ok: true, dev: razorpay.isDev(), host: HOST, price: PRICE_INR, period_days: PERIOD_DAYS, grace_days: GRACE_DAYS, version: APP_VERSION, codename: 'Starship Wonders',
         plans: { monthly: PLANS.monthly, daily: PLANS.daily } })
@@ -1684,6 +1806,46 @@ const server = http.createServer((req, res) => {
     }
     if (pathname === '/api/admin/releases') {
       if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+      return json(res, 200, { ok: true, releases: store.getReleases() })
+    }
+    // ---- Viewer-only AI chat admin endpoints (Co-founder read-only) ----
+    if (pathname === '/api/admin/view/dashboard') {
+      if (!adminViewOk(req)) return json(res, 401, { error: 'unauthorized' })
+      const dump = store.all()
+      const chats = dump.chats || []
+      return json(res, 200, {
+        ok: true,
+        version: APP_VERSION,
+        channel: 'rc',
+        active_sessions: chats.filter(c => c.messages && c.messages.length > 0).length,
+        total_sessions: chats.length,
+        total_messages: chats.reduce((sum, c) => sum + (c.messages ? c.messages.length : 0), 0)
+      })
+    }
+    if (pathname === '/api/admin/view/licenses') {
+      if (!adminViewOk(req)) return json(res, 401, { error: 'unauthorized' })
+      const dump = store.all()
+      const chats = dump.chats || []
+      return json(res, 200, { ok: true, chats: chats.map(c => ({
+        id: c.id,
+        title: c.title || 'Untitled',
+        updated: c.updated,
+        message_count: c.messages ? c.messages.length : 0
+      })) })
+    }
+    if (pathname === '/api/admin/view/accounts') {
+      if (!adminViewOk(req)) return json(res, 401, { error: 'unauthorized' })
+      const dump = store.all()
+      const accounts = dump.accounts || []
+      return json(res, 200, { ok: true, accounts: accounts.map(a => ({
+        email: a.email,
+        name: a.name || '',
+        updated: a.updated,
+        status: a.status || 'active'
+      })) })
+    }
+    if (pathname === '/api/admin/view/releases') {
+      if (!adminViewOk(req)) return json(res, 401, { error: 'unauthorized' })
       return json(res, 200, { ok: true, releases: store.getReleases() })
     }
     // ---- One-click unsubscribe (GET): click the link in any Kastrava email ----

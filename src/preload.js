@@ -116,5 +116,9 @@ contextBridge.exposeInMainWorld('api', {
   menuPause: (on) => ipcRenderer.invoke('menu-pause', on),
 
   // Auto-update (NSIS installer + AppImage; no-op elsewhere)
-  checkUpdates: () => ipcRenderer.invoke('check-updates')
+  checkUpdates: () => ipcRenderer.invoke('check-updates'),
+
+  // Referral program
+  referralInfo: () => ipcRenderer.invoke('account/referral'),
+  referralApply: (code) => ipcRenderer.invoke('account/referral/apply', { code }),
 })

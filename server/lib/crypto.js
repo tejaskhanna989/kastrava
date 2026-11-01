@@ -7,7 +7,7 @@ const USDT_CONTRACT = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'
 const USDT_DECIMALS = 6
 
 // Expected USDT per plan (whole units).
-const PLAN_USDT = { monthly: 49, daily: 4.99 }
+const PLAN_USDT = { monthly: 19, daily: 4.99 }
 
 function apiKey() {
   return process.env.TRONGRID_API_KEY || ''

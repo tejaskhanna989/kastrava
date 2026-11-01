@@ -1,0 +1,1766 @@
+// Kastrava license/Payment server. Serves the site + payment+license API.
+//   npm run server            -> dev mode (no Razorpay keys needed)
+//   RAZORPAY_KEY_ID=.. RAZORPAY_KEY_SECRET=.. ADMIN_TOKEN=.. npm run server
+// Env (also readable from server/.env):
+//   PORT                  default 8787
+//   BIND_HOST             interface to bind, default 127.0.0.1 (0.0.0.0 for a public/bare deployment)
+//   KAS_HOST              public base URL used in responses, default http://127.0.0.1:8787
+//   PRICE_INR             legacy fallback price (paise x100), default 248
+//   PERIOD_DAYS           legacy fallback validity days, default 34
+//   GRACE_DAYS            days past expiry before access is revoked, default 3
+//   RAZORPAY_WEBHOOK_SECRET  secret for /api/webhook signature verification
+//   LICENSE_YEARS         legacy fallback for old one-time keys, default 10
+//   DATA_DIR              store location, default ../data
+const http = require('http')
+const fs = require('fs')
+const path = require('path')
+const crypto = require('crypto')
+
+require('./lib/env').loadEnv()
+const sign = require('./lib/sign')
+const razorpay = require('./lib/razorpay')
+const yookassa = require('./lib/yookassa')
+const cryptopay = require('./lib/crypto')
+const paypal = require('./lib/paypal')
+const geo = require('./lib/geo')
+const fx = require('./lib/fx')
+const mailer = require('./lib/mailer')
+const products = require('./lib/products')
+const { BounceProcessor } = require('./lib/bounce')
+
+// Store install gate: only the Kastrava browser (desktop UA token or the
+// Android WebView token) can claim or buy. Everyone else sees grey.
+function isKastravaUA(req) {
+  try { return /kastrava\/\d/i.test((req.headers['user-agent'] || '').toString()) } catch { return false }
+}
+
+// Premium = any live owned-or-shared key (same rule as activation).
+function hasLivePremium(email) {
+  try {
+    const now = Date.now()
+    return store.keysVisibleTo(email).some((x) => {
+      const l = x.lic
+      if (l.status !== 'activated' && l.status !== 'issued') return false
+      if (!l.expires_at) return true
+      return new Date(l.expires_at).getTime() > now
+    })
+  } catch { return false }
+}
+
+const port = parseInt(process.env.PORT || '8787', 10)
+const BIND_HOST = process.env.BIND_HOST || '127.0.0.1'
+const HOST = process.env.KAS_HOST || 'http://127.0.0.1:' + port
+const PRICE_INR = parseInt(process.env.PRICE_INR || '248', 10)
+const PERIOD_DAYS = parseInt(process.env.PERIOD_DAYS || '34', 10)
+const GRACE_DAYS = parseInt(process.env.GRACE_DAYS || '3', 10)
+const LICENSE_YEARS = parseInt(process.env.LICENSE_YEARS || '10', 10)
+const DEVICE_LIMIT = 10
+// Plans: one-time default, auto-renew optional. `legacy` keeps old
+// builds working: no plan sent -> 34 days for INR 248, exactly as before.
+const PLANS = {
+  legacy: { usd: 2.8, inr: 248, days: 34, label: 'Legacy 34-day' },
+  monthly: { usd: 10, inr: 799, rub: 880, days: 30, label: 'Monthly', interval: 'monthly' },
+  daily: { usd: 4.99, inr: 49, rub: 449, days: 1, label: 'Daily', interval: 'daily' }
+}
+function planOf(name) {
+  return PLANS[name] || PLANS.legacy
+}
+
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data')
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN || ''
+const APP_VERSION = '101.5.15'
+const SITE_DIR = path.join(__dirname, '..', 'site')
+
+const keys = sign.ensureKeys()
+const store = new (require('./lib/store'))(path.join(DATA_DIR, 'db.json'))
+
+// Admin "Email Center" inbox: postfix pipes mail for email-center@kastrava.in
+// into a spool folder; we poll it, parse, and keep a bounded store. Single
+// writer (this process) so it never contends with db.json.
+const { Inbox } = require('./lib/inbox')
+const inbox = new Inbox(path.join(DATA_DIR, 'mail-spool'), path.join(DATA_DIR, 'inbox.json'))
+function drainInbox() { try { return inbox.drain() } catch (e) { console.error('[inbox] drain:', e && e.message); return 0 } }
+drainInbox()
+setInterval(drainInbox, 20000).unref()
+
+// ---- Outbound mail queue: async, rate-limited, micro-batch delivery.
+// Replaces fire-and-forget sendmail so broadcasts cannot overwhelm the
+// upstream relay or the inbox. Processed by mailq worker on a tick.
+mailer.init(store, HOST)
+const mailq = mailer.getQueue()
+mailq.start(mailer.queueSendFn)
+// ---- Bounce processor: suppresses hard-bounced addresses so they are never
+// mailed again. Postfix pipes noreply@kastrava.in bounces into DATA_DIR/bounce-spool.
+const bounceProcessor = new BounceProcessor(path.join(DATA_DIR, 'bounce-spool'), store)
+bounceProcessor.start({ onBounce: (b) => { try { store.audit('bounce', 'suppressed', b.email + ' :: ' + b.reason) } catch {} } })
+setInterval(() => { try { bounceProcessor.process() } catch {} }, 60000).unref()
+
+// Self-healing: re-grant paid store orders whose entitlements were lost to
+// the pre-fix restart wipe (load() used to drop the entitlements map).
+// Idempotent — owns() short-circuits already-granted items.
+try {
+  const allOrders = (store.all().orders || {})
+  let healed = 0
+  for (const oid in allOrders) {
+    const o = allOrders[oid]
+    if (!o || o.status !== 'paid') continue
+    if (o.provider !== 'store' && o.provider !== 'store-paypal') continue
+    if (!o.product || !o.account_email) continue
+    if (store.owns(o.account_email, o.product)) continue
+    const prod = products.get(o.product)
+    if (!prod) continue
+    if (prod.kind === 'pass') {
+      store.grantPass(o.account_email, oid, (prod.data && prod.data.days) || 30)
+    } else {
+      store.grant(o.account_email, o.product, oid)
+    }
+    store.audit(o.account_email, 'store_heal', o.product)
+    healed++
+  }
+  if (healed) console.log('[store] healed ' + healed + ' entitlements from paid orders')
+} catch (e) { console.error('[store] heal error:', e && e.message) }
+
+const MIME = {
+  '.html': 'text/html; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.js': 'application/javascript; charset=utf-8',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.json': 'application/json; charset=utf-8',
+  '.svg': 'image/svg+xml',
+  '.txt': 'text/plain; charset=utf-8',
+  '.ico': 'image/x-icon',
+  '.pdf': 'application/pdf',
+  '.deb': 'application/vnd.debian.binary-package',
+  '.zst': 'application/zstd',
+  '.gz': 'application/gzip'
+}
+
+function json(res, code, obj) {
+  const body = JSON.stringify(obj)
+  res.writeHead(code, {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Admin-Token, Authorization',
+    'Access-Control-Max-Age': '600'
+  })
+  res.end(body)
+}
+
+function readBody(req) {
+  return new Promise((resolve) => {
+    let data = ''
+    req.on('data', (c) => { data += c; if (data.length > 1e6) req.destroy() })
+    req.on('end', () => {
+      let parsed = {}
+      try { parsed = JSON.parse(data || '{}') } catch {}
+      resolve({ raw: data, parsed })
+    })
+    req.on('error', () => resolve({ raw: data, parsed: {} }))
+  })
+}
+
+function licenseExpirySeconds(lic) {
+  let end = null
+  if (lic && lic.expires_at) end = Math.floor(new Date(lic.expires_at).getTime() / 1000)
+  // Fall back to the subscription's period end (covers licenses issued
+  // before the expiry was seeded).
+  if (!end && lic && lic.subscription_id) {
+    const sub = store.getSubscription(lic.subscription_id)
+    if (sub && sub.current_end) end = Math.floor(new Date(sub.current_end).getTime() / 1000)
+  }
+  if (!end) return null
+  return end + GRACE_DAYS * 86400
+}
+
+function makeLicensePayload(key, machineId, accountEmail) {
+  const now = Math.floor(Date.now() / 1000)
+  const lic = store.getLicense(key)
+  const exp = licenseExpirySeconds(lic)
+  // v2 (account-bound): acc names the owning account, mid is the activating
+  // device (informational — the 10-device cap is enforced server-side, not
+  // in the signature). Field order is the signed canonical form: sub, acc,
+  // mid, product, edition, iss, iat, exp, sub_end?. Apps must mirror it.
+  // v1 (legacy machine-bound): no acc, mid enforced on-device as before.
+  const payload = accountEmail ? { sub: key, acc: String(accountEmail).toLowerCase() } : { sub: key }
+  payload.mid = (machineId || '').toUpperCase()
+  payload.product = 'kastrava-premium'
+  payload.edition = 'premium'
+  payload.iss = 'kastrasoft'
+  payload.iat = now
+  // Subscription keys expire at period end + grace; legacy one-time
+  // keys (no expires_at in store) keep the long LICENSE_YEARS lifetime.
+  payload.exp = exp || now + LICENSE_YEARS * 365 * 24 * 3600
+  if (lic && lic.expires_at) payload.sub_end = Math.floor(new Date(lic.expires_at).getTime() / 1000)
+  return payload
+}
+
+// Signed purchase receipt: Ed25519 over the exact payload with the same
+// license-signing key. Anyone can verify it (public key never leaves the
+// server here — /api/receipt/verify does it), nobody can forge it.
+function makeReceipt(orderId, machineRaw) {
+  const order = store.getOrder(orderId)
+  if (!order) return null
+  const key = store.keyForOrder(orderId)
+  const lic = key ? store.getLicense(key) : null
+  const machine = String(machineRaw || (order && order.machine_id) || '').trim().toUpperCase() || null
+  const plan = planOf(order.plan)
+  const receipt = {
+    kind: 'kastrava-receipt',
+    version: 1,
+    order_id: orderId,
+    payment_id: order.payment_id || null,
+    key: key,
+    machine_id: machine,
+    amount_paise: order.amount_paise || plan.inr * 100,
+    currency: order.currency || 'INR',
+    charged: order.pp_amount ? (order.pp_amount + ' ' + (order.currency || '')) : null,
+    plan: 'premium-' + ((order.plan || 'legacy') === 'legacy' ? '34d' : order.plan),
+    product: 'kastrava-premium',
+    iss: 'kastrasoft',
+    iat: Math.floor(Date.now() / 1000),
+    exp: licenseExpirySeconds(lic) || null,
+    paid_thru: (lic && lic.expires_at) || null
+  }
+  return { receipt, receipt_sig: sign.signPayload(receipt, keys.privateKey) }
+}
+
+function adminOk(req) {
+  const t = (req.headers['x-admin-token'] || '').toString()
+  return !!ADMIN_TOKEN && t.length === ADMIN_TOKEN.length && crypto.timingSafeEqual(Buffer.from(t), Buffer.from(ADMIN_TOKEN))
+}
+// Viewer-only admin access for co-founder - read-only, no mutations
+function adminViewOk(req) {
+  const t = (req.headers['x-admin-view-token'] || '').toString()
+  return (!!ADMIN_VIEWER_TOKEN && t.length === ADMIN_VIEWER_TOKEN.length && crypto.timingSafeEqual(Buffer.from(t), Buffer.from(ADMIN_VIEWER_TOKEN))) || adminOk(req)
+}
+
+// Provision an account for an admin grant/issue so it never dead-ends on
+// "no account". Password is unusable until the customer claims it via
+// "Forgot password"; verified=true because the admin grants TO this address
+// by name. Returns true when a new account was created.
+function adminEnsureAccount(email) {
+  const e = String(email || '').trim().toLowerCase()
+  if (!e || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e)) return false
+  if (store.getAccountByEmail(e)) return false
+  const passSalt = crypto.randomBytes(16).toString('hex')
+  const authSalt = crypto.randomBytes(16).toString('hex')
+  const syncSalt = crypto.randomBytes(16).toString('hex')
+  const passHash = crypto.randomBytes(32).toString('hex')
+  const acc = store.createAccount(e, passHash, passSalt, authSalt, syncSalt)
+  if (!acc) return false
+  acc.verified = true
+  store.save()
+  store.audit(e, 'admin_account_create', 'created by admin')
+  mailer.sendAsync(e, 'Your Kastrava account is ready',
+    'Hello,\n\nThe Kastrava team set up an account for you at ' + e +
+    ' and attached a gift to it.\n\nTo get in:\n1. Open https://account.kastrava.in/\n' +
+    '2. Click "Forgot password?" and enter this email — the code arrives in minutes.\n' +
+    '3. Choose a password and everything we granted you is there.\n\n' +
+    'Just reply to this email if anything looks off.\n\n— Kastrava team', mailer.TEAM_FROM)
+  return true
+}
+
+function serveStatic(req, res, pathname) {
+  if (pathname === '/') pathname = '/index.html'
+  let p = path.normalize(path.join(SITE_DIR, pathname))
+  if (p !== SITE_DIR && !p.startsWith(SITE_DIR + path.sep)) return json(res, 403, { error: 'forbidden' })
+  fs.stat(p, (err, st) => {
+    if (err || !st.isFile()) return json(res, 404, { error: 'not_found' })
+    res.writeHead(200, {
+      'Content-Type': MIME[path.extname(p).toLowerCase()] || 'application/octet-stream',
+      'Content-Length': st.size,
+      'X-Content-Type-Options': 'nosniff'
+    })
+    fs.createReadStream(p).pipe(res)
+  })
+}
+
+// One-time payment settlement. Called by /api/verify (checkout callback) and
+// the payment.captured webhook — idempotent, so both can race safely:
+//   - never paid before   -> mint a key with a fresh 34-day expiry
+//   - paid with a machine code that already has a license -> EXTEND that key
+//     from max(now, expiry) + PERIOD_DAYS and return the SAME key, so renewal
+//     needs no new activation; the app picks it up on its next re-activate.
+function finalizePayment(orderId, paymentId, machineIdRaw, accountEmailRaw) {
+  const order = store.getOrder(orderId)
+  const plan = planOf(order && order.plan)
+  store.markPaid(orderId, paymentId, (order && order.amount_paise) || plan.inr * 100)
+  const machine = String(machineIdRaw || (order && order.machine_id) || '').trim().toUpperCase()
+  const account = String(accountEmailRaw || (order && order.account_email) || '').trim().toLowerCase() || null
+  let key = store.keyForOrder(orderId)
+  let renewed = false
+  if (!key) {
+    const existing = machine ? store.licenseForMachine(machine) : null
+    if (existing && existing.status === 'activated') {
+      // Renewal: same machine keeps its key, expiry extends from today (or
+      // from its old end if still in the future — tightening is never applied).
+      key = existing.key
+      const base = existing.expires_at
+        ? Math.max(Date.now(), new Date(existing.expires_at).getTime())
+        : Date.now()
+      store.extendLicense(key, new Date(base + plan.days * 86400000).toISOString())
+      store.setLicenseOrder(key, orderId)
+      if (account && !existing.account_email) store.setAccountEmail(key, account)
+      renewed = true
+    } else if (account) {
+      // Account renewal: the account's newest live key extends (same key on
+      // every device picks it up on next launch) — otherwise mint + assign.
+      const cands = store.keysForAccount(account)
+        .filter((l) => l.status === 'activated' || l.status === 'issued')
+        .sort((a, b) => String(b.expires_at || '') < String(a.expires_at || '') ? -1 : 1)
+      if (cands.length) {
+        key = cands[0].key
+        const base = cands[0].expires_at
+          ? Math.max(Date.now(), new Date(cands[0].expires_at).getTime())
+          : Date.now()
+        store.extendLicense(key, new Date(base + plan.days * 86400000).toISOString())
+        store.setLicenseOrder(key, orderId)
+        renewed = true
+      } else {
+        key = sign.makeLicenseKey()
+        store.issueLicense(key, orderId, null, new Date(Date.now() + plan.days * 86400000).toISOString())
+        store.setAccountEmail(key, account)
+      }
+    } else {
+      key = sign.makeLicenseKey()
+      store.issueLicense(key, orderId, null, new Date(Date.now() + plan.days * 86400000).toISOString())
+    }
+  } else if (account) {
+    const lic = store.getLicense(key)
+    if (lic && !lic.account_email) store.setAccountEmail(key, account)
+  }
+  if (account && key) {
+    const lic = store.getLicense(key)
+    const exp = lic && lic.expires_at ? new Date(lic.expires_at).toDateString() : 'lifetime'
+    mailer.sendAsync(account, renewed ? 'Kastrava Premium renewed' : 'Your Kastrava Premium key',
+      (renewed ? 'Your Premium was renewed.\n\n' : 'Thanks for buying Kastrava Premium.\n\n') +
+      'License key: ' + key + '\nValid until: ' + exp + '\nDevices: up to 10 on your account.\n\n' +
+      'Manage everything at https://account.kastrava.in/\n\nIf you did not make this purchase, reply to this email at once.')
+    try { store.audit(account, 'purchase', 'key ' + (renewed ? 'renewed' : 'issued')) } catch {}
+  }
+  return { key, renewed, plan: (order && order.plan) || 'legacy' }
+}
+
+// ---- Kastrava accounts + zero-knowledge sync (module scope: the
+// throttle map must survive across requests) ----
+const AUTH_WINDOW_MS = 60000
+const AUTH_MAX = 20
+const authHits = new Map()
+
+async function handlePost(req, res, pathname) {
+  const { raw, parsed: body } = await readBody(req)
+
+  if (pathname === '/api/geo') {
+    try {
+      const g = await geo.resolveGeo(req, body.tz)
+      try {
+        const seenIp = (await geo.clientIpForLog(req)) || '?'
+        console.log('[geo]', g.country, g.currency, g.provider, 'via=' + g.via, 'ip=' + seenIp)
+      } catch {}
+      const prices = {}
+      for (const pn of ['monthly', 'daily']) {
+        const pl = planOf(pn)
+        prices[pn] = g.provider === 'paypal'
+          ? await fx.fromUsd(pl.usd, g.currency)
+          : g.provider === 'yookassa'
+            ? { amount: String(pl.rub || Math.round(pl.usd * 90)), currency: 'RUB' }
+            : { amount: String(pl.inr), currency: 'INR' }
+      }
+      prices.pass = g.provider === 'paypal'
+        ? await fx.fromUsd(999, g.currency)
+        : g.provider === 'yookassa'
+          ? { amount: '89900', currency: 'RUB' }
+          : { amount: '8999', currency: 'INR' }
+      return json(res, 200, { ok: true, country: g.country, currency: g.currency, via: g.via,
+        provider: g.provider, paypal_client_id: g.provider === 'paypal' ? paypal.clientId() : null,
+        paypal_dev: paypal.isDev(), prices })
+    } catch (e) {
+      return json(res, 200, { ok: true, country: 'US', currency: 'USD', provider: 'paypal',
+        paypal_client_id: paypal.clientId(), paypal_dev: paypal.isDev() })
+    }
+  }
+  if (pathname === '/api/order') {
+    try {
+      const planName = (body.plan === 'monthly' || body.plan === 'daily') ? body.plan : 'legacy'
+      const plan = planOf(planName)
+      const wantPaypal = String(body.provider || '') === 'paypal'
+      const wantYk = String(body.provider || '') === 'yookassa'
+      if (wantYk) {
+        const rub = String(plan.rub || Math.round(plan.usd * 90))
+        const o = await yookassa.createPayment('yk_' + Date.now().toString(36), rub, 'RUB', 'Kastrava Premium ' + planName)
+        const ykOrderId = 'yk_' + o.yk_id
+        const meta = { plan: planName, provider: 'yookassa', amount_paise: plan.inr * 100,
+          currency: 'RUB', yk_amount: rub, yk_id: o.yk_id, dev: !!o.dev }
+        if (typeof body.name === 'string' && body.name) meta.name = body.name
+        if (typeof body.email === 'string' && body.email) meta.email = body.email
+        if (typeof body.machine_id === 'string' && body.machine_id.trim()) meta.machine_id = body.machine_id.trim().toUpperCase()
+        if (typeof body.account_token === 'string' && body.account_token) {
+          const acc = store.getSessionAccount(body.account_token)
+          if (acc) meta.account_email = acc.email
+        }
+        store.createOrder(ykOrderId, meta)
+        return json(res, 200, { ok: true, provider: 'yookassa', order_id: ykOrderId,
+          amount: rub, currency: 'RUB', dev: !!o.dev, plan: planName,
+          plan_days: plan.days, confirm_url: o.confirm_url || null })
+      }
+      if (wantPaypal) {
+        const g = await geo.resolveGeo(req, body.tz)
+        const conv = await fx.fromUsd(plan.usd, g.currency)
+        const o = await paypal.createOrder(conv.amount, conv.currency, 'Kastrava Premium ' + planName)
+        const meta = { plan: planName, provider: 'paypal', amount_paise: plan.inr * 100,
+          currency: conv.currency, pp_amount: conv.amount }
+        if (typeof body.name === 'string' && body.name) meta.name = body.name
+        if (typeof body.email === 'string' && body.email) meta.email = body.email
+        if (typeof body.machine_id === 'string' && body.machine_id.trim()) meta.machine_id = body.machine_id.trim().toUpperCase()
+        if (typeof body.account_token === 'string' && body.account_token) {
+          const acc = store.getSessionAccount(body.account_token)
+          if (acc) meta.account_email = acc.email
+        }
+        store.createOrder(o.order_id, meta)
+        return json(res, 200, { ok: true, provider: 'paypal', order_id: o.order_id,
+          amount: conv.amount, currency: conv.currency, dev: !!o.dev, plan: planName,
+          plan_days: plan.days, client_id: paypal.clientId() })
+      }
+      const o = await razorpay.createOrder(plan.inr * 100)
+      const meta = { plan: planName, amount_paise: plan.inr * 100 }
+      if (typeof body.name === 'string' && body.name) meta.name = body.name
+      if (typeof body.email === 'string' && body.email) meta.email = body.email
+      if (typeof body.machine_id === 'string' && body.machine_id.trim()) meta.machine_id = body.machine_id.trim().toUpperCase()
+      if (typeof body.account_token === 'string' && body.account_token) {
+        const acc = store.getSessionAccount(body.account_token)
+        if (acc) meta.account_email = acc.email
+      }
+      store.createOrder(o.order_id, meta)
+      return json(res, 200, { ok: true, provider: 'razorpay', order_id: o.order_id, amount: o.amount, currency: o.currency, key_id: o.key_id, dev: !!o.dev, plan: planName, plan_usd: plan.usd, plan_days: plan.days })
+    } catch (e) {
+      return json(res, 500, { error: 'order_failed', msg: String(e.message || e) })
+    }
+  }
+
+  if (pathname === '/api/verify') {
+    const { order_id, payment_id, signature, machine_id, account_token } = body
+    if (!order_id) return json(res, 400, { error: 'bad_request' })
+    const order = store.getOrder(order_id)
+    if (!order) return json(res, 404, { error: 'order_not_found' })
+    if (order.provider === 'yookassa') {
+      if (order.status === 'paid') {
+        const k = store.keyForOrder(order_id)
+        if (k) {
+          const rc0 = makeReceipt(String(order_id), machine_id)
+          return json(res, 200, { ok: true, already_paid: true, key: k, plan: order.plan || 'legacy',
+            receipt: rc0 && rc0.receipt, receipt_sig: rc0 && rc0.receipt_sig })
+        }
+      }
+      const st = await yookassa.paymentStatus(String(order.yk_id || ''), String(order_id))
+      if (!st.ok) return json(res, 402, { error: 'capture_failed', msg: 'YooKassa payment was not completed.' })
+      const vacc0 = account_token ? store.getSessionAccount(String(account_token)) : null
+      const r0 = finalizePayment(String(order_id), String(order.yk_id || ''), machine_id, vacc0 ? vacc0.email : null)
+      const rc0 = makeReceipt(String(order_id), machine_id)
+      return json(res, 200, { ok: true, key: r0.key, renewed: r0.renewed, already_paid: false, plan: r0.plan, plan_days: planOf(r0.plan).days,
+        receipt: rc0 && rc0.receipt, receipt_sig: rc0 && rc0.receipt_sig })
+    }
+    if (order.provider === 'paypal') {
+      if (order.status === 'paid') {
+        const k = store.keyForOrder(order_id)
+        if (k) {
+          const rc0 = makeReceipt(String(order_id), machine_id)
+          return json(res, 200, { ok: true, already_paid: true, key: k, plan: order.plan || 'legacy',
+            receipt: rc0 && rc0.receipt, receipt_sig: rc0 && rc0.receipt_sig })
+        }
+      }
+      const cap = await paypal.captureOrder(String(body.pp_order_id || payment_id || ''))
+      if (!cap.ok) return json(res, 402, { error: 'capture_failed', msg: 'PayPal payment was not completed.' })
+      const vacc0 = account_token ? store.getSessionAccount(String(account_token)) : null
+      const r0 = finalizePayment(String(order_id), String(cap.capture_id || ''), machine_id, vacc0 ? vacc0.email : null)
+      const rc0 = makeReceipt(String(order_id), machine_id)
+      return json(res, 200, { ok: true, key: r0.key, renewed: r0.renewed, already_paid: false, plan: r0.plan, plan_days: planOf(r0.plan).days,
+        receipt: rc0 && rc0.receipt, receipt_sig: rc0 && rc0.receipt_sig })
+    }
+    if (!payment_id) return json(res, 400, { error: 'bad_request' })
+    if (order.status === 'paid') {
+      const k = store.keyForOrder(order_id)
+      if (k) {
+        const rc = makeReceipt(String(order_id), machine_id)
+        const ord = store.getOrder(String(order_id))
+        return json(res, 200, { ok: true, already_paid: true, key: k, plan: (ord && ord.plan) || 'legacy',
+          receipt: rc && rc.receipt, receipt_sig: rc && rc.receipt_sig })
+      }
+    }
+    if (!razorpay.verifySignature(String(order_id), String(payment_id), String(signature || ''))) {
+      return json(res, 403, { error: 'bad_signature', msg: 'Payment could not be verified.' })
+    }
+    const vacc = account_token ? store.getSessionAccount(String(account_token)) : null
+    const r = finalizePayment(String(order_id), String(payment_id), machine_id, vacc ? vacc.email : null)
+    const rc = makeReceipt(String(order_id), machine_id)
+    return json(res, 200, { ok: true, key: r.key, renewed: r.renewed, already_paid: false, plan: r.plan, plan_days: planOf(r.plan).days,
+      receipt: rc && rc.receipt, receipt_sig: rc && rc.receipt_sig })
+  }
+
+  // ---- manual crypto (USDT-TRC20): on-chain verify, auto-issue ----
+  // Buyer pays OUR_ADDR, pastes the TX hash; we confirm the inbound
+  // transfer on TronGrid (address, USDT contract, amount, unused hash)
+  // and finalize exactly like any other paid order. No processor involved.
+  if (pathname === '/api/crypto/verify') {
+    try {
+      const planName = (body.plan === 'monthly' || body.plan === 'daily') ? body.plan : 'monthly'
+      const txid = String(body.txid || '').trim()
+      if (!/^[0-9a-fA-F]{64}$/.test(txid)) return json(res, 400, { error: 'bad_txid' })
+      const payId = 'cu:' + txid.toLowerCase()
+      const dup = store.orderByPaymentId(payId)
+      if (dup) {
+        const dupId = dup.order_id || Object.keys(store.data.orders).find((id) => store.data.orders[id] === dup)
+        const k = dupId ? store.keyForOrder(dupId) : null
+        if (k) {
+          const rcDup = makeReceipt(dupId || '', '')
+          return json(res, 200, { ok: true, already_paid: true, key: k, plan: dup.plan || planName,
+            receipt: rcDup && rcDup.receipt, receipt_sig: rcDup && rcDup.receipt_sig })
+        }
+        return json(res, 402, { error: 'tx_reused' })
+      }
+      const v = await cryptopay.verifyTx(txid, planName)
+      if (!v.ok) return json(res, 402, { error: v.error || 'verify_failed', got: v.got, want: v.want })
+      const plan = planOf(planName)
+      const orderId = 'cu_' + Date.now().toString(36)
+      const meta = { plan: planName, provider: 'crypto', amount_paise: 0,
+        currency: 'USDT', crypto_amount: (cryptopay.PLAN_USDT[planName] || 0) }
+      const vacc = body.account_token ? store.getSessionAccount(String(body.account_token)) : null
+      if (vacc) meta.account_email = vacc.email
+      meta.order_id = orderId
+      store.createOrder(orderId, meta)
+      const r = finalizePayment(orderId, payId, '', vacc ? vacc.email : null)
+      const rc = makeReceipt(orderId, '')
+      return json(res, 200, { ok: true, key: r.key, renewed: r.renewed, already_paid: false,
+        plan: r.plan, plan_days: plan.days,
+        receipt: rc && rc.receipt, receipt_sig: rc && rc.receipt_sig })
+    } catch (e) {
+      return json(res, 500, { error: 'verify_failed', msg: String(e.message || e) })
+    }
+  }
+
+  // ---- one-time payments: webhook safety net (payment.captured) ----
+
+  // Razorpay webhook safety net. The checkout callback normally settles the
+  // order in /api/verify; this catches payments whose tab closed first.
+  // Event: payment.captured (entity.order_id links to our order).
+  if (pathname === '/api/webhook') {
+    if (!razorpay.verifyWebhookSignature(raw, (req.headers['x-razorpay-signature'] || '').toString())) {
+      return json(res, 400, { error: 'bad_signature', msg: 'Webhook signature verification failed.' })
+    }
+    try {
+      const ent = body.payload && body.payload.payment && body.payload.payment.entity
+      if (ent && ent.order_id && body.event === 'payment.captured') {
+        const order = store.getOrder(String(ent.order_id))
+        if (order && order.status !== 'paid') {
+          const r = finalizePayment(String(ent.order_id), String(ent.id || ''), order.machine_id || '', order.account_email || '')
+          console.log('[webhook] payment.captured', String(ent.order_id), r.renewed ? 'renewal' : 'new key', r.key)
+        }
+      }
+      // Auto-renew is discontinued: subscription events are acknowledged
+      // and ignored. Only payment.captured (one-time orders) is processed.
+    } catch (e) {
+      console.error('[webhook] error:', e)
+    }
+    return json(res, 200, { ok: true })
+  }
+  if (pathname === '/api/webhook-paypal') {
+    const okSig = await paypal.verifyWebhook(req.headers, body)
+    if (!okSig && !paypal.isDev()) return json(res, 400, { error: 'bad_signature' })
+    try {
+      if (body.event_type === 'PAYMENT.CAPTURE.COMPLETED') {
+        const cap = (body.resource || {})
+        const rel = (cap.supplementary_data && cap.supplementary_data.related_ids) || {}
+        const ppOrder = String(rel.order_id || cap.invoice_id || '')
+        const ours = ppOrder && store.getOrder(ppOrder)
+        if (ours && ours.status !== 'paid') {
+          if (ours.provider === 'store-paypal' && ours.account_email) {
+            store.markPaid(ppOrder, String(cap.id || ''), ours.amount_paise || 0)
+            store.grant(ours.account_email, ours.product, ppOrder)
+            store.audit(ours.account_email, 'store_buy', ours.product)
+          } else {
+            finalizePayment(ppOrder, String(cap.id || ''), ours.machine_id || '', ours.account_email || '')
+          }
+          console.log('[webhook-paypal] captured', ppOrder)
+        }
+      }
+    } catch (e) {
+      console.error('[webhook-paypal] error:', e)
+    }
+    return json(res, 200, { ok: true })
+  }
+
+  if (pathname === '/api/receipt/verify') {
+    const { receipt, receipt_sig } = body
+    if (!receipt || !receipt_sig) return json(res, 400, { error: 'bad_request' })
+    let valid = false
+    try { valid = sign.verifyPayload(receipt, String(receipt_sig), keys.publicKey) } catch {}
+    if (!valid) return json(res, 200, { ok: true, valid: false })
+    const lic = receipt.key ? store.getLicense(receipt.key) : null
+    return json(res, 200, { ok: true, valid: true, receipt,
+      key_status: lic ? lic.status : 'unknown',
+      key_expires_at: lic ? (lic.expires_at || null) : null })
+  }
+
+  // Re-issue a signed receipt for a past order. Public, but requires BOTH
+  // the order ID and the license key it minted — knowing only one gets nothing.
+  if (pathname === '/api/receipt/reissue') {
+    const orderId = String(body.order_id || '').trim()
+    const key = String(body.key || '').trim().toUpperCase()
+    if (!orderId || !key) return json(res, 400, { error: 'bad_request' })
+    const order = store.getOrder(orderId)
+    if (!order || order.status !== 'paid') return json(res, 404, { error: 'order_not_found' })
+    if (store.keyForOrder(orderId) !== key) return json(res, 403, { error: 'key_mismatch' })
+    const rc = makeReceipt(orderId)
+    if (!rc) return json(res, 404, { error: 'order_not_found' })
+    return json(res, 200, { ok: true, key, receipt: rc.receipt, receipt_sig: rc.receipt_sig })
+  }
+
+  // Stop Premium without refund: the bound machine ends its own license.
+  // No money moves (Razorpay is never touched). Cancelled keys cannot be
+  // re-activated or renewed; paying again mints a fresh key.
+  if (pathname === '/api/cancel') {
+    const key = String(body.key || '').trim().toUpperCase()
+    const machineId = String(body.machine_id || '').trim().toUpperCase()
+    if (!key) return json(res, 400, { error: 'bad_request' })
+    const lic = store.getLicense(key)
+    if (!lic) return json(res, 404, { error: 'invalid_key', msg: 'No such license key.' })
+    if (lic.status !== 'activated' && lic.status !== 'issued') {
+      return json(res, 400, { error: 'not_active', msg: 'This license is not active.' })
+    }
+    // Account owners can stop their own keys from the dashboard (no machine
+    // needed); otherwise the legacy bound-machine check applies.
+    let ownerOk = false
+    if (body.account_token) {
+      const acc = store.getSessionAccount(String(body.account_token))
+      ownerOk = !!(acc && lic.account_email === acc.email)
+    }
+    if (!ownerOk) {
+      if (!machineId) return json(res, 400, { error: 'bad_request' })
+      // Fresh keys are not bound yet (binding happens at activation), so fall
+      // back to the checkout machine recorded on the order.
+      const order = store.getOrder(lic.order_id)
+      const bound = ((lic.machine_id || (order && order.machine_id)) || '').toUpperCase()
+      if (bound !== machineId) {
+        return json(res, 403, { error: 'machine_mismatch', msg: 'Only the bound machine can stop this license.' })
+      }
+    }
+    lic.status = 'cancelled'
+    lic.cancelled_at = new Date().toISOString()
+    store.save()
+    return json(res, 200, { ok: true, key })
+  }
+
+  if (pathname === '/api/admin/issue') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const machine = String(body.machine_id || '').trim().toUpperCase() || null
+    const note = String(body.note || '').slice(0, 200)
+    const orderId = 'admin_' + Date.now().toString(36)
+    store.createOrder(orderId, { provider: 'manual', machine_id: machine, note })
+    store.markPaid(orderId, 'manual', 0)
+    const key = sign.makeLicenseKey()
+    const issueDays = Math.min(Math.max(Math.floor(Number(body.days) || 30), 1), 36500)
+    const expires = new Date(Date.now() + issueDays * 86400000).toISOString()
+    store.issueLicense(key, orderId, null, expires)
+    if (machine) store.bindLicense(key, machine)
+    const issueEmail = String(body.account_email || '').trim().toLowerCase()
+    const issueCreated = issueEmail ? adminEnsureAccount(issueEmail) : false
+    if (issueEmail && store.getAccountByEmail(issueEmail)) {
+      store.setAccountEmail(key, issueEmail)
+      store.audit(issueEmail, 'admin_grant', key)
+    }
+    const rc = makeReceipt(orderId)
+    return json(res, 200, { ok: true, key, order_id: orderId, expires_at: expires,
+      created_account: issueCreated,
+      receipt: rc && rc.receipt, receipt_sig: rc && rc.receipt_sig })
+  }
+
+  // Account device management: list keys+devices, free a device slot.
+  if (pathname === '/api/account/devices' || pathname === '/api/account/device/remove') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    if (pathname === '/api/account/devices') {
+      const keys = store.keysVisibleTo(acc.email).map(({ lic: l, shared, owner }) => ({
+        key: l.key, status: l.status, expires_at: l.expires_at || null,
+        shared: !!shared, owner: owner || null,
+        shared_with: l.account_email === acc.email ? (l.shared_with || []) : undefined,
+        devices_used: Object.keys(l.devices || {}).length, device_limit: DEVICE_LIMIT,
+        devices: Object.entries(l.devices || {}).map(([id, d]) => ({
+          id, name: (d && d.name) || null,
+          first_seen: d && d.first_seen, last_seen: d && d.last_seen
+        }))
+      }))
+      return json(res, 200, { ok: true, keys, device_limit: DEVICE_LIMIT })
+    }
+    const key = String(body.key || '').trim().toUpperCase()
+    const lic = store.getLicense(key)
+    if (!lic || lic.account_email !== acc.email) return json(res, 404, { error: 'invalid_key' })
+    const left = store.removeDevice(key, String(body.machine_id || ''))
+    return json(res, 200, { ok: true, key, devices_used: left })
+  }
+
+  // Per-key receipt for the account dashboard: signed receipt data plus
+  // the devices currently using the key. Key owners only.
+  if (pathname === '/api/account/key/receipt') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    const key = String(body.key || '').trim().toUpperCase()
+    const lic = store.getLicense(key)
+    if (!lic || lic.account_email !== acc.email) return json(res, 404, { error: 'invalid_key' })
+    if (!lic.order_id) return json(res, 404, { error: 'no_receipt' })
+    const rc = makeReceipt(lic.order_id, null)
+    if (!rc) return json(res, 404, { error: 'no_receipt' })
+    return json(res, 200, { ok: true, key,
+      receipt: rc.receipt, receipt_sig: rc.receipt_sig,
+      expires_at: lic.expires_at || null, status: lic.status,
+      devices_used: Object.keys(lic.devices || {}).length, device_limit: DEVICE_LIMIT,
+      devices: Object.entries(lic.devices || {}).map(([id, d]) => ({
+        id, name: (d && d.name) || null,
+        first_seen: d && d.first_seen, last_seen: d && d.last_seen })) })
+  }
+
+  // Manual key claim ("Add a key manually"): attach a loose key handed out
+  // by support to your own account. Same rule as activation first-touch:
+  // unbound keys can be claimed by whoever holds them; bound keys stay put.
+  if (pathname === '/api/account/key/claim') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    const key = String(body.key || '').trim().toUpperCase()
+    if (!key) return json(res, 400, { error: 'bad_request', msg: 'Enter the license key.' })
+    const lic = store.getLicense(key)
+    if (!lic) return json(res, 404, { error: 'invalid_key', msg: 'No such license key.' })
+    if (lic.status === 'revoked') return json(res, 403, { error: 'license_revoked', msg: 'This license was revoked. Contact support.' })
+    if (lic.status === 'cancelled') return json(res, 403, { error: 'license_cancelled', msg: 'This license was cancelled.' })
+    if (lic.account_email && lic.account_email !== acc.email) {
+      return json(res, 403, { error: 'wrong_account', msg: 'This key belongs to a different account.' })
+    }
+    if (!lic.account_email) {
+      store.setAccountEmail(key, acc.email)
+      store.audit(acc.email, 'key_claim', 'key added manually')
+    }
+    return json(res, 200, { ok: true, key, expires_at: lic.expires_at || null, status: lic.status })
+  }
+
+  // Full order dossier for the admin panel: order + license + a freshly
+  // signed receipt. Powers PDF cross-checks (extracted PDF fields are
+  // compared against this server truth).
+  if (pathname === '/api/admin/order') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const orderId = String(body.order_id || '').trim()
+    const order = store.getOrder(orderId)
+    if (!order) return json(res, 404, { error: 'order_not_found' })
+    const key = store.keyForOrder(orderId)
+    const lic = key ? store.getLicense(key) : null
+    const rc = makeReceipt(orderId)
+    return json(res, 200, { ok: true, order,
+      license: lic ? { key: lic.key, status: lic.status, machine_id: lic.machine_id,
+        expires_at: lic.expires_at, issued_at: lic.issued_at } : null,
+      receipt: rc && rc.receipt, receipt_sig: rc && rc.receipt_sig })
+  }
+
+  if (pathname === '/api/admin/extend') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const key = String(body.key || '').trim().toUpperCase()
+    const days = Math.floor(Number(body.days) || 0)
+    const lic = store.getLicense(key)
+    if (!lic) return json(res, 404, { error: 'invalid_key' })
+    if (!(days >= 1 && days <= 36500)) return json(res, 400, { error: 'bad_request' })
+    const base = lic.expires_at ? Math.max(Date.now(), new Date(lic.expires_at).getTime()) : Date.now()
+    const expires = new Date(base + days * 86400000).toISOString()
+    store.extendLicense(key, expires)
+    if (lic.status === 'revoked' || lic.status === 'cancelled') {
+      lic.status = 'issued'
+      delete lic.revoked_at
+      delete lic.cancelled_at
+      store.save()
+    }
+    return json(res, 200, { ok: true, key, expires_at: expires })
+  }
+
+  if (pathname === '/api/admin/rebind') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const key = String(body.key || '').trim().toUpperCase()
+    const machine = String(body.machine_id || '').trim().toUpperCase()
+    const lic = store.getLicense(key)
+    if (!lic) return json(res, 404, { error: 'invalid_key' })
+    if (!machine) return json(res, 400, { error: 'bad_request' })
+    lic.machine_id = machine
+    lic.rebound_at = new Date().toISOString()
+    store.save()
+    return json(res, 200, { ok: true, key, machine_id: machine })
+  }
+
+  if (pathname === '/api/admin/revoke') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const key = String(body.key || '').trim().toUpperCase()
+    const lic = store.getLicense(key)
+    if (!lic) return json(res, 404, { error: 'invalid_key' })
+    lic.status = 'revoked'
+    lic.revoked_at = new Date().toISOString()
+    store.save()
+    return json(res, 200, { ok: true, key })
+  }
+
+  if (pathname === '/api/activate') {
+    // Account-bound flow (new apps): one key auto-activates up to
+    // DEVICE_LIMIT devices. Legacy {key, machine_id} flow below is kept
+    // byte-identical for old builds.
+    if (body.account_token) {
+      const acc = store.getSessionAccount(String(body.account_token))
+      if (!acc) return json(res, 401, { error: 'unauthorized', msg: 'Login expired. Log in again.' })
+      const machineId = String(body.machine_id || '').trim().toUpperCase()
+      if (!machineId) return json(res, 400, { error: 'bad_request' })
+      const deviceName = String(body.device_name || '').slice(0, 60)
+      const reqKey = String(body.key || '').trim().toUpperCase()
+      let lic = null
+      if (reqKey) {
+        lic = store.getLicense(reqKey)
+        if (!lic) return json(res, 404, { error: 'invalid_key', msg: 'No such license key.' })
+        if (lic.status === 'revoked') return json(res, 403, { error: 'license_revoked', msg: 'This license was revoked. Contact support.' })
+        if (lic.status === 'cancelled') return json(res, 403, { error: 'license_cancelled', msg: 'This license was cancelled. Buy again to restart Premium.' })
+        const ownerEmail = lic.account_email || null
+        const shared = !ownerEmail ? false : ((lic.shared_with || []).includes(acc.email))
+        if (ownerEmail && ownerEmail !== acc.email && !shared) {
+          return json(res, 403, { error: 'wrong_account', msg: 'This key belongs to a different account.' })
+        }
+        // First touch claims a loose key for the account (whoever holds the
+        // key could already activate it anywhere, so this grants nothing new).
+        if (!lic.account_email) store.setAccountEmail(reqKey, acc.email)
+      } else {
+        const cands = store.keysVisibleTo(acc.email).map((x) => x.lic)
+          .filter((l) => l.status !== 'revoked' && l.status !== 'cancelled')
+          .sort((a, b) => String(b.expires_at || '') < String(a.expires_at || '') ? -1 : 1)
+        if (!cands.length) return json(res, 404, { error: 'no_key', msg: 'No Premium key on this account yet.' })
+        lic = cands[0]
+      }
+      const live = licenseExpirySeconds(lic)
+      if (!live || live * 1000 < Date.now()) {
+        return json(res, 402, { error: 'key_expired', msg: 'The key on this account expired. Renew to keep Premium on all devices.', key: lic.key })
+      }
+      // Device approvals: unknown hardware waits for the key owner's OK.
+      if (!lic.devices) lic.devices = {}
+      const ownerForGate = lic.account_email || acc.email
+      if (!lic.devices[machineId] && store.requireApproval(ownerForGate)) {
+        const pend = store.createApproval(ownerForGate, lic.key, machineId, deviceName)
+        store.audit(ownerForGate, 'approval_wait', 'new device waiting' + (pend.refreshed ? '' : ''))
+        return json(res, 403, { error: 'approval_pending', msg: 'New device — approve it on your account dashboard, then retry.', key: lic.key })
+      }
+      const devs = lic.devices || {}
+      if (!devs[machineId] && Object.keys(devs).length >= DEVICE_LIMIT) {
+        return json(res, 403, { error: 'device_limit', msg: 'All ' + DEVICE_LIMIT + ' device slots are used. Remove one or buy a new key.', key: lic.key, devices_used: Object.keys(devs).length, device_limit: DEVICE_LIMIT })
+      }
+      const isNew = !((lic.devices || {})[machineId])
+      const used = store.touchDevice(lic.key, machineId, deviceName, String(body.app_version || '').slice(0, 20))
+      store.noteDeviceOwner(lic.key, machineId, acc.email)
+      if (isNew) store.audit(lic.account_email || acc.email, 'device_add', 'device activated')
+      if (!lic.machine_id) store.bindLicense(lic.key, machineId)
+      const payload = makeLicensePayload(lic.key, machineId, acc.email)
+      const sig = sign.signPayload(payload, keys.privateKey)
+      const allSubs = store.all().subscriptions || {}
+      const auto = Object.values(allSubs).some((s) => s.account_email === acc.email && (s.status === 'active' || s.status === 'created' || s.status === 'pending'))
+      return json(res, 200, { ok: true, license: { key: lic.key, payload, sig }, status: 'activated', devices_used: used, device_limit: DEVICE_LIMIT, auto })
+    }
+    const key = String(body.key || '').trim().toUpperCase()
+    const machineId = String(body.machine_id || '').trim().toUpperCase()
+    if (!key || !machineId) return json(res, 400, { error: 'bad_request' })
+    const lic = store.getLicense(key)
+    if (!lic) return json(res, 404, { error: 'invalid_key', msg: 'No such license key.' })
+    if (lic.status === 'revoked') {
+      return json(res, 403, { error: 'license_revoked', msg: 'This license was revoked. Contact support.' })
+    }
+    if (lic.status === 'cancelled') {
+      return json(res, 403, { error: 'license_cancelled', msg: 'This license was cancelled. Buy again to restart Premium.' })
+    }
+    if (lic.status === 'activated' && lic.machine_id !== machineId) {
+      return json(res, 403, { error: 'machine_mismatch', msg: 'This key is already activated on another machine.' })
+    }
+    if (lic.status === 'activated') {
+      // Same machine re-activating: just re-sign, idempotent.
+      const payload = makeLicensePayload(key, machineId)
+      const sig = sign.signPayload(payload, keys.privateKey)
+      return json(res, 200, { ok: true, license: { key, payload, sig }, status: 'renewed' })
+    }
+    store.bindLicense(key, machineId)
+    const payload = makeLicensePayload(key, machineId)
+    const sig = sign.signPayload(payload, keys.privateKey)
+    return json(res, 200, { ok: true, license: { key, payload, sig }, status: 'activated' })
+  }
+
+  if (pathname === '/api/admin/release') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const lic = store.releaseLicense(String(body.key || '').trim().toUpperCase())
+    if (!lic) return json(res, 404, { error: 'invalid_key' })
+    return json(res, 200, { ok: true })
+  }
+
+  function authThrottle(req) {
+    const fwd = (req.headers['x-forwarded-for'] || '').toString().split(',')[0].trim()
+    const ip = fwd || (req.socket && req.socket.remoteAddress) || 'unknown'
+    const now = Date.now()
+    const hits = (authHits.get(ip) || []).filter((t) => now - t < AUTH_WINDOW_MS)
+    hits.push(now)
+    authHits.set(ip, hits)
+    if (authHits.size > 5000) authHits.clear()
+    return hits.length <= AUTH_MAX
+  }
+  function clientIp(req) {
+    const cf = (req.headers['cf-connecting-ip'] || '').toString().trim()
+    if (cf) return cf
+    const fwd = (req.headers['x-forwarded-for'] || '').toString().split(',')[0].trim()
+    return fwd || (req.socket && req.socket.remoteAddress) || 'unknown'
+  }
+  function bearer(req) {
+    const h = (req.headers.authorization || req.headers.Authorization || '').toString()
+    const m = h.match(/^Bearer\s+(kas_[A-Za-z0-9]+)$/)
+    return m ? m[1] : null
+  }
+  function validEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(e || '').trim()) }
+
+  if (pathname === '/api/account/signup' || pathname === '/api/account/login') {
+    if (!authThrottle(req)) return json(res, 429, { error: 'too_many' })
+    const email = String(body.email || '').trim().toLowerCase()
+    const password = String(body.password || '')
+    if (!validEmail(email)) return json(res, 400, { error: 'bad_email' })
+    if (password.length < 8) return json(res, 400, { error: 'weak_password' })
+    if (pathname === '/api/account/signup') {
+      if (store.getAccountByEmail(email)) return json(res, 409, { error: 'exists' })
+      const passSalt = crypto.randomBytes(16).toString('hex')
+      const authSalt = crypto.randomBytes(16).toString('hex')
+      const syncSalt = crypto.randomBytes(16).toString('hex')
+      const passHash = crypto.scryptSync(password, passSalt, 32).toString('hex')
+      const created = store.createAccount(email, passHash, passSalt, authSalt, syncSalt)
+      if (created) created.verified = false
+      store.save()
+      const code = store.issueEmailCode(email, 'verify')
+      if (code) {
+        mailer.sendAsync(email, 'Verify your Kastrava account',
+          'Welcome to Kastrava.\n\nYour verification code (valid 10 minutes):\n\n' + code + '\n\nIf you did not sign up, ignore this email.')
+      }
+      store.audit(email, 'signup', 'account created')
+      return json(res, 200, { ok: true, email, verify_required: true, auth_salt: authSalt, sync_salt: syncSalt })
+    }
+
+    const acc = store.getAccountByEmail(email)
+    if (!acc) return json(res, 401, { error: 'bad_login' })
+    let good = false
+    try {
+      const h = crypto.scryptSync(password, acc.pass_salt, 32)
+      good = h.length === 32 && crypto.timingSafeEqual(h, Buffer.from(acc.pass_hash, 'hex'))
+    } catch {}
+    if (!good) return json(res, 401, { error: 'bad_login' })
+    if (!acc.verified) return json(res, 401, { error: 'verify_required', msg: 'Verify your email first — the code is in your inbox.' })
+    // Step 1 done: email yourself the one-time code, token comes at step 2.
+    store.stageLogin(email, String(body.label || ''), clientIp(req))
+    const lcode = store.issueEmailCode(email, 'login')
+    if (!lcode) return json(res, 429, { error: 'too_many', msg: 'Too many codes — try again later.' })
+    mailer.sendAsync(email, 'Your Kastrava login code',
+      'Someone (hopefully you) just entered the right password from ' + clientIp(req) + '.\n\nYour login code (valid 10 minutes):\n\n' + lcode + '\n\nIf this was not you, change your password right away.')
+    return json(res, 200, { ok: true, email, otp_required: true, totp: !!acc.totp_secret })
+  }
+    if (pathname === '/api/account/verify' || pathname === '/api/account/verify/resend') {
+    const email = String(body.email || '').trim().toLowerCase()
+    const acc0 = store.getAccountByEmail(email)
+    if (!acc0) return json(res, 401, { error: 'bad_login' })
+    if (acc0.verified) {
+      const token0 = store.createSession(email, 30 * 86400000, { label: String(body.label || '').slice(0, 60), ip: clientIp(req) })
+      return json(res, 200, { ok: true, token: token0, email })
+    }
+    if (pathname === '/api/account/verify/resend') {
+      const code0 = store.issueEmailCode(email, 'verify')
+      if (!code0) return json(res, 429, { error: 'too_many', msg: 'Too many codes — try again later.' })
+      mailer.sendAsync(email, 'Your Kastrava code',
+        'Your verification code (valid 10 minutes):\n\n' + code0 + '\n\nIf you did not request this, ignore this email.')
+      return json(res, 200, { ok: true, email, verify_required: true })
+    }
+    if (!store.checkEmailCode(email, 'verify', body.code)) {
+      return json(res, 401, { error: 'bad_code', msg: 'Wrong or expired code.' })
+    }
+    store.setVerified(email, true)
+    store.audit(email, 'verified', 'email verified')
+    const token0 = store.createSession(email, 30 * 86400000, { label: String(body.label || '').slice(0, 60), ip: clientIp(req) })
+    return json(res, 200, { ok: true, token: token0, email, auth_salt: acc0.auth_salt, sync_salt: acc0.sync_salt })
+  }
+  if (pathname === '/api/account/login/otp') {
+    if (!authThrottle(req)) return json(res, 429, { error: 'too_many' })
+    const email = String(body.email || '').trim().toLowerCase()
+    const acc = store.getAccountByEmail(email)
+    if (!acc || !acc.verified) return json(res, 401, { error: 'bad_login' })
+    const staged = store.peekLogin(email)
+    if (!staged) return json(res, 401, { error: 'expired', msg: 'Start the login over.' })
+    if (acc.totp_secret) {
+      const how = store.totpCheck(email, body.totp)
+      if (!how) return json(res, 401, { error: 'need_totp', msg: 'Enter the 6-digit code from your authenticator app.' })
+      if (how === 'recovery') store.audit(email, 'totp_recovery', 'recovery code used')
+    }
+    if (!store.checkEmailCode(email, 'login', body.code)) {
+      return json(res, 401, { error: 'bad_code', msg: 'Wrong or expired email code.' })
+    }
+    store.takeLogin(email)
+    const token = store.createSession(email, 30 * 86400000, { label: staged.label, ip: staged.ip })
+    store.audit(email, 'login', 'login from ' + (staged.ip || 'unknown'))
+    return json(res, 200, { ok: true, token, email, auth_salt: acc.auth_salt, sync_salt: acc.sync_salt })
+  }
+  if (pathname === '/api/account/reset/request') {
+    const email = String(body.email || '').trim().toLowerCase()
+    if (!validEmail(email)) return json(res, 400, { error: 'bad_email' })
+    const acc = store.getAccountByEmail(email)
+    if (acc) {
+      const code = store.issueEmailCode(email, 'reset')
+      if (code) {
+        mailer.sendAsync(email, 'Reset your Kastrava password',
+          'Your password-reset code (valid 10 minutes):\n\n' + code + '\n\nIf you did not ask for this, ignore this email — your password stays as is.')
+      }
+    }
+    return json(res, 200, { ok: true })
+  }
+  if (pathname === '/api/account/reset/confirm') {
+    const email = String(body.email || '').trim().toLowerCase()
+    const password = String(body.password || '')
+    if (password.length < 8) return json(res, 400, { error: 'weak_password' })
+    const acc = store.getAccountByEmail(email)
+    if (!acc || !store.checkEmailCode(email, 'reset', body.code)) {
+      return json(res, 401, { error: 'bad_code', msg: 'Wrong or expired code.' })
+    }
+    const passSalt = crypto.randomBytes(16).toString('hex')
+    acc.pass_salt = passSalt
+    acc.pass_hash = crypto.scryptSync(password, passSalt, 32).toString('hex')
+    // New password cannot read the old sync blob: rotate the salt so every
+    // device starts a fresh encrypted copy instead of failing on garbage.
+    acc.sync_salt = crypto.randomBytes(16).toString('hex')
+    if (store.data.sync) delete store.data.sync[email]
+    for (const h in store.data.sessions) {
+      if (store.data.sessions[h].email === email) delete store.data.sessions[h]
+    }
+    store.save()
+    store.audit(email, 'password_reset', 'password changed, sessions ended')
+    return json(res, 200, { ok: true, email })
+  }
+  if (pathname === '/api/account/logout') {
+    const tok = bearer(req)
+    const who = tok ? store.getSessionAccount(tok) : null
+    store.destroySession(tok)
+    if (who) store.audit(who.email, 'logout', 'session ended')
+    return json(res, 200, { ok: true })
+  }
+
+  // Sessions, audit log, family sharing, device approvals.
+  if (pathname === '/api/account/sessions') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    const tok = bearer(req)
+    const cur = tok ? require('crypto').createHash('sha256').update(tok).digest('hex').slice(0, 12) : null
+    return json(res, 200, { ok: true, current: cur,
+      sessions: store.sessionsForAccount(acc.email).map((x) => ({ ...x, current: x.id === cur })) })
+  }
+  if (pathname === '/api/account/session/revoke') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    const n = store.revokeSession(acc.email, String(body.id || ''))
+    if (n) store.audit(acc.email, 'session_revoke', 'session ended remotely')
+    return json(res, 200, { ok: true, revoked: n })
+  }
+  if (pathname === '/api/account/sessions/revoke-others') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    const n = store.revokeOtherSessions(acc.email, bearer(req))
+    if (n) store.audit(acc.email, 'session_revoke', n + ' other session(s) ended')
+    return json(res, 200, { ok: true, revoked: n })
+  }
+  if (pathname === '/api/account/audit') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    return json(res, 200, { ok: true, events: store.getAudit(acc.email) })
+  }
+  if (pathname === '/api/account/key/share' || pathname === '/api/account/key/unshare') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    const key = String(body.key || '').trim().toUpperCase()
+    const lic = store.getLicense(key)
+    if (!lic || lic.account_email !== acc.email) return json(res, 404, { error: 'invalid_key' })
+    const email = String(body.email || '').trim().toLowerCase()
+    if (!validEmail(email)) return json(res, 400, { error: 'bad_email' })
+    if (pathname === '/api/account/key/share') {
+      const r = store.shareKey(key, email)
+      if (r === 'no_account') return json(res, 404, { error: 'no_account', msg: 'No Kastrava account with that email yet.' })
+      if (r === 'self') return json(res, 400, { error: 'bad_request', msg: 'That is your own account.' })
+      store.audit(acc.email, 'share_add', 'key shared with ' + email)
+      store.audit(email, 'share_add', 'key shared by ' + acc.email)
+      return json(res, 200, { ok: true, key })
+    }
+    store.unshareKey(key, email)
+    store.audit(acc.email, 'share_remove', 'key unshared from ' + email)
+    return json(res, 200, { ok: true, key })
+  }
+  if (pathname === '/api/account/approvals') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    return json(res, 200, { ok: true, require_approval: store.requireApproval(acc.email),
+      approvals: store.approvalsFor(acc.email) })
+  }
+  if (pathname === '/api/account/totp/setup') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    if (acc.totp_secret) return json(res, 400, { error: 'already_on' })
+    const setup = store.totpSetup(acc.email)
+    if (!setup) return json(res, 400, { error: 'bad_request' })
+    store.audit(acc.email, 'totp_setup', '2FA setup started')
+    return json(res, 200, { ok: true, secret: setup.secret, otpauth_url: setup.otpauth_url })
+  }
+  if (pathname === '/api/account/totp/confirm') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    const recovery = store.totpConfirm(acc.email, body.code)
+    if (recovery === null) return json(res, 400, { error: 'bad_request', msg: 'Setup expired — start over.' })
+    if (recovery === false) return json(res, 401, { error: 'bad_code', msg: 'Wrong code — check the authenticator and retry.' })
+    store.audit(acc.email, 'totp_on', '2FA enabled')
+    return json(res, 200, { ok: true, recovery })
+  }
+  if (pathname === '/api/account/totp/disable') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    const password = String(body.password || '')
+    let good = false
+    try {
+      const h = crypto.scryptSync(password, acc.pass_salt, 32)
+      good = h.length === 32 && crypto.timingSafeEqual(h, Buffer.from(acc.pass_hash, 'hex'))
+    } catch {}
+    if (!good) return json(res, 401, { error: 'bad_login' })
+    store.totpDisable(acc.email)
+    store.audit(acc.email, 'totp_off', '2FA disabled')
+    return json(res, 200, { ok: true })
+  }
+  // Storefront: public catalog (paid item data stays gated), claim free
+  // or Premium items, buy the rest one-time. Installs only work inside the
+  // Kastrava browser; old builds simply never call these routes.
+  if (pathname === '/api/store/catalog') {
+    const items = products.catalog()
+    const cur = String(body.currency || '').toUpperCase()
+    if (cur && cur !== 'INR' && /^[A-Z]{3}$/.test(cur)) {
+      try {
+        for (const it of items) {
+          if (!it.free && it.price_usd) it.disp = await fx.fromUsd(it.price_usd, cur)
+        }
+      } catch {}
+    }
+    return json(res, 200, { ok: true, items })
+  }
+  if (pathname === '/api/store/claim') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    if (!isKastravaUA(req)) return json(res, 403, { error: 'wrong_browser', msg: 'Open the Store in Kastrava to install.' })
+    const prod = products.get(String(body.id || ''))
+    if (!prod) return json(res, 404, { error: 'no_item' })
+    if (store.owns(acc.email, String(body.id))) {
+      return json(res, 200, { ok: true, id: String(body.id), data: prod.data })
+    }
+    const priced = (prod.price_paise || 0) !== 0 || (prod.price_usd || 0) !== 0
+    if (priced) {
+      return json(res, 402, { error: 'need_payment', amount: prod.price_paise || 0,
+        amount_usd: prod.price_usd || 0, msg: 'Buy it once to keep it.' })
+    }
+    store.grant(acc.email, String(body.id), null)
+    store.audit(acc.email, 'store_claim', String(body.id))
+    return json(res, 200, { ok: true, id: String(body.id), data: prod.data })
+  }
+  if (pathname === '/api/store/buy') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    if (!isKastravaUA(req)) return json(res, 403, { error: 'wrong_browser', msg: 'Open the Store in Kastrava to install.' })
+    const prod = products.get(String(body.id || ''))
+    if (!prod) return json(res, 404, { error: 'no_item' })
+    if (store.owns(acc.email, String(body.id))) {
+      return json(res, 200, { ok: true, id: String(body.id), data: prod.data })
+    }
+    if (prod.price_paise === 0) {
+      if (prod.kind === 'pass') {
+        store.grantPass(acc.email, null, (prod.data && prod.data.days) || 30)
+      } else {
+        store.grant(acc.email, String(body.id), null)
+      }
+      return json(res, 200, { ok: true, id: String(body.id), data: prod.data })
+    }
+    try {
+      if (String(body.provider || '') === 'yookassa') {
+        const rub = String(Math.max(50, Math.round((prod.price_usd || 5) * 90)))
+        const yo = await yookassa.createPayment('yk_' + Date.now().toString(36), rub, 'RUB', 'Kastrava Store: ' + prod.name)
+        const ykOrderId = 'yk_' + yo.yk_id
+        store.createOrder(ykOrderId, { provider: 'store-yookassa', product: String(body.id),
+          account_email: acc.email, amount_paise: prod.price_paise || 0,
+          currency: 'RUB', yk_amount: rub, yk_id: yo.yk_id, dev: !!yo.dev })
+        return json(res, 200, { ok: true, provider: 'yookassa', order_id: ykOrderId,
+          amount: rub, currency: 'RUB', dev: !!yo.dev,
+          id: String(body.id), confirm_url: yo.confirm_url || null })
+      }
+      if (String(body.provider || '') === 'paypal') {
+        const g = await geo.resolveGeo(req, body.tz)
+        const conv = await fx.fromUsd(prod.price_usd || 5, g.currency)
+        const po = await paypal.createOrder(conv.amount, conv.currency, 'Kastrava Store: ' + prod.name)
+        store.createOrder(po.order_id, { provider: 'store-paypal', product: String(body.id),
+          account_email: acc.email, amount_paise: prod.price_paise || 0,
+          currency: conv.currency, pp_amount: conv.amount })
+        return json(res, 200, { ok: true, provider: 'paypal', order_id: po.order_id,
+          amount: conv.amount, currency: conv.currency, dev: !!po.dev,
+          id: String(body.id), client_id: paypal.clientId() })
+      }
+      const o = await razorpay.createOrder(prod.price_paise)
+      store.createOrder(o.order_id, { provider: 'store', product: String(body.id),
+        account_email: acc.email, amount_paise: prod.price_paise })
+      return json(res, 200, { ok: true, provider: 'razorpay', order_id: o.order_id, amount: o.amount,
+        currency: o.currency, key_id: o.key_id, dev: !!o.dev, id: String(body.id) })
+    } catch (e) {
+      return json(res, 500, { error: 'order_failed', msg: String(e.message || e) })
+    }
+  }
+  if (pathname === '/api/store/verify') {
+    const { order_id, payment_id, signature, account_token } = body
+    if (!order_id) return json(res, 400, { error: 'bad_request' })
+    const order = store.getOrder(String(order_id))
+    if (!order || (order.provider !== 'store' && order.provider !== 'store-paypal' && order.provider !== 'store-yookassa')) return json(res, 404, { error: 'bad_order' })
+    const acc = store.getSessionAccount(String(account_token || bearer(req) || ''))
+    const email = acc ? acc.email : (order.account_email || null)
+    if (!email) return json(res, 401, { error: 'unauthorized' })
+    if (order.provider === 'store-paypal') {
+      if (order.status === 'paid') {
+        const prod0 = products.get(order.product)
+        return json(res, 200, { ok: true, already_paid: true, id: order.product, data: prod0 && prod0.data })
+      }
+      const cap = await paypal.captureOrder(String(body.pp_order_id || payment_id || ''))
+      if (!cap.ok) return json(res, 402, { error: 'capture_failed' })
+      const prod0 = products.get(order.product)
+      if (!prod0) return json(res, 404, { error: 'no_item' })
+      store.markPaid(String(order_id), String(cap.capture_id || ''), order.amount_paise || 0)
+      if (prod0.kind === 'pass') {
+        store.grantPass(email, String(order_id), (prod0.data && prod0.data.days) || 30)
+      } else {
+        store.grant(email, order.product, String(order_id))
+      }
+      store.audit(email, 'store_buy', order.product)
+      return json(res, 200, { ok: true, id: order.product, data: prod0.data })
+    }
+    if (order.provider === 'store-yookassa') {
+      const prod0 = products.get(order.product)
+      if (!prod0) return json(res, 404, { error: 'no_item' })
+      if (order.status === 'paid') {
+        return json(res, 200, { ok: true, already_paid: true, id: order.product, data: prod0.data })
+      }
+      const st = await yookassa.paymentStatus(String(order.yk_id || ''), String(order_id))
+      if (!st.ok) return json(res, 402, { error: 'capture_failed', msg: 'YooKassa payment was not completed.' })
+      store.markPaid(String(order_id), String(order.yk_id || ''), order.amount_paise || 0)
+      if (prod0.kind === 'pass') {
+        store.grantPass(email, String(order_id), (prod0.data && prod0.data.days) || 30)
+      } else {
+        store.grant(email, order.product, String(order_id))
+      }
+      store.audit(email, 'store_buy', order.product)
+      return json(res, 200, { ok: true, id: order.product, data: prod0.data })
+    }
+    if (!payment_id) return json(res, 400, { error: 'bad_request' })
+    if (!razorpay.verifySignature(String(order_id), String(payment_id), String(signature || ''))) {
+      return json(res, 403, { error: 'bad_signature' })
+    }
+    const prod = products.get(order.product)
+    if (!prod) return json(res, 404, { error: 'no_item' })
+    store.markPaid(String(order_id), String(payment_id), order.amount_paise || 0)
+    if (prod.kind === 'pass') {
+      store.grantPass(email, String(order_id), (prod.data && prod.data.days) || 30)
+    } else {
+      store.grant(email, order.product, String(order_id))
+    }
+    store.audit(email, 'store_buy', order.product)
+    return json(res, 200, { ok: true, id: order.product, data: prod.data })
+  }
+  if (pathname === '/api/account/items') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    return json(res, 200, { ok: true, items: store.itemsFor(acc.email) })
+  }
+  // ---- Admin: accounts, grants, broadcast ----
+  if (pathname === '/api/admin/accounts') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const out = Object.values(store.all().accounts || {}).map((a) => ({
+      email: a.email, created_at: a.created_at, verified: !!a.verified,
+      totp: !!a.totp_secret,
+      keys: store.keysForAccount(a.email).map((l) => l.key),
+      devices: store.keysForAccount(a.email).reduce((n, l) => n + Object.keys(l.devices || {}).length, 0),
+      items: Object.keys(((store.all().entitlements || {})[a.email]) || {}).length
+    }))
+    return json(res, 200, { ok: true, accounts: out })
+  }
+  if (pathname === '/api/admin/account') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const email = String(body.email || '').trim().toLowerCase()
+    const acc = store.getAccountByEmail(email)
+    if (!acc) return json(res, 404, { error: 'no_account' })
+    return json(res, 200, { ok: true, account: {
+      email: acc.email, created_at: acc.created_at, verified: !!acc.verified,
+      totp: !!acc.totp_secret, require_approval: !!acc.require_approval,
+      keys: store.keysVisibleTo(email).map((x) => ({ key: x.lic.key, status: x.lic.status,
+        expires_at: x.lic.expires_at || null, shared: !!x.shared,
+        devices: Object.keys(x.lic.devices || {}).length })),
+      sessions: store.sessionsForAccount(email).length,
+      items: store.itemsFor(email).map((x) => x.id),
+      audit: store.getAudit(email).slice(0, 20) } })
+  }
+  if (pathname === '/api/admin/account/delete') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const email = String(body.email || '').trim().toLowerCase()
+    const acc = store.getAccountByEmail(email)
+    if (!acc) return json(res, 404, { error: 'no_account' })
+    for (const l of store.keysForAccount(email)) {
+      l.status = 'cancelled'
+      l.cancelled_at = new Date().toISOString()
+      l.shared_with = []
+    }
+    for (const k in store.data.licenses) {
+      const l = store.data.licenses[k]
+      if (l.shared_with) l.shared_with = (l.shared_with || []).filter((e) => e !== email)
+    }
+    for (const h in store.data.sessions) {
+      if (store.data.sessions[h].email === email) delete store.data.sessions[h]
+    }
+    if (store.data.sync) delete store.data.sync[email]
+    if (store.data.audit) delete store.data.audit[email]
+    if (store.data.entitlements) delete store.data.entitlements[email]
+    delete store.data.accounts[email]
+    store.save()
+    return json(res, 200, { ok: true })
+  }
+  if (pathname === '/api/admin/grant') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const email = String(body.email || '').trim().toLowerCase()
+    const id = String(body.id || body.key || '')
+    if (!validEmail(email)) return json(res, 400, { error: 'bad_email' })
+    // Auto-provision the account so a grant never dead-ends (they claim the
+    // password later via "Forgot password").
+    const createdAcc = adminEnsureAccount(email)
+    // The all-items catalogue pass: not a store product, so grant it directly.
+    if (id === 'catalogue-pass' || id === 'pass' || id === 'premium') {
+      const days = Math.min(Math.max(Math.floor(Number(body.days) || 30), 1), 3650)
+      store.grantPass(email, 'admin', days)
+      store.audit(email, 'admin_grant', 'catalogue-pass ' + days + 'd')
+      return json(res, 200, { ok: true, granted: 'catalogue-pass', days, created_account: createdAcc })
+    }
+    // Store item grant (free, direct to account).
+    const prod = products.get(id)
+    if (prod) {
+      if (prod.kind === 'pass') {
+        // Catalogue pass needs a live entitlement with expiry, not a plain
+        // grant — otherwise owns()/passLive() ignores it. Default 30 days,
+        // admin may pass days (1..3650).
+        const days = Math.min(Math.max(Math.floor(Number(body.days) || 30), 1), 3650)
+        store.grantPass(email, 'admin', days)
+        store.audit(email, 'admin_grant', id + ' ' + days + 'd')
+        return json(res, 200, { ok: true, granted: id, days, created_account: createdAcc })
+      }
+      store.grant(email, id, 'admin')
+      store.audit(email, 'admin_grant', id)
+      return json(res, 200, { ok: true, granted: id, created_account: createdAcc })
+    }
+    // Otherwise treat as a license key grant.
+    const lic = store.getLicense(id.toUpperCase())
+    if (!lic) return json(res, 404, { error: 'unknown_id' })
+    if (lic.account_email && lic.account_email !== email) {
+      return json(res, 403, { error: 'wrong_account', msg: 'Key belongs elsewhere.' })
+    }
+    store.setAccountEmail(lic.key, email)
+    store.audit(email, 'admin_grant', lic.key)
+    return json(res, 200, { ok: true, granted: lic.key, created_account: createdAcc })
+  }
+  if (pathname === '/api/admin/email') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const subject = String(body.subject || '').replace(/[\r\n]/g, ' ').slice(0, 120)
+    const text = String(body.text || '').slice(0, 5000)
+    if (!subject || !text) return json(res, 400, { error: 'bad_request' })
+    let candidates = []
+    const dump = store.all()
+    const accts = dump.accounts || {}
+    // verified=true means the user clicked the code we mailed them — a
+    // proven-reachable address. undefined = grandfathered (legacy) = trusted.
+    const isVerified = (em) => { const a = accts[em]; return !a || a.verified !== false }
+    if (body.to === 'all') {
+      candidates = Object.keys(accts)
+    } else if (body.to === 'paid') {
+      // Customers with at least one paid order — the launch/announcement list.
+      const paid = new Set()
+      for (const o of Object.values(dump.orders || {})) {
+        if (o && o.status === 'paid' && o.account_email) paid.add(String(o.account_email).toLowerCase())
+      }
+      candidates = [...paid]
+    } else if (typeof body.to === 'string' && body.to.includes('@')) {
+      const one = body.to.trim().toLowerCase()
+      if (!validEmail(one)) return json(res, 400, { error: 'bad_email' })
+      candidates = [one]
+    } else {
+      return json(res, 400, { error: 'bad_request' })
+    }
+    // Bounce protection: suppressed addresses are ALWAYS dropped. Broadcasts
+    // (all/paid) also require a verified address unless explicitly overridden —
+    // this is what keeps the sender reputation from being killed by bounces.
+    const broadcast = body.to === 'all' || body.to === 'paid'
+    const requireVerified = broadcast && body.include_unverified !== true
+    let skippedSuppressed = 0, skippedUnverified = 0
+    const targets = []
+    for (const em of candidates) {
+      if (store.isSuppressed(em)) { skippedSuppressed++; continue }
+      if (requireVerified && !isVerified(em)) { skippedUnverified++; continue }
+      targets.push(em)
+    }
+    if (targets.length === 0) {
+      return json(res, 200, { ok: true, sent: 0, total: 0,
+        skipped_suppressed: skippedSuppressed, skipped_unverified: skippedUnverified })
+    }
+    if (body.preview) {
+      return json(res, 200, { ok: true, preview: true, total: targets.length,
+        sample: targets.slice(0, 5), skipped_suppressed: skippedSuppressed,
+        skipped_unverified: skippedUnverified })
+    }
+    let queued = 0, skipped = 0
+    for (const em of targets.slice(0, 5000)) {
+      if (mailer.sendWithQueue({ to: em, subject, text: text + '\n\n— Kastrava\nemail-center@kastrava.in', from: mailer.TEAM_FROM })) queued++
+      else skipped++
+    }
+    store.audit('admin', 'admin_email', subject + ' -> ' + targets.length + ' target(s), ' + queued + ' queued, ' + skipped + ' skipped (suppressed/unsubscribed), ' + skippedSuppressed + ' suppressed, ' + skippedUnverified + ' unverified skipped')
+    return json(res, 200, { ok: true, queued, total: targets.length,
+      skipped_suppressed: skippedSuppressed, skipped_unverified: skippedUnverified, skipped, sent: queued })
+  }
+
+  // ---- Admin Email Center: the email-center@kastrava.in inbox ----
+  if (pathname === '/api/admin/inbox') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    drainInbox()
+    const msgs = inbox.list()
+    return json(res, 200, { ok: true, messages: msgs,
+      unread: msgs.filter((m) => !m.read).length, total: msgs.length })
+  }
+  if (pathname === '/api/admin/inbox/message') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const m = inbox.get(String(body.id || ''))
+    if (!m) return json(res, 404, { error: 'not_found' })
+    inbox.markRead(m.id)
+    return json(res, 200, { ok: true, message: m, reply_to: inbox.replyToAddress(m.id) })
+  }
+  if (pathname === '/api/admin/inbox/read') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    if (body.id === 'all') return json(res, 200, { ok: true, marked: inbox.markAllRead() ? inbox.list().length : 0 })
+    return json(res, 200, { ok: inbox.markRead(String(body.id || '')) })
+  }
+  if (pathname === '/api/admin/inbox/delete') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    return json(res, 200, { ok: inbox.remove(String(body.id || '')) })
+  }
+  // Reply from the centre: sends FROM email-center@ to the original sender.
+  if (pathname === '/api/admin/inbox/reply') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const m = inbox.get(String(body.id || ''))
+    if (!m) return json(res, 404, { error: 'not_found' })
+    const to = inbox.replyToAddress(m.id)
+    if (!validEmail(to)) return json(res, 400, { error: 'bad_sender' })
+    const text = String(body.text || '').slice(0, 5000)
+    if (!text) return json(res, 400, { error: 'bad_request' })
+    const subject = 'Re: ' + String(m.subject || '').replace(/^re:\s*/i, '').slice(0, 100)
+    const ok = await mailer.sendAsync(to, subject, text, null, mailer.TEAM_FROM)
+    store.audit('admin', 'admin_reply', to + ' :: ' + subject + (ok ? ' (sent)' : ' (FAILED)'))
+    return json(res, ok ? 200 : 502, { ok: !!ok, to, subject })
+  }
+
+  // ---- Admin: bounce suppression list (never-mail addresses) ----
+  if (pathname === '/api/admin/suppression') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const sup = store.listSuppression()
+    const rows = Object.keys(sup).map((e) => Object.assign({ email: e }, sup[e]))
+      .sort((a, b) => String(b.at || '').localeCompare(String(a.at || '')))
+    return json(res, 200, { ok: true, count: rows.length, rows })
+  }
+  if (pathname === '/api/admin/suppression/add') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const em = String(body.email || '').trim().toLowerCase()
+    if (!validEmail(em)) return json(res, 400, { error: 'bad_email' })
+    store.suppress(em, body.reason || 'manual', 'admin')
+    store.audit('admin', 'suppress_add', em + ' :: ' + (body.reason || 'manual'))
+    return json(res, 200, { ok: true, email: em })
+  }
+  if (pathname === '/api/admin/suppression/remove') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const em = String(body.email || '').trim().toLowerCase()
+    const ok = store.unsuppress(em)
+    if (ok) store.audit('admin', 'suppress_remove', em)
+    return json(res, 200, { ok, email: em })
+  }
+  // ---- One-click unsubscribe confirm (POST): token + email ----
+  if (pathname === '/api/mail/unsubscribe') {
+    const email = String(body.email || '').trim().toLowerCase()
+    const token = String(body.token || '')
+    if (!validEmail(email)) return json(res, 400, { error: 'bad_email' })
+    if (!token) return json(res, 400, { error: 'bad_request' })
+    const e = mailer.consumeUnsubscribeToken(token)
+    if (!e || e !== email) return json(res, 400, { error: 'bad_token' })
+    return json(res, 200, { ok: true, email })
+  }
+  // ---- Admin: queue stats / retry / failed jobs ----
+  if (pathname === '/api/admin/mail/queue/stats') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    return json(res, 200, { ok: true, ...mailer.getQueue().stats() })
+  }
+  if (pathname === '/api/admin/mail/queue/jobs/failed') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const q = mailer.getQueue()
+    const jobs = []
+    const dir = path.join(q.dir, 'failed')
+    try {
+      const files = fs.readdirSync(dir).filter(f => f.endsWith('.json')).slice(0, 50)
+      for (const f of files) {
+        try {
+          const j = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'))
+          jobs.push({ id: j.id, to: j.to, error: j.error || '', attempts: j.attempts || 0 })
+        } catch {}
+      }
+    } catch {}
+    return json(res, 200, { ok: true, jobs })
+  }
+  if (pathname === '/api/admin/mail/queue/retry') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const n = mailer.getQueue().retryFailed()
+    store.audit('admin', 'mail_queue_retry', n + ' failed job(s) re-queued')
+    return json(res, 200, { ok: true, retried: n })
+  }
+  // ---- Admin: process bounce spool now ----
+  if (pathname === '/api/admin/mail/bounce/process') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const r = bounceProcessor.process()
+    return json(res, 200, { ok: true, ...r })
+  }
+  if (pathname === '/api/account/export') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    return json(res, 200, { ok: true, export: {
+      email: acc.email, created_at: acc.created_at,
+      totp: !!acc.totp_secret, require_approval: !!acc.require_approval,
+      keys: store.keysVisibleTo(acc.email).map((x) => ({ key: x.lic.key,
+        status: x.lic.status, expires_at: x.lic.expires_at || null,
+        shared: !!x.shared, owner: x.owner || null,
+        devices: Object.keys(x.lic.devices || {}).length })),
+      sessions: store.sessionsForAccount(acc.email).length,
+      sync_rev: store.getSync(acc.email).rev,
+      audit: store.getAudit(acc.email) } })
+  }
+  if (pathname === '/api/account/delete') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    if (String(body.confirm || '') !== 'DELETE') return json(res, 400, { error: 'bad_request', msg: 'Type DELETE to confirm.' })
+    const password = String(body.password || '')
+    let good = false
+    try {
+      const h = crypto.scryptSync(password, acc.pass_salt, 32)
+      good = h.length === 32 && crypto.timingSafeEqual(h, Buffer.from(acc.pass_hash, 'hex'))
+    } catch {}
+    if (!good) return json(res, 401, { error: 'bad_login' })
+    // Owned keys die with the account (devices lose Premium on next check);
+    // shares evaporate; sessions, sync and audit are wiped.
+    for (const l of store.keysForAccount(acc.email)) {
+      l.status = 'cancelled'
+      l.cancelled_at = new Date().toISOString()
+      l.shared_with = []
+    }
+    for (const k in store.data.licenses) {
+      const l = store.data.licenses[k]
+      if (l.shared_with) l.shared_with = (l.shared_with || []).filter((e) => e !== acc.email)
+    }
+    for (const h in store.data.sessions) {
+      if (store.data.sessions[h].email === acc.email) delete store.data.sessions[h]
+    }
+    if (store.data.sync) delete store.data.sync[acc.email]
+    if (store.data.audit) delete store.data.audit[acc.email]
+    delete store.data.accounts[acc.email]
+    store.save()
+    return json(res, 200, { ok: true })
+  }
+  if (pathname === '/api/account/approval-require') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    const on = !!body.on
+    store.setRequireApproval(acc.email, on)
+    store.audit(acc.email, 'approval_require', on ? 'device approvals on' : 'device approvals off')
+    return json(res, 200, { ok: true, require_approval: on })
+  }
+  if (pathname === '/api/account/approval/resolve') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    const r = store.resolveApproval(acc.email, String(body.id || ''), !!body.approve)
+    if (!r) return json(res, 404, { error: 'not_found' })
+    if (r.approved) {
+      store.touchDevice(r.approval.key, r.approval.machine_id, r.approval.device_name, '')
+      store.noteDeviceOwner(r.approval.key, r.approval.machine_id, acc.email)
+      store.audit(acc.email, 'approval_ok', 'device approved')
+    } else {
+      store.audit(acc.email, 'approval_deny', 'device denied')
+    }
+    return json(res, 200, { ok: true, approved: r.approved })
+  }
+  if (pathname === '/api/account/me' || pathname === '/api/sync/pull' || pathname === '/api/sync/push') {
+    const acc = store.getSessionAccount(bearer(req))
+    if (!acc) return json(res, 401, { error: 'unauthorized' })
+    if (pathname === '/api/account/me') {
+      const allSubs = store.all().subscriptions || {}
+      const auto = Object.values(allSubs).some((s) => s.account_email === acc.email && (s.status === 'active' || s.status === 'created' || s.status === 'pending'))
+      return json(res, 200, { ok: true, email: acc.email, created_at: acc.created_at, auto, totp: !!acc.totp_secret })
+    }
+    if (pathname === '/api/sync/pull') {
+      const cur = store.getSync(acc.email)
+      return json(res, 200, { ok: true, rev: cur.rev, blob: cur.blob, updated_at: cur.updated_at })
+    }
+    const blob = String(body.blob || '')
+    if (!blob || blob.length > 262144) return json(res, 400, { error: 'bad_blob' })
+    const r = store.pushSync(acc.email, blob, Number(body.base_rev) || 0)
+    if (r.conflict) return json(res, 409, { error: 'conflict', rev: r.rev, blob: r.blob, updated_at: r.updated_at })
+    return json(res, 200, { ok: true, rev: r.rev })
+  }
+
+  // Auto-renew is discontinued: subscriptions can no longer start, settle
+  // or cancel. Old clients get a clean answer pointing at manual renewal.
+  if (pathname === '/api/subscribe' || pathname === '/api/subscribe/verify' ||
+      pathname === '/api/subscription/cancel') {
+    return json(res, 410, { error: 'removed', msg: 'Auto-renew is discontinued — renew manually instead.' })
+  }
+
+  if (pathname === '/api/admin/markpaid') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const order = store.getOrder(String(body.order_id || ''))
+    if (!order) return json(res, 404, { error: 'order_not_found' })
+    const r = finalizePayment(String(body.order_id), String(body.payment_id || 'admin'), body.machine_id || order.machine_id || '')
+    return json(res, 200, { ok: true, key: r.key, renewed: r.renewed })
+  }
+
+  // ---- Release management (mandatory updates) ----
+  if (pathname === '/api/admin/releases/set-mandatory') {
+    if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+    const tag = String(body.tag || '').replace(/^v/, '')
+    const mandatory = body.mandatory === true || body.mandatory === 'true'
+    const reason = String(body.reason || '').slice(0, 500)
+    const setBy = req.headers['x-admin-email'] || String(body.set_by || 'admin').slice(0, 120)
+    const r = store.setMandatory(tag, mandatory, reason, setBy)
+    if (!r) return json(res, 400, { error: 'bad_tag' })
+    store.audit('admin', 'release_mandatory', tag + ' mandatory=' + mandatory + ' reason=' + reason)
+    return json(res, 200, { ok: true, release: r })
+  }
+
+  // Public: client checks if a mandatory update exists for its version.
+  if (pathname === '/api/release/mandatory') {
+    const clientVersion = String(body.client_version || app.getVersion() || '').replace(/^v/, '')
+    const m = store.mandatoryUpdate(clientVersion)
+    if (!m) return json(res, 200, { ok: true, mandatory: false })
+    return json(res, 200, { ok: true, mandatory: true, release: m })
+  }
+
+  return json(res, 404, { error: 'not_found' })
+}
+
+const server = http.createServer((req, res) => {
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204, {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, X-Admin-Token, Authorization',
+      'Access-Control-Max-Age': '600'
+    })
+    return res.end()
+  }
+
+  const u = new URL(req.url, HOST + '/')
+  let pathname = u.pathname
+
+  if (req.method === 'POST') return handlePost(req, res, pathname)
+
+  // HEAD is served like GET (same headers incl. Content-Length; Node
+  // suppresses the response body automatically), so download managers and
+  // `curl -I` probes get a real 200 instead of 405.
+  if (req.method === 'GET' || req.method === 'HEAD') {
+    if (pathname === '/register' || pathname === '/register/' || pathname === '/login' || pathname === '/login/') {
+      pathname = '/account.html'
+    }
+    // Co-founder viewer admin panel (read-only)
+    if (pathname === '/admin') {
+      if (!adminViewOk(req)) return json(res, 401, { error: 'unauthorized' })
+      return serveStatic(req, res, '/admin-viewer.html')
+    }
+    if (pathname === '/api/health') {
+      return json(res, 200, { ok: true, dev: razorpay.isDev(), host: HOST, price: PRICE_INR, period_days: PERIOD_DAYS, grace_days: GRACE_DAYS, version: APP_VERSION, codename: 'Starship Wonders',
+        plans: { monthly: PLANS.monthly, daily: PLANS.daily } })
+    }
+    if (pathname === '/api/admin/list') {
+      if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+      const dump = store.all()
+      dump.server_version = APP_VERSION
+      return json(res, 200, dump)
+    }
+    if (pathname === '/api/admin/releases') {
+      if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+      return json(res, 200, { ok: true, releases: store.getReleases() })
+    }
+    // ---- Viewer-only AI chat admin endpoints (Co-founder read-only) ----
+    if (pathname === '/api/admin/view/dashboard') {
+      if (!adminViewOk(req)) return json(res, 401, { error: 'unauthorized' })
+      const dump = store.all()
+      const chats = dump.chats || []
+      return json(res, 200, {
+        ok: true,
+        version: APP_VERSION,
+        channel: 'rc',
+        active_sessions: chats.filter(c => c.messages && c.messages.length > 0).length,
+        total_sessions: chats.length,
+        total_messages: chats.reduce((sum, c) => sum + (c.messages ? c.messages.length : 0), 0)
+      })
+    }
+    if (pathname === '/api/admin/view/licenses') {
+      if (!adminViewOk(req)) return json(res, 401, { error: 'unauthorized' })
+      const dump = store.all()
+      const chats = dump.chats || []
+      return json(res, 200, { ok: true, chats: chats.map(c => ({
+        id: c.id,
+        title: c.title || 'Untitled',
+        updated: c.updated,
+        message_count: c.messages ? c.messages.length : 0
+      })) })
+    }
+    if (pathname === '/api/admin/view/accounts') {
+      if (!adminViewOk(req)) return json(res, 401, { error: 'unauthorized' })
+      const dump = store.all()
+      const accounts = dump.accounts || []
+      return json(res, 200, { ok: true, accounts: accounts.map(a => ({
+        email: a.email,
+        name: a.name || '',
+        updated: a.updated,
+        status: a.status || 'active'
+      })) })
+    }
+    if (pathname === '/api/admin/view/releases') {
+      if (!adminViewOk(req)) return json(res, 401, { error: 'unauthorized' })
+      return json(res, 200, { ok: true, releases: store.getReleases() })
+    }
+    // ---- One-click unsubscribe (GET): click the link in any Kastrava email ----
+    if (pathname === '/api/mail/unsubscribe') {
+      const token = u.searchParams.get('token')
+      const email = u.searchParams.get('email')
+      if (!token || !email) return json(res, 400, { error: 'bad_request' })
+      const e = mailer.consumeUnsubscribeToken(token)
+      if (!e || e !== email.toLowerCase()) return json(res, 400, { error: 'bad_token' })
+      return res.end('<!doctype html><html><head><meta charset="utf-8"><title>Unsubscribed</title></head>' +
+        '<body style="font-family:Arial,sans-serif;text-align:center;padding-top:70px;color:#14110b;">' +
+        '<h2 style="font-size:22px;font-weight:600;">Unsubscribed</h2>' +
+        '<p style="font-size:14px;color:#5f6368;">You will no longer receive Kastrava marketing email.</p>' +
+        '<p style="font-size:13px;color:#8a8474;margin-top:14px;"><a href="https://account.kastrava.in/" style="color:#1a73e8">Go to your account</a></p>' +
+        '</body></html>')
+    }
+    if (pathname === '/api/admin/mail/unsubscribed') {
+      if (!adminOk(req)) return json(res, 401, { error: 'unauthorized' })
+      return json(res, 200, { ok: true, list: store.listUnsubscribed() })
+    }
+    return serveStatic(req, res, pathname)
+  }
+
+  return json(res, 405, { error: 'method_not_allowed' })
+})
+
+server.listen(port, BIND_HOST, () => {
+  console.log('[kastrava-licenses] listening on http://' + BIND_HOST + ':' + port)
+  console.log('[kastrava-licenses] host=' + HOST + ' price=INR ' + PRICE_INR + '/' + PERIOD_DAYS + 'd one-time grace=' + GRACE_DAYS + 'd dev=' + razorpay.isDev())
+})

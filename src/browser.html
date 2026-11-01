@@ -71,7 +71,7 @@ body.no-fav .tab-favicon{display:none!important}
 .tb-update .u-dot{width:8px;height:8px;border-radius:50%;background:#fff;display:inline-block;margin-right:6px;flex-shrink:0;animation:u-pulse 1.5s infinite}
 .tb-update.warn .u-dot{background:#000}
 @keyframes u-pulse{0%,100%{opacity:1}50%{opacity:.45}}
-#btn-home,#btn-split,#btn-radar{display:none}
+#btn-home,#btn-radar{display:none}
 .more-menu{position:fixed;z-index:950;display:none;flex-direction:column;background:var(--c-bg);border:1px solid var(--c-border);border-radius:10px;box-shadow:0 16px 48px rgba(0,0,0,.45);padding:6px;min-width:210px}
 .more-menu.visible{display:flex}
 .mm-item{padding:8px 12px;font-size:13px;color:var(--c-text);cursor:pointer;border-radius:6px;display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -85,6 +85,8 @@ body.no-fav .tab-favicon{display:none!important}
 .omni-prefix{color:var(--c-text2);font-size:12px;font-weight:500;flex-shrink:0;letter-spacing:.2px}
 .omni-lock{width:14px;height:14px;flex-shrink:0;color:var(--c-text2);display:flex;align-items:center;justify-content:center}
 .omni-lock svg{width:13px;height:13px}
+.omni-shield{width:16px;height:16px;flex-shrink:0;color:#10b981;display:flex;align-items:center;justify-content:center;margin-left:4px}
+.omni-shield svg{width:14px;height:14px}
 .omnibox .url-input{flex:1;background:none;border:none;outline:none;color:var(--c-text);font-size:13px;min-width:0;padding:0;font-family:inherit;-webkit-user-select:text;user-select:text;transition:text-align .18s}
 .omnibox .url-input.collapsed{text-align:center}
 .omnibox .url-input::placeholder{color:var(--c-text2)}
@@ -200,6 +202,12 @@ body.no-logo .ntp-logo,body.no-logo .ntp-brand{display:none}
 .ant-switch input:checked + .slider{background:var(--accent)}
 .ant-switch input:focus-visible + .slider{box-shadow:0 0 0 2px var(--c-bg),0 0 0 4px var(--accent)}
 .ant-switch input:checked + .slider:before{transform:translateX(1.6em);width:2em;height:2em;bottom:0}
+.pro-locked{opacity:.45;pointer-events:none;filter:grayscale(.8)}
+.pro-locked .tgl-btn{background:var(--c-line)!important}
+.pro-locked .tgl-btn:after{background:var(--c-line)!important}
+.pro-locked select,.pro-locked input,.pro-locked button{background:var(--c-surface)!important;color:var(--c-text3)!important;border-color:var(--c-line)!important}
+.pro-locked .desc{color:var(--c-text3)!important}
+.pro-badge{font-size:10px;background:rgba(255,255,255,.1);color:var(--accent);padding:2px 8px;border-radius:10px;margin-left:8px;border:1px solid var(--accent)}
 .btn-sm{padding:6px 14px;border:none;border-radius:var(--radius-sm);cursor:pointer;font-size:12px;font-family:inherit;transition:background .15s}
 .btn-danger{background:rgba(242,139,130,.15);color:#f28b82}
 .btn-danger:hover{background:rgba(242,139,130,.25)}
@@ -564,6 +572,7 @@ body.vtabs-collapsed .vtabs-new{border-style:solid}
   <div class="omnibox chrome-omnibox" id="omnibox">
     <span class="omni-prefix" id="omni-prefix">http://</span>
     <span class="omni-lock" id="omni-lock" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg></span>
+    <span class="omni-shield" id="omni-shield" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><circle cx="12" cy="8" r="4"/></svg></span>
     <input class="url-input" type="text" id="url-input" data-i18n-ph="searchPh" placeholder="Search with KastravaSearch" spellcheck="false">
     <button class="omni-copy" id="omni-copy" title="Copy link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 10a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
     <button class="bm-star" id="bm-star" title="Bookmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
@@ -719,8 +728,8 @@ body.vtabs-collapsed .vtabs-new{border-style:solid}
 "use strict";
 window.addEventListener("error", function(e){ console.log("[GLOBAL ERROR]", e.message, "at", e.lineno+":"+e.colno, e.filename); });
 var api=window.api;
-// Edition: 'premium' default (also when running from source); 'free' hides premium features.
-var EDITION=(typeof __EDITION__!=="undefined"&&__EDITION__)?__EDITION__:"premium";
+// Edition: 'free' default — all features free for everyone.
+var EDITION=(typeof __EDITION__!=="undefined"&&__EDITION__)?__EDITION__:"free";
 var KAS_API=(typeof __KAS_API__!=="undefined"&&__KAS_API__)?__KAS_API__:"http://127.0.0.1:8787";
 var KAS_STORE=(typeof __KAS_STORE__!=="undefined"&&__KAS_STORE__)?__KAS_STORE__:(KAS_API||"http://127.0.0.1:8787");
 var LIC={activated:false,machine:"",key:null,reason:"no_license",expiresAt:null,subEnd:null,grace:false};
@@ -729,9 +738,23 @@ var DEMO_ACCOUNT="reviewer@kastrava.in";
 var DEMO_MODE=false;
 function isDemo(){return DEMO_MODE;}
 var licRefreshed=false;
-function editionLabel(){if(EDITION==="free")return "Free";return LIC.activated?"Premium":"Free";}
-function isPremium(){if(EDITION==="free")return false;return !!(LIC&&LIC.activated);}
-function requirePremium(){if(isPremium())return true;toast("Kastrava Premium — from ₹49/day, 10 devices");setTimeout(function(){openPremiumSection();},600);return false;}
+function editionLabel(){if(EDITION==="free")return "Kastrava Orion";return LIC.activated?"Kastrava Proxima":"Kastrava Orion";}
+function isPremium(){
+  if(EDITION==="free")return false;
+  // Premium requires an active license that hasn't expired.
+  if(!LIC||!LIC.activated)return false;
+  if(LIC.expiresAt){
+    var exp=new Date(LIC.expiresAt).getTime();
+    if(!isNaN(exp)&&Date.now()>=exp){
+      // Expired — mark grace and downgrade
+      LIC.grace=true;
+      LIC.reason="expired";
+      return false;
+    }
+  }
+  return true;
+}
+function requirePremium(){return isPremium();}
 function $(id){return document.getElementById(id)}
 function qa(sel){return document.querySelectorAll(sel)}
 function esc(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
@@ -741,7 +764,7 @@ function isBlank(u){return!u||u==="about:newtab"||u==="about:localhost"||u==="ab
 function err(fn,e){console.error("[Kastrava]",fn,e)}
 var tabs=[];var tabMap={};var activeTab=null;var tabIdCounter=0;
 var agDownloads=[];var agIdMap={};var bookmarkUrls=new Set();
-var settings={setupDone:"1",searchEngine:"kastravasearch",accent:"#1a73e8",fontSize:"12",reduceAnimations:"off",hwAcc:"on",dnt:"on",tracking:"strict",suggest:"off",bookmarkBar:"auto",startup:"last",confirmClose:"off",historyEnabled:"on",bookmarksEnabled:"on",cookies:"off",lang:"en",location:"block",zoom:"100",uiRadius:"medium",speedDial:"comfortable",showHomeBtn:"off",showCopyBtn:"on",showNtpClock:"on",showNtpLogo:"on",tabLayout:"horizontal",vtabsCollapsed:"off",shortcuts:{},uiStyle:"chrome",sleepTabs:"off",siteShields:{},jsGlobal:"on",adblock:"on",images:"off",webrtcMode:"disable",doh:"off",proxy:{enabled:false},startupUrls:"",showFullUrls:"off",ntpQuick:"on",ntpSearch:"on",ntpBg:"default",ntpTiles:"8",tabFavicons:"on",clearHistoryOnExit:"off",historyKeep:"0",maxTabs:"0",askDlLoc:"off",dlDir:"",maxSuggestions:"8",launchMaximized:"off",sendReferrer:"off",cursorFx:"off",cursorFxMode:"color",cursorFxColor:"#1a73e8",cursorFxForce:"medium",cursorFxSize:"medium",blobFx:"off",blobColor:"#1a73e8",blobCount:"3",blobSize:"medium",blobOpacity:"0.6",blobShape:"circle",glassFx:"off",glassColor:"#1a73e8",glassShape:"sphere",glassSize:"medium",glassOpacity:"0.5",particleFx:"off",particleColor:"#1a73e8",particleSize:"medium",particleDensity:"medium",clickSparkFx:"off",clickSparkColor:"#ffffff",clickSparkSize:"medium",clickSparkCount:"8",clickSparkDuration:"400",pixelTrailFx:"off",pixelTrailColor:"#ffffff",pixelTrailGrid:"medium",pixelTrailTrail:"medium",ribbonsFx:"off",ribbonsColor:"#1a73e8",ribbonsThickness:"medium",ribbonsPoints:"50",cursorStyle:"system",cursorStyleColor:"#ffffff",customThemes:[],customLogo:"",customWallpaper:"",bankSecur:"on",bankDelaySec:45,customToolbarOrder:null};
+var settings={setupDone:"1",searchEngine:"kastravasearch",accent:"#1a73e8",fontSize:"12",reduceAnimations:"off",hwAcc:"on",dnt:"on",tracking:"strict",suggest:"off",bookmarkBar:"auto",startup:"last",confirmClose:"off",historyEnabled:"on",bookmarksEnabled:"on",cookies:"off",lang:"en",location:"block",zoom:"100",uiRadius:"medium",speedDial:"comfortable",showHomeBtn:"off",showCopyBtn:"on",showNtpClock:"on",showNtpLogo:"on",tabLayout:"horizontal",vtabsCollapsed:"off",shortcuts:{},uiStyle:"chrome",sleepTabs:"off",siteShields:{},jsGlobal:"on",adblock:"on",images:"off",webrtcMode:"disable",doh:"off",proxy:{enabled:false},startupUrls:"",showFullUrls:"off",ntpQuick:"on",ntpSearch:"on",ntpBg:"default",ntpTiles:"8",tabFavicons:"on",clearHistoryOnExit:"off",historyKeep:"0",maxTabs:"0",askDlLoc:"off",dlDir:"",maxSuggestions:"8",launchMaximized:"off",sendReferrer:"off",cursorFx:"off",cursorFxMode:"color",cursorFxColor:"#1a73e8",cursorFxForce:"medium",cursorFxSize:"medium",blobFx:"off",blobColor:"#1a73e8",blobCount:"3",blobSize:"medium",blobOpacity:"0.6",blobShape:"circle",glassFx:"off",glassColor:"#1a73e8",glassShape:"sphere",glassSize:"medium",glassOpacity:"0.5",particleFx:"off",particleColor:"#1a73e8",particleSize:"medium",particleDensity:"medium",clickSparkFx:"off",clickSparkColor:"#ffffff",clickSparkSize:"medium",clickSparkCount:"8",clickSparkDuration:"400",pixelTrailFx:"off",pixelTrailColor:"#ffffff",pixelTrailGrid:"medium",pixelTrailTrail:"medium",ribbonsFx:"off",ribbonsColor:"#1a73e8",ribbonsThickness:"medium",ribbonsPoints:"50",cursorStyle:"system",cursorStyleColor:"#ffffff",customThemes:[],customLogo:"",customWallpaper:"",proximaLogo:"",bankSecur:"on",bankDelaySec:45,customBankDomains:[],customToolbarOrder:null,aiEnabled:"off",aiProvider:"ollama",aiApiKey:"",aiApiBase:"http://127.0.0.1:11434",aiModel:"llama3",tabSuspender:"off",tabSuspendMins:"30",forceDarkMode:"off",passGenerator:"off",autoFillForms:"off",pageTranslate:"off",pageSummarize:"off",mouseGestures:"off",tabColoring:"off"};
 var splitOn=false;var splitPartner=null;var prevTabId=null;
 var closedTabs=[];
 function isPaymentUrl(u){
@@ -754,7 +777,8 @@ function isBankUrl(u){
   try{
     var h=new URL(u||"").hostname.toLowerCase();
     if(!settings||settings.bankSecur==="off")return false;
-    return BANK_DOMAINS.some(function(d){return h===d||h.endsWith("."+d);});
+    var customs=settings.customBankDomains||[];
+    return BANK_DOMAINS.some(function(d){return h===d||h.endsWith("."+d);})||customs.some(function(d){return h===d||h.endsWith("."+d);});
   }catch(e){return false;}
 }
 var readerUrls={};
@@ -762,14 +786,12 @@ var radarEvents={};var radarOpen=false;
 var customSites=[];
 var cursorFxDispose=null;
 var SEARCH_ENGINES={kastravasearch:"https://search.kastrava.in/search?q=%s",duckduckgo:"https://duckduckgo.com/?q=%s",brave:"https://search.brave.com/search?q=%s",google:"https://www.google.com/search?q=%s",ecosia:"https://www.ecosia.org/search?q=%s"};
-// Premium-only extras. Free ships KastravaSearch + DuckDuckGo.
-var PREMIUM_ENGINES={brave:1,google:1,ecosia:1};
-var BANK_DOMAINS=["paytm.com","bankofamerica.com","chase.com","wellsfargo.com","citibank.com","hsbc.com","barclays.co.uk","sbi.co.in","hdfcbank.com","icicibank.com","axisbank.com","kotak.com","bnp paribas.com","santander.com","deutsche-bank.com","credit-suisse.com","ubs.com","standardchartered.com","bbva.com","ing.com","rabobank.com","nordea.com","danskebank.com","swedbank.com","commonwealthbank.com","anz.com","westpac.com","nab.com.au","rbc.com","td.com","scotiabank.com","bmo.com","cibc.com","tangerine.ca","amex.com","capitalone.com","discover.com","usbank.com","pnc.com","tdbank.com","ally.com","chime.com","revolut.com","monzo.com","starlingbank.com","n26.com","transferwise.com","wise.com","paypal.com","venmo.com","cash.app","zelle.com","remitly.com","westernunion.com","moneygram.com"];
+// All search engines are free for everyone.
+var PREMIUM_ENGINES={};
+var BANK_DOMAINS=["paytm.com","bankofamerica.com","chase.com","wellsfargo.com","citibank.com","hsbc.com","barclays.co.uk","sbi.co.in","hdfcbank.com","icicibank.com","axisbank.com","kotak.com","bnp paribas.com","santander.com","deutsche-bank.com","credit-suisse.com","ubs.com","standardchartered.com","bbva.com","ing.com","rabobank.com","nordea.com","danskebank.com","swedbank.com","commonwealthbank.com","anz.com","westpac.com","nab.com.au","rbc.com","td.com","scotiabank.com","bmo.com","cibc.com","tangerine.ca","amex.com","capitalone.com","discover.com","usbank.com","pnc.com","tdbank.com","ally.com","chime.com","revolut.com","monzo.com","starlingbank.com","n26.com","transferwise.com","wise.com","paypal.com","venmo.com","cash.app","zelle.com","remitly.com","westernunion.com","moneygram.com","nationwide.co.uk","lloydsbank.co.uk","natwest.com","halifax.co.uk","barclaycard.co.uk","americanexpress.co.uk","capitalone.co.uk","vanquis.co.uk","aquacard.co.uk","vanquisbank.co.uk","credtline.co.uk","sainsburysbank.co.uk","jasminefinance.co.uk","barclaycard.co.uk","americanexpress.co.uk","capitalone.co.uk","vanquis.co.uk","aquacard.co.uk","sainsburysbank.co.uk","jasminefinance.co.uk","barclaycard.co.uk","americanexpress.co.uk","capitalone.co.uk","vanquis.co.uk","aquacard.co.uk","sainsburysbank.co.uk","postoffice.co.uk","citibank.co.uk","lombard.co.uk","securetrustbank.com","aldemore.co.uk","aldmore.co.uk","handelsbanken.co.uk","santander.co.uk","cahoot.co.uk","egg.com","firstdirect.com","barclays.co.uk","natwest.com","halifax.co.uk","lloydsbank.co.uk","nationwide.co.uk","tescobank.com","sainsburysbank.co.uk","marksandspencer.com","virginmoney.co.uk","co-operativebank.co.uk","metrobank.co.uk","starlingbank.com","monzo.com","revolut.com","bunq.com","n26.com","revolut.com","starlingbank.com","monzo.com","transferwise.com","wise.com","paypal.com","venmo.com","cash.app","zelle.com","remitly.com","westernunion.com","moneygram.com","barclays.com","hsbc.com","santander.com","lloydsbank.co.uk","natwest.com","halifax.co.uk","barclaycard.co.uk","americanexpress.co.uk","capitalone.co.uk","vanquis.co.uk","aquacard.co.uk","sainsburysbank.co.uk","tescobank.com","postoffice.co.uk","citibank.co.uk","securetrustbank.com","aldemore.co.uk","handelsbanken.co.uk","cahoot.co.uk","egg.com","firstdirect.com","barclays.co.uk","natwest.com","halifax.co.uk","lloydsbank.co.uk","nationwide.co.uk","tescobank.com","sainsburysbank.co.uk","marksandspencer.com","virginmoney.co.uk","co-operativebank.co.uk","metrobank.co.uk","starlingbank.com","monzo.com","revolut.com","apichase.com","americanexpress.com","capitalone.com","discover.com","usbank.com","pnc.com","tdbank.com","ally.com","chime.com","revolut.com","monzo.com","starlingbank.com","n26.com","transferwise.com","wise.com","paypal.com","venmo.com","cash.app","zelle.com","remitly.com","westernunion.com","moneygram.com","cibc.com","td.com","scotiabank.com","bmo.com","td.com","scotiabank.com","bmo.com","cibc.com","tangerine.ca","amex.com","capitalone.com","discover.com","usbank.com","pnc.com","tdbank.com","ally.com","chime.com","revolut.com","monzo.com","starlingbank.com","n26.com","transferwise.com","wise.com","paypal.com","venmo.com","cash.app","zelle.com","remitly.com","westernunion.com","moneygram.com","hsbc.com","barclays.co.uk","sbi.co.in","hdfcbank.com","icicibank.com","axisbank.com","kotak.com","citi.com","icicibank.com","axisbank.com","kotak.com","hdfcbank.com","sbi.co.in","paytm.com","yesbank.co.in","indusind.com","federalbank.co.in","idfcfirstbank.com","rblbank.com","kotak.com","canarabank.com","punjabandsindbank.co.in","unionbankofindia.co.in","centralbank.co.in","uco bank.co.in","iob.com","jammu-kashmirbank.com","keralabank.co.in","andhra bank.co.in","corporationbank.co.in","denabank.co.in","vijayabank.co.in","syndicatebank.co.in","orientsbank.co.in","pbobank.co.in","ucobank.co.in","indianbank.co.in","unionbank.co.in","canarabank.co.in","pnb.co.in","baroda.co.in","iob.co.in","centralbank.co.in","ucobank.co.in","sbi.co.in","hdfcbank.com","icicibank.com","axisbank.com","kotak.com","yesbank.co.in","indusind.com","federalbank.co.in","idfcfirstbank.com","rblbank.com","kotak.com","canarabank.com","punjabandsindbank.co.in","unionbankofindia.co.in","centralbank.co.in","ucobank.co.in","icicibank.com","axisbank.com","kotak.com","hdfcbank.com","sbi.co.in","paytm.com","yesbank.co.in","indusind.com","federalbank.co.in","idfcfirstbank.com","rblbank.com","kotak.com","canarabank.com","punjabandsindbank.co.in","unionbankofindia.co.in","centralbank.co.in","ucobank.co.in","icicibank.com","axisbank.com","kotak.com","hdfcbank.com","sbi.co.in","paytm.com","yesbank.co.in","indusind.com","federalbank.co.in","idfcfirstbank.com","rblbank.com","kotak.com","canarabank.com","punjabandsindbank.co.in","unionbankofindia.co.in","centralbank.co.in","ucobank.co.in"];
 function customEngineIsPremium(tpl){
-  // Any custom search engine URL is Pro-only. Free ships KastravaSearch +
-  // DuckDuckGo; Brave/Google/Ecosia presets are Pro via PREMIUM_ENGINES.
-  try{new URL(tpl);}catch(e){return false;}
-  return true;
+  // Custom search engines are free for everyone.
+  return false;
 }
 function loadSettings(){
   if(!api||!api.getSettings)return Promise.resolve(JSON.parse(JSON.stringify(settings)));
@@ -798,7 +820,7 @@ function loadLicense(){
       }).catch(function(){});
     }
   }catch(e){}
-  try{applyEditionUI();}catch(e){}try{
+  try{applyEditionUI();applyEditionLogo();}catch(e){}try{
     // applyEditionUI can silently downgrade settings (e.g. premium engine
     // back to KastravaSearch on expiry). If Settings is open, re-render the
     // active section so controls never disagree with effective settings.
@@ -809,22 +831,45 @@ function loadLicense(){
     }
   }catch(e){}}).catch(function(){});
 }
+function downgradeToFree(){
+  // Reset all premium-exclusive settings to free-tier defaults
+  // Stock themes are free for everyone — only custom themes from store are premium
+  if(!applyThemeKey(settings.theme||"dark-0")&&settings.accent){document.documentElement.style.setProperty("--accent",settings.accent);}
+  reassertAccent();
+  ["cursorFx","blobFx","glassFx","particleFx","clickSparkFx","pixelTrailFx","ribbonsFx"].forEach(function(k){if(settings[k]==="on"){settings[k]="off";saveSetting(k,"off");}});
+  if(settings.cursorStyle==="custom"){settings.cursorStyle="system";saveSetting("cursorStyle","system");applyCursorStyle();}
+  if(settings.bankSecur==="on"){settings.bankSecur="off";saveSetting("bankSecur","off");}
+  if(settings.uiStyle!=="kastrava"){settings.uiStyle="kastrava";saveSetting("uiStyle","kastrava");applyUiStyle("kastrava");}
+  if(settings.tabLayout==="vertical"){settings.tabLayout="horizontal";saveSetting("tabLayout","horizontal");applyTabLayout("horizontal");}
+  // Clear premium store items
+  settings.customThemes=[]; saveSetting("customThemes",[]);
+  settings.customLogo=""; saveSetting("customLogo","");
+  settings.customWallpaper=""; saveSetting("customWallpaper","");
+  settings.proximaLogo=""; saveSetting("proximaLogo","");
+  // AI is premium-only
+  settings.aiEnabled="off"; saveSetting("aiEnabled","off");
+  settings.aiApiKey=""; saveSetting("aiApiKey","");
+  // New Pro features
+  settings.tabSuspender="off"; saveSetting("tabSuspender","off");
+  settings.forceDarkMode="off"; saveSetting("forceDarkMode","off");
+  settings.passGenerator="off"; saveSetting("passGenerator","off");
+  settings.autoFillForms="off"; saveSetting("autoFillForms","off");
+  settings.pageTranslate="off"; saveSetting("pageTranslate","off");
+  settings.pageSummarize="off"; saveSetting("pageSummarize","off");
+  settings.mouseGestures="off"; saveSetting("mouseGestures","off");
+  settings.tabColoring="off"; saveSetting("tabColoring","off");
+  try{applyAllFx();}catch(e){}
+  try{applyCustomLogo("");}catch(e){}
+}
 function applyEditionUI(){
   var prem=isPremium();
   var br=$("btn-radar");if(br)br.style.display=prem?"":"none";
-  var bs=$("btn-split");if(bs)bs.style.display=prem?"":"none";
+
   var wb=document.getElementById("workspaces-bar");
   if(wb&&!prem)wb.classList.remove("visible");
   if(!prem){
-    if(settings.theme!=="dark-0"&&settings.theme!=="light-0"&&settings.theme.indexOf("custom-")!==0){settings.theme="dark-0";saveSetting("theme","dark-0");}
-    if(PREMIUM_ENGINES[settings.searchEngine]||settings.searchEngine==="custom"){settings.searchEngine="kastravasearch";saveSetting("searchEngine","kastravasearch");}
-    if(settings.tabLayout==="vertical"){settings.tabLayout="horizontal";saveSetting("tabLayout","horizontal");applyTabLayout("horizontal");}
-    if(settings.uiStyle!=="kastrava"){settings.uiStyle="kastrava";saveSetting("uiStyle","kastrava");applyUiStyle("kastrava");}
-    if(!applyThemeKey(settings.theme||"dark-0")&&settings.accent){document.documentElement.style.setProperty("--accent",settings.accent);}
-    reassertAccent();
-    ["cursorFx","blobFx","glassFx","particleFx","clickSparkFx","pixelTrailFx","ribbonsFx"].forEach(function(k){if(settings[k]==="on"){settings[k]="off";saveSetting(k,"off");}});
-    if(settings.cursorStyle==="custom"){settings.cursorStyle="system";saveSetting("cursorStyle","system");applyCursorStyle();}
-    try{applyAllFx();}catch(e){}
+    downgradeToFree();
+    if(LIC.reason==="expired"||LIC.grace){try{maybeRenewReminder();}catch(e){}}
   }else{
     try{renderWorkspaces();}catch(e){}
   }
@@ -844,15 +889,29 @@ function applyEditionUI(){
 }
 function openPremiumSection(){openSettings();var item=document.querySelector('.settings-nav .sn-item[data-s="premium"]');if(item)item.click();else renderSettingsSection("premium");}
 async function stopPremium(){
-  if(!api||!api.licCancel)return;
   if(isDemo()){launchMarbleRace();return;}
   toast("Stopping Premium...");
   var res=await api.licCancel().catch(function(){return null;});
   if(!res||!res.ok){toast(res&&res.msg?res.msg:"Could not stop Premium.");return;}
   try{await loadLicense();}catch(e){}
-  try{applyEditionUI();}catch(e){}
+  try{applyEditionUI();applyEditionLogo();}catch(e){}
   try{renderSettingsSection("premium");}catch(e){}
   toast("Premium stopped. No refund was issued.");
+}
+function logout(){
+  // Local logout only — keeps the license valid on the server, just removes
+  // activation from this device and disables all Pro features.
+  LIC.activated=false;
+  LIC.key=null;
+  LIC.reason="logged_out";
+  LIC.grace=false;
+  LIC.expiresAt=null;
+  try{localStorage.removeItem("kastra_license");}catch(e){}
+  try{sessionStorage.removeItem("kastra_license");}catch(e){}
+  downgradeToFree();
+  try{applyEditionUI();applyEditionLogo();}catch(e){}
+  try{renderSettingsSection("premium");}catch(e){}
+  toast("Logged out — Pro features disabled on this device.");
 }
 /* Google Play reviewer demo: marble race for subscription cancellation.
    Keep the marble on the track until the finish line to process cancellation. */
@@ -925,7 +984,7 @@ function launchMarbleRace(){
 function processDemoCancellation(){
   LIC.activated=false;LIC.key=null;LIC.reason="cancelled";LIC.grace=false;
   LIC.expiresAt=null;
-  try{applyEditionUI();}catch(e){}
+  try{applyEditionUI();applyEditionLogo();}catch(e){}
   try{renderSettingsSection("premium");bindSettingsEvents("premium");}catch(e){}
   toast("Premium cancelled — subscription ended.");
   refresh();
@@ -939,7 +998,7 @@ async function activatePremium(key){
   var res=await api.licActivate(key);
   if(!res||!res.ok){toast(res&&res.msg?res.msg:"Activation failed.");return;}
   LIC.activated=true;LIC.key=res.license&&res.license.key?res.license.key:LIC.key;
-  applyEditionUI();try{renderSettingsSection("premium");}catch(e){}
+  applyEditionUI();applyEditionLogo();try{renderSettingsSection("premium");}catch(e){}
   toast("Premium activated — up to 10 devices.");
   try{renderWorkspaces();}catch(e){}
 }
@@ -987,7 +1046,7 @@ function activateDemoPremium(){
   LIC.activated=true;LIC.key="demo-key-"+Date.now();LIC.reason="demo";LIC.grace=false;
   LIC.expiresAt=Date.now()+86400000*30;
   try{saveSetting("theme","dark-0");}catch(e){}
-  try{applyEditionUI();}catch(e){}
+  try{applyEditionUI();applyEditionLogo();}catch(e){}
   try{renderSettingsSection("premium");bindSettingsEvents("premium");}catch(e){}
   toast("Premium unlocked — all features active for 30 days.");
   refresh();
@@ -1027,8 +1086,8 @@ function showRenewModal(s){
 function saveSetting(k,v){settings[k]=v;if(api&&api.setSetting)api.setSetting(k,v);}
 /* ===== Minimal i18n (en default, ru) ===== */
 var STR={
-en:{settings:"Settings",newTab:"New tab",searchPh:"Search with KastravaSearch",cmdPh:"Type a command...",findPh:"Find in page...",tabsPh:"Search tabs",bookmarks:"Bookmarks",history:"History",downloads:"Downloads",allDownloads:"All Downloads",trackingRadar:"Tracking Radar",localhost:"Localhost",localhostSub:"On-device webapps — localhost:3000-9000",dlSub:"Kept private for this session — wiped when you quit. Save files you want to keep.",ok:"OK",cancel:"Cancel",close:"Close",save:"Save",delete:"Delete",add:"Add",yes:"Yes",no:"No",copy:"Copy",open:"Open",reset:"Reset",restore:"Restore",addShortcut:"Add Shortcut",namePh:"Name",urlPh:"https://example.com",delHistH:"Delete All History?",delHistD:"This will delete all your browsing history. This cannot be reverted!",navPremium:"Kastrava Premium",navAccount:"Account",navGeneral:"General",navAppearance:"Appearance",navSearch:"Search Engine",navPrivacy:"Privacy & Security",navShortcuts:"Shortcuts",navA11y:"Accessibility",navSystem:"System",navReset:"Reset Settings",navAbout:"About",snSearchPh:"Search settings",hGeneral:"General",hAppearance:"Appearance",hSearch:"Search Engine",hPrivacy:"Privacy & Security",hShortcuts:"Keyboard Shortcuts",hA11y:"Accessibility",hSystem:"System",hReset:"Reset Settings",hAbout:"About",language:"Language",languageD:"Interface language. Applies immediately.",lStartup:"Startup",lStartupPages:"Startup Pages",lFontSize:"Font Size",lDefaultZoom:"Default Zoom",lConfirmClose:"Confirm Close",lTabLimit:"Tab Limit",lFullUrls:"Always Show Full URLs",lClearExit:"Clear History on Exit",lKeepHist:"Keep History",lDark:"Dark Themes",lLight:"Light Themes",lAccent:"Accent Color",lRadius:"Corner Radius",lDial:"Speed Dial Size",lTiles:"Shortcut Tiles",lNtpBg:"New Tab Background",lNtpSearch:"New Tab Search",lNtpShort:"New Tab Shortcuts",lTabFav:"Tab Favicons",lUiStyle:"Interface Style",lTabLayout:"Tab Layout",lCollapse:"Collapse Vertical Sidebar",lHomeBtn:"Show Home Button",lCopyBtn:"Show Copy Link Button",lClock:"Show Clock on New Tab",lLogo:"Show Logo on New Tab",lDefEngine:"Default Search Engine",lJs:"JavaScript",lImages:"Images",lCookies:"Cookies",lRef:"Referrer Policy",lWebrtc:"WebRTC",lDoh:"Secure DNS",lProxy:"Proxy",lLoc:"Location Access",lPerms:"Permissions",lTrack:"Tracking Protection",lDnt:"Do Not Track",lClear:"Clear Data",lBm:"Bookmarks",lRadar:"Tracking Radar",lHist:"Browsing History",lHw:"Hardware Acceleration",lMax:"Launch Maximized",lAskDl:"Ask Where to Save",lDlDir:"Download Folder",lSleep:"Sleep Inactive Tabs",lClearHist:"Clear History",lClearAll:"Clear All Data",lResetAll:"Reset All Settings",lResetEv:"Reset Everything",lReplay:"Replay Welcome Setup",lUpdates:"Updates",oobWelcome:"Welcome",oobPremium:"Premium & plans",oobDone:"Done",navExtensions:"Extensions",cws_add:"Add to Kastrava",cws_installed:"Installed — manage in Settings › Extensions",cws_installing:"Installing…",cws_done:"% installed ✓",cws_fail:"Install failed",ext_sub:"Install extensions from the Chrome Web Store — open any extension page and click + in the address bar, or paste a link below.",ext_installed_h:"Installed",ext_empty:"No extensions yet. Open a Chrome Web Store page or use the buttons below.",ext_addurl_h:"Install from link",ext_install:"Install",ext_import:"Import .crx / .zip file",ext_vpn_h:"VPN extensions",ext_vpn_sub:"50+ VPN providers — one click installs straight from the Chrome Web Store.",ext_on:"On",ext_off:"Disabled",ext_offbtn:"Enable",ext_remove:"Remove",ext_removed:"Extension removed",ext_installed_sh:"Installed"},
-ru:{settings:"Настройки",newTab:"Новая вкладка",searchPh:"Поиск с KastravaSearch",cmdPh:"Введите команду...",findPh:"Найти на странице...",tabsPh:"Поиск по вкладкам",bookmarks:"Закладки",history:"История",downloads:"Загрузки",allDownloads:"Все загрузки",trackingRadar:"Радар трекинга",localhost:"Локальные приложения",localhostSub:"Приложения на устройстве — localhost:3000-9000",dlSub:"Хранится приватно только эту сессию — удаляется при выходе. Сохраните нужные файлы.",ok:"ОК",cancel:"Отмена",close:"Закрыть",save:"Сохранить",delete:"Удалить",add:"Добавить",yes:"Да",no:"Нет",copy:"Копировать",open:"Открыть",reset:"Сбросить",restore:"Восстановить",addShortcut:"Добавить ярлык",namePh:"Название",urlPh:"https://example.com",delHistH:"Удалить всю историю?",delHistD:"Вся история просмотров будет удалена. Это действие необратимо!",navPremium:"Kastrava Premium",navAccount:"Аккаунт",navGeneral:"Основные",navAppearance:"Оформление",navSearch:"Поиск",navPrivacy:"Приватность и защита",navShortcuts:"Горячие клавиши",navA11y:"Специальные возможности",navSystem:"Система",navReset:"Сброс настроек",navAbout:"О программе",snSearchPh:"Поиск по настройкам",hGeneral:"Основные",hAppearance:"Оформление",hSearch:"Поисковая система",hPrivacy:"Приватность и защита",hShortcuts:"Горячие клавиши",hA11y:"Специальные возможности",hSystem:"Система",hReset:"Сброс настроек",hAbout:"О программе",language:"Язык",languageD:"Язык интерфейса. Применяется сразу.",lStartup:"Запуск",lStartupPages:"Стартовые страницы",lFontSize:"Размер шрифта",lDefaultZoom:"Масштаб по умолчанию",lConfirmClose:"Подтверждение закрытия",lTabLimit:"Лимит вкладок",lFullUrls:"Всегда показывать полные URL",lClearExit:"Очищать историю при выходе",lKeepHist:"Хранить историю",lDark:"Тёмные темы",lLight:"Светлые темы",lAccent:"Акцентный цвет",lRadius:"Скругление углов",lDial:"Размер экспресс-панели",lTiles:"Плитки ярлыков",lNtpBg:"Фон новой вкладки",lNtpSearch:"Поиск на новой вкладке",lNtpShort:"Ярлыки на новой вкладке",lTabFav:"Значки сайтов во вкладках",lUiStyle:"Стиль интерфейса",lTabLayout:"Расположение вкладок",lCollapse:"Сворачивать боковую панель",lHomeBtn:"Кнопка «Домой»",lCopyBtn:"Кнопка копирования ссылки",lClock:"Часы на новой вкладке",lLogo:"Логотип на новой вкладке",lDefEngine:"Поиск по умолчанию",lJs:"JavaScript",lImages:"Изображения",lCookies:"Файлы cookie",lRef:"Политика реферера",lDoh:"Защищённый DNS",lWebrtc:"WebRTC",lProxy:"Прокси",lLoc:"Доступ к геопозиции",lPerms:"Разрешения",lTrack:"Защита от трекинга",lDnt:"Не отслеживать (DNT)",lClear:"Очистить данные",lBm:"Закладки",lRadar:"Радар трекинга",lHist:"История просмотров",lHw:"Аппаратное ускорение",lMax:"Запускать развёрнутым",lAskDl:"Спрашивать место сохранения",lDlDir:"Папка загрузок",lSleep:"Спящие неактивные вкладки",lClearHist:"Очистить историю",lClearAll:"Удалить все данные",lResetAll:"Сбросить все настройки",lResetEv:"Сбросить всё",lReplay:"Показать приветствие снова",lUpdates:"Обновления",oobWelcome:"Добро пожаловать",oobPremium:"Premium и тарифы",oobDone:"Готово",navExtensions:"Расширения",cws_add:"Добавить в Kastrava",cws_installed:"Установлено — управление: Настройки › Расширения",cws_installing:"Установка…",cws_done:"% установлено ✓",cws_fail:"Не удалось установить",ext_sub:"Устанавливайте расширения из Chrome Web Store — откройте страницу расширения и нажмите + в адресной строке либо вставьте ссылку ниже.",ext_installed_h:"Установленные",ext_empty:"Пока нет расширений. Откройте страницу Chrome Web Store или воспользуйтесь кнопками ниже.",ext_addurl_h:"Установить по ссылке",ext_install:"Установить",ext_import:"Импорт .crx / .zip",ext_vpn_h:"VPN-расширения",ext_vpn_sub:"50+ VPN-провайдеров — установка в один клик прямо из Chrome Web Store.",ext_on:"Вкл",ext_off:"Выкл",ext_offbtn:"Включить",ext_remove:"Удалить",ext_removed:"Расширение удалено",ext_installed_sh:"Установлено"}
+en:{settings:"Settings",newTab:"New tab",searchPh:"Search with KastravaSearch",cmdPh:"Type a command...",findPh:"Find in page...",tabsPh:"Search tabs",bookmarks:"Bookmarks",history:"History",downloads:"Downloads",allDownloads:"All Downloads",trackingRadar:"Tracking Radar",localhost:"Localhost",localhostSub:"On-device webapps — localhost:3000-9000",dlSub:"Kept private for this session — wiped when you quit. Save files you want to keep.",ok:"OK",cancel:"Cancel",close:"Close",save:"Save",delete:"Delete",add:"Add",yes:"Yes",no:"No",copy:"Copy",open:"Open",reset:"Reset",restore:"Restore",addShortcut:"Add Shortcut",namePh:"Name",urlPh:"https://example.com",delHistH:"Delete All History?",delHistD:"This will delete all your browsing history. This cannot be reverted!",navPremium:"Kastrava Proxima",navAccount:"Account",navGeneral:"General",navAppearance:"Appearance",navSearch:"Search Engine",navPrivacy:"Privacy & Security",navShortcuts:"Shortcuts",navA11y:"Accessibility",navSystem:"System",navReset:"Reset Settings",navAbout:"About",snSearchPh:"Search settings",hGeneral:"General",hAppearance:"Appearance",hSearch:"Search Engine",hPrivacy:"Privacy & Security",hShortcuts:"Keyboard Shortcuts",hA11y:"Accessibility",hSystem:"System",hReset:"Reset Settings",hAbout:"About",language:"Language",languageD:"Interface language. Applies immediately.",lStartup:"Startup",lStartupPages:"Startup Pages",lFontSize:"Font Size",lDefaultZoom:"Default Zoom",lConfirmClose:"Confirm Close",lTabLimit:"Tab Limit",lFullUrls:"Always Show Full URLs",lClearExit:"Clear History on Exit",lKeepHist:"Keep History",lDark:"Dark Themes",lLight:"Light Themes",lAccent:"Accent Color",lRadius:"Corner Radius",lDial:"Speed Dial Size",lTiles:"Shortcut Tiles",lNtpBg:"New Tab Background",lNtpSearch:"New Tab Search",lNtpShort:"New Tab Shortcuts",lTabFav:"Tab Favicons",lUiStyle:"Interface Style",lTabLayout:"Tab Layout",lCollapse:"Collapse Vertical Sidebar",lHomeBtn:"Show Home Button",lCopyBtn:"Show Copy Link Button",lClock:"Show Clock on New Tab",lLogo:"Show Logo on New Tab",lDefEngine:"Default Search Engine",lJs:"JavaScript",lImages:"Images",lCookies:"Cookies",lRef:"Referrer Policy",lWebrtc:"WebRTC",lDoh:"Secure DNS",lProxy:"Proxy",lLoc:"Location Access",lPerms:"Permissions",lTrack:"Tracking Protection",lDnt:"Do Not Track",lClear:"Clear Data",lBm:"Bookmarks",lRadar:"Tracking Radar",lHist:"Browsing History",lHw:"Hardware Acceleration",lMax:"Launch Maximized",lAskDl:"Ask Where to Save",lDlDir:"Download Folder",lSleep:"Sleep Inactive Tabs",lClearHist:"Clear History",lClearAll:"Clear All Data",lResetAll:"Reset All Settings",lResetEv:"Reset Everything",lReplay:"Replay Welcome Setup",lUpdates:"Updates",oobWelcome:"Welcome",oobPremium:"Kastrava Proxima & plans",oobDone:"Done",navExtensions:"Extensions",cws_add:"Add to Kastrava",cws_installed:"Installed — manage in Settings › Extensions",cws_installing:"Installing…",cws_done:"% installed ✓",cws_fail:"Install failed",ext_sub:"Install extensions from the Chrome Web Store — open any extension page and click + in the address bar, or paste a link below.",ext_installed_h:"Installed",ext_empty:"No extensions yet. Open a Chrome Web Store page or use the buttons below.",ext_addurl_h:"Install from link",ext_install:"Install",ext_import:"Import .crx / .zip file",ext_vpn_h:"VPN extensions",ext_vpn_sub:"50+ VPN providers — one click installs straight from the Chrome Web Store.",ext_on:"On",ext_off:"Disabled",ext_offbtn:"Enable",ext_remove:"Remove",ext_removed:"Extension removed",ext_installed_sh:"Installed"},
+ru:{settings:"Настройки",newTab:"Новая вкладка",searchPh:"Поиск с KastravaSearch",cmdPh:"Введите команду...",findPh:"Найти на странице...",tabsPh:"Поиск по вкладкам",bookmarks:"Закладки",history:"История",downloads:"Загрузки",allDownloads:"Все загрузки",trackingRadar:"Радар трекинга",localhost:"Локальные приложения",localhostSub:"Приложения на устройстве — localhost:3000-9000",dlSub:"Хранится приватно только эту сессию — удаляется при выходе. Сохраните нужные файлы.",ok:"ОК",cancel:"Отмена",close:"Закрыть",save:"Сохранить",delete:"Удалить",add:"Добавить",yes:"Да",no:"Нет",copy:"Копировать",open:"Открыть",reset:"Сбросить",restore:"Восстановить",addShortcut:"Добавить ярлык",namePh:"Название",urlPh:"https://example.com",delHistH:"Удалить всю историю?",delHistD:"Вся история просмотров будет удалена. Это действие необратимо!",navPremium:"Kastrava Proxima",navAccount:"Аккаунт",navGeneral:"Основные",navAppearance:"Оформление",navSearch:"Поиск",navPrivacy:"Приватность и защита",navShortcuts:"Горячие клавиши",navA11y:"Специальные возможности",navSystem:"Система",navReset:"Сброс настроек",navAbout:"О программе",snSearchPh:"Поиск по настройкам",hGeneral:"Основные",hAppearance:"Оформление",hSearch:"Поисковая система",hPrivacy:"Приватность и защита",hShortcuts:"Горячие клавиши",hA11y:"Специальные возможности",hSystem:"Система",hReset:"Сброс настроек",hAbout:"О программе",language:"Язык",languageD:"Язык интерфейса. Применяется сразу.",lStartup:"Запуск",lStartupPages:"Стартовые страницы",lFontSize:"Размер шрифта",lDefaultZoom:"Масштаб по умолчанию",lConfirmClose:"Подтверждение закрытия",lTabLimit:"Лимит вкладок",lFullUrls:"Всегда показывать полные URL",lClearExit:"Очищать историю при выходе",lKeepHist:"Хранить историю",lDark:"Тёмные темы",lLight:"Светлые темы",lAccent:"Акцентный цвет",lRadius:"Скругление углов",lDial:"Размер экспресс-панели",lTiles:"Плитки ярлыков",lNtpBg:"Фон новой вкладки",lNtpSearch:"Поиск на новой вкладке",lNtpShort:"Ярлыки на новой вкладке",lTabFav:"Значки сайтов во вкладках",lUiStyle:"Стиль интерфейса",lTabLayout:"Расположение вкладок",lCollapse:"Сворачивать боковую панель",lHomeBtn:"Кнопка «Домой»",lCopyBtn:"Кнопка копирования ссылки",lClock:"Часы на новой вкладке",lLogo:"Логотип на новой вкладке",lDefEngine:"Поиск по умолчанию",lJs:"JavaScript",lImages:"Изображения",lCookies:"Файлы cookie",lRef:"Политика реферера",lDoh:"Защищённый DNS",lWebrtc:"WebRTC",lProxy:"Прокси",lLoc:"Доступ к геопозиции",lPerms:"Разрешения",lTrack:"Защита от трекинга",lDnt:"Не отслеживать (DNT)",lClear:"Очистить данные",lBm:"Закладки",lRadar:"Радар трекинга",lHist:"История просмотров",lHw:"Аппаратное ускорение",lMax:"Запускать развёрнутым",lAskDl:"Спрашивать место сохранения",lDlDir:"Папка загрузок",lSleep:"Спящие неактивные вкладки",lClearHist:"Очистить историю",lClearAll:"Удалить все данные",lResetAll:"Сбросить все настройки",lResetEv:"Сбросить всё",lReplay:"Показать приветствие снова",lUpdates:"Обновления",oobWelcome:"Добро пожаловать",oobPremium:"Kastrava Proxima & plans",oobDone:"Готово",navExtensions:"Расширения",cws_add:"Добавить в Kastrava",cws_installed:"Установлено — управление: Настройки › Расширения",cws_installing:"Установка…",cws_done:"% установлено ✓",cws_fail:"Не удалось установить",ext_sub:"Устанавливайте расширения из Chrome Web Store — откройте страницу расширения и нажмите + в адресной строке либо вставьте ссылку ниже.",ext_installed_h:"Установленные",ext_empty:"Пока нет расширений. Откройте страницу Chrome Web Store или воспользуйтесь кнопками ниже.",ext_addurl_h:"Установить по ссылке",ext_install:"Установить",ext_import:"Импорт .crx / .zip",ext_vpn_h:"VPN-расширения",ext_vpn_sub:"50+ VPN-провайдеров — установка в один клик прямо из Chrome Web Store.",ext_on:"Вкл",ext_off:"Выкл",ext_offbtn:"Включить",ext_remove:"Удалить",ext_removed:"Расширение удалено",ext_installed_sh:"Установлено"}
 };
 var OOBE_KEYS=["oobWelcome","oobPremium","oobDone"];
 function t(k){var L=(settings&&settings.lang)||"en";if(STR[L]&&STR[L][k]!=null)return STR[L][k];if(STR.en[k]!=null)return STR.en[k];return k;}
@@ -1063,8 +1122,8 @@ function applyReduceAnim(v){
   settings.reduceAnimations=v==="on"?"on":"off";
   document.documentElement.classList.toggle("reduce-anim",v==="on");
 }
-var DARK_THEMES=[{n:"Onyx",bg:"#000000",tbg:"#0a0a0c",tb:"#141418",om:"#0a0a0c",ac:"#4fc3f7"},{n:"Midnight",bg:"#0b0d12",tbg:"#11141b",tb:"#181c26",om:"#11141b",ac:"#6fb1ff"},{n:"Obsidian",bg:"#101010",tbg:"#171717",tb:"#202020",om:"#101010",ac:"#63b8e8"},{n:"Void",bg:"#0a0a0f",tbg:"#111117",tb:"#16161e",om:"#0a0a0f",ac:"#4fc3f7"},{n:"Carbon",bg:"#161616",tbg:"#1e1e1e",tb:"#2a2a2a",om:"#161616",ac:"#6ecf97"},{n:"Deep Sea",bg:"#0b1628",tbg:"#0f1f3d",tb:"#142952",om:"#0b1628",ac:"#64d2ff"},{n:"Emerald Night",bg:"#0d1a12",tbg:"#132618",tb:"#1a3322",om:"#0d1a12",ac:"#81c995"},{n:"Slate",bg:"#0c0c0e",tbg:"#131316",tb:"#1b1b1f",om:"#0c0c0e",ac:"#9aa0a6"},{n:"Royal",bg:"#070a14",tbg:"#0d1220",tb:"#131a2c",om:"#070a14",ac:"#7c9dff"},{n:"Titanium",bg:"#0d0d0f",tbg:"#141417",tb:"#1c1c20",om:"#0d0d0f",ac:"#52d3e0"},{n:"Firefox",bg:"#1c1b22",tbg:"#23222b",tb:"#2b2a33",om:"#1c1b22",ac:"#00ddff"},{n:"Alpenglow",bg:"#251834",tbg:"#2e2044",tb:"#38304e",om:"#251834",ac:"#ff87c7"}];
-var LIGHT_THEMES=[{n:"Clean",bg:"#ffffff",tbg:"#f4f4f6",tb:"#ececf0",om:"#f6f6f8",ac:"#1a73e8"},{n:"Frost",bg:"#f0f4f8",tbg:"#e8eef4",tb:"#dce3eb",om:"#f0f4f8",ac:"#1967d2"},{n:"Mint",bg:"#f0faf4",tbg:"#e6f5ec",tb:"#d4ede0",om:"#f0faf4",ac:"#137333"},{n:"Pearl",bg:"#fbfbfc",tbg:"#f4f4f6",tb:"#ececf0",om:"#f6f6f8",ac:"#4d9fff"},{n:"Cloud White",bg:"#f6f8fb",tbg:"#eef1f6",tb:"#e2e7ef",om:"#f8fafc",ac:"#4d8fe8"},{n:"Chalk",bg:"#f4f5f7",tbg:"#e9ebef",tb:"#dcdfe4",om:"#f7f8fa",ac:"#5f6368"},{n:"Sky Light",bg:"#f0f8ff",tbg:"#e6f2ff",tb:"#d4eaff",om:"#f0f8ff",ac:"#0b57d0"},{n:"Frost White",bg:"#f2f5f9",tbg:"#e9eef4",tb:"#dce4ec",om:"#f6f8fb",ac:"#3d7dd8"},{n:"Ice",bg:"#eef4f8",tbg:"#e3ecf3",tb:"#d4e2ec",om:"#f2f7fa",ac:"#2f80c4"},{n:"Slate Light",bg:"#f4f5f7",tbg:"#eaecf0",tb:"#dcdfe4",om:"#f4f5f7",ac:"#5f6368"},{n:"Firefox Light",bg:"#f9f9fb",tbg:"#f0f0f4",tb:"#e0e0e6",om:"#f9f9fb",ac:"#0061e0"}];
+var DARK_THEMES=[{n:"Onyx",bg:"#000000",tbg:"#0a0a0c",tb:"#141418",om:"#0a0a0c",ac:"#4fc3f7"},{n:"Midnight",bg:"#0b0d12",tbg:"#11141b",tb:"#181c26",om:"#11141b",ac:"#6fb1ff"},{n:"Obsidian",bg:"#101010",tbg:"#171717",tb:"#202020",om:"#101010",ac:"#63b8e8"},{n:"Void",bg:"#0a0a0f",tbg:"#111117",tb:"#16161e",om:"#0a0a0f",ac:"#4fc3f7"},{n:"Carbon",bg:"#161616",tbg:"#1e1e1e",tb:"#2a2a2a",om:"#161616",ac:"#6ecf97"},{n:"Deep Sea",bg:"#0b1628",tbg:"#0f1f3d",tb:"#142952",om:"#0b1628",ac:"#64d2ff"},{n:"Emerald Night",bg:"#0d1a12",tbg:"#132618",tb:"#1a3322",om:"#0d1a12",ac:"#81c995"},{n:"Slate",bg:"#0c0c0e",tbg:"#131316",tb:"#1b1b1f",om:"#0c0c0e",ac:"#9aa0a6"},{n:"Royal",bg:"#070a14",tbg:"#0d1220",tb:"#131a2c",om:"#070a14",ac:"#7c9dff"},{n:"Titanium",bg:"#0d0d0f",tbg:"#141417",tb:"#1c1c20",om:"#0d0d0f",ac:"#52d3e0"},{n:"Firefox",bg:"#1c1b22",tbg:"#23222b",tb:"#2b2a33",om:"#1c1b22",ac:"#00ddff"},{n:"Alpenglow",bg:"#251834",tbg:"#2e2044",tb:"#38304e",om:"#251834",ac:"#ff87c7"},{n:"Nord",bg:"#2e3440",tbg:"#3b4252",tb:"#4c566a",om:"#3b4252",ac:"#88c0d0"},{n:"Dracula",bg:"#282a36",tbg:"#44475a",tb:"#6272a4",om:"#44475a",ac:"#bd93f9"},{n:"Cyberpunk",bg:"#0f0c29",tbg:"#1a1a2e",tb:"#16213e",om:"#1a1a2e",ac:"#e94560"},{n:"Synthwave",bg:"#2b2d42",tbg:"#8d99ae",tb:"#ed213e",om:"#2b2d42",ac:"#3d5a80"},{n:"Matrix",bg:"#000000",tbg:"#0a0a0a",tb:"#1a1a1a",om:"#0a0a0a",ac:"#00ff41"},{n:"Crimson",bg:"#1a0b0b",tbg:"#2a1212",tb:"#3a1e1e",om:"#2a1212",ac:"#ff4d4d"},{n:"Amber",bg:"#1b1811",tbg:"#2d241a",tb:"#3f3226",om:"#2d241a",ac:"#ffb703"},{n:"Ocean",bg:"#0a1929",tbg:"#102940",tb:"#1f4067",om:"#102940",ac:"#e9d8a6"},{n:"Forest",bg:"#0f1711",tbg:"#1a271e",tb:"#2b3d2e",om:"#1a271e",ac:"#2ecc71"},{n:"Sunset",bg:"#2d1b17",tbg:"#3d231f",tb:"#4d2f29",om:"#3d231f",ac:"#ff6b35"},{n:"Plum",bg:"#2c1836",tbg:"#3d254c",tb:"#4e3263",om:"#3d254c",ac:"#d291bc"},{n:"Nebula",bg:"#1a1a2e",tbg:"#16213e",tb:"#0f3460",om:"#16213e",ac:"#e94560"},{n:"Aurora",bg:"#0f0c29",tbg:"#1a1a2e",tb:"#16213e",om:"#1a1a2e",ac:"#e94560"},{n:"Steel",bg:"#2f343f",tbg:"#3d464d",tb:"#4a5568",om:"#3d464d",ac:"#718096"},{n:"Vapor",bg:"#1a1a2e",tbg:"#2d1b69",tb:"#8e9eaf",om:"#2d1b69",ac:"#e94560"},{n:"Midnight Blue",bg:"#001f3f",tbg:"#001f3f",tb:"#074b6c",om:"#001f3f",ac:"#ff851b"},{n:"Dark Violet",bg:"#2d0f3f",tbg:"#3d1f5f",tb:"#4e2f7f",om:"#3d1f5f",ac:"#bc13fe"},{n:"Chocolate",bg:"#2f1b0c",tbg:"#3d2616",tb:"#4d311e",om:"#3d2616",ac:"#d2691e"},{n:"Midnight Green",bg:"#092430",tbg:"#113b49",tb:"#145d6b",om:"#113b49",ac:"#2ec4b6"},{n:"Electric",bg:"#0d0d0d",tbg:"#1a1a1a",tb:"#2a2a2a",om:"#1a1a1a",ac:"#00ff00"},{n:"Dark Gold",bg:"#2a1f14",tbg:"#3d2b1e",tb:"#4e3726",om:"#3d2b1e",ac:"#d4af37"},{n:"Ash",bg:"#1a1a1a",tbg:"#2a2a2a",tb:"#3a3a3a",om:"#2a2a2a",ac:"#e0e0e0"},{n:"Noir",bg:"#0a0a0a",tbg:"#141414",tb:"#1e1e1e",om:"#141414",ac:"#ffd700"},{n:"Deep Purple",bg:"#1a0b2e",tbg:"#2a134e",tb:"#3a1d6e",om:"#2a134e",ac:"#a020f0"}];
+var LIGHT_THEMES=[{n:"Clean",bg:"#ffffff",tbg:"#f4f4f6",tb:"#ececf0",om:"#f6f6f8",ac:"#1a73e8"},{n:"Frost",bg:"#f0f4f8",tbg:"#e8eef4",tb:"#dce3eb",om:"#f0f4f8",ac:"#1967d2"},{n:"Mint",bg:"#f0faf4",tbg:"#e6f5ec",tb:"#d4ede0",om:"#f0faf4",ac:"#137333"},{n:"Pearl",bg:"#fbfbfc",tbg:"#f4f4f6",tb:"#ececf0",om:"#f6f6f8",ac:"#4d9fff"},{n:"Cloud White",bg:"#f6f8fb",tbg:"#eef1f6",tb:"#e2e7ef",om:"#f8fafc",ac:"#4d8fe8"},{n:"Chalk",bg:"#f4f5f7",tbg:"#e9ebef",tb:"#dcdfe4",om:"#f7f8fa",ac:"#5f6368"},{n:"Sky Light",bg:"#f0f8ff",tbg:"#e6f2ff",tb:"#d4eaff",om:"#f0f8ff",ac:"#0b57d0"},{n:"Frost White",bg:"#f2f5f9",tbg:"#e9eef4",tb:"#dce4ec",om:"#f6f8fb",ac:"#3d7dd8"},{n:"Ice",bg:"#eef4f8",tbg:"#e3ecf3",tb:"#d4e2ec",om:"#f2f7fa",ac:"#2f80c4"},{n:"Slate Light",bg:"#f4f5f7",tbg:"#eaecf0",tb:"#dcdfe4",om:"#f4f5f7",ac:"#5f6368"},{n:"Firefox Light",bg:"#f9f9fb",tbg:"#f0f0f4",tb:"#e0e0e6",om:"#f9f9fb",ac:"#0061e0"},{n:"Lavender",bg:"#f8f4ff",tbg:"#e8e2ff",tb:"#d8cfff",om:"#e8e2ff",ac:"#7b61ff"},{n:"Peach",bg:"#fff6f0",tbg:"#ffe6d8",tb:"#ffd8c2",om:"#ffe6d8",ac:"#ff9e6b"},{n:"Sage",bg:"#f4f6f4",tbg:"#e8ece9",tb:"#d8e2de",om:"#e8ece9",ac:"#8a9a5b"},{n:"Rose",bg:"#f9f1f3",tbg:"#f2e4e8",tb:"#e6d8de",om:"#f2e4e8",ac:"#d870ad"},{n:"Sunrise",bg:"#fff4e5",tbg:"#ffe2c4",tb:"#ffd8b0",om:"#ffe2c4",ac:"#ffa94d"},{n:"Ocean Mist",bg:"#f0f8ff",tbg:"#e3f0fd",tb:"#d6e8f8",om:"#e3f0fd",ac:"#3498db"},{n:"Lemon",bg:"#fffff0",tbg:"#ffffd8",tb:"#ffeec4",om:"#ffffd8",ac:"#ffd700"},{n:"Blush",bg:"#fff7f8",tbg:"#ffe8ec",tb:"#ffdcdd",om:"#ffe8ec",ac:"#e84393"},{n:"Moss",bg:"#f4f8f4",tbg:"#e8ece8",tb:"#dce4dc",om:"#e8ece8",ac:"#4caf50"},{n:"Cotton",bg:"#fafafa",tbg:"#f0f0f0",tb:"#e8e8e8",om:"#f0f0f0",ac:"#9c27b0"},{n:"Sky",bg:"#f0f8ff",tbg:"#e0f2ff",tb:"#d0eaff",om:"#e0f2ff",ac:"#2196f3"},{n:"Sand",bg:"#faf7f2",tbg:"#f0e6d8",tb:"#e8dcc4",om:"#f0e6d8",ac:"#f4a261"},{n:"Graphite",bg:"#f4f4f4",tbg:"#e8e8e8",tb:"#dcdcdc",om:"#e8e8e8",ac:"#616161"},{n:"Cherry",bg:"#fff8f8",tbg:"#ffe8e8",tb:"#ffd8d8",om:"#ffe8e8",ac:"#e53935"},{n:"Emerald Light",bg:"#f4fdf7",tbg:"#e8f8ec",tb:"#d4f4e0",om:"#e8f8ec",ac:"#00c853"},{n:"Periwinkle",bg:"#f4f4ff",tbg:"#e8e8ff",tb:"#dcdcff",om:"#e8e8ff",ac:"#5e60ce"},{n:"Watermelon",bg:"#fff8f5",tbg:"#ffe8e2",tb:"#ffd8d0",om:"#ffe8e2",ac:"#ff5252"},{n:"Mist",bg:"#f5f7f8",tbg:"#e8ecee",tb:"#dce2e6",om:"#e8ecee",ac:"#78909c"},{n:"Gold Light",bg:"#fffdf0",tbg:"#ffeec4",tb:"#ffdfb0",om:"#ffeec4",ac:"#fbc02d"},{n:"Coral",bg:"#fff5f0",tbg:"#ffe8df",tb:"#ffd8c8",om:"#ffe8df",ac:"#ff7043"},{n:"Indigo Light",bg:"#f8f4ff",tbg:"#e8e2ff",tb:"#d8cfff",om:"#e8e2ff",ac:"#5c6bc0"},{n:"Hazel",bg:"#f8f4f0",tbg:"#ece8e0",tb:"#dcdcc4",om:"#ece8e0",ac:"#795548"}];
 var THEME_DARK_VARS={text:"#e8eaed",text2:"#8892a0",text3:"rgba(232,234,237,.45)",border:"#2a2a4a",hover:"rgba(255,255,255,.07)",surface:"rgba(255,255,255,.04)",line:"rgba(255,255,255,.05)",tglOn:"#2ea86b",tglOnC:"#6ec4a0",tglOff:"#e5484d"};
 var THEME_LIGHT_VARS={text:"#1b2430",text2:"#5b6472",text3:"rgba(27,36,48,.4)",border:"rgba(15,23,42,.13)",hover:"rgba(15,23,42,.06)",surface:"rgba(15,23,42,.045)",line:"rgba(15,23,42,.09)",tglOn:"#0f9d58",tglOnC:"#6cc39a",tglOff:"#d93025"};
 function resolveTheme(theme){
@@ -1127,10 +1186,8 @@ function applyBookmarkBar(v){
 function applyHistoryEnabled(v){settings.historyEnabled=v;document.body.classList.toggle("no-history",v==="off");}
 function applyBookmarksEnabled(v){settings.bookmarksEnabled=v;document.body.classList.toggle("no-bookmarks",v==="off");}
 var UI_STYLES=["kastrava","chrome","firefox","zen","brave","safari"];
-var UI_FREE=["kastrava","chrome"];
 function applyUiStyle(v){
   if(UI_STYLES.indexOf(v)<0)v="kastrava";
-  if(UI_FREE.indexOf(v)<0&&!isPremium())v="kastrava";
   settings.uiStyle=v;
   document.body.classList.toggle("ui-firefox",v==="firefox");
   document.body.classList.toggle("ui-chrome",v==="chrome");
@@ -1153,7 +1210,20 @@ function applyTabLayout(v){
 function applyNtpQuick(v){settings.ntpQuick=v;var el=$("top-sites");if(el)el.style.display=(v==="off"?"none":"");}
 function applyNtpSearch(v){settings.ntpSearch=v;var el=document.querySelector(".ntp-search");if(el)el.style.display=(v==="off"?"none":"");}
 function applyNtpBg(v){settings.ntpBg=v;var el=$("ntp");if(!el)return;el.style.background=(v&&v!=="default")?v:"";}
-function applyCustomLogo(url){settings.customLogo=url||"";try{document.querySelectorAll(".ntp-logo").forEach(function(im){im.src=settings.customLogo||"logo.png";});}catch(e){}}
+function applyCustomLogo(url){settings.customLogo=url||"";try{document.querySelectorAll(".ntp-logo").forEach(function(im){im.src=settings.customLogo||getEditionLogo();});}catch(e){}}
+function applyEditionLogo(){
+  try{
+    var prem=isPremium();
+    var logoUrl = prem ? (settings.proximaLogo || "proxima-logo.png") : "logo.png";
+    document.querySelectorAll(".ntp-logo").forEach(function(im){im.src=logoUrl;});
+    // Also update setup hero logo
+    var sh=document.querySelector(".setup-hero img");
+    if(sh)sh.src=logoUrl;
+    // Update favicon if possible
+    var link=document.querySelector('link[rel="icon"]');
+    if(link)link.href=logoUrl;
+  }catch(e){}
+}
 function applyCustomWallpaper(css){settings.customWallpaper=css||"";try{var el=$("ntp");if(el)el.style.background=settings.customWallpaper||"";}catch(e){}}
 function snapshotAppearance(){
   return {theme:settings.theme,accent:settings.accent,customLogo:settings.customLogo,customWallpaper:settings.customWallpaper,cursorStyle:settings.cursorStyle,cursorStyleColor:settings.cursorStyleColor};
@@ -1218,7 +1288,6 @@ function applyVtabsCollapsed(v){
 }
 function toggleTabLayout(){
   var next=settings.tabLayout==="vertical"?"horizontal":"vertical";
-  if(next==="vertical"&&!isPremium()){requirePremium();return;}
   saveSetting("tabLayout",next);applyTabLayout(next);
   toast(next==="vertical"?"Vertical tabs on":"Horizontal tabs on");
 }
@@ -1359,16 +1428,13 @@ function finishShortcutRec(combo){
   if(combo===null){ // cancel — keep whatever was set before
     restoreLabel();shortcutRecording=null;resume();return;
   }
-  // Viewing the shortcut list is free; assigning a custom combo is Premium.
-  if(combo&&!isPremium()){
-    restoreLabel();shortcutRecording=null;resume();
-    toast("Custom shortcut remapping is a Premium feature");
-    setTimeout(function(){openPremiumSection();},600);
-    return;
-  }
+  // Viewing the shortcut list is free; assigning a custom combo is free.
   var cur=settings.shortcuts||{};
-  if(combo===""){delete cur[a];}
-  else{cur[a]=combo;}
+  if(combo){
+    cur[a]=combo;
+  } else {
+    delete cur[a];
+  }
   saveSetting("shortcuts",cur);
   if(btn){btn.textContent=combo||SHORTCUT_ACTIONS[a].default?combo||SHORTCUT_ACTIONS[a].default:"—";btn.classList.remove("rec");}
   shortcutRecording=null;
@@ -1388,8 +1454,7 @@ function resolveUrl(url){
   if(url.match(/^[a-zA-Z0-9][a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(\/.*)?$/))return "https://"+url;
   var e=SEARCH_ENGINES[settings.searchEngine]||SEARCH_ENGINES.kastravasearch;
   if(settings.searchEngine==="custom"&&settings.customEngine){
-    if(customEngineIsPremium(settings.customEngine)&&!isPremium())e=SEARCH_ENGINES.kastravasearch;
-    else e=settings.customEngine;
+    e=settings.customEngine;
   }
   return e.replace("%s",encodeURIComponent(url));
 }
@@ -1406,11 +1471,7 @@ function errInfo(code){
 function addTab(url,opts){
   opts=opts||{};
   if(url==="about:anterget")url="about:kastget";
-  if(url==="about:localhost"&&!isPremium()){
-    toast("Localhost Dashboard is a Premium feature");
-    setTimeout(function(){openPremiumSection();},600);
-    url="about:newtab";
-  }
+  // localhost/local IP links work directly — no premium gate
   if(activeTab&&isBlank(activeTab.url)&&!opts.pinned&&url&&url!="about:kastget"&&!isBlank(url)){
     activeTab.wv.setAttribute("src",url);
     activeTab.url=url;
@@ -1475,10 +1536,11 @@ function addTab(url,opts){
         try{tab.url=wv.getURL();}catch(x){}
         showBankGuard(e.url,"Banking security check");
       }
+      updateBankShield(e.url);
     }catch(x){}
   });
   wv.addEventListener("page-title-updated",function(e){tab.title=e.title;renderTabs();});
-  wv.addEventListener("did-navigate",function(e){var nu=e.url;if(nu.indexOf("data:text/html")===0&&tab._failedUrl){nu=tab._failedUrl;}else if(nu.indexOf("data:")!==0){tab._failedUrl=null;}tab.url=nu;try{tab.canGoBack=wv.canGoBack();tab.canGoForward=wv.canGoForward();}catch(x){}updNav();renderTabs();showPage(id);if(api&&api.addHistory&&settings.historyEnabled!=="off"&&nu.indexOf("data:")!==0)api.addHistory({title:tab.title,url:nu}).catch(function(){});});
+  wv.addEventListener("did-navigate",function(e){var nu=e.url;if(nu.indexOf("data:text/html")===0&&tab._failedUrl){nu=tab._failedUrl;}else if(nu.indexOf("data:")!==0){tab._failedUrl=null;}tab.url=nu;try{tab.canGoBack=wv.canGoBack();tab.canGoForward=wv.canGoForward();}catch(x){}updNav();renderTabs();showPage(id);updateBankShield(nu);if(api&&api.addHistory&&settings.historyEnabled!=="off"&&nu.indexOf("data:")!==0)api.addHistory({title:tab.title,url:nu}).catch(function(){});});
   wv.addEventListener("did-navigate-in-page",function(e){
     // Payment iframes (Razorpay checkout, PayPal buttons) do in-page
     // navigations of their own — never let a subframe rewrite the tab URL,
@@ -1774,7 +1836,7 @@ function renderSetup(){
   function grid(art,body,nav){return '<div class="setup-grid"><div class="setup-art">'+art+'</div><div class="setup-body">'+body+'</div></div><div class="setup-foot">'+nav+'</div>';}
   var CONTINUE='<button class="setup-skip" id="setup-back">Back</button><button class="setup-btn" id="setup-next">Continue</button>';
   if(setupStep===0){
-    c.innerHTML=dots+'<div class="setup-grid"><div class="setup-art">'+setupHero()+'</div><div class="setup-body"><div class="setup-name" style="font-size:34px;letter-spacing:.5px">Kastrava</div><div class="setup-beta" style="margin-bottom:14px"><span>RC</span></div><div class="setup-sub" style="margin-bottom:0">The most private browser.<br>Zero telemetry. Your data never leaves this machine.</div></div></div><div class="setup-foot"><button class="setup-skip" id="setup-skip">Skip setup</button><button class="setup-btn" id="setup-next">Get Started</button></div>';
+    c.innerHTML=dots+'<div class="setup-grid"><div class="setup-art">'+setupHero()+'</div><div class="setup-body"><div class="setup-name" style="font-size:34px;letter-spacing:.5px">Kastrava</div><div class="setup-stable" style="margin-bottom:14px"><span style="color:var(--c-accent)">Stable</span></div><div class="setup-sub" style="margin-bottom:0">The most private browser.<br>Zero telemetry. Your data never leaves this machine.</div></div></div><div class="setup-foot"><button class="setup-skip" id="setup-skip">Skip setup</button><button class="setup-btn" id="setup-next">Get Started</button></div>';
     $("setup-next").addEventListener("click",function(){setupGo(1);});
     $("setup-skip").addEventListener("click",function(){setupThemeKey=settings.theme||"light-0";finishSetup();});
   }else if(setupStep===1){
@@ -1783,8 +1845,8 @@ function renderSetup(){
     setupBindChoices(function(v){if(PREMIUM_ENGINES[v]&&!isPremium()){requirePremium();return false;}setupEngine=v;});
     setupBindNav(2);
   }else if(setupStep===2){
-    var th=(isPremium()?DARK_THEMES.slice(0,4):[DARK_THEMES[0]]).map(function(t,i){return {v:"dark-"+i,n:t.n,d:"Dark",c:t.bg};});
-    var tl=(isPremium()?LIGHT_THEMES.slice(0,2):[LIGHT_THEMES[0]]).map(function(t,i){return {v:"light-"+i,n:t.n,d:"Light",c:t.bg};});
+    var th=DARK_THEMES.map(function(t,i){return {v:"dark-"+i,n:t.n,d:"Dark",c:t.bg};});
+    var tl=LIGHT_THEMES.map(function(t,i){return {v:"light-"+i,n:t.n,d:"Light",c:t.bg};});
     var all=th.concat(tl);
     var sw=all.map(function(o){return '<button class="setup-eng'+(setupThemeKey===o.v?' sel':'')+'" data-v="'+o.v+'"><span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:'+o.c+';border:1px solid var(--c-border);vertical-align:-2px;margin-right:8px"></span>'+o.n+'<small>'+o.d+'</small></button>';}).join("");
     c.innerHTML=dots+grid(ART_THEME,'<div class="setup-name" style="font-size:23px">Theme</div><div class="setup-sub">Pick your look. Clean white is the default.</div><div class="setup-preview"><div class="setup-pv-tab"></div><div class="setup-pv-tab active"></div><div class="setup-pv-url"></div></div><div class="setup-engines">'+sw+'</div>',CONTINUE);
@@ -1819,7 +1881,7 @@ function renderSetup(){
     var __premActive=isPremium();
     var __premBox=__premActive
       ?'<div class="setup-priv"><div><span class="ok">\u2713</span>Premium is active on this machine</div></div>'
-      :'<div style="margin:10px auto 4px;padding:8px 24px;border-radius:999px;border:1px solid rgba(255,179,0,.45);background:rgba(255,179,0,.08);color:#ffb300;font-weight:700;font-size:20px;display:inline-block">$49 \u00B7 \u20B9499 <span style="font-size:12px;color:var(--c-text2);font-weight:500">/ 30 days \u00B7 10 devices</span><div style="font-size:12px;color:var(--c-text2);margin-top:8px">Radar · Cursor FX · Workspaces · Split View · 20 themes · Brave/Google/Ecosia · PiP · Screenshots · Localhost · Vertical tabs</div></div><div><button class="setup-btn" id="setup-prem-go" style="background:linear-gradient(135deg,#ffb300,#f57c00);box-shadow:0 6px 24px rgba(255,179,0,.35)">Get Premium</button></div><div class="setup-sub" style="margin-top:10px">Opens the buying page after setup finishes.</div>';
+      :'<div style="margin:10px auto 4px;padding:8px 24px;border-radius:999px;border:1px solid rgba(255,179,0,.45);background:rgba(255,179,0,.08);color:#ffb300;font-weight:700;font-size:20px;display:inline-block">$19 \u00B7 \u20B9199 <span style="font-size:12px;color:var(--c-text2);font-weight:500">/ 30 days \u00B7 10 devices</span><div style="font-size:12px;color:var(--c-text2);margin-top:4px">$4.99 \u00B7 \u20B949 / day \u00B7 10 devices</div><div style="font-size:12px;color:var(--c-text2);margin-top:8px">Custom themes · Custom cursor · Banking guard · Workspaces · PiP+audio · Tab groups · Split presets · Anti-fingerprint · Local translate · Screenshot annotator</div></div><div><button class="setup-btn" id="setup-prem-go" style="background:linear-gradient(135deg,#ffb300,#f57c00);box-shadow:0 6px 24px rgba(255,179,0,.35)">Get Premium</button></div><div class="setup-sub" style="margin-top:10px">Opens the buying page after setup finishes.</div>';
     c.innerHTML=dots+grid(ART_PREMIUM,'<div class="setup-name" style="font-size:23px">Account & Premium</div><div class="setup-sub">One login syncs bookmarks and settings between devices, encrypted end to end. Logging in auto-activates the account key on this device — up to 10 devices share one key, bound to your account, not the machine. Manual renewal — you pay each time, nothing auto-charges.'+(isPremium()?' Sync is on with your Premium.':' Your login is saved now — syncing itself unlocks with Premium.')+'</div><div class="setup-sub" id="setup-sync-note"></div><input id="setup-ac-email" type="email" autocomplete="email" placeholder="you@example.com" style="width:100%;margin:2px 0 8px;padding:10px 14px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px"><input id="setup-ac-pass" type="password" autocomplete="current-password" placeholder="Password (8+ characters)" style="width:100%;margin:0 0 8px;padding:10px 14px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px"><input id="setup-ac-code" inputmode="numeric" maxlength="6" placeholder="Email code" autocomplete="one-time-code" style="display:none;width:100%;margin:0 0 8px;padding:10px 14px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px"><input id="setup-ac-totp" inputmode="numeric" maxlength="6" placeholder="2FA code (if enabled)" autocomplete="one-time-code" style="display:none;width:100%;margin:0 0 12px;padding:10px 14px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px"><div><button class="setup-btn" id="setup-ac-login" style="margin-right:8px">Log in</button><button class="setup-btn" id="setup-ac-signup">Sign up</button></div><div style="margin-top:14px">'+__premBox+'</div>',CONTINUE);
     (function(){
       function note(t){var n=$("setup-sync-note");if(n)n.textContent=t||"";}
@@ -1860,8 +1922,22 @@ function renderSetup(){
         if(mode==="signup"){
           note("Creating account…");
           fetch(syncApiBase()+"/api/account/signup",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:email,password:pass})}).then(function(r){return r.json();}).then(function(j){
-            if(j&&j.ok)finishLogin(email,pass,pw);
-            else if(j&&j.error==="exists"){note("Account exists — logging in…");finishLogin(email,pass,pw);}
+            if(j&&j.ok){
+              // Handle trial key from signup
+              if(j.trial_key){
+                note("Account created! Activating " + (j.trial_hours || 2) + "-hour trial…");
+                api.licActivate(j.trial_key).then(function(res){
+                  if(res && res.ok){
+                    note("Trial activated! Enjoy your " + (j.trial_hours || 2) + "-hour Premium trial.");
+                  }else{
+                    note("Trial activation failed — you can activate manually in Settings.");
+                  }
+                  finishLogin(email,pass,pw);
+                }).catch(function(){note("Trial activation failed — you can activate manually in Settings."); finishLogin(email,pass,pw);});
+              }else{
+                finishLogin(email,pass,pw);
+              }
+            }else if(j&&j.error==="exists"){note("Account exists — logging in…");finishLogin(email,pass,pw);}
             else note("Signup failed.");
           }).catch(function(){note("Could not reach the server.");});
         }else{note("Logging in…");finishLogin(email,pass,pw);}
@@ -4270,7 +4346,7 @@ function bindSyncPanel(){
     setTimeout(function(){loggedIn();},500);
   });
   var lo=$("sy-logout");
-  if(lo)lo.addEventListener("click",function(){if(!api||!api.syncLogout)return;api.syncLogout().then(function(){msg("Logged out.");paint(null);showLic(null);try{loadLicense();}catch(e){}}).catch(function(){});});
+  if(lo)lo.addEventListener("click",function(){logout();});
   var nw=$("sy-now");
   if(nw)nw.addEventListener("click",function(){
     if(!isPremium()){openPremiumSection();return;}
@@ -4315,7 +4391,6 @@ function reopenTab(){var t=null;while(closedTabs.length){t=closedTabs.pop();if(t
 
 /* Picture-in-Picture */
 function togglePip(){
-  if(!requirePremium())return;
   if(!activeTab||!activeTab.wv)return;
   var js="(function(){var v=[].slice.call(document.querySelectorAll('video')).filter(function(x){return !x.paused&&x.readyState>2}).sort(function(a,b){return b.videoWidth*b.videoHeight-a.videoWidth*a.videoHeight})[0]||[].slice.call(document.querySelectorAll('video')).sort(function(a,b){return b.videoWidth*b.videoHeight-a.videoWidth*a.videoHeight})[0];if(!v)return false;if(document.pictureInPictureElement===v){document.exitPictureInPicture();return true}v.requestPictureInPicture()['catch'](function(){});return true})()";
   activeTab.wv.executeJavaScript(js).then(function(ok){if(!ok)toast("No video found on this page");}).catch(function(){});
@@ -4360,7 +4435,6 @@ function toggleReader(){
 
 /* Split view */
 function toggleSplit(){
-  if(!requirePremium())return;
   splitOn=!splitOn;
   if(splitOn){
     if(prevTabId&&prevTabId!==activeTab.id&&tabMap[prevTabId])splitPartner=prevTabId;
@@ -4525,7 +4599,6 @@ function openShotEditor(dataURL){
 
 /* Bookmark import/export */
 async function exportBookmarks(){
-  if(!requirePremium())return;
   if(!api||!api.getBookmarks)return;
   var bms=await api.getBookmarks().catch(function(){return[];});
   var html="<!DOCTYPE NETSCAPE-Bookmark-file-1>\n<META HTTP-EQUIV=\"Content-Type\" CONTENT=\"text/html; charset=UTF-8\">\n<TITLE>Bookmarks</TITLE>\n<H1>Bookmarks</H1>\n<DL><p>\n";
@@ -4535,7 +4608,6 @@ async function exportBookmarks(){
   toast(p?"Exported "+bms.length+" bookmarks":(p===null?"Export cancelled":null));
 }
 async function importBookmarks(skipGate){
-  if(!skipGate&&!requirePremium())return;
   if(!api||!api.importBookmarks)return;
   if(isDemo()){
     var key=prompt("Enter the import key:");
@@ -4809,7 +4881,7 @@ function applyToolbarOrder(order){
   leftEls.forEach(function(el){tb.appendChild(el);});
   if(omni)tb.appendChild(omni);
   rightEls.forEach(function(el){tb.appendChild(el);});
-  try{applyEditionUI();}catch(e){}
+  try{applyEditionUI();applyEditionLogo();}catch(e){}
   toast("Toolbar order saved.");
 }
 function openToolbarCanvas(){
@@ -4917,7 +4989,7 @@ function renderSettingsSection(id){
     return;
   }
   else if(id==="premium"){h="<h3>Kastrava Premium</h3>";
-    h+="<div class=\"desc\" style=\"margin-bottom:12px\">Unlock Tracking Radar, Cursor FX, Workspaces, Split View and every theme \u2014 <b>\u20B9499 for 30 days (~$49), up to 10 devices. Manual renewal by default.</b></div>";
+    h+="<div class=\"desc\" style=\"margin-bottom:12px\">Unique Kastrava features — Custom themes · Custom cursor arrow · Banking security guard · Workspaces · PiP+audio · Tab groups · Split presets · Anti-fingerprint · Local translate · Screenshot annotator · Local AI (bring your own key/Ollama) \u2014 <b>\u20B9199 for 30 days (~$19), up to 10 devices.</b> <span style=\"font-size:12px;color:var(--c-text2);font-weight:500\">Or \u20B949/day (~$4.99). Manual renewal by default.</span></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Your Machine Code</div><div style=\"display:flex;gap:8px;align-items:center\"><code id=\"pm-machine\" style=\"flex:1;word-break:break-all;font-size:12px\">"+(LIC.machine||"…")+"</code><button class=\"btn-sm\" id=\"pm-copy\">Copy</button></div><div class=\"desc\">This code identifies <b>this device</b> on your account. One key covers up to 10 devices.</div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Device Nickname</div><div style=\"display:flex;gap:8px;align-items:center\"><input id=\"s-devnick\" type=\"text\" maxlength=\"60\" placeholder=\"e.g. Office PC\" value=\""+esc(settings.deviceName||"")+"\" style=\"flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px\"></div><div class=\"desc\">Shown on your account dashboard instead of a bare hostname. Applies on next activation or sync.</div></div>";
     if(LIC.activated){
@@ -4927,13 +4999,25 @@ function renderSettingsSection(id){
       h+="<div class=\"sg\" style=\"display:flex;gap:8px;flex-wrap:wrap\"><button class=\"btn-sm btn-accent\" id=\"s-licrenew\">Renew Premium</button><button class=\"btn-sm\" id=\"s-liccopy\">Copy device ID</button><button class=\"btn-sm btn-danger\" id=\"s-licstop\">Stop Premium</button></div>";
     }else{
       if(LIC.reason==="expired"){
-        h+="<div class=\"sg\"><div class=\"lbl\">Status</div><div class=\"desc\" style=\"font-weight:600;color:#c62828\">\u2716 Premium expired \u2014 renew from \u20B949/day. Manual by default.</div></div>";
+        h+="<div class=\"sg\"><div class=\"lbl\">Status</div><div class=\"desc\" style=\"font-weight:600;color:#c62828\">\u2716 Premium expired \u2014 renew from \u20B949/day (~$4.99). Manual by default.</div></div>";
       }
       h+="<div class=\"sg\" id=\"s-licneed\"><div class=\"lbl\">Premium needs an account</div><div class=\"desc\">Log in under Account — the account key activates this device itself, up to 10 devices. No keys to paste, even after updating.</div><div style=\"margin-top:8px;display:flex;gap:8px;flex-wrap:wrap\"><button class=\"btn-sm btn-accent\" id=\"s-licgoacc\">Open Account</button></div></div>";
       h+="<div class=\"sg\" style=\"display:flex;gap:8px;flex-wrap:wrap\">"+(LIC.reason==="expired"?"<button class=\"btn-sm btn-accent\" id=\"s-licrenew\">Renew Premium</button>":"")+"<button class=\"btn-sm\" id=\"s-licbuy\">Buy Premium</button></div>";
-      h+="<div class=\"desc\" id=\"s-licgeo\" style=\"margin-top:6px\">No key yet? Buy at <a href=\"#\" id=\"s-licbuylink\" style=\"color:var(--accent)\">kastrava.in/#premium</a> \u2014 you'll get a key instantly after payment (Razorpay in India, PayPal elsewhere). Plans from \u20B949/day. Manual renewal.</div>";
+      h+="<div class=\"desc\" id=\"s-licgeo\" style=\"margin-top:6px\">No key yet? Buy at <a href=\"#\" id=\"s-licbuylink\" style=\"color:var(--accent)\">store.kastrava.in/#premium</a> \u2014 you'll get a key instantly after payment (Razorpay in India, PayPal elsewhere). Plans from \u20B949/day (~$4.99). Manual renewal.</div>";
     }
-    h+="<div class=\"sg\"><div class=\"lbl\">What's in Premium</div><div class=\"desc\">\u2022 Tracking Radar (live per-tab tracker score)<br>\u2022 Cursor Effects: Mouse Style, Fluid Splash, Blob Trail, Glass Lens, Particle Trail, Click Spark, Pixel Trail, Ribbons<br>\u2022 Workspaces<br>\u2022 Split View<br>\u2022 All 20 dark + light themes<br>\u2022 Extra search engines: Brave, Google, Ecosia<br>\u2022 Custom cursor arrow<br>\u2022 Picture-in-Picture, Screenshot<br>\u2022 Localhost Dashboard<br>\u2022 Vertical tabs layout<br>\u2022 Bookmark import &amp; export<br>\u2022 Custom shortcut remapping</div></div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">What's in Premium</div><div class=\"desc\">\u2022 Custom themes (20+ dark/light + custom)<br>\u2022 Custom cursor arrow + Cursor FX (splash, blob, glass, particles, trails, ribbons)<br>\u2022 Banking security guard (auto-hardens banking sites)<br>\u2022 Workspaces (tab groups)<br>\u2022 PiP+audio (audio-only Picture-in-Picture)<br>\u2022 Tab groups & Split presets<br>\u2022 Anti-fingerprint protection<br>\u2022 Local translate<br>\u2022 Screenshot annotator<br>\u2022 Local AI — bring your own API key or connect Ollama</div></div>";
+$
+    // Referral Program section
+    if(isPremium()){
+      h+="<div class=\"sg\" style=\"margin-top:16px\"><div class=\"lbl\">Referral Program</div><div class=\"desc\">Share your link. When someone signs up and makes their first purchase, they get <b>30 days Premium free</b> and you earn <b>20% cashback</b>.</div><div id=\"referral-out\" style=\"margin-top:10px\"><button class=\"btn-sm btn-accent\" id=\"s-referral-load\">Load referral info</button></div></div>";
+    if(isPremium()){
+      h+="<h4 style=\"margin:16px 0 8px\">Local AI (Premium)</h4>";   h+="<h4 style=\"margin:16px 0 8px\">Local AI (Premium)</h4>";
+      h+="<div class=\"sg\"><div class=\"lbl\">Enable AI</div><div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">AI assistant (disabled by default)</div><div class=\"desc\">Bring your own API key or connect Ollama — nothing is sent to Kastrava servers.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-aienabled\" class=\"tgl tgl-flip\""+(settings.aiEnabled==="on"?" checked":"")+"><label for=\"s-aienabled\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div></div>";
+      h+="<div class=\"sg\"><div class=\"lbl\">AI Provider</div><select id=\"s-aiprovider\"><option value=\"ollama\" "+(settings.aiProvider==="ollama"?"selected":"")+">Ollama (local)</option><option value=\"openai\" "+(settings.aiProvider==="openai"?"selected":"")+">OpenAI API</option><option value=\"anthropic\" "+(settings.aiProvider==="anthropic"?"selected":"")+">Anthropic API</option><option value=\"gemini\" "+(settings.aiProvider==="gemini"?"selected":"")+">Google Gemini</option></select></div>";
+      h+="<div class=\"sg\"><div class=\"lbl\">API Key</div><input id=\"s-aiapikey\" type=\"password\" placeholder=\"Enter API key\" style=\"width:100%;margin:6px 0;padding:9px 12px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px\"><div class=\"desc\">Your API key stays on this device — never sent to Kastrava servers.</div></div>";
+      h+="<div class=\"sg\"><div class=\"lbl\">API Base URL</div><input id=\"s-aibase\" type=\"text\" placeholder=\"http://127.0.0.1:11434\" style=\"width:100%;margin:6px 0;padding:9px 12px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px\"+\" value=\""+(settings.aiApiBase||"")+"\"><div class=\"desc\">Ollama default: http://127.0.0.1:11434</div></div>";
+      h+="<div class=\"sg\"><div class=\"lbl\">Model</div><input id=\"s-aimodel\" type=\"text\" placeholder=\"llama3\" style=\"width:100%;margin:6px 0;padding:9px 12px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-family:inherit;font-size:13px\"+\" value=\""+(settings.aiModel||"llama3")+"\"></div>";
+    }
   }
   else if(id==="sync"){h="<h3>Account</h3>";
     if(!isPremium()){
@@ -4959,12 +5043,26 @@ function renderSettingsSection(id){
     h+="<div class=\"sg\"><div class=\"lbl\">Tab Limit</div><select id=\"s-maxtabs\"><option value=\"0\">No limit</option><option value=\"20\">20 tabs</option><option value=\"50\">50 tabs</option><option value=\"100\">100 tabs</option></select><div class=\"desc\">Refuse new tabs past the limit.</div></div><div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Always Show Full URLs</div><div class=\"desc\">Show the complete address instead of just the site name.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-fullurls\" class=\"tgl tgl-flip\"><label for=\"s-fullurls\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div><div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Clear History on Exit</div><div class=\"desc\">Wipe history every time the browser closes.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-clearhistexit\" class=\"tgl tgl-flip\"><label for=\"s-clearhistexit\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div><div class=\"sg\"><div class=\"lbl\">Keep History</div><select id=\"s-historykeep\"><option value=\"0\">Forever</option><option value=\"7\">7 days</option><option value=\"30\">30 days</option><option value=\"90\">90 days</option></select></div>";
   }
   else if(id==="appearance"){h="<h3>Appearance</h3>";
-    h+="<div class=\"sg\"><div class=\"lbl\">Dark Themes</div><div id=\"s-presets-dark\" style=\"display:flex;gap:6px;flex-wrap:wrap\">";
-    (isPremium()?DARK_THEMES:[DARK_THEMES[0]]).forEach(function(p,i){h+="<div data-idx=\""+i+"\" data-type=\"dark\" style=\"width:28px;height:28px;border-radius:6px;background:"+p.bg+";cursor:pointer;border:2px solid "+(settings.theme===("dark-"+i)?p.ac:"transparent")+";position:relative;overflow:hidden;transition:border .15s,transform .15s\" title=\""+p.n+"\" class=\"theme-btn\"><div style=\"position:absolute;top:0;left:0;right:0;height:6px;background:"+p.tbg+"\"></div><div style=\"position:absolute;bottom:0;left:0;right:0;height:3px;background:"+p.tb+"\"></div></div>";});
+    h+="<div class=\"sg"+(isPremium()?"":" pro-locked")+"\"><div class=\"lbl\">Dark Themes</div><div id=\"s-presets-dark\" style=\"display:flex;gap:6px;flex-wrap:wrap\">";
+    DARK_THEMES.forEach(function(p,i){h+="<div data-idx=\""+i+"\" data-type=\"dark\" style=\"width:28px;height:28px;border-radius:6px;background:"+p.bg+";cursor:pointer;border:2px solid "+(settings.theme===("dark-"+i)?p.ac:"transparent")+";position:relative;overflow:hidden;transition:border .15s,transform .15s\" title=\""+p.n+"\" class=\"theme-btn\"><div style=\"position:absolute;top:0;left:0;right:0;height:6px;background:"+p.tbg+"\"></div><div style=\"position:absolute;bottom:0;left:0;right:0;height:3px;background:"+p.tb+"\"></div></div>";});
     h+="</div></div>";
-    h+="<div class=\"sg\"><div class=\"lbl\">Light Themes</div><div id=\"s-presets-light\" style=\"display:flex;gap:6px;flex-wrap:wrap\">";
-    (isPremium()?LIGHT_THEMES:[LIGHT_THEMES[0]]).forEach(function(p,i){h+="<div data-idx=\""+i+"\" data-type=\"light\" style=\"width:28px;height:28px;border-radius:6px;background:"+p.bg+";cursor:pointer;border:2px solid "+(settings.theme===("light-"+i)?p.ac:"transparent")+";position:relative;overflow:hidden;transition:border .15s,transform .15s\" title=\""+p.n+"\" class=\"theme-btn\"><div style=\"position:absolute;top:0;left:0;right:0;height:6px;background:"+p.tbg+"\"></div><div style=\"position:absolute;bottom:0;left:0;right:0;height:3px;background:"+p.tb+"\"></div></div>";});
+    h+="<div class=\"sg"+(isPremium()?"":" pro-locked")+"\"><div class=\"lbl\">Light Themes</div><div id=\"s-presets-light\" style=\"display:flex;gap:6px;flex-wrap:wrap\">";
+    LIGHT_THEMES.forEach(function(p,i){h+="<div data-idx=\""+i+"\" data-type=\"light\" style=\"width:28px;height:28px;border-radius:6px;background:"+p.bg+";cursor:pointer;border:2px solid "+(settings.theme===("light-"+i)?p.ac:"transparent")+";position:relative;overflow:hidden;transition:border .15s,transform .15s\" title=\""+p.n+"\" class=\"theme-btn\"><div style=\"position:absolute;top:0;left:0;right:0;height:6px;background:"+p.tbg+"\"></div><div style=\"position:absolute;bottom:0;left:0;right:0;height:3px;background:"+p.tb+"\"></div></div>";});
     h+="</div></div>";
+    if(isPremium()){
+    h+="<div class=\"sg\"><div class=\"lbl\">Custom Theme Editor</div><div class=\"desc\">Create your own theme. Colors apply to tabs, panels, buttons and accents.</div>";
+    h+="<div style=\"display:flex;gap:10px;align-items:center;flex-wrap:wrap\">";
+    h+="<div class=\"sg\"><div class=\"lbl\">Background</div><input type=\"color\" id=\"s-theme-bg\" style=\"width:36px;height:28px;padding:0;border:1px solid var(--c-border);border-radius:6px;background:none;cursor:pointer\"></div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">Surface</div><input type=\"color\" id=\"s-theme-surface\" style=\"width:36px;height:28px;padding:0;border:1px solid var(--c-border);border-radius:6px;background:none;cursor:pointer\"></div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">Top Bar</div><input type=\"color\" id=\"s-theme-topbar\" style=\"width:36px;height:28px;padding:0;border:1px solid var(--c-border);border-radius:6px;background:none;cursor:pointer\"></div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">Bottom Bar</div><input type=\"color\" id=\"s-theme-bottombar\" style=\"width:36px;height:28px;padding:0;border:1px solid var(--c-border);border-radius:6px;background:none;cursor:pointer\"></div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">Accent</div><input type=\"color\" id=\"s-theme-accent\" style=\"width:36px;height:28px;padding:0;border:1px solid var(--c-border);border-radius:6px;background:none;cursor:pointer\"></div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">Name</div><input type=\"text\" id=\"s-theme-name\" placeholder=\"My Theme\" style=\"width:120px;padding:6px 10px;border-radius:6px;border:1px solid var(--c-border);background:var(--c-card);color:var(--c-text);font-size:13px\"></div>";
+    h+="<div class=\"sg\"><button class=\"btn-sm btn-accent\" id=\"s-theme-save\" style=\"padding:8px 16px\">Save Theme</button><button class=\"btn-sm\" id=\"s-theme-apply\" style=\"padding:8px 16px\">Apply</button><button class=\"btn-sm\" id=\"s-theme-export\" style=\"padding:8px 16px\">Export</button><button class=\"btn-sm\" id=\"s-theme-import\" style=\"padding:8px 16px\">Import</button></div>";
+    h+="</div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">Custom Themes Saved</div><div id=\"s-custom-themes-list\" style=\"display:flex;gap:8px;flex-wrap:wrap;margin-top:8px\"></div></div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">Theme Import/Export</div><div style=\"display:flex;gap:8px\"><input type=\"file\" id=\"s-theme-file\" accept=\".json\" style=\"flex:1;padding:6px 10px;border-radius:6px;border:1px solid var(--c-border);background:var(--c-card);color:var(--c-text);font-size:13px\"><button class=\"btn-sm btn-accent\" id=\"s-theme-file-import\" style=\"padding:8px 16px\">Import File</button></div></div>";
+    }
     h+="<div class=\"sg\"><div class=\"lbl\">Store</div><div class=\"desc\">Themes, logos, wallpapers and more from the Kastrava Store.</div><div style=\"display:flex;gap:8px;flex-wrap:wrap;margin:8px 0\" id=\"store-owned\"><span class=\"desc\">Loading…</span></div><div><button class=\"btn-sm btn-accent\" id=\"s-storeopen\" data-open-store=\"https://store.kastrava.in/\">Get themes</button></div></div>";
     if(settings.customLogo){h+="<div class=\"sg\"><div class=\"lbl\">Custom Logo</div><div style=\"display:flex;gap:8px;align-items:center\"><span class=\"desc\" style=\"flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap\">Applied from the store</span><button class=\"btn-sm btn-danger\" id=\"s-rmlogo\">Remove</button></div></div>";}
     if(settings.customWallpaper){h+="<div class=\"sg\"><div class=\"lbl\">Custom Wallpaper</div><div style=\"display:flex;gap:8px;align-items:center\"><span class=\"desc\" style=\"flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap\">Applied from the store</span><button class=\"btn-sm btn-danger\" id=\"s-rmwallpaper\">Remove</button></div></div>";}
@@ -4976,7 +5074,7 @@ function renderSettingsSection(id){
     h+="<div class=\"sg\"><div class=\"lbl\">Corner Radius</div><select id=\"s-radius\"><option value=\"small\">Small</option><option value=\"medium\">Medium</option><option value=\"large\">Large</option></select><div class=\"desc\">Rounding of tabs, panels and menus.</div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Speed Dial Size</div><select id=\"s-scsize\"><option value=\"comfortable\">Comfortable</option><option value=\"compact\">Compact</option></select></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Shortcut Tiles</div><select id=\"s-ntptiles\"><option value=\"4\">4</option><option value=\"8\">8</option><option value=\"12\">12</option></select><div class=\"desc\">How many shortcut tiles to show.</div></div><div class=\"sg\"><div class=\"lbl\">New Tab Background</div><select id=\"s-ntpbg\"><option value=\"default\">Default</option><option value=\"#15181d\">Graphite</option><option value=\"#0d1b2a\">Midnight</option><option value=\"#10231a\">Forest</option></select></div><div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">New Tab Search</div><div class=\"desc\">Show the search box on new tabs.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-ntpsearch\" class=\"tgl tgl-flip\"><label for=\"s-ntpsearch\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div><div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">New Tab Shortcuts</div><div class=\"desc\">Show the shortcut tiles on new tabs.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-ntpquick\" class=\"tgl tgl-flip\"><label for=\"s-ntpquick\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div><div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Tab Favicons</div><div class=\"desc\">Show site icons on tabs.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-tabfav\" class=\"tgl tgl-flip\"><label for=\"s-tabfav\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
-    h+="<div class=\"sg\"><div class=\"lbl\">Interface Style</div><select id=\"s-uistyle\"><option value=\"kastrava\">Kastrava</option><option value=\"chrome\">Chrome</option><option value=\"firefox\">Firefox</option><option value=\"zen\">Zen</option><option value=\"brave\">Brave</option><option value=\"safari\">Safari</option></select><div class=\"desc\">Kastrava and Chrome are free. Firefox, Zen, Brave and Safari styles need Premium.</div></div>";
+    h+="<div class=\"sg\"><div class=\"lbl\">Interface Style</div><select id=\"s-uistyle\"><option value=\"kastrava\">Kastrava</option><option value=\"chrome\">Chrome</option><option value=\"firefox\">Firefox</option><option value=\"zen\">Zen</option><option value=\"brave\">Brave</option><option value=\"safari\">Safari</option></select><div class=\"desc\">All interface styles are free.</div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Tab Layout</div><select id=\"s-tablayout\"><option value=\"horizontal\">Horizontal (top)</option><option value=\"vertical\">Vertical (side)</option></select><div class=\"desc\">Vertical tabs show a sidebar with full titles, count and drag-to-reorder. Shortcut: Ctrl+Shift+V.</div></div>";
     h+="<div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Collapse Vertical Sidebar</div><div class=\"desc\">Show icons only in vertical mode.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-vtabscollapse\" class=\"tgl tgl-flip\"><label for=\"s-vtabscollapse\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
     h+="<div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Show Home Button</div><div class=\"desc\">Adds a home button to the toolbar.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-homebtn\" class=\"tgl tgl-flip\"><label for=\"s-homebtn\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
@@ -4985,9 +5083,9 @@ function renderSettingsSection(id){
     h+="<div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Show Logo on New Tab</div><div class=\"desc\">Displays the Kastrava logo on the new tab page.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-ntplogo\" class=\"tgl tgl-flip\"><label for=\"s-ntplogo\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
     if(isPremium()){
     h+="<div class=\"sg-sep\">Mouse</div>";
-    h+="<div class=\"sg\"><div class=\"lbl\">Mouse Style</div><select id=\"s-cursorstyle\"><option value=\"system\">System Default</option><option value=\"custom\">Custom Arrow</option></select><div class=\"desc\">Custom Arrow replaces the OS cursor with an animated pointer that trails your mouse.</div></div>";
+    h+="<div class=\"sg"+(isPremium()?"":" pro-locked")+"\"><div class=\"lbl\">Mouse Style</div><select id=\"s-cursorstyle\" style=\"pointer-events:"+ (isPremium()?"auto":"none") +";\"><option value=\"system\">System Default</option><option value=\"custom\">Custom Arrow</option></select><div class=\"desc\">Custom Arrow replaces the OS cursor with an animated pointer that trails your mouse.</div></div>";
     h+="<div id=\"cursorstyle-opts\" style=\"display:none\">";
-    h+="<div class=\"sg\"><div class=\"lbl\">Arrow Color</div><div style=\"display:flex;gap:10px;align-items:center\"><input type=\"color\" id=\"s-cursorstylecolor\" style=\"width:36px;height:28px;padding:0;border:1px solid var(--c-border);border-radius:6px;background:none;cursor:pointer\"><span id=\"cursorstyle-color-hex\" style=\"font-size:11px;color:var(--c-text2)\"></span></div></div>";
+    h+="<div class=\"sg"+(isPremium()?"":" pro-locked")+"\"><div class=\"lbl\">Arrow Color</div><div style=\"display:flex;gap:10px;align-items:center\"><input type=\"color\" id=\"s-cursorstylecolor\" style=\"width:36px;height:28px;padding:0;border:1px solid var(--c-border);border-radius:6px;background:none;cursor:"+ (isPremium()?"pointer":"not-allowed") +";\" disabled=\""+ (isPremium()?"":"true") +"\"><span id=\"cursorstyle-color-hex\" style=\"font-size:11px;color:var(--c-text2)\"></span></div></div>";
     h+="</div>";
     h+="<div class=\"sg-sep\">Cursor Effects</div>";
     h+="<div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Fluid Splash</div><div class=\"desc\">Animated fluid trail that follows your cursor. Off by default.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-cursorfx\" class=\"tgl tgl-flip\"><label for=\"s-cursorfx\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
@@ -5037,8 +5135,27 @@ function renderSettingsSection(id){
     h+="<div class=\"sg\"><div class=\"lbl\">Points</div><select id=\"s-ribbonspoints\"><option value=\"30\">30</option><option value=\"50\">50</option><option value=\"80\">80</option></select></div>";
     h+="</div>";
     }
+    h+="<div class=\"sg-sep\">Pro Features</div>";
+    h+="<div class=\"sg"+(isPremium()?"":" pro-locked")+"\"><div style=\"flex:1\"><div class=\"lbl\">Tab Suspender</div><div class=\"desc\">Auto-suspend inactive tabs to save memory. Pro only.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-tabsuspender\" class=\"tgl tgl-flip\""+(isPremium()?"":" disabled")+"><label for=\"s-tabsuspender\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\""+(isPremium()?"":" disabled")+"></label></div></div>";
+    h+="<div class=\"sg\" id=\"tabsuspender-opts\" style=\"display:"+(isPremium()&&settings.tabSuspender==="on"?"block":"none")+";margin-left:24px\"><div class=\"lbl\">Suspend after (min)</div><select id=\"s-tabsuspendmins\" disabled=\""+(isPremium()?"":"true")+"\"><option value=\"5\">5 min</option><option value=\"10\">10 min</option><option value=\"15\">15 min</option><option value=\"30\">30 min</option><option value=\"60\">60 min</option><option value=\"120\">120 min</option></select></div>";
+    h+="<div class=\"sg"+(isPremium()?"":" pro-locked")+"\"><div style=\"flex:1\"><div class=\"lbl\">Force Dark Mode</div><div class=\"desc\">Force dark theme on all websites, even those without dark mode support.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-forcedarkmode\" class=\"tgl tgl-flip\""+(isPremium()?"":" disabled")+"><label for=\"s-forcedarkmode\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\""+(isPremium()?"":" disabled")+"></label></div></div>";
+    h+="<div class=\"sg"+(isPremium()?"":" pro-locked")+"\"><div style=\"flex:1\"><div class=\"lbl\">Password Generator</div><div class=\"desc\">Generate strong, random passwords with one click in password fields.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-passgenerator\" class=\"tgl tgl-flip\""+(isPremium()?"":" disabled")+"><label for=\"s-passgenerator\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\""+(isPremium()?"":" disabled")+"></label></div></div>";
+    h+="<div class=\"sg\" id=\"passgen-opts\" style=\"display:"+(isPremium()&&settings.passGenerator==="on"?"block":"none")+";margin-left:24px\"><div class=\"lbl\">Length</div><select id=\"s-passlength\"><option value=\"8\">8</option><option value=\"12\">12</option><option value=\"16\">16</option><option value=\"20\">20</option></select></div>";
+    h+="<div class=\"sg\" id=\"passgen-opts2\" style=\"display:"+(isPremium()&&settings.passGenerator==="on"?"block":"none")+";margin-left:24px\"><div class=\"lbl\">Include</div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-passupper\" class=\"tgl tgl-flip\" checked><label for=\"s-passupper\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\">Uppercase</label></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-passlower\" class=\"tgl tgl-flip\" checked><label for=\"s-passlower\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\">Lowercase</label></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-passdigit\" class=\"tgl tgl-flip\" checked><label for=\"s-passdigit\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\">Digits</label></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-passincludes\" class=\"tgl tgl-flip\"><label for=\"s-passincludes\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\">Symbols</label></div></div>";
+    h+="<div class=\"sg\" id=\"passgen-btn\" style=\"margin-left:24px\"><button class=\"btn-sm btn-accent\" id=\"s-passgen\">Generate Password</button><span id=\"passgen-result\" style=\"font-size:13px;font-weight:600;margin-left:10px\"></span></div>";
+    h+="<div class=\"sg"+(isPremium()?"":" pro-locked")+"\"><div style=\"flex:1\"><div class=\"lbl\">Auto-fill Forms</div><div class=\"desc\">Auto-fill login and form fields from saved data.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-autofillforms\" class=\"tgl tgl-flip\""+(isPremium()?"":" disabled")+"><label for=\"s-autofillforms\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\""+(isPremium()?"":" disabled")+"></label></div></div>";
+    h+="<div class=\"sg\" id=\"autofill-opts\" style=\"display:"+(isPremium()&&settings.autoFillForms==="on"?"block":"none")+";margin-left:24px\"><div class=\"lbl\">Save logins</div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-autofilllogins\" class=\"tgl tgl-flip\" checked><label for=\"s-autofilllogins\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\">Save logins</label></div></div>";
+    h+="<div class=\"sg\" id=\"autofill-opts2\" style=\"display:"+(isPremium()&&settings.autoFillForms==="on"?"block":"none")+";margin-left:24px\"><div class=\"lbl\">Save cards</div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-autofillcards\" class=\"tgl tgl-flip\" checked><label for=\"s-autofillcards\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\">Save cards</label></div></div>";
+    h+="<div class=\"sg\" id=\"autofill-opts3\" style=\"display:"+(isPremium()&&settings.autoFillForms==="on"?"block":"none")+";margin-left:24px\"><div class=\"lbl\">Save addresses</div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-autofilladdr\" class=\"tgl tgl-flip\" checked><label for=\"s-autofilladdr\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\">Save addresses</label></div></div>";
+    h+="<div class=\"sg"+(isPremium()?"":" pro-locked")+"\"><div style=\"flex:1\"><div class=\"lbl\">Page Translation</div><div class=\"desc\">Translate web pages to your language using AI.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-pagetranslate\" class=\"tgl tgl-flip\""+(isPremium()?"":" disabled")+"><label for=\"s-pagetranslate\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\""+(isPremium()?"":" disabled")+"></label></div></div>";
+    h+="<div class=\"sg"+(isPremium()?"":" pro-locked")+"\"><div style=\"flex:1\"><div class=\"lbl\">Page Summarization</div><div class=\"desc\">AI summarize long articles into key points.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-pagesummarize\" class=\"tgl tgl-flip\""+(isPremium()?"":" disabled")+"><label for=\"s-pagesummarize\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\""+(isPremium()?"":" disabled")+"></label></div></div>";
+    h+="<div class=\"sg\" id=\"pagesummarize-opts\" style=\"display:"+(isPremium()&&settings.pageSummarize==="on"?"block":"none")+";margin-left:24px\"><div class=\"lbl\">Length</div><select id=\"s-pagesumlen\"><option value=\"short\">Short</option><option value=\"medium\">Medium</option><option value=\"long\">Long</option></select></div>";
+    h+="<div class=\"sg\" id=\"pagetranslate-opts\" style=\"display:"+(isPremium()&&settings.pageTranslate==="on"?"block":"none")+";margin-left:24px\"><div class=\"lbl\">Target Language</div><select id=\"s-pagetranslang\"><option value=\"en\">English</option><option value=\"es\">Spanish</option><option value=\"fr\">French</option><option value=\"de\">German</option><option value=\"hi\">Hindi</option><option value=\"ru\">Russian</option><option value=\"zh\">Chinese</option><option value=\"ja\">Japanese</option></select></div>";
+    h+="<div class=\"sg"+(isPremium()?"":" pro-locked")+"\"><div style=\"flex:1\"><div class=\"lbl\">Mouse Gestures</div><div class=\"desc\">Gesture navigation: swipe left/right for back/forward, down for refresh.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-mousegestures\" class=\"tgl tgl-flip\""+(isPremium()?"":" disabled")+"><label for=\"s-mousegestures\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\""+(isPremium()?"":" disabled")+"></label></div></div>";
+    h+="<div class=\"sg\" id=\"mousegestures-opts\" style=\"display:"+(isPremium()&&settings.mouseGestures==="on"?"block":"none")+";margin-left:24px\"><div class=\"lbl\">Gesture</div><select id=\"s-mousegesture\"><option value=\"back\">Left = Back</option><option value=\"forward\">Right = Forward</option><option value=\"refresh\">Down = Refresh</option><option value=\"newtab\">Down-Left = New Tab</option><option value=\"closetab\">Down-Right = Close Tab</option></select></div>";
+    h+="<div class=\"sg"+(isPremium()?"":" pro-locked")+"\"><div style=\"flex:1\"><div class=\"lbl\">Tab Coloring</div><div class=\"desc\">Color-code tabs by domain or custom color for easy identification.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-tabcoloring\" class=\"tgl tgl-flip\""+(isPremium()?"":" disabled")+"><label for=\"s-tabcoloring\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\""+(isPremium()?"":" disabled")+"></label></div></div>";
+    h+="<div class=\"sg\" id=\"tabcoloring-opts\" style=\"display:"+(isPremium()&&settings.tabColoring==="on"?"block":"none")+";margin-left:24px\"><div class=\"lbl\">Tab Color</div><input type=\"color\" id=\"s-tabcolor\" style=\"width:36px;height:28px;padding:0;border:1px solid var(--c-border);border-radius:6px;background:none;cursor:pointer\" disabled=\""+(isPremium()?"":"true")+"\"></div>";
   }
-  else if(id==="search"){h="<h3>Search Engine</h3>";
     h+="<div class=\"sg\"><div class=\"lbl\">Default Search Engine</div><select id=\"s-se\"><option value=\"kastravasearch\">KastravaSearch (Default, RC)</option><option value=\"duckduckgo\">DuckDuckGo</option><option value=\"brave\">Brave Search (Premium)</option><option value=\"google\">Google (Premium)</option><option value=\"ecosia\">Ecosia (Premium)</option><option value=\"custom\">Custom URL… (Pro)</option></select><div class=\"desc\">KastravaSearch is Kastrava's own private search engine. DuckDuckGo is free too; Brave, Google and Ecosia are Premium.</div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Custom Engine URL (Pro)</div><input id=\"s-customengine\" type=\"text\" placeholder=\"https://example.com/search?q=%s\"><div class=\"desc\">Use %s where the query goes. Used when Custom URL is selected.</div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Current Engine URL</div><div class=\"desc\" style=\"word-break:break-all\">"+esc(SEARCH_ENGINES[settings.searchEngine]||SEARCH_ENGINES.kastravasearch)+"</div></div>";
@@ -5046,8 +5163,9 @@ function renderSettingsSection(id){
   else if(id==="privacy"){h="<h3>Privacy &amp; Security</h3>";
     h+="<div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">JavaScript</div><div class=\"desc\">Block scripts everywhere. Breaks most sites — use per-site shields for exceptions.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-jsglobal\" class=\"tgl tgl-flip\"><label for=\"s-jsglobal\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
     h+="<div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Ad blocker</div><div class=\"desc\">Blocks ads and trackers (EasyList + EasyPrivacy + YouTube ad hosts). On by default.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-adblock\" class=\"tgl tgl-flip\"><label for=\"s-adblock\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
-    h+="<div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Bank security guard</div><div class=\"desc\">Blocks banking/payment sites until a security scan passes. On by default.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-banksecur\" class=\"tgl tgl-flip\"><label for=\"s-banksecur\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
+    h+="<div class=\"sg"+(isPremium()?"":" pro-locked")+" sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Bank security guard</div><div class=\"desc\">Blocks banking/payment sites until a security scan passes. On by default.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-banksecur\" class=\"tgl tgl-flip\""+(isPremium()?"":" disabled")+"<label for=\"s-banksecur\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\""+(isPremium()?"":" disabled")+"></label></div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Bank security delay (seconds)</div><div class=\"desc\">Time the security screen is shown before allowing access to banking sites.</div><div style=\"display:flex;gap:8px\"><input id=\"s-bankdelay\" type=\"number\" min=\"5\" max=\"120\" value=\"45\" style=\"width:100px\"><span style=\"font-size:12px;color:var(--c-text2)\">seconds</span></div></div>";
+    h+="<div class=\"sg"+(isPremium()?"":" pro-locked")+"\"><div style=\"flex:1\"><div class=\"lbl\">Custom Bank Domains</div><div class=\"desc\">Add custom bank domains to block via Privacy Guard.</div></div><div class=\"sg\" style=\"padding:8px\"><input id=\"s-custombank\" type=\"text\" placeholder=\"examplebank.com\" style=\"flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text);font-size:13px\"><button class=\"btn-sm btn-accent\" id=\"s-addbankdomain\" style=\"padding:8px 16px;margin-left:8px\">Add</button></div><div id=\"custombank-list\" style=\"margin-top:8px\"></div></div>";
     h+="<div class=\"sg-switch\"><div style=\"flex:1\"><div class=\"lbl\">Images</div><div class=\"desc\">Block all images. Pages load fast and light.</div></div><div class=\"checkbox-wrapper-10\"><input type=\"checkbox\" id=\"s-images\" class=\"tgl tgl-flip\"><label for=\"s-images\" data-tg-on=\"On\" data-tg-off=\"Off\" class=\"tgl-btn\"></label></div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Cookies</div><select id=\"s-cookies\"><option value=\"off\">Block all</option><option value=\"third\">Block third-party</option><option value=\"on\">Allow all</option></select><div class=\"desc\">Blocked by default. Stored cookies are cleared.</div></div>";
     h+="<div class=\"sg\"><div class=\"lbl\">Referrer Policy</div><select id=\"s-referrer2\"><option value=\"off\">Never send</option><option value=\"origin\">Origin only</option><option value=\"on\">Full URL</option></select><div class=\"desc\">What sites learn about the page you came from.</div></div>";
@@ -5112,6 +5230,7 @@ function renderSettingsSection(id){
           else if(k==="source"){if(api&&api.openExternal)api.openExternal("https://github.com/tejaskhanna989/kastrava");}
           else if(k==="privacy"){try{renderSettingsSection("privacy");}catch(e){}}
         });
+      });
       });
       var b=document.getElementById("s-checkupd");if(b)b.addEventListener("click",function(){
       b.disabled=true;toast("Checking for updates…");
@@ -5215,9 +5334,9 @@ function bindSettingsEvents(id){
       setSel("s-ntptiles",settings.ntpTiles||"8");
       bindChange("s-ntptiles",function(v){sv("ntpTiles",v);applyNtpTiles(v);});
       setSel("s-uistyle",settings.uiStyle||"firefox");
-      bindChange("s-uistyle",function(v){if(UI_FREE.indexOf(v)<0&&!isPremium()){setSel("s-uistyle",settings.uiStyle||"kastrava");requirePremium();return;}sv("uiStyle",v);applyUiStyle(v);toast("Interface: "+v);});
+      bindChange("s-uistyle",function(v){sv("uiStyle",v);applyUiStyle(v);toast("Interface: "+v);});
       setSel("s-tablayout",settings.tabLayout||"horizontal");
-      bindChange("s-tablayout",function(v){if(v==="vertical"&&!isPremium()){setSel("s-tablayout","horizontal");requirePremium();return;}sv("tabLayout",v);applyTabLayout(v);});
+      bindChange("s-tablayout",function(v){sv("tabLayout",v);applyTabLayout(v);});
       setCheck("s-vtabscollapse","on",settings.vtabsCollapsed);
       bindCheck("s-vtabscollapse","on","off",function(v){sv("vtabsCollapsed",v);applyVtabsCollapsed(v);});
       setCheck("s-homebtn","on",settings.showHomeBtn);
@@ -5228,7 +5347,49 @@ function bindSettingsEvents(id){
       bindCheck("s-ntpclock","on","off",function(v){sv("showNtpClock",v);applyNtpClock(v);});
       setCheck("s-ntplogo","on",settings.showNtpLogo);
       bindCheck("s-ntplogo","on","off",function(v){sv("showNtpLogo",v);applyNtpLogo(v);});
-      function toggleFxOpts(){
+      // Pro features bindings
+      setCheck("s-tabsuspender","on",settings.tabSuspender);
+      bindCheck("s-tabsuspender","on","off",function(v){if(v==="on"&&!isPremium()){setCheck("s-tabsuspender","on",settings.tabSuspender);requirePremium();return;}sv("tabSuspender",v);});
+      setSel("s-tabsuspendmins",settings.tabSuspendMins||"30");
+      bindChange("s-tabsuspendmins",function(v){sv("tabSuspendMins",v);});
+      setCheck("s-forcedarkmode","on",settings.forceDarkMode);
+      bindCheck("s-forcedarkmode","on","off",function(v){if(v==="on"&&!isPremium()){setCheck("s-forcedarkmode","on",settings.forceDarkMode);requirePremium();return;}sv("forceDarkMode",v);});
+      setCheck("s-passgenerator","on",settings.passGenerator);
+      bindCheck("s-passgenerator","on","off",function(v){if(v==="on"&&!isPremium()){setCheck("s-passgenerator","on",settings.passGenerator);requirePremium();return;}sv("passGenerator",v);});
+      setSel("s-passlength",settings.passLength||"16");
+      bindChange("s-passlength",function(v){sv("passLength",v);});
+      setCheck("s-passupper","on",settings.passUpper!==false);
+      bindCheck("s-passupper","on","off",function(v){sv("passUpper",v);});
+      setCheck("s-passlower","on",settings.passLower!==false);
+      bindCheck("s-passlower","on","off",function(v){sv("passLower",v);});
+      setCheck("s-passdigit","on",settings.passDigit!==false);
+      bindCheck("s-passdigit","on","off",function(v){sv("passDigit",v);});
+      setCheck("s-passincludes","on",settings.passIncludes!==false);
+      bindCheck("s-passincludes","on","off",function(v){sv("passIncludes",v);});
+      var pg=$("s-passgen");if(pg)pg.addEventListener("click",function(){var len=parseInt($("s-passlength").value||16),upper=$("s-passupper").checked,lower=$("s-passlower").checked,dig=$("s-passdigit").checked,sym=$("s-passincludes").checked;var chars="";if(upper)chars+="ABCDEFGHIJKLMNOPQRSTUVWXYZ";if(lower)chars+="abcdefghijklmnopqrstuvwxyz";if(dig)chars+="0123456789";if(sym)chars+="!@#$%^&*()_+-=[]{}|;:,.<>?";var pwd="";for(var i=0;i<len;i++)pwd+=chars.charAt(Math.floor(Math.random()*chars.length));$("passgen-result").textContent=pwd;navigator.clipboard.writeText(pwd);toast("Password copied to clipboard");});
+      setCheck("s-autofillforms","on",settings.autoFillForms);
+      bindCheck("s-autofillforms","on","off",function(v){if(v==="on"&&!isPremium()){setCheck("s-autofillforms","on",settings.autoFillForms);requirePremium();return;}sv("autoFillForms",v);});
+      setCheck("s-autofilllogins","on",settings.autoFillLogins!==false);
+      bindCheck("s-autofilllogins","on","off",function(v){sv("autoFillLogins",v);});
+      setCheck("s-autofillcards","on",settings.autoFillCards!==false);
+      bindCheck("s-autofillcards","on","off",function(v){sv("autoFillCards",v);});
+      setCheck("s-autofilladdr","on",settings.autoFillAddr!==false);
+      bindCheck("s-autofilladdr","on","off",function(v){sv("autoFillAddr",v);});
+      setCheck("s-pagetranslate","on",settings.pageTranslate);
+      bindCheck("s-pagetranslate","on","off",function(v){if(v==="on"&&!isPremium()){setCheck("s-pagetranslate","on",settings.pageTranslate);requirePremium();return;}sv("pageTranslate",v);});
+      setSel("s-pagetranslang",settings.pageTransLang||"en");
+      bindChange("s-pagetranslang",function(v){sv("pageTransLang",v);});
+      setCheck("s-pagesummarize","on",settings.pageSummarize);
+      bindCheck("s-pagesummarize","on","off",function(v){if(v==="on"&&!isPremium()){setCheck("s-pagesummarize","on",settings.pageSummarize);requirePremium();return;}sv("pageSummarize",v);});
+      setSel("s-pagesumlen",settings.pageSumLen||"medium");
+      bindChange("s-pagesumlen",function(v){sv("pageSumLen",v);});
+      setCheck("s-mousegestures","on",settings.mouseGestures);
+      bindCheck("s-mousegestures","on","off",function(v){if(v==="on"&&!isPremium()){setCheck("s-mousegestures","on",settings.mouseGestures);requirePremium();return;}sv("mouseGestures",v);});
+      setSel("s-mousegesture",settings.mouseGesture||"back");
+      bindChange("s-mousegesture",function(v){sv("mouseGesture",v);});
+      setCheck("s-tabcoloring","on",settings.tabColoring);
+      bindCheck("s-tabcoloring","on","off",function(v){if(v==="on"&&!isPremium()){setCheck("s-tabcoloring","on",settings.tabColoring);requirePremium();return;}sv("tabColoring",v);});
+      var tc=$("s-tabcolor");if(tc){tc.value=settings.tabColor||"#4fc3f7";bindChange("s-tabcolor",function(v){sv("tabColor",v);});});
         [["fx-opts","cursorFx"],["blob-opts","blobFx"],["glass-opts","glassFx"],["particle-opts","particleFx"],["clickspark-opts","clickSparkFx"],["pixeltrail-opts","pixelTrailFx"],["ribbons-opts","ribbonsFx"]].forEach(function(pair){
           var wrap=$(pair[0]);if(!wrap)return;
           wrap.style.display=settings[pair[1]]==="on"?"block":"none";
@@ -5308,6 +5469,93 @@ function bindSettingsEvents(id){
       setSel("s-bmbar",settings.bookmarkBar);
       bindChange("s-bmbar",function(v){sv("bookmarkBar",v);applyBookmarkBar(v);});
       var tb=$("s-tbcanvas");if(tb)tb.addEventListener("click",function(){openToolbarCanvas();});
+
+      /* ---- Custom Theme Editor bindings ---- */
+      var cbg=$("s-theme-bg"),csurf=$("s-theme-surface"),ctop=$("s-theme-topbar"),cbot=$("s-theme-bottombar"),cacc=$("s-theme-accent"),cname=$("s-theme-name");
+        if(cbg){cbg.value=settings.customThemeBg||"";bindChange("s-theme-bg",function(v){sv("customThemeBg",v);});}
+        if(csurf){csurf.value=settings.customThemeSurface||"";bindChange("s-theme-surface",function(v){sv("customThemeSurface",v);});}
+        if(ctop){ctop.value=settings.customThemeTopbar||"";bindChange("s-theme-topbar",function(v){sv("customThemeTopbar",v);});}
+        if(cbot){cbot.value=settings.customThemeBottombar||"";bindChange("s-theme-bottombar",function(v){sv("customThemeBottombar",v);});}
+        if(cacc){cacc.value=settings.customThemeAccent||"";bindChange("s-theme-accent",function(v){sv("customThemeAccent",v);});}
+        if(cname){cname.value=settings.customThemeName||"";bindChange("s-theme-name",function(v){sv("customThemeName",v);});}
+
+        var ssave=$("s-theme-save");if(ssave)ssave.addEventListener("click",function(){
+          if(!isPremium()){toast("Custom themes require Kastrava Proxima.");return;}
+          var name=cname&&cname.value.trim()||"My Theme";
+          var theme={id:"c"+Date.now().toString(36),name:name,bg:cbg&&cbg.value||"#000000",tbg:csurf&&csurf.value||"#0a0a0c",tb:ctop&&ctop.value||"#141418",om:cbot&&cbot.value||"#0a0a0c",ac:cacc&&cacc.value||"#4fc3f7"};
+          var customs=settings.customThemes||[];
+          customs.push(theme);
+          sv("customThemes",customs);
+          renderCustomThemesList();
+          sv("theme","custom-"+theme.id);
+          applyThemeKey("custom-"+theme.id);
+          toast("Theme \""+name+"\" saved.");
+        });
+
+        var sap=$("s-theme-apply");if(sap)sap.addEventListener("click",function(){
+          if(!isPremium()){toast("Custom themes require Kastrava Proxima.");return;}
+          var id=cbg&&cbg.value?("custom-"+(settings.customThemes||[]).slice(-1)[0]?.id||"") : "";
+          if(id)applyThemeKey(id);
+        });
+
+        var sx=$("s-theme-export");if(sx)sx.addEventListener("click",function(){
+          var customs=settings.customThemes||[];
+          if(!customs.length){toast("No custom themes to export.");return;}
+          var blob=new Blob([JSON.stringify(customs,null,2)],{type:"application/json"});
+          var url=URL.createObjectURL(blob);
+          var a=document.createElement("a");a.href=url;a.download="kastrava-themes.json";a.click();
+          URL.revokeObjectURL(url);
+        });
+
+        var si=$("s-theme-import");if(si)si.addEventListener("click",function(){
+          var f=$("s-theme-file");if(!f||!f.files.length){toast("Select a JSON file first.");return;}
+          var r=new FileReader();r.onload=function(e){
+            try{
+              var customs=JSON.parse(e.target.result);
+              if(!Array.isArray(customs)){toast("Invalid theme file.");return;}
+              sv("customThemes",customs);
+              renderCustomThemesList();
+              toast(customs.length+" theme(s) imported.");
+            }catch(err){toast("Failed to import themes.");}
+          };
+          r.readAsText(f.files[0]);
+        });
+        var si2=$("s-theme-file-import");if(si2)si2.addEventListener("click",function(){$("s-theme-file").click();});
+
+        renderCustomThemesList();
+
+      var renderCustomThemesList=function(){
+        var el=$("s-custom-themes-list");if(!el)return;
+        var customs=settings.customThemes||[];
+        el.innerHTML="";
+        customs.forEach(function(c){
+          var d=document.createElement("div");
+          d.style.cssText="display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px;";
+          d.innerHTML='<div style="width:24px;height:24px;border-radius:6px;background:'+c.bg+';flex-shrink:0"></div>'+
+            '<div style="flex:1;overflow:hidden"><div style="font-weight:500;color:var(--ink);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(c.name||c.id)+'</div><div style="font-size:11px;color:var(--muted);">'+c.id+'</div></div>'+
+            '<button class="btn-sm" style="padding:4px 10px;font-size:12px" onclick="applyCustomTheme(\''+c.id+'\')">Apply</button>'+
+            '<button class="btn-sm btn-danger" style="padding:4px 10px;font-size:12px" onclick="deleteCustomTheme(\''+c.id+'\')">Delete</button>';
+          el.appendChild(d);
+        });
+      }
+
+      window.applyCustomTheme=function(cid){
+        if(!isPremium()){toast("Custom themes require Kastrava Proxima.");return;}
+        sv("theme","custom-"+cid);
+        applyThemeKey("custom-"+cid);
+        toast("Theme applied.");
+      };
+
+      window.deleteCustomTheme=function(cid){
+        if(!isPremium()){toast("Custom themes require Kastrava Proxima.");return;}
+        if(!confirm("Delete this custom theme?"))return;
+        var customs=(settings.customThemes||[]).filter(function(c){return c.id!==cid;});
+        sv("customThemes",customs);
+        if(settings.theme==="custom-"+cid){sv("theme","dark-0");applyThemeKey("dark-0");}
+        renderCustomThemesList();
+        toast("Theme deleted.");
+      };
+    }catch(e){err("appearance",e);}
     }else if(id==="search"){
       var se=$("s-se");if(se)se.value=settings.searchEngine||"kastravasearch";
       var ce=$("s-customengine");if(ce){ce.value=settings.customEngine||"";ce.addEventListener("change",function(e){var v=e.target.value.trim();if(v&&customEngineIsPremium(v)&&!isPremium()){e.target.value=settings.customEngine||"";requirePremium();toast("That search belongs to Premium — pick it directly with Premium.");return;}sv("customEngine",v);});}
@@ -5342,6 +5590,41 @@ function bindSettingsEvents(id){
         var inp=$("s-bankdelay");if(!inp)return;
         inp.value=settings.bankDelaySec||45;
         inp.addEventListener("change",function(){var v=inp.value;sv("bankDelaySec",v);toast("Bank security delay set to "+v+" seconds");});
+      })();
+      // Custom bank domains
+      (function(){
+        var inp=$("s-custombank");if(!inp)return;
+        var addBtn=$("s-addbankdomain");if(!addBtn)return;
+        var list=$("custombank-list");if(!list)return;
+        function renderList(){
+          var customs=settings.customBankDomains||[];
+          list.innerHTML="";
+          customs.forEach(function(d,i){
+            var div=document.createElement("div");
+            div.style.cssText="display:flex;align-items:center;gap:8px;background:var(--c-surface);border:1px solid var(--c-border);border-radius:6px;padding:6px 10px;margin-top:4px;";
+            div.innerHTML='<span style="flex:1;color:var(--k-text);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(d)+'</div>'+
+              '<button class="btn-sm btn-danger" style="padding:4px 10px;font-size:12px" data-dom="'+esc(d)+'">Remove</button>';
+            div.querySelector("button").addEventListener("click",function(){
+              var dom=d;
+              var customs=settings.customBankDomains||[];
+              var idx=customs.indexOf(dom);
+              if(idx>=0){customs.splice(idx,1);sv("customBankDomains",customs);renderList();toast("Removed "+dom);}
+            });
+            list.appendChild(div);
+          });
+        }
+        addBtn.addEventListener("click",function(){
+          var v=inp.value.trim().toLowerCase();
+          if(!v){toast("Enter a domain");return;}
+          var customs=settings.customBankDomains||[];
+          if(customs.includes(v)){toast("Already added");return;}
+          customs.push(v);
+          sv("customBankDomains",customs);
+          inp.value="";
+          renderList();
+          toast("Added "+v);
+        });
+        renderList();
       })();
       setCheck("s-images","on",settings.images);
       bindCheck("s-images","on","off",function(v){sv("images",v);toast("Images "+(v==="on"?"enabled":"blocked"));});
@@ -5433,16 +5716,26 @@ function bindSettingsEvents(id){
             var b=$("s-licbuy");if(!b)return;
             if(g.provider==="paypal"&&g.prices&&g.prices.monthly){
               b.textContent="Buy Premium \u2014 "+g.prices.monthly.amount+" "+g.currency+"/30d (PayPal)";
-            }else{b.textContent="Buy Premium \u2014 \u20B9499/30d (Razorpay)";}
+            }else{b.textContent="Buy Premium \u2014 \u20B9199/30d (Razorpay)";}
           }).catch(function(){});
         }
       }catch(e){}
       var renew=$("s-licrenew");if(renew)renew.addEventListener("click",function(){openOobBuy(LIC.machine);});
+      // AI settings bindings (Premium only)
+      try{
+        var ae=$("s-aienabled");if(ae){ae.addEventListener("change",function(){sv("aiEnabled",ae.checked?"on":"off");});}
+        var ap=$("s-aiprovider");if(ap){ap.addEventListener("change",function(){sv("aiProvider",ap.value);});}
+        var ak=$("s-aiapikey");if(ak){ak.addEventListener("change",function(){sv("aiApiKey",ak.value);});ak.addEventListener("input",function(){sv("aiApiKey",ak.value);});}
+        var ab=$("s-aibase");if(ab){ab.addEventListener("change",function(){sv("aiApiBase",ab.value);});ab.addEventListener("input",function(){sv("aiApiBase",ab.value);});}
+        var am=$("s-aimodel");if(am){am.addEventListener("change",function(){sv("aiModel",am.value);});am.addEventListener("input",function(){sv("aiModel",am.value);});}
+      }catch(e){}
       var buylink=$("s-licbuylink");if(buylink)buylink.addEventListener("click",function(e){e.preventDefault();openOobBuy(LIC.machine);});
       var ccm=$("s-liccopy");if(ccm)ccm.addEventListener("click",function(){copyText(LIC.machine);toast("Machine code copied");});
       var stp=$("s-licstop");if(stp)stp.addEventListener("click",function(){showConfirmModal(function(){stopPremium();},{title:"Stop Premium?",desc:"This ends Premium on this machine immediately. No refund is issued. You can buy again any time."});});
+      // Referral Program
+      var rl=$("s-referral-load");if(rl)rl.addEventListener("click",function(){rl.disabled=true;rl.textContent="Loading...";api.referralInfo().then(function(r){rl.disabled=false;rl.textContent="Load referral info";if(!r||!r.ok){toast("Failed to load referral info");return;}var c=r.config;var out=$("referral-out");if(out){out.innerHTML="<div style=\\"margin-bottom:12px\\"><div class=\\"rowline\\"><span>Your referral code</span><span class=\\"mono\\" style=\\"font-size:14px;letter-spacing:1px\\">"+esc(c.code)+"</span></div><div class=\\"rowline\\"><span>Referral link</span><span style=\\"flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap\\"><input id=\\"ref-link\\" readonly value=\\""+esc(c.link)+"\\" style=\\"width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--line2);background:var(--card2);color:var(--ink);font-family:var(--mono);font-size:12px\\"></span></div><div style=\\"display:flex;gap:8px;margin-top:8px\\"><button class=\\"btn btn-ghost\\" id=\\"ref-copy\\" style=\\"flex:1\\">Copy link</button><button class=\\"btn btn-primary\\" id=\\"ref-share\\" style=\\"flex:1\\">Share</button></div></div><div style=\\"display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-top:10px\\"><div class=\\"stat\\" style=\\"padding:10px\\"><div class=\\"k\\">Total referrals</div><div class=\\"v\\">"+esc(r.count)+"</div></div><div class=\\"stat\\" style=\\"padding:10px\\"><div class=\\"k\\">First purchases</div><div class=\\"v\\">"+esc(r.purchase_rewarded)+"</div></div><div class=\\"stat\\" style=\\"padding:10px\\"><div class=\\"k\\">Pending</div><div class=\\"v\\">"+esc(r.purchase_pending)+"</div></div><div class=\\"stat\\" style=\\"padding:10px\\"><div class=\\"k\\">Your cashback</div><div class=\\"v\\">\u20B9"+esc((r.total_cashback_paise/100).toFixed(2))+"</div></div><div class=\\"stat\\" style=\\"padding:10px\\"><div class=\\"k\\">Premium earned</div><div class=\\"v\\">"+esc(r.total_reward_days)+" days</div></div></div>"+(r.referrals&&r.referrals.length?"<div style=\\"margin-top:14px\\"><div class=\\"fine\\" style=\\"font-weight:600;margin-bottom:6px\\">Your referrals</div>"+r.referrals.map(function(rf){var status=rf.purchase_rewarded?'<span class=\\"pill on\\">Rewarded</span>':'<span class=\\"pill warn\\">Pending</span>';return '<div class=\\"rowline\\" style=\\"padding:8px 0;border-top:1px solid var(--line)\\"><span>'+esc(rf.email)+'<br><span class=\\"fine\\">Joined '+esc((rf.joined_at||'').slice(0,10))+'</span></span><span>'+status+'</span></div>';}).join('')+'</div>':'<p class=\\"fine\\" style=\\"margin-top:10px\\">No referrals yet.</p>');}var rc=$("ref-copy");if(rc)rc.addEventListener("click",function(){var inp=$("ref-link");inp.select();document.execCommand("copy");var ot=rc.textContent;rc.textContent="Copied!";setTimeout(function(){rc.textContent=ot;},1500);});var rs=$("ref-share");if(rs)rs.addEventListener("click",function(){if(navigator.share){navigator.share({title:"Kastrava Referral",text:"Join Kastrava with my link \u2014 get 30 days Premium free on first purchase!",url:c.link}).catch(function(){});}else{alert("Sharing not supported on this browser. Use the Copy button.");}});});
     }else if(id==="reset"){
-      function doResetSettings(){var keepT=settings.customThemes||[],keepL=settings.customLogo||"",keepW=settings.customWallpaper||"";settings={setupDone:"1",searchEngine:"kastravasearch",accent:"#4fc3f7",fontSize:"12",reduceAnimations:"off",hwAcc:"on",dnt:"on",tracking:"strict",suggest:"off",bookmarkBar:"auto",startup:"last",confirmClose:"off",historyEnabled:"on",bookmarksEnabled:"on",cookies:"off",lang:"en",location:"block",zoom:"100",uiRadius:"medium",speedDial:"comfortable",showHomeBtn:"off",showCopyBtn:"on",showNtpClock:"on",showNtpLogo:"on",tabLayout:"horizontal",vtabsCollapsed:"off",shortcuts:{},uiStyle:"firefox",sleepTabs:"off",siteShields:{},jsGlobal:"on",images:"on",webrtcMode:"disable",doh:"off",proxy:{enabled:false},startupUrls:"",showFullUrls:"off",ntpQuick:"on",ntpSearch:"on",ntpBg:"default",ntpTiles:"8",tabFavicons:"on",clearHistoryOnExit:"off",historyKeep:"0",maxTabs:"0",askDlLoc:"off",dlDir:"",maxSuggestions:"8",launchMaximized:"off",sendReferrer:"off",cursorFx:"off",cursorFxMode:"color",cursorFxColor:"#4fc3f7",cursorFxForce:"medium",cursorFxSize:"medium",blobFx:"off",blobColor:"#2f6fed",blobCount:"3",blobSize:"medium",blobOpacity:"0.6",blobShape:"circle",glassFx:"off",glassColor:"#3b82f6",glassShape:"sphere",glassSize:"medium",glassOpacity:"0.5",particleFx:"off",particleColor:"#3b82f6",particleSize:"medium",particleDensity:"medium",clickSparkFx:"off",clickSparkColor:"#ffffff",clickSparkSize:"medium",clickSparkCount:"8",clickSparkDuration:"400",pixelTrailFx:"off",pixelTrailColor:"#ffffff",pixelTrailGrid:"medium",pixelTrailTrail:"medium",ribbonsFx:"off",ribbonsColor:"#2f6fed",ribbonsThickness:"medium",ribbonsPoints:"50",cursorStyle:"system",cursorStyleColor:"#ffffff",customThemes:keepT,customLogo:keepL,customWallpaper:keepW};if(api&&api.setSetting){Object.keys(settings).forEach(function(k){api.setSetting(k,settings[k]);});}document.documentElement.style.cssText="";applyFontSize("12");applyReduceAnim("off");applyUiRadius("medium");applySpeedDial("comfortable");applyHomeBtn("off");applyCopyBtn("on");applyNtpClock("on");applyNtpLogo("on");applyTabLayout("horizontal");applyVtabsCollapsed("off");applyBookmarkBar("auto");applyHistoryEnabled("on");applyBookmarksEnabled("on");applyAllFx();toast("Settings reset.");}
+      function doResetSettings(){var keepT=settings.customThemes||[],keepL=settings.customLogo||"",keepW=settings.customWallpaper||"";settings={setupDone:"1",searchEngine:"kastravasearch",accent:"#4fc3f7",fontSize:"12",reduceAnimations:"off",hwAcc:"on",dnt:"on",tracking:"strict",suggest:"off",bookmarkBar:"auto",startup:"last",confirmClose:"off",historyEnabled:"on",bookmarksEnabled:"on",cookies:"off",lang:"en",location:"block",zoom:"100",uiRadius:"medium",speedDial:"comfortable",showHomeBtn:"off",showCopyBtn:"on",showNtpClock:"on",showNtpLogo:"on",tabLayout:"horizontal",vtabsCollapsed:"off",shortcuts:{},uiStyle:"firefox",sleepTabs:"off",siteShields:{},jsGlobal:"on",images:"on",webrtcMode:"disable",doh:"off",proxy:{enabled:false},startupUrls:"",showFullUrls:"off",ntpQuick:"on",ntpSearch:"on",ntpBg:"default",ntpTiles:"8",tabFavicons:"on",clearHistoryOnExit:"off",historyKeep:"0",maxTabs:"0",askDlLoc:"off",dlDir:"",maxSuggestions:"8",launchMaximized:"off",sendReferrer:"off",cursorFx:"off",cursorFxMode:"color",cursorFxColor:"#4fc3f7",cursorFxForce:"medium",cursorFxSize:"medium",blobFx:"off",blobColor:"#2f6fed",blobCount:"3",blobSize:"medium",blobOpacity:"0.6",blobShape:"circle",glassFx:"off",glassColor:"#3b82f6",glassShape:"sphere",glassSize:"medium",glassOpacity:"0.5",particleFx:"off",particleColor:"#3b82f6",particleSize:"medium",particleDensity:"medium",clickSparkFx:"off",clickSparkColor:"#ffffff",clickSparkSize:"medium",clickSparkCount:"8",clickSparkDuration:"400",pixelTrailFx:"off",pixelTrailColor:"#ffffff",pixelTrailGrid:"medium",pixelTrailTrail:"medium",ribbonsFx:"off",ribbonsColor:"#2f6fed",ribbonsThickness:"medium",ribbonsPoints:"50",cursorStyle:"system",cursorStyleColor:"#ffffff",customThemes:keepT,customLogo:keepL,customWallpaper:keepW,proximaLogo:"",aiEnabled:"off",aiProvider:"ollama",aiApiKey:"",aiApiBase:"http://127.0.0.1:11434",aiModel:"llama3"};if(api&&api.setSetting){Object.keys(settings).forEach(function(k){api.setSetting(k,settings[k]);});}document.documentElement.style.cssText="";applyFontSize("12");applyReduceAnim("off");applyUiRadius("medium");applySpeedDial("comfortable");applyHomeBtn("off");applyCopyBtn("on");applyNtpClock("on");applyNtpLogo("on");applyTabLayout("horizontal");applyVtabsCollapsed("off");applyBookmarkBar("auto");applyHistoryEnabled("on");applyBookmarksEnabled("on");applyAllFx();toast("Settings reset.");}
       var rs=$("s-reset");if(rs)rs.addEventListener("click",function(){showConfirmModal(function(){doResetSettings();},{title:"Reset all settings?",desc:"Restore all settings to defaults. This cannot be reverted!"});});
       var ra=$("s-resetall");if(ra)ra.addEventListener("click",function(){showConfirmModal(function(){doResetSettings();clearAllData();},{title:"Reset everything?",desc:"Restore defaults and delete all history, bookmarks and top sites. This cannot be reverted!"});});
       var sr=$("s-setupreplay");if(sr)sr.addEventListener("click",function(){try{saveSetting("setupDone","");}catch(e){}setupRestart();});
@@ -5684,7 +5977,7 @@ function init(){
       try{applyTabFavicons(settings.tabFavicons||"on");}catch(e){}
       try{applyVtabsCollapsed(settings.vtabsCollapsed||"off");}catch(e){}
       try{applyAllFx();}catch(e){}
-      try{applyEditionUI();}catch(e){}
+      try{applyEditionUI();applyEditionLogo();}catch(e){}
       try{bindFxVisibility();}catch(e){}
       try{maybeShowSetup();}catch(e){}
     }).catch(function(e){err("loadSettings",e);});
@@ -5974,6 +6267,22 @@ function showBankGuard(url,reason){
   $("bank-continue").classList.remove("ready");$("bank-continue").disabled=true;
   $("bank-result").style.display="none";$("bank-fail-msg").style.display="none";$("bank-continue").style.display="none";
   g.classList.add("visible");renderBankSteps();startBankTimer();advanceBankStep();
+  // Show shield icon on omnibox for banking pages
+  var sh=$("omni-shield");if(sh){sh.style.display="inline-flex";sh.style.color="#10b981";}
+}
+function hideBankShield(){
+  var sh=$("omni-shield");if(sh)sh.style.display="none";
+}
+function updateBankShield(url){
+  try{
+    var isBank=isBankUrl(url);
+    var sh=$("omni-shield");if(!sh)return;
+    if(isBank&&settings&&settings.bankSecur==="on"){
+      sh.style.display="inline-flex";sh.style.color="#10b981";
+    }else{
+      sh.style.display="none";
+    }
+  }catch(e){}
 }
 function renderBankSteps(){
   var s=$("bank-steps");if(!s)return;s.innerHTML=bankState.steps.map(function(st,i){var done=i<bankState.step,cur=i===bankState.step;return '<div class="bank-step'+(done?" done":"")+(cur?"":"")+'"><div class="step-over"><div class="step-num">'+(done?"✓":(i+1))+'</div><div class="step-txt">'+esc(st.name)+'</div></div><div class="step-bar"></div></div>';}).join("");
